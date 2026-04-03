@@ -1,0 +1,47 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: #FAFFFE;
+  --foreground: #2D2D2D;
+  --primary: #5BBFAD;
+  --primary-light: #E8FAF8;
+  --accent: #F9A8C0;
+  --accent-light: #FFF0F5;
+  --warning: #F48C8C;
+  --warning-light: #FFF3F3;
+  --info: #7DB8E8;
+  --sub: #9B9B9B;
+  --border: #F2F2F2;
+  --card: #FFFFFF;
+}
+
+/* Reset */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  background: #FAFFFE;
+}
+
+body {
+  color: var(--foreground);
+  font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Noto Sans JP", sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* アプリのコンテナをbodyではなくラッパーdivで制御 */
+#app-container {
+  max-width: 430px;
+  margin: 0 auto;
+  min-height: 100dvh;
+  min-height: 100vh;
+  position: relative;
+  overflow-x: hidden;
+}
