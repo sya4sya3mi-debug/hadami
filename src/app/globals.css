@@ -172,6 +172,21 @@ body {
 .animate-stagger-in { animation: stagger-in 0.4s ease-out forwards; }
 .animate-check-pop { animation: check-pop 0.4s ease-out forwards; }
 
+/* Modal/BottomSheet open: 背景スクロール完全ロック */
+html.scroll-locked,
+html.scroll-locked body,
+html.scroll-locked #app-container {
+  overflow: hidden !important;
+  -webkit-overflow-scrolling: auto !important;
+  touch-action: none !important;
+  overscroll-behavior: none !important;
+}
+html.scroll-locked #app-container {
+  position: fixed !important;
+  width: 100% !important;
+  height: 100% !important;
+}
+
 /* Hide scrollbar for genre chips */
 .hide-scrollbar::-webkit-scrollbar { display: none; }
 .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }

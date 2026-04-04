@@ -26,41 +26,27 @@ export default function BottomSheet({ open, onClose, children, footer, title, su
 
     document.addEventListener("keydown", handleKeyDown);
 
-    // スクロール位置を保存して#app-containerをfixedに
+    // スクロール位置を保存
     const container = document.getElementById("app-container");
     const scrollY = container ? container.scrollTop : window.scrollY;
 
-    document.body.style.overflow = "hidden";
-    if (container) {
-      container.style.position = "fixed";
-      container.style.top = `-${scrollY}px`;
-      container.style.left = "0";
-      container.style.right = "0";
-      container.style.overflow = "hidden";
-    }
+    // CSSクラスで完全ロック
+    if (container) container.style.top = `-${scrollY}px`;
+    document.documentElement.classList.add("scroll-locked");
 
-    // iOS: シート外のtouchmoveをブロック
+    // touchmoveもブロック（シート内スクロールは許可）
     const handleTouchMove = (e: TouchEvent) => {
-      // シート内のスクロール可能エリア内のタッチは許可
-      const scrollableContent = contentRef.current;
-      if (scrollableContent && scrollableContent.contains(e.target as Node)) {
-        return;
-      }
+      if (contentRef.current?.contains(e.target as Node)) return;
       e.preventDefault();
     };
-
     document.addEventListener("touchmove", handleTouchMove, { passive: false });
 
     return () => {
       document.removeEventListener("keydown", handleKeyDown);
       document.removeEventListener("touchmove", handleTouchMove);
-      document.body.style.overflow = "";
+      document.documentElement.classList.remove("scroll-locked");
       if (container) {
-        container.style.position = "";
         container.style.top = "";
-        container.style.left = "";
-        container.style.right = "";
-        container.style.overflow = "";
         container.scrollTop = scrollY;
       }
     };
@@ -101,6 +87,7 @@ export default function BottomSheet({ open, onClose, children, footer, title, su
           style={{
             WebkitOverflowScrolling: "touch",
             overscrollBehavior: "contain",
+            touchAction: "pan-y",
             paddingBottom: footer ? "12px" : "calc(32px + env(safe-area-inset-bottom))",
           }}
         >

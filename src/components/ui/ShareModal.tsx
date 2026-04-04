@@ -14,14 +14,8 @@ export default function ShareModal({ text, onClose }: ShareModalProps) {
   useEffect(() => {
     const container = document.getElementById("app-container");
     const scrollY = container ? container.scrollTop : 0;
-    document.body.style.overflow = "hidden";
-    if (container) {
-      container.style.position = "fixed";
-      container.style.top = `-${scrollY}px`;
-      container.style.left = "0";
-      container.style.right = "0";
-      container.style.overflow = "hidden";
-    }
+    if (container) container.style.top = `-${scrollY}px`;
+    document.documentElement.classList.add("scroll-locked");
     const handleTouchMove = (e: TouchEvent) => {
       const modal = document.querySelector("[data-modal-content]");
       if (modal && modal.contains(e.target as Node)) return;
@@ -30,13 +24,9 @@ export default function ShareModal({ text, onClose }: ShareModalProps) {
     document.addEventListener("touchmove", handleTouchMove, { passive: false });
     return () => {
       document.removeEventListener("touchmove", handleTouchMove);
-      document.body.style.overflow = "";
+      document.documentElement.classList.remove("scroll-locked");
       if (container) {
-        container.style.position = "";
         container.style.top = "";
-        container.style.left = "";
-        container.style.right = "";
-        container.style.overflow = "";
         container.scrollTop = scrollY;
       }
     };
