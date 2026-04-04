@@ -9,12 +9,7 @@ import Disclaimer from "@/components/ui/Disclaimer";
 import { useUser } from "@/lib/auth";
 
 export default function HomePage() {
-  const { user, profile, supabase } = useUser();
-
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    window.location.reload();
-  };
+  const { user, profile } = useUser();
 
   const products = useProductStore((s) => s.products);
   const discoveredCount = useZukanStore((s) => s.discoveredIds.length);
@@ -39,8 +34,8 @@ export default function HomePage() {
                   {profile.display_name} さん
                 </span>
               )}
-              <button
-                onClick={handleLogout}
+              <Link
+                href="/settings"
                 style={{
                   fontSize: "12px",
                   color: "var(--sub)",
@@ -48,11 +43,11 @@ export default function HomePage() {
                   border: "1px solid var(--border)",
                   borderRadius: "20px",
                   padding: "5px 12px",
-                  cursor: "pointer",
+                  textDecoration: "none",
                 }}
               >
-                ログアウト
-              </button>
+                設定
+              </Link>
             </>
           ) : (
             <Link
