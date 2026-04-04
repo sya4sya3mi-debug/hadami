@@ -6,11 +6,12 @@ interface BottomSheetProps {
   open: boolean;
   onClose: () => void;
   children: React.ReactNode;
+  footer?: React.ReactNode;
   title?: string;
   subtitle?: string;
 }
 
-export default function BottomSheet({ open, onClose, children, title, subtitle }: BottomSheetProps) {
+export default function BottomSheet({ open, onClose, children, footer, title, subtitle }: BottomSheetProps) {
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
@@ -59,15 +60,24 @@ export default function BottomSheet({ open, onClose, children, title, subtitle }
         </div>
         {/* Content */}
         <div
-          className="flex-1 min-h-0 overflow-y-auto px-5 pb-8"
+          className="flex-1 min-h-0 overflow-y-auto px-5"
           style={{
-            paddingBottom: "calc(32px + env(safe-area-inset-bottom))",
             WebkitOverflowScrolling: "touch",
             overscrollBehavior: "contain",
+            paddingBottom: footer ? "12px" : "calc(32px + env(safe-area-inset-bottom))",
           }}
         >
           {children}
         </div>
+        {/* Footer（常時表示） */}
+        {footer && (
+          <div
+            className="shrink-0 px-5 pt-3"
+            style={{ paddingBottom: "calc(16px + env(safe-area-inset-bottom))" }}
+          >
+            {footer}
+          </div>
+        )}
       </div>
     </div>
   );
