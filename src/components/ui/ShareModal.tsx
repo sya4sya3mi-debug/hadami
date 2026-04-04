@@ -13,8 +13,12 @@ export default function ShareModal({ text, onClose }: ShareModalProps) {
   // 背景スクロール完全ロック
   useEffect(() => {
     const container = document.getElementById("app-container");
+    const nextDiv = document.getElementById("__next");
     const scrollY = container ? container.scrollTop : 0;
-    if (container) container.style.top = `-${scrollY}px`;
+    const topValue = `-${scrollY}px`;
+    document.body.style.top = topValue;
+    if (nextDiv) nextDiv.style.top = topValue;
+    if (container) container.style.top = topValue;
     document.documentElement.classList.add("scroll-locked");
     const handleTouchMove = (e: TouchEvent) => {
       const modal = document.querySelector("[data-modal-content]");
@@ -25,6 +29,8 @@ export default function ShareModal({ text, onClose }: ShareModalProps) {
     return () => {
       document.removeEventListener("touchmove", handleTouchMove);
       document.documentElement.classList.remove("scroll-locked");
+      document.body.style.top = "";
+      if (nextDiv) nextDiv.style.top = "";
       if (container) {
         container.style.top = "";
         container.scrollTop = scrollY;

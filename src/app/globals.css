@@ -175,16 +175,23 @@ body {
 /* Modal/BottomSheet open: 背景スクロール完全ロック */
 html.scroll-locked,
 html.scroll-locked body,
-html.scroll-locked #app-container {
+html.scroll-locked body > div,
+html.scroll-locked #__next,
+html.scroll-locked #app-container,
+html.scroll-locked main {
   overflow: hidden !important;
   -webkit-overflow-scrolling: auto !important;
   touch-action: none !important;
   overscroll-behavior: none !important;
+  height: 100% !important;
 }
+html.scroll-locked body,
+html.scroll-locked #__next,
 html.scroll-locked #app-container {
   position: fixed !important;
+  left: 0 !important;
+  right: 0 !important;
   width: 100% !important;
-  height: 100% !important;
 }
 
 /* Hide scrollbar for genre chips */

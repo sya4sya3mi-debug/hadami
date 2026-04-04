@@ -30,8 +30,12 @@ export default function BottomSheet({ open, onClose, children, footer, title, su
     const container = document.getElementById("app-container");
     const scrollY = container ? container.scrollTop : window.scrollY;
 
-    // CSSクラスで完全ロック
-    if (container) container.style.top = `-${scrollY}px`;
+    // CSSクラスで完全ロック + スクロール位置をtopで維持
+    const topValue = `-${scrollY}px`;
+    document.body.style.top = topValue;
+    const nextDiv = document.getElementById("__next");
+    if (nextDiv) nextDiv.style.top = topValue;
+    if (container) container.style.top = topValue;
     document.documentElement.classList.add("scroll-locked");
 
     // touchmoveもブロック（シート内スクロールは許可）
@@ -45,6 +49,8 @@ export default function BottomSheet({ open, onClose, children, footer, title, su
       document.removeEventListener("keydown", handleKeyDown);
       document.removeEventListener("touchmove", handleTouchMove);
       document.documentElement.classList.remove("scroll-locked");
+      document.body.style.top = "";
+      if (nextDiv) nextDiv.style.top = "";
       if (container) {
         container.style.top = "";
         container.scrollTop = scrollY;
