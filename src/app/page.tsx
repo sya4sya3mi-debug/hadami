@@ -1,13 +1,32 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import { useProductStore } from "@/stores/useProductStore";
 import { useZukanStore } from "@/stores/useZukanStore";
 import { useDeckStore } from "@/stores/useDeckStore";
 import { MASTER_INGREDIENTS } from "@/lib/ingredients";
 import Disclaimer from "@/components/ui/Disclaimer";
+import { createClient } from "@/lib/supabase";
+import type { User } from "@supabase/supabase-js";
 
 export default function HomePage() {
+  const [user, setUser] = useState<User | null>(null);
+  const supabase = createClient();
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => setUser(data.user));
+    const { data: listener } = supabase.auth.onAuthStateChange((_e, session) => {
+      setUser(session?.user ?? null);
+    });
+    return () => listener.subscription.unsubscribe();
+  }, []);
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    setUser(null);
+  };
+
   const products = useProductStore((s) => s.products);
   const discoveredCount = useZukanStore((s) => s.discoveredIds.length);
   const deckItems = useDeckStore((s) => s.items);
@@ -21,6 +40,42 @@ export default function HomePage() {
   return (
     <div className="min-h-screen" style={{ background: "linear-gradient(160deg, #F0FDFA 0%, #FFF0F5 100%)" }}>
       <div className="px-5 pt-10 pb-6">
+
+        {/* ログインボタン */}
+        <div className="flex justify-end mb-2">
+          {user ? (
+            <button
+              onClick={handleLogout}
+              style={{
+                fontSize: "12px",
+                color: "var(--sub)",
+                background: "none",
+                border: "1px solid var(--border)",
+                borderRadius: "20px",
+                padding: "5px 12px",
+                cursor: "pointer",
+              }}
+            >
+              ログアウト
+            </button>
+          ) : (
+            <Link
+              href="/auth/login"
+              style={{
+                fontSize: "12px",
+                color: "#5BBFAD",
+                background: "none",
+                border: "1px solid #5BBFAD",
+                borderRadius: "20px",
+                padding: "5px 12px",
+                textDecoration: "none",
+                fontWeight: "600",
+              }}
+            >
+              ログイン / 登録
+            </Link>
+          )}
+        </div>
 
         {/* Logo */}
         <div className="text-center mb-8">
