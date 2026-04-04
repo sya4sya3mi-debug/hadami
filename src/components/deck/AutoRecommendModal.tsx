@@ -15,21 +15,22 @@ export default function AutoRecommendModal({
   onConfirm,
   onClose,
 }: AutoRecommendModalProps) {
-  // iOS対応: 背景スクロールロック
+  // 背景スクロールロック（body + #app-container）
   useEffect(() => {
-    const scrollY = window.scrollY;
-    document.body.style.position = "fixed";
-    document.body.style.top = `-${scrollY}px`;
-    document.body.style.left = "0";
-    document.body.style.right = "0";
+    const container = document.getElementById("app-container");
+    const scrollY = container ? container.scrollTop : 0;
     document.body.style.overflow = "hidden";
+    if (container) {
+      container.style.overflow = "hidden";
+      container.style.touchAction = "none";
+    }
     return () => {
-      document.body.style.position = "";
-      document.body.style.top = "";
-      document.body.style.left = "";
-      document.body.style.right = "";
       document.body.style.overflow = "";
-      window.scrollTo(0, scrollY);
+      if (container) {
+        container.style.overflow = "";
+        container.style.touchAction = "";
+        container.scrollTop = scrollY;
+      }
     };
   }, []);
 
