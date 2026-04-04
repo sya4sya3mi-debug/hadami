@@ -165,25 +165,25 @@ export default function DeckPage() {
   const totalIngredients = new Set(allIngredientNames).size;
   const combinations = findCombinations(Array.from(new Set(allIngredientNames)));
 
-  // A・B: 製品ごとの相性カラー計算（deckProducts・combinations が変わった時だけ再計算）
-  const COMBO_COLORS = ["#5BBFAD", "#F9A8C0", "#B39DDB", "#FFB347", "#7DB8E8", "#98D89E"];
   const recommendedCombos = combinations.filter((c) => c.type === "recommended");
+  const cautionCombos = combinations.filter((c) => c.type === "note");
 
-  const productComboMap = new Map<string, number[]>();
-  recommendedCombos.forEach((combo, idx) => {
-    deckProducts.forEach((product) => {
-      const ingNames = new Set(
-        product.ingredients.map((pi) => getIngredientById(pi.ingredientId)?.nameJa ?? "")
-      );
-      if (ingNames.has(combo.pair[0]) || ingNames.has(combo.pair[1])) {
-        const existing = productComboMap.get(product.id) ?? [];
-        if (!existing.includes(idx)) productComboMap.set(product.id, [...existing, idx]);
-      }
+  // 各相性ペアについて、どの製品にその成分が含まれるか計算
+  const comboWithSources = combinations.map((combo) => {
+    const sources: [string[], string[]] = [[], []];
+    combo.pair.forEach((ingredientName, pairIdx) => {
+      deckProducts.forEach((product) => {
+        const hasIngredient = product.ingredients.some((pi) => {
+          const ing = getIngredientById(pi.ingredientId);
+          return ing?.nameJa === ingredientName;
+        });
+        if (hasIngredient) {
+          sources[pairIdx].push(product.name);
+        }
+      });
     });
+    return { combo, sources };
   });
-
-  const getComboColors = (productId: string) =>
-    (productComboMap.get(productId) ?? []).map((i) => COMBO_COLORS[i % COMBO_COLORS.length]);
 
   const shareText = shareDeck(
     routine,
@@ -246,41 +246,13 @@ export default function DeckPage() {
 
         {/* Product list */}
         <div className="space-y-2 mb-5">
-          {deckProducts.map((product, idx) => {
-            const colors = getComboColors(product.id);
-            const nextProduct = deckProducts[idx + 1];
-            const nextColors = nextProduct ? getComboColors(nextProduct.id) : [];
-            // B: 隣接する2製品が共通の相性カラーを持つ場合、ブリッジを表示
-            const sharedColors = colors.filter((c) => nextColors.includes(c));
-            return (
-              <div key={product.id}>
-                <DeckCard
-                  product={product}
-                  onRemove={() => { void handleRemoveItem(product.id); }}
-                  comboColors={colors}
-                />
-                {sharedColors.length > 0 && (
-                  <div className="flex items-center justify-center gap-1.5 py-1">
-                    {sharedColors.slice(0, 2).map((color, i) => (
-                      <div
-                        key={i}
-                        className="flex items-center gap-1 px-2 py-0.5 rounded-full animate-resonance-pulse"
-                        style={{
-                          background: color + "18",
-                          border: `1px solid ${color}44`,
-                          fontSize: "10px",
-                          color,
-                          fontWeight: 700,
-                        }}
-                      >
-                        ✦ 相性
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            );
-          })}
+          {deckProducts.map((product) => (
+            <DeckCard
+              key={product.id}
+              product={product}
+              onRemove={() => { void handleRemoveItem(product.id); }}
+            />
+          ))}
           <button
             onClick={() => { setPickerFilter("すべて"); setShowPicker(true); }}
             className="w-full flex items-center justify-center gap-2 rounded-2xl py-3.5"
@@ -331,17 +303,58 @@ export default function DeckPage() {
               <div className="text-[10px]" style={{ color: "#9B9B9B" }}>アイテム</div>
             </div>
             <div
-              className={`text-center py-3 rounded-2xl shadow-sm ${recommendedCombos.length > 0 ? "animate-resonance-glow" : "bg-white"}`}
-              style={{
-                border: recommendedCombos.length > 0 ? "1px solid rgba(91,191,173,0.3)" : "1px solid #F5E6EF",
-                background: recommendedCombos.length > 0 ? "linear-gradient(135deg, #E8FAF8, #FFF0F5)" : "#fff",
-              }}
+              className="text-center py-3 rounded-2xl shadow-sm bg-white"
+              style={{ border: "1px solid #F5E6EF" }}
             >
               <div className="text-lg font-bold" style={{ color: recommendedCombos.length > 0 ? "#5BBFAD" : "#C5C5C5" }}>
-                {recommendedCombos.length > 0 ? `✦${recommendedCombos.length}` : "−"}
+                {recommendedCombos.length > 0 ? recommendedCombos.length : "−"}
               </div>
-              <div className="text-[10px]" style={{ color: "#9B9B9B" }}>相性</div>
+              <div className="text-[10px]" style={{ color: "#9B9B9B" }}>好相性</div>
             </div>
+          </div>
+        )}
+
+        {/* 成分の相性（おすすめ + 注意を分離して表示） */}
+        {combinations.length > 0 && (
+          <div className="mb-5">
+            {recommendedCombos.length > 0 && (
+              <>
+                <h3 className="font-bold text-sm mb-3 flex items-center gap-2" style={{ color: "#2D2D2D" }}>
+                  <span
+                    className="w-5 h-5 rounded-full flex items-center justify-center text-[10px]"
+                    style={{ background: "#E8FAF8", color: "#5BBFAD" }}
+                  >
+                    ✓
+                  </span>
+                  おすすめの組み合わせ
+                  <span className="text-xs font-normal" style={{ color: "#9B9B9B" }}>({recommendedCombos.length}件)</span>
+                </h3>
+                <div className="space-y-2.5 mb-4">
+                  {comboWithSources
+                    .filter((c) => c.combo.type === "recommended")
+                    .map((item, i) => (
+                      <CombinationCard key={`r-${i}`} combo={item.combo} ingredientProducts={item.sources} />
+                    ))}
+                </div>
+              </>
+            )}
+
+            {cautionCombos.length > 0 && (
+              <>
+                <h3 className="font-bold text-sm mb-3 flex items-center gap-2" style={{ color: "#2D2D2D" }}>
+                  <span className="text-sm">⚠️</span>
+                  注意が必要な組み合わせ
+                  <span className="text-xs font-normal" style={{ color: "#9B9B9B" }}>({cautionCombos.length}件)</span>
+                </h3>
+                <div className="space-y-2.5">
+                  {comboWithSources
+                    .filter((c) => c.combo.type === "note")
+                    .map((item, i) => (
+                      <CombinationCard key={`n-${i}`} combo={item.combo} ingredientProducts={item.sources} />
+                    ))}
+                </div>
+              </>
+            )}
           </div>
         )}
 
@@ -399,21 +412,6 @@ export default function DeckPage() {
                   </div>
                 );
               })}
-            </div>
-          </div>
-        )}
-
-        {/* Combinations */}
-        {combinations.length > 0 && (
-          <div className="mb-5">
-            <h3 className="font-bold text-sm mb-3 flex items-center gap-2" style={{ color: "#2D2D2D" }}>
-              <span className="w-1 h-4 rounded-full inline-block" style={{ background: "#F9A8C0" }} />
-              成分の相性
-            </h3>
-            <div className="space-y-2.5">
-              {combinations.map((combo, i) => (
-                <CombinationCard key={i} combo={combo} />
-              ))}
             </div>
           </div>
         )}

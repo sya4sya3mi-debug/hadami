@@ -192,8 +192,8 @@ export default function AutoRecommendModal({
               onClick={onConfirm}
               className="w-full py-3.5 rounded-2xl text-sm font-bold text-white"
               style={{
-                background: "linear-gradient(135deg, #5BBFAD, #7DD3C8)",
-                boxShadow: "0 2px 8px rgba(91,191,173,0.3)",
+                background: "linear-gradient(135deg, #F9A8C0, #F48FB1)",
+                boxShadow: "0 2px 8px rgba(249,168,192,0.35)",
               }}
             >
               この組み合わせを使う

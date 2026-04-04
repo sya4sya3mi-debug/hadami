@@ -86,21 +86,35 @@ export default function ManualInputSheet({ open, onClose, onSubmit }: ManualInpu
   };
 
   return (
-    <BottomSheet open={open} onClose={onClose}>
-      <div className="space-y-4">
-        <div className="text-center mb-2">
-          <div className="text-lg font-bold" style={{ color: "#2D2D2D" }}>📋 手動入力</div>
-          <div className="text-xs mt-1" style={{ color: "#9B9B9B" }}>APIを使わないため、スキャン回数にカウントされません</div>
+    <BottomSheet
+      open={open}
+      onClose={onClose}
+      title="📋 成分を手動入力"
+      subtitle="スキャン回数を消費しません"
+    >
+      <div className="space-y-3 pt-2">
+        {/* iPhoneのテキストコピー案内 (コンパクト版) */}
+        <div
+          className="rounded-xl px-3 py-2.5 flex items-center gap-2.5"
+          style={{
+            background: "linear-gradient(135deg, #FDE8F0 0%, #EEF6FF 100%)",
+            border: "1px solid rgba(249,168,192,0.25)",
+          }}
+        >
+          <span className="text-base shrink-0">📱</span>
+          <p className="text-[11px] leading-relaxed" style={{ color: "#555" }}>
+            写真アプリで成分表を<span className="font-bold" style={{ color: "#C97A9A" }}>長押し</span>→コピー→下にペーストが便利！
+          </p>
         </div>
 
         {/* OCR camera button */}
         <button
           onClick={() => cameraInputRef.current?.click()}
           disabled={ocrLoading}
-          className="w-full flex items-center justify-center gap-2 rounded-2xl py-3"
+          className="w-full flex items-center justify-center gap-2 rounded-xl py-2.5"
           style={{
             background: ocrLoading ? "#F2F2F2" : "linear-gradient(135deg, #FFF0F5, #FFFFFF)",
-            border: "1px solid #F9A8C020",
+            border: "1px solid rgba(249,168,192,0.12)",
           }}
         >
           <span>{ocrLoading ? "⏳" : "📷"}</span>
@@ -125,18 +139,18 @@ export default function ManualInputSheet({ open, onClose, onSubmit }: ManualInpu
 
         {/* Textarea */}
         <div>
-          <label className="block text-xs font-medium mb-1.5" style={{ color: "#9B9B9B" }}>
+          <label className="block text-xs font-medium mb-1" style={{ color: "#9B9B9B" }}>
             成分テキスト
           </label>
           <textarea
             value={ingredientText}
             onChange={(e) => setIngredientText(e.target.value)}
             placeholder="例: 水、グリセリン、BG、ナイアシンアミド、ヒアルロン酸Na..."
-            rows={5}
+            rows={4}
             className="w-full rounded-xl p-3 text-sm outline-none resize-none"
             style={{ background: "#FAFAFA", border: "1px solid #F2F2F2", color: "#2D2D2D" }}
           />
-          <div className="text-[10px] mt-1" style={{ color: "#BDBDBD" }}>
+          <div className="text-[10px] mt-0.5" style={{ color: "#BDBDBD" }}>
             カンマ・改行・スペース区切りに対応
           </div>
         </div>

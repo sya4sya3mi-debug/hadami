@@ -6,37 +6,25 @@ import { getCategoryByKey } from "@/lib/categories";
 interface DeckCardProps {
   product: Product;
   onRemove?: () => void;
-  comboColors?: string[];   // A・B用: この製品が参加している相性ペアのカラー配列
 }
 
-export default function DeckCard({ product, onRemove, comboColors = [] }: DeckCardProps) {
+export default function DeckCard({ product, onRemove }: DeckCardProps) {
   const categories = new Set<string>();
   product.ingredients.forEach((pi) => {
     const ing = getIngredientById(pi.ingredientId);
     ing?.categories.forEach((c) => categories.add(c));
   });
 
-  const primaryColor = comboColors[0];
-  const hasCombo = comboColors.length > 0;
-
   return (
     <div
-      className="bg-white rounded-2xl p-3.5 relative flex items-center gap-3 overflow-hidden"
+      className="bg-white rounded-2xl p-3.5 flex items-center gap-3"
       style={{
         border: "1px solid #F5E6EF",
         boxShadow: "0 2px 8px rgba(249,168,192,0.1)",
       }}
     >
-      {/* B: 左ボーダーストライプ（相性カラー） */}
-      {primaryColor && (
-        <div
-          className="absolute left-0 top-0 bottom-0 w-1 rounded-l-2xl"
-          style={{ background: primaryColor }}
-        />
-      )}
-
       {product.packageImage ? (
-        <div className="w-11 h-11 rounded-xl overflow-hidden shrink-0 relative" style={{ marginLeft: primaryColor ? 4 : 0 }}>
+        <div className="w-11 h-11 rounded-xl overflow-hidden shrink-0 relative">
           <Image
             src={product.packageImage}
             alt={product.name}
@@ -49,7 +37,7 @@ export default function DeckCard({ product, onRemove, comboColors = [] }: DeckCa
       ) : (
         <div
           className="w-11 h-11 rounded-xl flex items-center justify-center text-xl shrink-0"
-          style={{ background: "linear-gradient(135deg, #E8FAF8, #FFF0F5)", marginLeft: primaryColor ? 4 : 0 }}
+          style={{ background: "linear-gradient(135deg, #E8FAF8, #FFF0F5)" }}
         >
           📦
         </div>
@@ -77,23 +65,6 @@ export default function DeckCard({ product, onRemove, comboColors = [] }: DeckCa
           })}
         </div>
       </div>
-
-      {/* A: 相性バッジ（右上） */}
-      {hasCombo && (
-        <div
-          className="absolute top-2 right-8 flex gap-0.5"
-        >
-          {comboColors.slice(0, 3).map((color, i) => (
-            <span
-              key={i}
-              className="text-[10px] font-bold px-1.5 py-0.5 rounded-full animate-pill-glow"
-              style={{ background: color + "22", color, border: `1px solid ${color}55` }}
-            >
-              ✦
-            </span>
-          ))}
-        </div>
-      )}
 
       {onRemove && (
         <button

@@ -90,7 +90,7 @@ export default function CaptureStep({ onCapture, onManualInput, preview, disable
           disabled={disabled}
           className="w-full rounded-3xl flex flex-col items-center justify-center gap-5 relative overflow-hidden"
           style={{
-            height: 280,
+            height: 200,
             background: "rgba(255,255,255,0.7)",
             backdropFilter: "blur(12px)",
             WebkitBackdropFilter: "blur(12px)",
@@ -121,7 +121,7 @@ export default function CaptureStep({ onCapture, onManualInput, preview, disable
         <div
           className="w-full rounded-3xl relative overflow-hidden"
           style={{
-            height: 280,
+            height: 200,
             border: "1px solid rgba(91,191,173,0.2)",
             boxShadow: "0 4px 24px rgba(91,191,173,0.08)",
           }}
@@ -157,13 +157,39 @@ export default function CaptureStep({ onCapture, onManualInput, preview, disable
         className="hidden"
       />
 
-      {/* Manual input link */}
+      {/* Manual input card */}
       <button
         onClick={onManualInput}
-        className="w-full py-3 text-center text-[13px] font-medium"
-        style={{ color: "#9B9B9B" }}
+        className="w-full rounded-2xl p-4 text-left"
+        style={{
+          background: "rgba(255,255,255,0.85)",
+          border: "1.5px solid rgba(249,168,192,0.4)",
+          boxShadow: "0 2px 12px rgba(249,168,192,0.1)",
+        }}
       >
-        📋 成分リストを直接入力する
+        <div className="flex items-center gap-3">
+          <div
+            className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0"
+            style={{ background: "linear-gradient(135deg, #FDE8F0, #FCE4EC)" }}
+          >
+            <span className="text-2xl">📋</span>
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="text-[14px] font-bold" style={{ color: "#2D2D2D" }}>
+              成分リストを直接入力
+            </div>
+            <div className="text-xs mt-0.5" style={{ color: "#9B9B9B" }}>
+              スキャン回数を消費しません
+            </div>
+          </div>
+          <span className="text-[#C8C8C8] text-lg">›</span>
+        </div>
+        <div
+          className="mt-3 rounded-xl px-3 py-2 text-xs"
+          style={{ background: "rgba(249,168,192,0.1)", color: "#C97A9A" }}
+        >
+          💡 iPhoneの写真でテキストを長押しコピー → 貼り付けるだけ
+        </div>
       </button>
 
       {/* Tips */}

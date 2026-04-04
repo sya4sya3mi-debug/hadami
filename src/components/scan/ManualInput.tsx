@@ -77,6 +77,42 @@ export default function ManualInput({ onSubmit, disabled }: ManualInputProps) {
 
   return (
     <div className="space-y-4">
+      {/* iPhoneのテキストコピー案内バナー */}
+      <div
+        className="rounded-2xl p-4"
+        style={{
+          background: "linear-gradient(135deg, #FDE8F0 0%, #EEF6FF 100%)",
+          border: "1.5px solid rgba(249,168,192,0.35)",
+        }}
+      >
+        <div className="flex items-center gap-2 mb-2">
+          <span className="text-lg">📱</span>
+          <span className="text-sm font-bold" style={{ color: "#2D2D2D" }}>
+            iPhoneのテキストコピーが便利！
+          </span>
+        </div>
+        <ol className="space-y-1.5 text-xs" style={{ color: "#555" }}>
+          <li className="flex gap-2">
+            <span className="font-bold" style={{ color: "#C97A9A", flexShrink: 0 }}>①</span>
+            <span>カメラロールで成分表の写真を開く</span>
+          </li>
+          <li className="flex gap-2">
+            <span className="font-bold" style={{ color: "#C97A9A", flexShrink: 0 }}>②</span>
+            <span>成分テキストを<span className="font-bold">長押し</span>して「すべてを選択」→「コピー」</span>
+          </li>
+          <li className="flex gap-2">
+            <span className="font-bold" style={{ color: "#C97A9A", flexShrink: 0 }}>③</span>
+            <span>下のテキストエリアに<span className="font-bold">ペースト</span>するだけ</span>
+          </li>
+        </ol>
+        <div
+          className="mt-2.5 rounded-lg px-2.5 py-1.5 text-xs font-medium"
+          style={{ background: "rgba(249,168,192,0.15)", color: "#C97A9A" }}
+        >
+          ✨ スキャン回数を消費しないのでどんどん使えます
+        </div>
+      </div>
+
       {/* カメラで撮影ボタン */}
       <button
         onClick={() => cameraInputRef.current?.click()}
@@ -129,7 +165,6 @@ export default function ManualInput({ onSubmit, disabled }: ManualInputProps) {
           </span>
         </div>
         <p className="text-xs mb-3" style={{ color: "#9B9B9B" }}>
-          iPhoneのテキスト認識（Live Text）でコピーした成分表を貼り付けてください。
           カンマ・改行・スペース区切りに対応しています。
         </p>
         <textarea

@@ -35,7 +35,10 @@ export default function ShareModal({ text, onClose }: ShareModalProps) {
         </div>
 
         {/* 投稿テキスト（スクロール可能） */}
-        <div className="overflow-y-auto px-6 flex-1">
+        <div
+          className="overflow-y-auto px-6 flex-1 min-h-0"
+          style={{ WebkitOverflowScrolling: "touch", overscrollBehavior: "contain" }}
+        >
           <div
             className="rounded-2xl p-4 mb-4 text-sm whitespace-pre-wrap leading-relaxed"
             style={{ background: "#F9F9F9", color: "#2D2D2D" }}
@@ -58,7 +61,7 @@ export default function ShareModal({ text, onClose }: ShareModalProps) {
             target="_blank"
             rel="noopener noreferrer"
             className="flex-1 py-3 rounded-2xl text-white text-center text-sm font-bold"
-            style={{ background: "linear-gradient(135deg, #5BBFAD, #F9A8C0)" }}
+            style={{ background: "linear-gradient(135deg, #F9A8C0, #F48FB1)" }}
           >
             Xで投稿する ✨
           </a>

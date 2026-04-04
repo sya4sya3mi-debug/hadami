@@ -6,9 +6,11 @@ interface BottomSheetProps {
   open: boolean;
   onClose: () => void;
   children: React.ReactNode;
+  title?: string;
+  subtitle?: string;
 }
 
-export default function BottomSheet({ open, onClose, children }: BottomSheetProps) {
+export default function BottomSheet({ open, onClose, children, title, subtitle }: BottomSheetProps) {
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
@@ -38,15 +40,32 @@ export default function BottomSheet({ open, onClose, children }: BottomSheetProp
       />
       {/* Sheet */}
       <div
-        className="absolute bottom-0 left-0 right-0 bg-white rounded-t-3xl animate-slide-up"
-        style={{ maxHeight: "75vh", overflow: "hidden", display: "flex", flexDirection: "column" }}
+        className="absolute bottom-0 left-0 right-0 bg-white rounded-t-3xl animate-slide-up max-h-[90vh] flex flex-col"
       >
-        {/* Drag handle */}
-        <div className="flex justify-center pt-3 pb-2 shrink-0">
-          <div className="w-10 h-1 rounded-full" style={{ background: "#E0E0E0" }} />
+        {/* Drag handle + header */}
+        <div className="shrink-0 px-6 pt-3 pb-4" style={{ borderBottom: title ? "1px solid #F5F5F5" : undefined }}>
+          <div className="flex justify-center mb-3">
+            <div className="w-10 h-1 rounded-full" style={{ background: "#E0E0E0" }} />
+          </div>
+          {title && (
+            <div className="flex justify-between items-center">
+              <div>
+                <h3 className="font-bold text-base" style={{ color: "#2D2D2D" }}>{title}</h3>
+                {subtitle && <p className="text-xs mt-0.5" style={{ color: "#9B9B9B" }}>{subtitle}</p>}
+              </div>
+              <button onClick={onClose} className="text-xl" style={{ color: "#9B9B9B" }}>✕</button>
+            </div>
+          )}
         </div>
         {/* Content */}
-        <div className="flex-1 overflow-y-auto px-5 pb-8" style={{ paddingBottom: "calc(32px + env(safe-area-inset-bottom))" }}>
+        <div
+          className="flex-1 min-h-0 overflow-y-auto px-5 pb-8"
+          style={{
+            paddingBottom: "calc(32px + env(safe-area-inset-bottom))",
+            WebkitOverflowScrolling: "touch",
+            overscrollBehavior: "contain",
+          }}
+        >
           {children}
         </div>
       </div>
