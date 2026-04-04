@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useCallback } from "react";
+import { useEffect, useCallback, useRef } from "react";
 
 interface BottomSheetProps {
   open: boolean;
@@ -12,6 +12,9 @@ interface BottomSheetProps {
 }
 
 export default function BottomSheet({ open, onClose, children, footer, title, subtitle }: BottomSheetProps) {
+  const overlayRef = useRef<HTMLDivElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
+
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
@@ -34,8 +37,23 @@ export default function BottomSheet({ open, onClose, children, footer, title, su
     if (container) container.style.top = topValue;
     document.documentElement.classList.add("scroll-locked");
 
+    // overlayのtouchmoveをnon-passiveで直接ブロック
+    const overlay = overlayRef.current;
+    const content = contentRef.current;
+    const blockTouch = (e: TouchEvent) => {
+      // contentRef内のタッチはスクロール許可
+      if (content && content.contains(e.target as Node)) return;
+      e.preventDefault();
+    };
+    if (overlay) {
+      overlay.addEventListener("touchmove", blockTouch, { passive: false });
+    }
+
     return () => {
       document.removeEventListener("keydown", handleKeyDown);
+      if (overlay) {
+        overlay.removeEventListener("touchmove", blockTouch);
+      }
       document.documentElement.classList.remove("scroll-locked");
       document.body.style.top = "";
       if (nextDiv) nextDiv.style.top = "";
@@ -49,11 +67,7 @@ export default function BottomSheet({ open, onClose, children, footer, title, su
   if (!open) return null;
 
   return (
-    <div
-      className="fixed inset-0 z-50"
-      style={{ touchAction: "none" }}
-      onTouchMove={(e) => e.preventDefault()}
-    >
+    <div ref={overlayRef} className="fixed inset-0 z-50" style={{ touchAction: "none" }}>
       {/* Backdrop */}
       <div
         className="absolute inset-0 bg-black/50 animate-fade-in"
@@ -62,7 +76,6 @@ export default function BottomSheet({ open, onClose, children, footer, title, su
       {/* Sheet */}
       <div
         className="absolute bottom-0 left-0 right-0 bg-white rounded-t-3xl animate-slide-up max-h-[90vh] flex flex-col"
-        style={{ touchAction: "none" }}
       >
         {/* Drag handle + header */}
         <div className="shrink-0 px-6 pt-3 pb-4" style={{ borderBottom: title ? "1px solid #F5F5F5" : undefined }}>
@@ -81,6 +94,7 @@ export default function BottomSheet({ open, onClose, children, footer, title, su
         </div>
         {/* Content - ここだけスクロール許可 */}
         <div
+          ref={contentRef}
           className="flex-1 min-h-0 overflow-y-auto px-5"
           style={{
             touchAction: "pan-y",
@@ -88,7 +102,6 @@ export default function BottomSheet({ open, onClose, children, footer, title, su
             overscrollBehavior: "contain",
             paddingBottom: footer ? "12px" : "calc(32px + env(safe-area-inset-bottom))",
           }}
-          onTouchMove={(e) => e.stopPropagation()}
         >
           {children}
         </div>

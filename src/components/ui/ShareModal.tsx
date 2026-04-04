@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 
 interface ShareModalProps {
   text: string;
@@ -9,6 +9,8 @@ interface ShareModalProps {
 
 export default function ShareModal({ text, onClose }: ShareModalProps) {
   const [copied, setCopied] = useState(false);
+  const overlayRef = useRef<HTMLDivElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const container = document.getElementById("app-container");
@@ -19,7 +21,19 @@ export default function ShareModal({ text, onClose }: ShareModalProps) {
     if (nextDiv) nextDiv.style.top = topValue;
     if (container) container.style.top = topValue;
     document.documentElement.classList.add("scroll-locked");
+
+    const overlay = overlayRef.current;
+    const content = contentRef.current;
+    const blockTouch = (e: TouchEvent) => {
+      if (content && content.contains(e.target as Node)) return;
+      e.preventDefault();
+    };
+    if (overlay) {
+      overlay.addEventListener("touchmove", blockTouch, { passive: false });
+    }
+
     return () => {
+      if (overlay) overlay.removeEventListener("touchmove", blockTouch);
       document.documentElement.classList.remove("scroll-locked");
       document.body.style.top = "";
       if (nextDiv) nextDiv.style.top = "";
@@ -40,14 +54,14 @@ export default function ShareModal({ text, onClose }: ShareModalProps) {
 
   return (
     <div
+      ref={overlayRef}
       className="fixed inset-0 bg-black/40 z-50 flex items-end justify-center"
       style={{ touchAction: "none" }}
       onClick={onClose}
-      onTouchMove={(e) => e.preventDefault()}
     >
       <div
         className="bg-white w-full max-w-[430px] rounded-t-3xl flex flex-col"
-        style={{ boxShadow: "0 -4px 24px rgba(0,0,0,0.08)", maxHeight: "85vh", touchAction: "none" }}
+        style={{ boxShadow: "0 -4px 24px rgba(0,0,0,0.08)", maxHeight: "85vh" }}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Handle + Header */}
@@ -61,9 +75,9 @@ export default function ShareModal({ text, onClose }: ShareModalProps) {
 
         {/* 投稿テキスト（スクロール可能） */}
         <div
+          ref={contentRef}
           className="overflow-y-auto px-6 flex-1 min-h-0"
           style={{ touchAction: "pan-y", WebkitOverflowScrolling: "touch", overscrollBehavior: "contain" }}
-          onTouchMove={(e) => e.stopPropagation()}
         >
           <div
             className="rounded-2xl p-4 mb-4 text-sm whitespace-pre-wrap leading-relaxed"

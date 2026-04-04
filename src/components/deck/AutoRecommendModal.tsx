@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { RecommendationResult, Product } from "@/types";
 import DeckCard from "./DeckCard";
 
@@ -15,7 +15,9 @@ export default function AutoRecommendModal({
   onConfirm,
   onClose,
 }: AutoRecommendModalProps) {
-  // 背景スクロール完全ロック
+  const overlayRef = useRef<HTMLDivElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
     const container = document.getElementById("app-container");
     const nextDiv = document.getElementById("__next");
@@ -25,7 +27,19 @@ export default function AutoRecommendModal({
     if (nextDiv) nextDiv.style.top = topValue;
     if (container) container.style.top = topValue;
     document.documentElement.classList.add("scroll-locked");
+
+    const overlay = overlayRef.current;
+    const content = contentRef.current;
+    const blockTouch = (e: TouchEvent) => {
+      if (content && content.contains(e.target as Node)) return;
+      e.preventDefault();
+    };
+    if (overlay) {
+      overlay.addEventListener("touchmove", blockTouch, { passive: false });
+    }
+
     return () => {
+      if (overlay) overlay.removeEventListener("touchmove", blockTouch);
       document.documentElement.classList.remove("scroll-locked");
       document.body.style.top = "";
       if (nextDiv) nextDiv.style.top = "";
@@ -42,10 +56,10 @@ export default function AutoRecommendModal({
 
   return (
     <div
+      ref={overlayRef}
       className="fixed inset-0 bg-black/40 z-50 flex items-end justify-center"
       style={{ touchAction: "none" }}
       onClick={onClose}
-      onTouchMove={(e) => e.preventDefault()}
     >
       <div
         className="bg-white w-full max-w-[430px] rounded-t-3xl max-h-[85vh] flex flex-col"
@@ -73,9 +87,9 @@ export default function AutoRecommendModal({
 
         {/* Scrollable content */}
         <div
+          ref={contentRef}
           className="overflow-y-auto px-6 pb-8 flex-1 min-h-0"
           style={{ touchAction: "pan-y", WebkitOverflowScrolling: "touch", overscrollBehavior: "contain" }}
-          onTouchMove={(e) => e.stopPropagation()}
         >
           {/* Score summary */}
           <div className="flex gap-3 mb-4">
