@@ -15,20 +15,33 @@ export default function AutoRecommendModal({
   onConfirm,
   onClose,
 }: AutoRecommendModalProps) {
-  // 背景スクロールロック（body + #app-container）
+  // 背景スクロール完全ロック
   useEffect(() => {
     const container = document.getElementById("app-container");
     const scrollY = container ? container.scrollTop : 0;
     document.body.style.overflow = "hidden";
     if (container) {
+      container.style.position = "fixed";
+      container.style.top = `-${scrollY}px`;
+      container.style.left = "0";
+      container.style.right = "0";
       container.style.overflow = "hidden";
-      container.style.touchAction = "none";
     }
+    const handleTouchMove = (e: TouchEvent) => {
+      const modal = document.querySelector("[data-modal-scroll]");
+      if (modal && modal.contains(e.target as Node)) return;
+      e.preventDefault();
+    };
+    document.addEventListener("touchmove", handleTouchMove, { passive: false });
     return () => {
+      document.removeEventListener("touchmove", handleTouchMove);
       document.body.style.overflow = "";
       if (container) {
+        container.style.position = "";
+        container.style.top = "";
+        container.style.left = "";
+        container.style.right = "";
         container.style.overflow = "";
-        container.style.touchAction = "";
         container.scrollTop = scrollY;
       }
     };
@@ -68,7 +81,7 @@ export default function AutoRecommendModal({
         </div>
 
         {/* Scrollable content */}
-        <div className="overflow-y-auto px-6 pb-8 flex-1">
+        <div data-modal-scroll className="overflow-y-auto px-6 pb-8 flex-1 min-h-0" style={{ WebkitOverflowScrolling: "touch", overscrollBehavior: "contain" }}>
           {/* Score summary */}
           <div className="flex gap-3 mb-4">
             <div

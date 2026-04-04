@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useCallback } from "react";
+import { useEffect, useCallback, useRef } from "react";
 
 interface BottomSheetProps {
   open: boolean;
@@ -12,6 +12,8 @@ interface BottomSheetProps {
 }
 
 export default function BottomSheet({ open, onClose, children, footer, title, subtitle }: BottomSheetProps) {
+  const contentRef = useRef<HTMLDivElement>(null);
+
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
@@ -20,28 +22,47 @@ export default function BottomSheet({ open, onClose, children, footer, title, su
   );
 
   useEffect(() => {
-    if (open) {
-      document.addEventListener("keydown", handleKeyDown);
-      const container = document.getElementById("app-container");
-      const scrollY = container ? container.scrollTop : window.scrollY;
-      // body + #app-container 両方ロック
-      document.body.style.overflow = "hidden";
-      if (container) {
-        container.style.overflow = "hidden";
-        container.style.touchAction = "none";
-      }
-      return () => {
-        document.removeEventListener("keydown", handleKeyDown);
-        document.body.style.overflow = "";
-        if (container) {
-          container.style.overflow = "";
-          container.style.touchAction = "";
-          container.scrollTop = scrollY;
-        }
-      };
+    if (!open) return;
+
+    document.addEventListener("keydown", handleKeyDown);
+
+    // スクロール位置を保存して#app-containerをfixedに
+    const container = document.getElementById("app-container");
+    const scrollY = container ? container.scrollTop : window.scrollY;
+
+    document.body.style.overflow = "hidden";
+    if (container) {
+      container.style.position = "fixed";
+      container.style.top = `-${scrollY}px`;
+      container.style.left = "0";
+      container.style.right = "0";
+      container.style.overflow = "hidden";
     }
+
+    // iOS: シート外のtouchmoveをブロック
+    const handleTouchMove = (e: TouchEvent) => {
+      // シート内のスクロール可能エリア内のタッチは許可
+      const scrollableContent = contentRef.current;
+      if (scrollableContent && scrollableContent.contains(e.target as Node)) {
+        return;
+      }
+      e.preventDefault();
+    };
+
+    document.addEventListener("touchmove", handleTouchMove, { passive: false });
+
     return () => {
       document.removeEventListener("keydown", handleKeyDown);
+      document.removeEventListener("touchmove", handleTouchMove);
+      document.body.style.overflow = "";
+      if (container) {
+        container.style.position = "";
+        container.style.top = "";
+        container.style.left = "";
+        container.style.right = "";
+        container.style.overflow = "";
+        container.scrollTop = scrollY;
+      }
     };
   }, [open, handleKeyDown]);
 
@@ -75,6 +96,7 @@ export default function BottomSheet({ open, onClose, children, footer, title, su
         </div>
         {/* Content */}
         <div
+          ref={contentRef}
           className="flex-1 min-h-0 overflow-y-auto px-5"
           style={{
             WebkitOverflowScrolling: "touch",
