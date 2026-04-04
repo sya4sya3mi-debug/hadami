@@ -38,6 +38,7 @@ export default function SettingsPage() {
           method: "POST",
           headers: {
             Authorization: `Bearer ${sessionData.session?.access_token}`,
+            apikey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
             "Content-Type": "application/json",
           },
         }
