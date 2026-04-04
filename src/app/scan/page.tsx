@@ -80,7 +80,7 @@ export default function ScanPage() {
         const ingredientNames = foundIngs.map((f) => f.ingredient.nameJa);
         const combos = findCombinations(ingredientNames);
 
-        const newIds = discover(foundIngs.map((f) => f.ingredient.id));
+        const newIds = user ? discover(foundIngs.map((f) => f.ingredient.id)) : [];
         const discoveries = newIds
           .map((id) => getIngredientById(id))
           .filter((i): i is Ingredient => i !== null);
@@ -104,6 +104,7 @@ export default function ScanPage() {
       } catch (error) {
         console.error("OCR error:", error);
         setProgressMsg("エラーが発生しました。もう一度お試しください。");
+        setTimeout(() => setPhase("ingredients"), 2000);
       }
     },
     [discover]
