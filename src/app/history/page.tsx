@@ -205,23 +205,22 @@ export default function HistoryPage() {
                       className="flex items-center gap-3 p-4"
                     >
                       {p.packageImage ? (
-                        <div className="w-16 h-16 rounded-xl overflow-hidden shrink-0 relative">
+                        <div className="w-20 h-20 rounded-xl overflow-hidden shrink-0 relative">
                           <Image
                             src={p.packageImage}
                             alt={p.name}
                             fill
                             className="object-cover"
-                            sizes="64px"
+                            sizes="80px"
                             loading="lazy"
-
                           />
                         </div>
                       ) : (
                         <div
-                          className="w-16 h-16 rounded-xl flex items-center justify-center text-2xl shrink-0"
+                          className="w-20 h-20 rounded-xl flex items-center justify-center text-3xl shrink-0"
                           style={{ background: "linear-gradient(135deg, #E8FAF8, #FFF0F5)" }}
                         >
-                          {genre?.icon || "����"}
+                          {genre?.icon || "📦"}
                         </div>
                       )}
                       <div className="flex-1 min-w-0">
