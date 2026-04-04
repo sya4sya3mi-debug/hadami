@@ -86,7 +86,7 @@ export default function CaptureStep({ onCapture, onManualInput, preview, disable
       {/* Hero capture card */}
       {!displayPreview ? (
         <button
-          onClick={() => fileInputRef.current?.click()}
+          onClick={() => { if (!disabled) fileInputRef.current?.click(); }}
           disabled={disabled}
           className="w-full rounded-3xl flex flex-col items-center justify-center gap-5 relative overflow-hidden"
           style={{

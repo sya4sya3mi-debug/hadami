@@ -27,7 +27,7 @@ export interface Profile {
 
 interface AuthContextValue {
   user: User | null;
-  profile: Profile | null;
+  profile: Profile | null | undefined;
   loading: boolean;
   supabase: ReturnType<typeof createClient>;
   refreshProfile: () => Promise<Profile | null>;
@@ -57,7 +57,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.getItem("hadami-cache-owner") !== null;
 
   const [user, setUser] = useState<User | null>(storedUser);
-  const [profile, setProfile] = useState<Profile | null>(null);
+  const [profile, setProfile] = useState<Profile | null | undefined>(undefined);
   // If we have both a stored session and cached data, skip the loading screen
   const [loading, setLoading] = useState(!(storedUser && hasCacheOwner));
   const syncSequence = useRef(0);

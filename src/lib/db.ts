@@ -60,7 +60,13 @@ export async function saveProductToDb(
     const base64Data = product.packageImageBase64.split(",")[1];
     if (base64Data) {
       if (!validateImageSize(base64Data)) {
-        return { error: "画像サイズが上限(5MB)を超えています", productId: data.id, imageUrl: null };
+        // 製品行を巻き戻して保存枠を無駄にしない
+        await supabase
+          .from("products")
+          .delete()
+          .eq("id", data.id)
+          .eq("user_id", userId);
+        return { error: "画像サイズが上限(5MB)を超えています", productId: null, imageUrl: null };
       }
       const bytes = Uint8Array.from(atob(base64Data), (c) => c.charCodeAt(0));
       const filePath = `${userId}/${data.id}.jpg`;
@@ -220,9 +226,9 @@ export function getUserLimit() {
   return USER_LIMIT;
 }
 
-/** アカウント累計スキャン上限 */
+/** アカウント累計スキャン上限（デバッグ用: 1回） */
 export function getAccountScanLimit() {
-  return 10;
+  return 1;
 }
 
 /** @deprecated 後方互換のため残す */

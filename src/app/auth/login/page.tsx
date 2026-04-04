@@ -38,7 +38,7 @@ function LoginPageInner() {
         return;
       }
 
-      const { error } = await supabase.auth.signUp({
+      const { data: signUpData, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
@@ -47,6 +47,9 @@ function LoginPageInner() {
       });
       if (error) {
         setMessage(error.message);
+      } else if (signUpData.user && signUpData.user.identities?.length === 0) {
+        // 既に登録済みのメールアドレス（Supabaseはエラーを返さずidentities空で返す）
+        setMessage("このメールアドレスは既に登録されています。ログインしてください。");
       } else {
         setMessage("確認メールを送信しました。メールのリンクをクリックしてください。");
       }
@@ -72,14 +75,7 @@ function LoginPageInner() {
 
   const handleGoogleLogin = async () => {
     setLoading(true);
-    // 新規登録の場合は上限チェック（既存ユーザーはcallback側でハンドル）
-    const res = await fetch("/api/check-registration");
-    const { allowed } = await res.json();
-    if (!allowed) {
-      setRegistrationClosed(true);
-      setLoading(false);
-      return;
-    }
+    // 新規/既存の判定はcallback側で行う（ここでブロックすると既存ユーザーもログイン不能になる）
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {

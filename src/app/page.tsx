@@ -24,8 +24,9 @@ export default function HomePage() {
   const scanLimit = getAccountScanLimit();
 
   // プロフィール未設定のユーザーをプロフィール設定画面へ
+  // profile === undefined は読み込み中、null はプロフィール行なし
   useEffect(() => {
-    if (!loading && user && profile !== null && !profile.display_name) {
+    if (!loading && user && profile !== undefined && (profile === null || !profile.display_name)) {
       router.replace("/auth/profile");
     }
   }, [loading, user, profile, router]);
@@ -120,7 +121,9 @@ export default function HomePage() {
         </Link>
 
         {/* スキャン残回数 */}
-        {scanCount !== null && (
+        {scanCount !== null && (() => {
+          const remaining = Math.max(scanLimit - scanCount, 0);
+          return (
           <div
             className="flex items-center justify-between bg-white rounded-2xl px-4 py-3 mb-4 shadow-sm"
             style={{ border: "1px solid #F5E6EF" }}
@@ -132,21 +135,40 @@ export default function HomePage() {
               </span>
             </div>
             <div className="flex items-center gap-2">
-              <span className="text-sm font-bold" style={{ color: scanCount >= scanLimit ? "#E57373" : "#5BBFAD" }}>
-                {scanCount}/{scanLimit}回
+              <span className="text-sm font-bold" style={{ color: remaining <= 0 ? "#E57373" : "#5BBFAD" }}>
+                残り {remaining}/{scanLimit}回
               </span>
               <div className="w-16 h-1.5 rounded-full overflow-hidden" style={{ background: "#F2F2F2" }}>
                 <div
                   className="h-full rounded-full"
                   style={{
-                    width: `${Math.min((scanCount / scanLimit) * 100, 100)}%`,
-                    background: scanCount >= scanLimit
+                    width: `${Math.min((remaining / scanLimit) * 100, 100)}%`,
+                    background: remaining <= 0
                       ? "#E57373"
                       : "linear-gradient(90deg, #5BBFAD, #7DD3C8)",
                   }}
                 />
               </div>
             </div>
+          </div>
+          );
+        })()}
+
+        {/* 累計撮影数カード */}
+        {scanCount !== null && scanCount > 0 && (
+          <div
+            className="flex items-center justify-between bg-white rounded-2xl px-4 py-3 mb-4 shadow-sm"
+            style={{ border: "1px solid #F5E6EF" }}
+          >
+            <div className="flex items-center gap-2">
+              <span className="text-base">📸</span>
+              <span className="text-xs font-medium" style={{ color: "#9B9B9B" }}>
+                累計撮影数
+              </span>
+            </div>
+            <span className="text-sm font-bold" style={{ color: "#5BBFAD" }}>
+              {scanCount} 回
+            </span>
           </div>
         )}
 

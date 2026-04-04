@@ -24,6 +24,26 @@ export default function ProfileSetupPage() {
     setLoading(true);
     setError("");
 
+    // 既存プロフィールの有無を確認
+    const { data: existing } = await supabase
+      .from("profiles")
+      .select("id")
+      .eq("id", user.id)
+      .single();
+
+    if (!existing) {
+      // 新規ユーザー：ベータ登録上限チェック
+      const { count } = await supabase
+        .from("profiles")
+        .select("*", { count: "exact", head: true });
+
+      if ((count ?? 0) >= 10) {
+        setError("現在ベータ版の新規登録を停止しています。");
+        setLoading(false);
+        return;
+      }
+    }
+
     const { error: dbError } = await supabase
       .from("profiles")
       .upsert(

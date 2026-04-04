@@ -227,6 +227,8 @@ TYPE2: [製品タイプ]
     console.log(`[identify] Found ${identifiedProducts.length} product(s):`, identifiedProducts);
 
     if (identifiedProducts.length === 0) {
+      // 製品を特定できなかった場合、スキャン枠を返却（OCRフォールバックで再予約される）
+      await rollbackScan(auth.supabase, auth.user.id, auth.user.email!);
       return NextResponse.json({
         products: [],
         productName: "",
@@ -252,7 +254,11 @@ TYPE2: [製品タイプ]
 
     console.log(`[results] ${results.length} product(s) processed`);
 
-    // Scan count already incremented atomically by tryReserveScan above.
+    // 成分が1件も見つからなかった場合、スキャン枠を返却（OCRフォールバックで再予約される）
+    const hasUsableResult = results.some(r => r.found && r.ingredients);
+    if (!hasUsableResult) {
+      await rollbackScan(auth.supabase, auth.user.id, auth.user.email!);
+    }
 
     // Return backward-compatible response (first product) + full products array
     const first = results[0];
