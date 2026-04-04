@@ -15,7 +15,7 @@ interface ScanResultProps {
   foundIngredients: { ingredient: Ingredient; orderIndex: number }[];
   unknownIngredients: string[];
   combinations: Combination[];
-  onSave: () => void;
+  onSave?: () => void;
   saved: boolean;
 }
 
@@ -136,7 +136,7 @@ export default function ScanResult({
       )}
 
       {/* Save button */}
-      <button
+      {onSave && <button
         onClick={onSave}
         disabled={saved}
         className="w-full py-3.5 rounded-2xl font-bold text-sm"
@@ -147,7 +147,7 @@ export default function ScanResult({
         }
       >
         {saved ? "✓ 履歴に保存済み" : "✨ 履歴に保存する"}
-      </button>
+      </button>}
 
       <Disclaimer />
     </div>

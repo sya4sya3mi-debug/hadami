@@ -1,30 +1,19 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
 import { useProductStore } from "@/stores/useProductStore";
 import { useZukanStore } from "@/stores/useZukanStore";
 import { useDeckStore } from "@/stores/useDeckStore";
 import { MASTER_INGREDIENTS } from "@/lib/ingredients";
 import Disclaimer from "@/components/ui/Disclaimer";
-import { createClient } from "@/lib/supabase";
-import type { User } from "@supabase/supabase-js";
+import { useUser } from "@/lib/auth";
 
 export default function HomePage() {
-  const [user, setUser] = useState<User | null>(null);
-  const supabase = createClient();
-
-  useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => setUser(data.user));
-    const { data: listener } = supabase.auth.onAuthStateChange((_e, session) => {
-      setUser(session?.user ?? null);
-    });
-    return () => listener.subscription.unsubscribe();
-  }, []);
+  const { user, supabase } = useUser();
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
-    setUser(null);
+    window.location.reload();
   };
 
   const products = useProductStore((s) => s.products);
