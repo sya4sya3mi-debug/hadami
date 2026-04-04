@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { RecommendationResult, Product } from "@/types";
 import DeckCard from "./DeckCard";
 
@@ -14,6 +15,24 @@ export default function AutoRecommendModal({
   onConfirm,
   onClose,
 }: AutoRecommendModalProps) {
+  // iOS対応: 背景スクロールロック
+  useEffect(() => {
+    const scrollY = window.scrollY;
+    document.body.style.position = "fixed";
+    document.body.style.top = `-${scrollY}px`;
+    document.body.style.left = "0";
+    document.body.style.right = "0";
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.position = "";
+      document.body.style.top = "";
+      document.body.style.left = "";
+      document.body.style.right = "";
+      document.body.style.overflow = "";
+      window.scrollTo(0, scrollY);
+    };
+  }, []);
+
   const recommendedProducts = result.productIds
     .map((id) => products.find((p) => p.id === id))
     .filter((p): p is Product => p !== undefined);
