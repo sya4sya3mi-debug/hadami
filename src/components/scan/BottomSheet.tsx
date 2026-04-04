@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useCallback, useRef } from "react";
+import { useEffect, useCallback } from "react";
 
 interface BottomSheetProps {
   open: boolean;
@@ -12,8 +12,6 @@ interface BottomSheetProps {
 }
 
 export default function BottomSheet({ open, onClose, children, footer, title, subtitle }: BottomSheetProps) {
-  const contentRef = useRef<HTMLDivElement>(null);
-
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
@@ -26,28 +24,18 @@ export default function BottomSheet({ open, onClose, children, footer, title, su
 
     document.addEventListener("keydown", handleKeyDown);
 
-    // スクロール位置を保存
     const container = document.getElementById("app-container");
-    const scrollY = container ? container.scrollTop : window.scrollY;
-
-    // CSSクラスで完全ロック + スクロール位置をtopで維持
-    const topValue = `-${scrollY}px`;
-    document.body.style.top = topValue;
     const nextDiv = document.getElementById("__next");
+    const scrollY = container ? container.scrollTop : window.scrollY;
+    const topValue = `-${scrollY}px`;
+
+    document.body.style.top = topValue;
     if (nextDiv) nextDiv.style.top = topValue;
     if (container) container.style.top = topValue;
     document.documentElement.classList.add("scroll-locked");
 
-    // touchmoveもブロック（シート内スクロールは許可）
-    const handleTouchMove = (e: TouchEvent) => {
-      if (contentRef.current?.contains(e.target as Node)) return;
-      e.preventDefault();
-    };
-    document.addEventListener("touchmove", handleTouchMove, { passive: false });
-
     return () => {
       document.removeEventListener("keydown", handleKeyDown);
-      document.removeEventListener("touchmove", handleTouchMove);
       document.documentElement.classList.remove("scroll-locked");
       document.body.style.top = "";
       if (nextDiv) nextDiv.style.top = "";
@@ -61,7 +49,11 @@ export default function BottomSheet({ open, onClose, children, footer, title, su
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50">
+    <div
+      className="fixed inset-0 z-50"
+      style={{ touchAction: "none" }}
+      onTouchMove={(e) => e.preventDefault()}
+    >
       {/* Backdrop */}
       <div
         className="absolute inset-0 bg-black/50 animate-fade-in"
@@ -70,6 +62,7 @@ export default function BottomSheet({ open, onClose, children, footer, title, su
       {/* Sheet */}
       <div
         className="absolute bottom-0 left-0 right-0 bg-white rounded-t-3xl animate-slide-up max-h-[90vh] flex flex-col"
+        style={{ touchAction: "none" }}
       >
         {/* Drag handle + header */}
         <div className="shrink-0 px-6 pt-3 pb-4" style={{ borderBottom: title ? "1px solid #F5F5F5" : undefined }}>
@@ -86,16 +79,16 @@ export default function BottomSheet({ open, onClose, children, footer, title, su
             </div>
           )}
         </div>
-        {/* Content */}
+        {/* Content - ここだけスクロール許可 */}
         <div
-          ref={contentRef}
           className="flex-1 min-h-0 overflow-y-auto px-5"
           style={{
+            touchAction: "pan-y",
             WebkitOverflowScrolling: "touch",
             overscrollBehavior: "contain",
-            touchAction: "pan-y",
             paddingBottom: footer ? "12px" : "calc(32px + env(safe-area-inset-bottom))",
           }}
+          onTouchMove={(e) => e.stopPropagation()}
         >
           {children}
         </div>

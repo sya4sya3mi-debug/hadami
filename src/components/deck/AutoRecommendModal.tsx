@@ -25,14 +25,7 @@ export default function AutoRecommendModal({
     if (nextDiv) nextDiv.style.top = topValue;
     if (container) container.style.top = topValue;
     document.documentElement.classList.add("scroll-locked");
-    const handleTouchMove = (e: TouchEvent) => {
-      const modal = document.querySelector("[data-modal-scroll]");
-      if (modal && modal.contains(e.target as Node)) return;
-      e.preventDefault();
-    };
-    document.addEventListener("touchmove", handleTouchMove, { passive: false });
     return () => {
-      document.removeEventListener("touchmove", handleTouchMove);
       document.documentElement.classList.remove("scroll-locked");
       document.body.style.top = "";
       if (nextDiv) nextDiv.style.top = "";
@@ -50,7 +43,9 @@ export default function AutoRecommendModal({
   return (
     <div
       className="fixed inset-0 bg-black/40 z-50 flex items-end justify-center"
+      style={{ touchAction: "none" }}
       onClick={onClose}
+      onTouchMove={(e) => e.preventDefault()}
     >
       <div
         className="bg-white w-full max-w-[430px] rounded-t-3xl max-h-[85vh] flex flex-col"
@@ -77,7 +72,11 @@ export default function AutoRecommendModal({
         </div>
 
         {/* Scrollable content */}
-        <div data-modal-scroll className="overflow-y-auto px-6 pb-8 flex-1 min-h-0" style={{ WebkitOverflowScrolling: "touch", overscrollBehavior: "contain" }}>
+        <div
+          className="overflow-y-auto px-6 pb-8 flex-1 min-h-0"
+          style={{ touchAction: "pan-y", WebkitOverflowScrolling: "touch", overscrollBehavior: "contain" }}
+          onTouchMove={(e) => e.stopPropagation()}
+        >
           {/* Score summary */}
           <div className="flex gap-3 mb-4">
             <div

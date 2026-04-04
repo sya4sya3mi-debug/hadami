@@ -10,7 +10,6 @@ interface ShareModalProps {
 export default function ShareModal({ text, onClose }: ShareModalProps) {
   const [copied, setCopied] = useState(false);
 
-  // 背景スクロール完全ロック
   useEffect(() => {
     const container = document.getElementById("app-container");
     const nextDiv = document.getElementById("__next");
@@ -20,14 +19,7 @@ export default function ShareModal({ text, onClose }: ShareModalProps) {
     if (nextDiv) nextDiv.style.top = topValue;
     if (container) container.style.top = topValue;
     document.documentElement.classList.add("scroll-locked");
-    const handleTouchMove = (e: TouchEvent) => {
-      const modal = document.querySelector("[data-modal-content]");
-      if (modal && modal.contains(e.target as Node)) return;
-      e.preventDefault();
-    };
-    document.addEventListener("touchmove", handleTouchMove, { passive: false });
     return () => {
-      document.removeEventListener("touchmove", handleTouchMove);
       document.documentElement.classList.remove("scroll-locked");
       document.body.style.top = "";
       if (nextDiv) nextDiv.style.top = "";
@@ -47,13 +39,18 @@ export default function ShareModal({ text, onClose }: ShareModalProps) {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/40 z-50 flex items-end justify-center" onClick={onClose}>
+    <div
+      className="fixed inset-0 bg-black/40 z-50 flex items-end justify-center"
+      style={{ touchAction: "none" }}
+      onClick={onClose}
+      onTouchMove={(e) => e.preventDefault()}
+    >
       <div
         className="bg-white w-full max-w-[430px] rounded-t-3xl flex flex-col"
-        style={{ boxShadow: "0 -4px 24px rgba(0,0,0,0.08)", maxHeight: "85vh" }}
+        style={{ boxShadow: "0 -4px 24px rgba(0,0,0,0.08)", maxHeight: "85vh", touchAction: "none" }}
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Handle + Header（固定） */}
+        {/* Handle + Header */}
         <div className="px-6 pt-4 pb-3 shrink-0">
           <div className="w-10 h-1 rounded-full mx-auto mb-4" style={{ background: "#E0E0E0" }} />
           <div className="flex justify-between items-center">
@@ -64,9 +61,9 @@ export default function ShareModal({ text, onClose }: ShareModalProps) {
 
         {/* 投稿テキスト（スクロール可能） */}
         <div
-          data-modal-content
           className="overflow-y-auto px-6 flex-1 min-h-0"
-          style={{ WebkitOverflowScrolling: "touch", overscrollBehavior: "contain" }}
+          style={{ touchAction: "pan-y", WebkitOverflowScrolling: "touch", overscrollBehavior: "contain" }}
+          onTouchMove={(e) => e.stopPropagation()}
         >
           <div
             className="rounded-2xl p-4 mb-4 text-sm whitespace-pre-wrap leading-relaxed"
@@ -76,7 +73,7 @@ export default function ShareModal({ text, onClose }: ShareModalProps) {
           </div>
         </div>
 
-        {/* ボタン（固定） */}
+        {/* ボタン */}
         <div className="px-6 pb-8 pt-3 shrink-0 flex gap-3">
           <button
             onClick={handleCopy}
