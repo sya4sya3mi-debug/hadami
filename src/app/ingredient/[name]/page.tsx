@@ -11,14 +11,21 @@ import { shareIngredientDiscovery } from "@/lib/share";
 import Badge from "@/components/ui/Badge";
 import ShareModal from "@/components/ui/ShareModal";
 import Disclaimer from "@/components/ui/Disclaimer";
+import { useUser } from "@/lib/auth";
+import PageLoading from "@/components/ui/PageLoading";
 
 export default function IngredientDetailPage() {
+  const { loading } = useUser();
   const { name } = useParams<{ name: string }>();
   const ingredient = getIngredientById(name);
   const products = useProductStore((s) => s.products);
   const discoveredIds = useZukanStore((s) => s.discoveredIds);
-  const isDiscovered = discoveredIds.includes(name);
   const [showShare, setShowShare] = useState(false);
+
+  if (loading) {
+    return <PageLoading message="成分情報を読み込んでいます..." />;
+  }
+  const isDiscovered = discoveredIds.includes(name);
 
   if (!ingredient) {
     return (

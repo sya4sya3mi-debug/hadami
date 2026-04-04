@@ -1,18 +1,38 @@
 "use client";
 
-import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { useEffect } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import { useUser } from "@/lib/auth";
+import { useZukanStore } from "@/stores/useZukanStore";
 
 const TABS = [
   { href: "/", label: "ホーム", icon: "🏠" },
   { href: "/scan", label: "撮る", icon: "📷" },
   { href: "/zukan", label: "集める", icon: "📖" },
-  { href: "/deck", label: "組む", icon: "🃏" },
-  { href: "/history", label: "履歴", icon: "🕐" },
+  { href: "/deck", label: "組む", icon: "✨" },
+  { href: "/history", label: "Myコスメ", icon: "🧴" },
 ] as const;
 
 export default function TabBar() {
   const pathname = usePathname();
+  const router = useRouter();
+  const { user, loading } = useUser();
+  const unsavedScan = useZukanStore((s) => s.unsavedScan);
+
+  // Prefetch all tab routes for instant navigation
+  useEffect(() => {
+    TABS.forEach((tab) => router.prefetch(tab.href));
+  }, [router]);
+
+  if (!loading && !user) return null;
+
+  const handleNavigation = (href: string) => {
+    if (unsavedScan && pathname.startsWith("/scan")) {
+      if (!window.confirm("スキャン結果がまだ保存されていません。破棄しますか？")) return;
+      useZukanStore.getState().setUnsavedScan(false);
+    }
+    router.push(href);
+  };
 
   return (
     <nav
@@ -22,7 +42,7 @@ export default function TabBar() {
         left: "50%",
         transform: "translateX(-50%)",
         width: "100%",
-        maxWidth: "430px",
+        maxWidth: "100%",
         background: "rgba(255,255,255,0.94)",
         backdropFilter: "blur(12px)",
         WebkitBackdropFilter: "blur(12px)",
@@ -44,9 +64,13 @@ export default function TabBar() {
           const isActive =
             tab.href === "/" ? pathname === "/" : pathname.startsWith(tab.href);
           return (
-            <Link
+            <a
               key={tab.href}
               href={tab.href}
+              onClick={(e) => {
+                e.preventDefault();
+                handleNavigation(tab.href);
+              }}
               style={{
                 display: "flex",
                 flexDirection: "column",
@@ -54,6 +78,9 @@ export default function TabBar() {
                 gap: "2px",
                 textDecoration: "none",
                 flex: 1,
+                cursor: "pointer",
+                touchAction: "manipulation",
+                WebkitTapHighlightColor: "transparent",
               }}
             >
               <span
@@ -83,7 +110,7 @@ export default function TabBar() {
               >
                 {tab.label}
               </span>
-            </Link>
+            </a>
           );
         })}
       </div>

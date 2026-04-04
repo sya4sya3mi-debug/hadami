@@ -4,19 +4,72 @@ import { useRef, useCallback } from "react";
 
 interface CameraViewProps {
   step: 1 | 2;
-  onCapture: (imageData: string) => void;
+  onCapture: (imageData: string, colorImage?: string) => void;
   packagePreview?: string;
+}
+
+interface PreprocessResult {
+  /** グレースケール＋コントラスト強調（API送信用） */
+  processed: string;
+  /** カラーのままリサイズ（保存用） */
+  color: string;
+}
+
+async function preprocessImage(dataUrl: string): Promise<PreprocessResult> {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => {
+      const MAX_SIDE = 1800;
+      let { width, height } = img;
+      if (width > MAX_SIDE || height > MAX_SIDE) {
+        const scale = MAX_SIDE / Math.max(width, height);
+        width = Math.round(width * scale);
+        height = Math.round(height * scale);
+      }
+
+      // カラー版（保存用）
+      const colorCanvas = document.createElement("canvas");
+      colorCanvas.width = width;
+      colorCanvas.height = height;
+      const colorCtx = colorCanvas.getContext("2d")!;
+      colorCtx.drawImage(img, 0, 0, width, height);
+      const color = colorCanvas.toDataURL("image/jpeg", 0.92);
+
+      // グレースケール版（API送信用）
+      const canvas = document.createElement("canvas");
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext("2d")!;
+      ctx.drawImage(img, 0, 0, width, height);
+
+      const imageData = ctx.getImageData(0, 0, width, height);
+      const d = imageData.data;
+      for (let i = 0; i < d.length; i += 4) {
+        const gray = Math.round(0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2]);
+        const contrast = Math.min(255, Math.max(0, (gray - 128) * 1.5 + 128));
+        d[i] = d[i + 1] = d[i + 2] = contrast;
+      }
+      ctx.putImageData(imageData, 0, 0);
+      const processed = canvas.toDataURL("image/jpeg", 0.92);
+
+      resolve({ processed, color });
+    };
+    img.src = dataUrl;
+  });
 }
 
 export default function CameraView({ step, onCapture, packagePreview }: CameraViewProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
+    async (e: React.ChangeEvent<HTMLInputElement>) => {
       const file = e.target.files?.[0];
       if (!file) return;
       const reader = new FileReader();
-      reader.onload = () => onCapture(reader.result as string);
+      reader.onload = async () => {
+        const { processed, color } = await preprocessImage(reader.result as string);
+        onCapture(processed, color);
+      };
       reader.readAsDataURL(file);
     },
     [onCapture]
@@ -38,10 +91,10 @@ export default function CameraView({ step, onCapture, packagePreview }: CameraVi
           }}
         >
           <span>{isStep1 ? "📦" : "📋"}</span>
-          <span>STEP {step}/2</span>
+          <span>{isStep1 ? "パッケージ撮影" : "成分表撮影"}</span>
         </div>
         <span className="text-sm" style={{ color: "#9B9B9B" }}>
-          {isStep1 ? "パッケージを撮影" : "成分表を撮影"}
+          {isStep1 ? "製品名を自動で検索します" : "成分表を直接読み取ります"}
         </span>
       </div>
 

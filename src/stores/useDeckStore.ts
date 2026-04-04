@@ -10,6 +10,8 @@ interface DeckState {
   removeItem: (productId: string, routine: RoutineType) => void;
   getRoutineItems: (routine: RoutineType) => DeckItem[];
   reorder: (routine: RoutineType, productIds: string[]) => void;
+  replaceAll: (items: DeckItem[]) => void;
+  clearAll: () => void;
 }
 
 export const useDeckStore = create<DeckState>()(
@@ -31,13 +33,22 @@ export const useDeckStore = create<DeckState>()(
           };
         }),
       removeItem: (productId, routine) =>
-        set((state) => ({
-          items: state.items
-            .filter((i) => !(i.productId === productId && i.routine === routine))
-            .map((item, idx) =>
-              item.routine === routine ? { ...item, orderIndex: idx } : item
-            ),
-        })),
+        set((state) => {
+          const remainingItems = state.items.filter(
+            (i) => !(i.productId === productId && i.routine === routine)
+          );
+          let routineIndex = 0;
+
+          return {
+            items: remainingItems.map((item) => {
+              if (item.routine !== routine) return item;
+
+              const nextItem = { ...item, orderIndex: routineIndex };
+              routineIndex += 1;
+              return nextItem;
+            }),
+          };
+        }),
       getRoutineItems: (routine) =>
         get()
           .items.filter((i) => i.routine === routine)
@@ -50,6 +61,8 @@ export const useDeckStore = create<DeckState>()(
             return newIndex >= 0 ? { ...item, orderIndex: newIndex } : item;
           }),
         })),
+      replaceAll: (items) => set({ items }),
+      clearAll: () => set({ items: [] }),
     }),
     { name: "hadami-deck" }
   )

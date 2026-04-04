@@ -1,19 +1,54 @@
 "use client";
 
 import Link from "next/link";
+import { useCallback, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { useProductStore } from "@/stores/useProductStore";
 import { useZukanStore } from "@/stores/useZukanStore";
 import { useDeckStore } from "@/stores/useDeckStore";
 import { MASTER_INGREDIENTS } from "@/lib/ingredients";
+import { getScanCountByEmail, getAccountScanLimit } from "@/lib/db";
 import Disclaimer from "@/components/ui/Disclaimer";
+import InstallBanner from "@/components/ui/InstallBanner";
 import { useUser } from "@/lib/auth";
+import PageLoading from "@/components/ui/PageLoading";
+import LandingPage from "@/components/ui/LandingPage";
 
 export default function HomePage() {
-  const { user, profile } = useUser();
-
+  const { user, profile, supabase, loading } = useUser();
   const products = useProductStore((s) => s.products);
   const discoveredCount = useZukanStore((s) => s.discoveredIds.length);
   const deckItems = useDeckStore((s) => s.items);
+  const router = useRouter();
+  const [scanCount, setScanCount] = useState<number | null>(null);
+  const scanLimit = getAccountScanLimit();
+
+  // プロフィール未設定のユーザーをプロフィール設定画面へ
+  useEffect(() => {
+    if (!loading && user && profile !== null && !profile.display_name) {
+      router.replace("/auth/profile");
+    }
+  }, [loading, user, profile, router]);
+
+  // スキャン累計を取得
+  const fetchScanCount = useCallback(async () => {
+    if (!user?.email) return;
+    const count = await getScanCountByEmail(supabase, user.email);
+    setScanCount(count);
+  }, [user, supabase]);
+
+  useEffect(() => {
+    fetchScanCount();
+  }, [fetchScanCount]);
+
+  if (loading) {
+    return <PageLoading />;
+  }
+
+  if (!user) {
+    return <LandingPage />;
+  }
+
   const total = MASTER_INGREDIENTS.length;
 
   const recentProducts = products.slice(0, 3);
@@ -25,47 +60,26 @@ export default function HomePage() {
     <div className="min-h-screen" style={{ background: "linear-gradient(160deg, #F0FDFA 0%, #FFF0F5 100%)" }}>
       <div className="px-5 pt-10 pb-6">
 
-        {/* ログインボタン */}
         <div className="flex items-center justify-end gap-2 mb-2">
-          {user ? (
-            <>
-              {profile?.display_name && (
-                <span style={{ fontSize: "12px", color: "var(--foreground)", fontWeight: "600" }}>
-                  {profile.display_name} さん
-                </span>
-              )}
-              <Link
-                href="/settings"
-                style={{
-                  fontSize: "12px",
-                  color: "var(--sub)",
-                  background: "none",
-                  border: "1px solid var(--border)",
-                  borderRadius: "20px",
-                  padding: "5px 12px",
-                  textDecoration: "none",
-                }}
-              >
-                設定
-              </Link>
-            </>
-          ) : (
-            <Link
-              href="/auth/login"
-              style={{
-                fontSize: "12px",
-                color: "#5BBFAD",
-                background: "none",
-                border: "1px solid #5BBFAD",
-                borderRadius: "20px",
-                padding: "5px 12px",
-                textDecoration: "none",
-                fontWeight: "600",
-              }}
-            >
-              ログイン / 登録
-            </Link>
+          {profile?.display_name && (
+            <span style={{ fontSize: "12px", color: "var(--foreground)", fontWeight: "600" }}>
+              {profile.display_name} さん
+            </span>
           )}
+          <Link
+            href="/settings"
+            style={{
+              fontSize: "12px",
+              color: "var(--sub)",
+              background: "none",
+              border: "1px solid var(--border)",
+              borderRadius: "20px",
+              padding: "5px 12px",
+              textDecoration: "none",
+            }}
+          >
+            設定
+          </Link>
         </div>
 
         {/* Logo */}
@@ -90,6 +104,9 @@ export default function HomePage() {
           </p>
         </div>
 
+        {/* ホーム画面追加バナー（ログイン後のみ） */}
+        {user && <InstallBanner />}
+
         {/* CTA */}
         <Link
           href="/scan"
@@ -101,6 +118,37 @@ export default function HomePage() {
         >
           📷 化粧品をスキャンする
         </Link>
+
+        {/* スキャン残回数 */}
+        {scanCount !== null && (
+          <div
+            className="flex items-center justify-between bg-white rounded-2xl px-4 py-3 mb-4 shadow-sm"
+            style={{ border: "1px solid #F5E6EF" }}
+          >
+            <div className="flex items-center gap-2">
+              <span className="text-base">📷</span>
+              <span className="text-xs font-medium" style={{ color: "#9B9B9B" }}>
+                無料スキャン
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-bold" style={{ color: scanCount >= scanLimit ? "#E57373" : "#5BBFAD" }}>
+                {scanCount}/{scanLimit}回
+              </span>
+              <div className="w-16 h-1.5 rounded-full overflow-hidden" style={{ background: "#F2F2F2" }}>
+                <div
+                  className="h-full rounded-full"
+                  style={{
+                    width: `${Math.min((scanCount / scanLimit) * 100, 100)}%`,
+                    background: scanCount >= scanLimit
+                      ? "#E57373"
+                      : "linear-gradient(90deg, #5BBFAD, #7DD3C8)",
+                  }}
+                />
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Mini Cards */}
         <div className="grid grid-cols-2 gap-3 mb-6">
@@ -130,15 +178,15 @@ export default function HomePage() {
           <Link href="/deck" className="bg-white rounded-2xl p-4 shadow-sm border border-pink-50">
             <div className="flex items-center gap-1.5 mb-3">
               <span className="text-lg">🃏</span>
-              <span className="text-sm font-bold" style={{ color: "#2D2D2D" }}>マイデッキ</span>
+              <span className="text-sm font-bold" style={{ color: "#2D2D2D" }}>スキンケアデッキ</span>
             </div>
-            <div className="flex gap-4 mt-1">
+            <div className="flex justify-center gap-4 mt-1">
               <div className="text-center">
                 <div className="text-xs mb-1" style={{ color: "#9B9B9B" }}>☀️ 朝</div>
                 <div className="text-2xl font-bold" style={{ color: "#F9A8C0" }}>{morningCount}</div>
                 <div className="text-xs" style={{ color: "#9B9B9B" }}>アイテム</div>
               </div>
-              <div className="w-px my-1" style={{ background: "#F2F2F2" }} />
+              <div className="w-px" style={{ background: "#F2F2F2" }} />
               <div className="text-center">
                 <div className="text-xs mb-1" style={{ color: "#9B9B9B" }}>🌙 夜</div>
                 <div className="text-2xl font-bold" style={{ color: "#B39DDB" }}>{nightCount}</div>
@@ -190,6 +238,17 @@ export default function HomePage() {
             <p className="text-xs mt-1.5" style={{ color: "#9B9B9B" }}>上のボタンから始めてみましょう！</p>
           </div>
         )}
+
+        {/* みおのミハダノート リンク */}
+        <a
+          href="https://blog-engine.com/"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="block w-full py-3 rounded-2xl text-center text-sm font-medium mb-4"
+          style={{ background: "#FFF0F5", color: "#F9A8C0", border: "1px solid rgba(249,168,192,0.2)", textDecoration: "none" }}
+        >
+          みおのミハダノート（ブログ）を読む →
+        </a>
 
         <Disclaimer />
       </div>

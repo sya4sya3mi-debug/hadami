@@ -1,15 +1,27 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import Link from "next/link";
+import { useSearchParams, useRouter } from "next/navigation";
+import { Suspense } from "react";
 import { createClient } from "@/lib/supabase";
 
-export default function LoginPage() {
+function LoginPageInner() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isSignUp, setIsSignUp] = useState(false);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
+  const [registrationClosed, setRegistrationClosed] = useState(false);
   const supabase = createClient();
+  const searchParams = useSearchParams();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (searchParams.get("error") === "registration_limit_reached") {
+      setRegistrationClosed(true);
+    }
+  }, [searchParams]);
 
   const handleEmailAuth = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -17,6 +29,15 @@ export default function LoginPage() {
     setMessage("");
 
     if (isSignUp) {
+      // 登録上限チェック
+      const res = await fetch("/api/check-registration");
+      const { allowed } = await res.json();
+      if (!allowed) {
+        setMessage("現在ベータ版の新規登録を停止しています。");
+        setLoading(false);
+        return;
+      }
+
       const { error } = await supabase.auth.signUp({
         email,
         password,
@@ -32,14 +53,18 @@ export default function LoginPage() {
     } else {
       const { data: authData, error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) {
-        setMessage("メールアドレスまたはパスワードが正しくありません");
+        if (error.message?.includes("Email not confirmed")) {
+          setMessage("メールアドレスが未確認です。確認メールのリンクをクリックしてください。");
+        } else if (error.message?.includes("Invalid login credentials")) {
+          setMessage("メールアドレスまたはパスワードが正しくありません。");
+        } else if (error.status === 429 || error.message?.includes("rate")) {
+          setMessage("ログイン試行回数が上限に達しました。しばらく待ってからもう一度お試しください。");
+        } else {
+          setMessage("ログインに失敗しました。しばらく待ってからもう一度お試しください。");
+        }
       } else if (authData.user) {
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("display_name")
-          .eq("id", authData.user.id)
-          .single();
-        window.location.href = profile?.display_name ? "/" : "/auth/profile";
+        // プロフィールチェックはホームページ側で行うためここでは即遷移
+        router.push("/");
       }
     }
     setLoading(false);
@@ -47,6 +72,14 @@ export default function LoginPage() {
 
   const handleGoogleLogin = async () => {
     setLoading(true);
+    // 新規登録の場合は上限チェック（既存ユーザーはcallback側でハンドル）
+    const res = await fetch("/api/check-registration");
+    const { allowed } = await res.json();
+    if (!allowed) {
+      setRegistrationClosed(true);
+      setLoading(false);
+      return;
+    }
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
@@ -67,6 +100,25 @@ export default function LoginPage() {
       padding: "24px",
       background: "var(--background)",
     }}>
+      {/* 登録締め切りバナー */}
+      {registrationClosed && (
+        <div style={{
+          width: "100%",
+          maxWidth: "360px",
+          background: "#FFF3F3",
+          border: "1px solid #F48C8C",
+          borderRadius: "12px",
+          padding: "12px 16px",
+          marginBottom: "16px",
+          textAlign: "center",
+          fontSize: "13px",
+          color: "#E57373",
+        }}>
+          現在ベータ版の新規登録を停止しています。<br />
+          登録受付再開をお待ちください。
+        </div>
+      )}
+
       {/* ロゴ */}
       <div style={{ marginBottom: "32px", textAlign: "center" }}>
         <div style={{ fontSize: "36px", marginBottom: "8px" }}>🌿</div>
@@ -74,7 +126,7 @@ export default function LoginPage() {
           HADAMI
         </h1>
         <p style={{ fontSize: "13px", color: "var(--sub)", marginTop: "4px" }}>
-          成分図鑑・スキンケアデッキ
+          成分図鑑・マイスキンケアデッキ
         </p>
       </div>
 
@@ -218,6 +270,19 @@ export default function LoginPage() {
           </button>
         </p>
       </div>
+
+      {/* 同意テキスト */}
+      <p style={{ textAlign: "center", marginTop: "16px", fontSize: "11px", color: "#9B9B9B", maxWidth: "360px", lineHeight: "1.6" }}>
+        登録することで、<Link href="/privacy" style={{ color: "#5BBFAD" }}>プライバシーポリシー</Link>と<Link href="/terms" style={{ color: "#5BBFAD" }}>利用規約</Link>に同意したものとみなします。
+      </p>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={null}>
+      <LoginPageInner />
+    </Suspense>
   );
 }

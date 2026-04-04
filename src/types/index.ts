@@ -32,12 +32,27 @@ export interface Ingredient {
   caution?: string;
 }
 
+// ── 製品ジャンル ──
+export type ProductGenre =
+  | "cleansing"
+  | "face_wash"
+  | "toner"
+  | "serum"
+  | "emulsion"
+  | "cream"
+  | "sunscreen"
+  | "mask_pack"
+  | "eye_care"
+  | "oil"
+  | "mist"
+  | "other";
+
 // ── 製品 ──
 export interface Product {
   id: string;
   name: string;
   brand: string;
-  productType: string;
+  productType: ProductGenre;
   packageImage?: string;
   createdAt: string;
   ingredients: ProductIngredient[];
@@ -49,7 +64,7 @@ export interface ProductIngredient {
 }
 
 // ── デッキ ──
-export type RoutineType = "morning" | "night";
+export type RoutineType = "morning" | "night" | "spring_summer" | "autumn_winter";
 
 export interface DeckItem {
   productId: string;
@@ -66,6 +81,16 @@ export interface Combination {
   label: string;
   desc: string;
   source: string;
+}
+
+// ── おすすめデッキ結果 ──
+export interface RecommendationResult {
+  productIds: string[];
+  score: number;
+  recommendedCombinations: Combination[];
+  cautionCombinations: Combination[];
+  categoryCoverage: Record<CategoryKey, number>;
+  coveredCategoryCount: number;
 }
 
 // ── スキャン結果 ──

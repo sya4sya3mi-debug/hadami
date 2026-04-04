@@ -1,33 +1,76 @@
 "use client";
 
-import { useState, useCallback } from "react";
-import { createWorker } from "tesseract.js";
-import CameraView from "@/components/scan/CameraView";
-import ScanProgress from "@/components/scan/ScanProgress";
+import { Suspense, useCallback, useEffect, useState } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
+import StepIndicator from "@/components/scan/StepIndicator";
+import CaptureStep from "@/components/scan/CaptureStep";
+import ManualInputSheet from "@/components/scan/ManualInputSheet";
+import IdentifyStep from "@/components/scan/IdentifyStep";
+import ClassifyStep from "@/components/scan/ClassifyStep";
 import ScanResult from "@/components/scan/ScanResult";
 import DiscoveryModal from "@/components/ui/DiscoveryModal";
-import SignUpBanner from "@/components/ui/SignUpBanner";
+import AuthGuard from "@/components/ui/AuthGuard";
 import { extractIngredients } from "@/lib/ocr";
 import { findCombinations } from "@/lib/combinations";
 import { getIngredientById } from "@/lib/ingredients";
 import { useProductStore } from "@/stores/useProductStore";
 import { useZukanStore } from "@/stores/useZukanStore";
 import { useUser } from "@/lib/auth";
-import { saveProductToDb, saveDiscoveriesToDb, getGuestLimit, getUserLimit } from "@/lib/db";
-import { Ingredient, Combination } from "@/types";
+import {
+  saveProductToDb,
+  saveDiscoveriesToDb,
+  getUserLimit,
+  getMonthlyScanLimit,
+  getScanCountByEmail,
+} from "@/lib/db";
+import { Ingredient, Combination, ProductGenre } from "@/types";
+import { normalizeGenreFromScan } from "@/lib/productGenres";
 
-type ScanPhase = "package" | "ingredients" | "processing" | "result";
+type WizardStep = 1 | 2 | 3 | 4;
+
+interface ScannedProduct {
+  productName: string;
+  brand: string;
+  productType: string;
+  found: boolean;
+  ingredients: string;
+}
 
 export default function ScanPage() {
+  return (
+    <Suspense fallback={null}>
+      <ScanPageInner />
+    </Suspense>
+  );
+}
+
+function ScanPageInner() {
   const { user, supabase } = useUser();
 
-  const [phase, setPhase] = useState<ScanPhase>("package");
-  const [packageImage, setPackageImage] = useState<string>("");
+  // Wizard step
+  const [step, setStep] = useState<WizardStep>(1);
+  const [showManualSheet, setShowManualSheet] = useState(false);
+
+  // Image data
+  const [packageImage, setPackageImage] = useState("");
+  const [packageImageColor, setPackageImageColor] = useState("");
+
+  // Progress (Step 2)
   const [progress, setProgress] = useState(0);
   const [progressMsg, setProgressMsg] = useState("");
+  const [showFallback, setShowFallback] = useState(false);
 
+  // Multi-product (Step 2)
+  const [multiProducts, setMultiProducts] = useState<ScannedProduct[]>([]);
+  const [multiSavedIndexes, setMultiSavedIndexes] = useState<Set<number>>(new Set());
+  const [showMultiSheet, setShowMultiSheet] = useState(false);
+
+  // Product info (Step 3)
   const [productName, setProductName] = useState("");
   const [brand, setBrand] = useState("");
+  const [productType, setProductType] = useState<ProductGenre>("other");
+
+  // Results (Step 4)
   const [foundIngredients, setFoundIngredients] = useState<{ ingredient: Ingredient; orderIndex: number }[]>([]);
   const [unknownIngredients, setUnknownIngredients] = useState<string[]>([]);
   const [combinations, setCombinations] = useState<Combination[]>([]);
@@ -37,254 +80,479 @@ export default function ScanPage() {
   const [saveError, setSaveError] = useState("");
 
   const addProduct = useProductStore((s) => s.addProduct);
-  const localProducts = useProductStore((s) => s.products);
+  const getProduct = useProductStore((s) => s.getProduct);
   const discover = useZukanStore((s) => s.discover);
+  const setRecentlyFound = useZukanStore((s) => s.setRecentlyFound);
+  const setUnsavedScan = useZukanStore((s) => s.setUnsavedScan);
+  const searchParams = useSearchParams();
+  const router = useRouter();
 
-  const guestLimit = getGuestLimit();
+  // 再スキャン: 履歴からの遷移時
+  useEffect(() => {
+    const rescanId = searchParams.get("rescan");
+    if (!rescanId) return;
+    const product = getProduct(rescanId);
+    if (product) {
+      setProductName(product.name);
+      setBrand(product.brand);
+      if (product.packageImage) setPackageImage(product.packageImage);
+    }
+    router.replace("/scan", { scroll: false });
+  }, [searchParams, getProduct, router]);
+
+  // 未保存時の離脱アラート
+  const isUnsaved = step === 4 && !saved;
+  useEffect(() => {
+    setUnsavedScan(isUnsaved);
+    if (!isUnsaved) return;
+    const handler = (e: BeforeUnloadEvent) => { e.preventDefault(); };
+    window.addEventListener("beforeunload", handler);
+    return () => {
+      window.removeEventListener("beforeunload", handler);
+      setUnsavedScan(false);
+    };
+  }, [isUnsaved, setUnsavedScan]);
+
   const userLimit = getUserLimit();
-  const isGuest = !user;
-  const localCount = localProducts.length;
+  const monthlyScanLimit = getMonthlyScanLimit();
+  const [scanLimitReached, setScanLimitReached] = useState(false);
 
-  const handlePackageCapture = useCallback((imageData: string) => {
-    setPackageImage(imageData);
-    setPhase("ingredients");
-  }, []);
+  useEffect(() => {
+    if (!user?.email) return;
+    getScanCountByEmail(supabase, user.email).then((count) => {
+      if (count >= monthlyScanLimit) setScanLimitReached(true);
+    });
+  }, [user, supabase, monthlyScanLimit]);
 
-  const handleIngredientsCapture = useCallback(
-    async (imageData: string) => {
-      setPhase("processing");
+  // 成分データ処理
+  const processIngredients = useCallback(
+    async (ingredientText: string, name: string, brandName: string) => {
+      const result = await extractIngredients(ingredientText);
+      const foundIngs = result.found
+        .map((f) => {
+          const ingredient = getIngredientById(f.ingredientId);
+          return ingredient ? { ingredient, orderIndex: f.orderIndex } : null;
+        })
+        .filter((f): f is { ingredient: Ingredient; orderIndex: number } => f !== null);
+
+      const ingredientNames = foundIngs.map((f) => f.ingredient.nameJa);
+      const combos = findCombinations(ingredientNames);
+      const newIds = discover(foundIngs.map((f) => f.ingredient.id));
+      const discoveries = newIds
+        .map((id) => getIngredientById(id))
+        .filter((i): i is Ingredient => i !== null);
+
+      setProductName(name);
+      setBrand(brandName);
+      setFoundIngredients(foundIngs);
+      setUnknownIngredients(result.unknown);
+      setCombinations(combos);
+      setNewDiscoveries(discoveries);
+
+      return discoveries;
+    },
+    [discover]
+  );
+
+  const checkScanLimit = useCallback(async (): Promise<boolean> => {
+    if (!user?.email) return false;
+    const count = await getScanCountByEmail(supabase, user.email);
+    if (count >= monthlyScanLimit) {
+      setScanLimitReached(true);
+      return false;
+    }
+    return true;
+  }, [user, supabase, monthlyScanLimit]);
+
+  // Step 1 → Step 2: パッケージ撮影 → ネット検索
+  const handlePackageCapture = useCallback(
+    async (imageData: string, colorImage?: string) => {
+      const allowed = await checkScanLimit();
+      if (!allowed) return;
+
+      setPackageImage(imageData);
+      setPackageImageColor(colorImage || imageData);
+      setStep(2);
       setProgress(10);
-      setProgressMsg("画像を読み込んでいます...");
+      setProgressMsg("製品を特定しています...");
+      setShowFallback(false);
 
       try {
-        const worker = await createWorker("jpn+eng");
-
         setProgress(30);
-        setProgressMsg("文字を認識しています...");
-        const { data } = await worker.recognize(imageData);
+        setProgressMsg("ネットで成分情報を検索中...");
+
+        const res = await fetch("/api/scan-product", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ imageBase64: imageData }),
+        });
+
+        if (!res.ok) throw new Error("API error");
+        const data = await res.json();
+        const products: ScannedProduct[] = data.products || [data];
+        const foundProducts = products.filter((p: ScannedProduct) => p.found && p.ingredients);
+
+        if (foundProducts.length > 1) {
+          setMultiProducts(foundProducts);
+          setProgress(100);
+          setProgressMsg("複数の製品を検出しました！");
+          setTimeout(() => setShowMultiSheet(true), 500);
+        } else if (foundProducts.length === 1) {
+          const p = foundProducts[0];
+          setProgress(80);
+          setProgressMsg("成分を照合しています...");
+          setProductType(normalizeGenreFromScan(p.productType || ""));
+
+          const discoveries = await processIngredients(
+            p.ingredients,
+            p.productName || "スキャンした製品",
+            p.brand || "ブランド不明"
+          );
+
+          setProgress(100);
+          setProgressMsg("完了！");
+
+          setTimeout(() => {
+            setStep(3);
+            if (discoveries.length > 0) setShowDiscovery(true);
+          }, 500);
+        } else {
+          const first = products[0] || data;
+          setProductName(first.productName || "スキャンした製品");
+          setBrand(first.brand || "ブランド不明");
+          setProductType(normalizeGenreFromScan(first.productType || ""));
+          setShowFallback(true);
+        }
+      } catch (error) {
+        console.error("Product search error:", error);
+        setProgressMsg("検索に失敗しました");
+        setTimeout(() => setShowFallback(true), 1000);
+      }
+    },
+    [processIngredients, checkScanLimit]
+  );
+
+  // Step 2 fallback: 成分表直接撮影 → OCR
+  const handleFallbackCapture = useCallback(
+    async (imageData: string) => {
+      setShowFallback(false);
+      setProgress(10);
+      setProgressMsg("画像を解析しています...");
+
+      try {
+        setProgress(30);
+        const ocrRes = await fetch("/api/ocr", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ imageBase64: imageData }),
+        });
+        if (!ocrRes.ok) throw new Error("OCR API error");
+        const { text } = await ocrRes.json();
 
         setProgress(60);
         setProgressMsg("成分を照合しています...");
-        const result = await extractIngredients(data.text);
 
-        setProgress(80);
-        setProgressMsg("組み合わせ情報を確認中...");
-
-        const foundIngs = result.found
-          .map((f) => {
-            const ingredient = getIngredientById(f.ingredientId);
-            return ingredient ? { ingredient, orderIndex: f.orderIndex } : null;
-          })
-          .filter((f): f is { ingredient: Ingredient; orderIndex: number } => f !== null);
-
-        const ingredientNames = foundIngs.map((f) => f.ingredient.nameJa);
-        const combos = findCombinations(ingredientNames);
-
-        const newIds = user ? discover(foundIngs.map((f) => f.ingredient.id)) : [];
-        const discoveries = newIds
-          .map((id) => getIngredientById(id))
-          .filter((i): i is Ingredient => i !== null);
+        const discoveries = await processIngredients(
+          text,
+          productName || "スキャンした製品",
+          brand || "ブランド不明"
+        );
 
         setProgress(100);
         setProgressMsg("完了！");
 
-        setProductName("スキャンした製品");
-        setBrand("ブランド不明");
-        setFoundIngredients(foundIngs);
-        setUnknownIngredients(result.unknown);
-        setCombinations(combos);
-        setNewDiscoveries(discoveries);
-
-        await worker.terminate();
-
         setTimeout(() => {
-          setPhase("result");
+          setStep(3);
           if (discoveries.length > 0) setShowDiscovery(true);
         }, 500);
       } catch (error) {
         console.error("OCR error:", error);
         setProgressMsg("エラーが発生しました。もう一度お試しください。");
-        setTimeout(() => setPhase("ingredients"), 2000);
+        setTimeout(() => setShowFallback(true), 2000);
       }
     },
-    [discover]
+    [processIngredients, productName, brand]
   );
 
-  const handleSave = useCallback(async () => {
-    setSaveError("");
+  // 手動入力 → 成分マッチング
+  const handleManualSubmit = useCallback(
+    async (ingredientText: string, name: string, brandName: string) => {
+      setStep(2);
+      setProgress(50);
+      setProgressMsg("成分を照合しています...");
 
-    if (user) {
-      // ログイン済み → Supabaseに保存
-      const result = await saveProductToDb(supabase, user.id, {
-        name: productName,
-        brand: brand,
-        ingredientIds: foundIngredients.map((f) => f.ingredient.id),
-        unknownIngredients: unknownIngredients,
-        packageImageBase64: packageImage || undefined,
-      });
+      const discoveries = await processIngredients(ingredientText, name, brandName);
 
-      if (result.error === "limit_reached") {
-        setSaveError(`保存上限（${userLimit}件）に達しています。古い製品を削除してください。`);
-        return;
-      }
-      if (result.error) {
-        setSaveError("保存に失敗しました。もう一度お試しください。");
-        return;
-      }
+      setProgress(100);
+      setProgressMsg("完了！");
 
-      // 図鑑発見もSupabaseに保存
-      await saveDiscoveriesToDb(
-        supabase,
-        user.id,
-        foundIngredients.map((f) => f.ingredient.id)
+      setTimeout(() => {
+        setStep(3);
+        if (discoveries.length > 0) setShowDiscovery(true);
+      }, 300);
+    },
+    [processIngredients]
+  );
+
+  // 複数製品から1つ選択
+  const handleSelectProduct = useCallback(
+    async (product: ScannedProduct) => {
+      setShowMultiSheet(false);
+      setProgress(50);
+      setProgressMsg("成分を照合しています...");
+      setProductType(normalizeGenreFromScan(product.productType || ""));
+
+      const discoveries = await processIngredients(
+        product.ingredients,
+        product.productName || "スキャンした製品",
+        product.brand || "ブランド不明"
       );
 
-      // localStorageにも保存（オフライン表示用）
+      setProgress(100);
+      setProgressMsg("完了！");
+
+      setTimeout(() => {
+        setStep(3);
+        if (discoveries.length > 0) setShowDiscovery(true);
+      }, 300);
+    },
+    [processIngredients]
+  );
+
+  // 複数製品を一括保存
+  const handleSaveMulti = useCallback(
+    async (product: ScannedProduct, index: number) => {
+      if (!user || multiSavedIndexes.has(index)) return;
+
+      const result0 = await extractIngredients(product.ingredients);
+      const foundIngs = result0.found
+        .map((f) => {
+          const ingredient = getIngredientById(f.ingredientId);
+          return ingredient ? { ingredient, orderIndex: f.orderIndex } : null;
+        })
+        .filter((f): f is { ingredient: Ingredient; orderIndex: number } => f !== null);
+
+      const result = await saveProductToDb(supabase, user.id, {
+        name: product.productName,
+        brand: product.brand,
+        productType: normalizeGenreFromScan(product.productType || ""),
+        ingredientIds: foundIngs.map((f) => f.ingredient.id),
+        unknownIngredients: result0.unknown,
+        packageImageBase64: packageImageColor || packageImage || undefined,
+      });
+
+      if (result.error) return;
+
+      discover(foundIngs.map((f) => f.ingredient.id));
+      await saveDiscoveriesToDb(supabase, user.id, foundIngs.map((f) => f.ingredient.id));
+
       addProduct({
         id: result.productId!,
-        name: productName,
-        brand: brand,
-        productType: "スキンケア",
-        packageImage: result.imageUrl || packageImage || undefined,
+        name: product.productName,
+        brand: product.brand,
+        productType: normalizeGenreFromScan(product.productType || ""),
+        packageImage: result.imageUrl ?? undefined,
         createdAt: new Date().toISOString(),
-        ingredients: foundIngredients.map((f) => ({
-          ingredientId: f.ingredient.id,
-          orderIndex: f.orderIndex,
-        })),
+        ingredients: foundIngs.map((f) => ({ ingredientId: f.ingredient.id, orderIndex: f.orderIndex })),
       });
-    } else {
-      // 未ログイン → localStorageのみ（3件制限）
-      if (localCount >= guestLimit) {
-        setSaveError("");
-        return;
-      }
 
-      const productId = `product-${Date.now()}`;
-      addProduct({
-        id: productId,
-        name: productName,
-        brand: brand,
-        productType: "スキンケア",
-        packageImage: packageImage || undefined,
-        createdAt: new Date().toISOString(),
-        ingredients: foundIngredients.map((f) => ({
-          ingredientId: f.ingredient.id,
-          orderIndex: f.orderIndex,
-        })),
-      });
+      setMultiSavedIndexes((prev) => new Set(prev).add(index));
+    },
+    [user, supabase, addProduct, discover, packageImage, packageImageColor, multiSavedIndexes]
+  );
+
+  // Step 3 → Step 4
+  const handleClassifyContinue = useCallback(() => {
+    setStep(4);
+  }, []);
+
+  // Save
+  const handleSave = useCallback(async () => {
+    if (!user || saved) return;
+    setSaveError("");
+
+    const result = await saveProductToDb(supabase, user.id, {
+      name: productName,
+      brand,
+      productType,
+      ingredientIds: foundIngredients.map((f) => f.ingredient.id),
+      unknownIngredients,
+      packageImageBase64: packageImageColor || packageImage || undefined,
+    });
+
+    if (result.error === "limit_reached") {
+      setSaveError(`保存上限（${userLimit}件）に達しています。古い製品を削除してください。`);
+      return;
+    }
+    if (result.error) {
+      setSaveError("保存に失敗しました。もう一度お試しください。");
+      return;
     }
 
+    await saveDiscoveriesToDb(supabase, user.id, foundIngredients.map((f) => f.ingredient.id));
+
+    addProduct({
+      id: result.productId!,
+      name: productName,
+      brand,
+      productType,
+      packageImage: result.imageUrl ?? undefined,
+      createdAt: new Date().toISOString(),
+      ingredients: foundIngredients.map((f) => ({ ingredientId: f.ingredient.id, orderIndex: f.orderIndex })),
+    });
+
     setSaved(true);
-  }, [user, supabase, addProduct, productName, brand, packageImage, foundIngredients, unknownIngredients, localCount, guestLimit, userLimit]);
+    setRecentlyFound(foundIngredients.map((f) => f.ingredient.id));
+    setTimeout(() => router.push("/zukan"), 1500);
+  }, [user, supabase, addProduct, productName, brand, productType, packageImage, packageImageColor, foundIngredients, unknownIngredients, userLimit, saved, setRecentlyFound, router]);
 
   const handleReset = useCallback(() => {
-    setPhase("package");
+    if (step === 4 && !saved) {
+      if (!window.confirm("スキャン結果がまだ保存されていません。破棄しますか？")) return;
+    }
+    setStep(1);
     setPackageImage("");
+    setPackageImageColor("");
     setProgress(0);
+    setProgressMsg("");
+    setProductName("");
+    setBrand("");
+    setProductType("other");
     setFoundIngredients([]);
     setUnknownIngredients([]);
     setCombinations([]);
     setNewDiscoveries([]);
     setSaved(false);
     setSaveError("");
-  }, []);
-
-  // 未ログインで上限到達時は保存不可
-  const guestAtLimit = isGuest && localCount >= guestLimit;
+    setScanLimitReached(false);
+    setMultiProducts([]);
+    setMultiSavedIndexes(new Set());
+    setShowFallback(false);
+    setShowMultiSheet(false);
+  }, [step, saved]);
 
   return (
-    <div className="min-h-screen" style={{ background: "linear-gradient(160deg, #F0FDFA 0%, #FFF0F5 100%)" }}>
-      <div className="px-5 pt-8 pb-6">
-        <div className="flex items-center justify-between mb-6">
-          <h1 className="font-bold text-lg" style={{ color: "#2D2D2D" }}>📷 成分スキャン</h1>
-          {phase === "result" && (
-            <button
-              onClick={handleReset}
-              className="px-3 py-1.5 rounded-full text-sm font-medium"
-              style={{ background: "#F0FDFA", color: "#5BBFAD" }}
+    <AuthGuard>
+      <div className="min-h-screen" style={{ background: "linear-gradient(160deg, #F0FDFA 0%, #FFF0F5 100%)" }}>
+        <div className="px-5 pt-8 pb-6">
+          {/* Header */}
+          <div className="flex items-center justify-between mb-5">
+            <h1 className="font-bold text-lg" style={{ color: "#2D2D2D" }}>
+              成分スキャン
+            </h1>
+            {step > 1 && (
+              <button
+                onClick={handleReset}
+                className="px-3 py-1.5 rounded-full text-xs font-medium"
+                style={{ background: "#F0FDFA", color: "#5BBFAD" }}
+              >
+                最初から
+              </button>
+            )}
+          </div>
+
+          {/* Step indicator */}
+          <StepIndicator currentStep={step} />
+
+          {/* Scan limit warning */}
+          {scanLimitReached && step === 1 && (
+            <div
+              className="rounded-2xl p-4 mb-4 text-center"
+              style={{ background: "#FFF3F3", border: "1px solid #F9A8C0" }}
             >
-              新しくスキャン
-            </button>
+              <div className="text-2xl mb-2">🚫</div>
+              <div className="font-bold text-sm mb-1" style={{ color: "#E57373" }}>
+                無料スキャン上限（{monthlyScanLimit}回）に達しました
+              </div>
+              <div className="text-xs" style={{ color: "#9B9B9B" }}>
+                ベータ版では1アカウントにつき{monthlyScanLimit}回まで無料です
+              </div>
+            </div>
+          )}
+
+          {/* Step 1: Capture */}
+          {step === 1 && (
+            <CaptureStep
+              onCapture={handlePackageCapture}
+              onManualInput={() => setShowManualSheet(true)}
+              disabled={scanLimitReached}
+            />
+          )}
+
+          {/* Step 2: Identify */}
+          {step === 2 && (
+            <IdentifyStep
+              progress={progress}
+              message={progressMsg}
+              imagePreview={packageImageColor || packageImage}
+              showFallback={showFallback}
+              onFallbackCapture={handleFallbackCapture}
+              multiProducts={multiProducts}
+              onSelectProduct={handleSelectProduct}
+              onSaveMulti={handleSaveMulti}
+              multiSavedIndexes={multiSavedIndexes}
+              showMultiSheet={showMultiSheet}
+              onCloseMultiSheet={() => setShowMultiSheet(false)}
+            />
+          )}
+
+          {/* Step 3: Classify */}
+          {step === 3 && (
+            <ClassifyStep
+              productName={productName}
+              brand={brand}
+              productType={productType}
+              imagePreview={packageImageColor || packageImage}
+              onProductNameChange={setProductName}
+              onBrandChange={setBrand}
+              onProductTypeChange={setProductType}
+              onContinue={handleClassifyContinue}
+            />
+          )}
+
+          {/* Step 4: Results */}
+          {step === 4 && (
+            <>
+              {saveError && (
+                <div style={{
+                  background: "#FFF3F3",
+                  border: "1px solid #F9A8C0",
+                  borderRadius: "12px",
+                  padding: "12px 16px",
+                  marginBottom: "12px",
+                  fontSize: "13px",
+                  color: "#E57373",
+                }}>
+                  {saveError}
+                </div>
+              )}
+              <ScanResult
+                productName={productName}
+                brand={brand}
+                productType={productType}
+                foundIngredients={foundIngredients}
+                unknownIngredients={unknownIngredients}
+                combinations={combinations}
+                onSave={handleSave}
+                saved={saved}
+                imagePreview={packageImageColor || packageImage}
+              />
+            </>
           )}
         </div>
 
-        {/* 未ログインバナー */}
-        {isGuest && phase !== "processing" && (
-          <SignUpBanner currentCount={localCount} limit={guestLimit} />
-        )}
+        {/* Manual input bottom sheet */}
+        <ManualInputSheet
+          open={showManualSheet}
+          onClose={() => setShowManualSheet(false)}
+          onSubmit={handleManualSubmit}
+        />
 
-        {phase === "package" && (
-          <CameraView step={1} onCapture={handlePackageCapture} />
-        )}
-
-        {phase === "ingredients" && (
-          <CameraView step={2} onCapture={handleIngredientsCapture} packagePreview={packageImage} />
-        )}
-
-        {phase === "processing" && (
-          <ScanProgress progress={progress} message={progressMsg} />
-        )}
-
-        {phase === "result" && (
-          <>
-            {/* Editable product info */}
-            <div
-              className="bg-white rounded-2xl p-4 mb-4 shadow-sm"
-              style={{ border: "1px solid #F5E6EF" }}
-            >
-              <label className="block text-xs font-medium mb-1" style={{ color: "#9B9B9B" }}>製品名</label>
-              <input
-                type="text"
-                value={productName}
-                onChange={(e) => setProductName(e.target.value)}
-                className="w-full text-base font-bold pb-1 mb-3 outline-none border-b"
-                style={{ borderColor: "#F2F2F2", color: "#2D2D2D" }}
-              />
-              <label className="block text-xs font-medium mb-1" style={{ color: "#9B9B9B" }}>ブランド</label>
-              <input
-                type="text"
-                value={brand}
-                onChange={(e) => setBrand(e.target.value)}
-                className="w-full text-sm pb-1 outline-none border-b"
-                style={{ borderColor: "#F2F2F2", color: "#2D2D2D" }}
-              />
-            </div>
-
-            {saveError && (
-              <div style={{
-                background: "#FFF3F3",
-                border: "1px solid #F9A8C0",
-                borderRadius: "12px",
-                padding: "12px 16px",
-                marginBottom: "12px",
-                fontSize: "13px",
-                color: "#E57373",
-              }}>
-                {saveError}
-              </div>
-            )}
-
-            <ScanResult
-              productName={productName}
-              brand={brand}
-              productType="スキンケア"
-              foundIngredients={foundIngredients}
-              unknownIngredients={unknownIngredients}
-              combinations={combinations}
-              onSave={guestAtLimit ? undefined : handleSave}
-              saved={saved}
-            />
-
-            {guestAtLimit && !saved && (
-              <SignUpBanner currentCount={localCount} limit={guestLimit} />
-            )}
-          </>
+        {/* Discovery modal */}
+        {showDiscovery && (
+          <DiscoveryModal ingredients={newDiscoveries} onClose={() => setShowDiscovery(false)} />
         )}
       </div>
-
-      {showDiscovery && (
-        <DiscoveryModal ingredients={newDiscoveries} onClose={() => setShowDiscovery(false)} />
-      )}
-    </div>
+    </AuthGuard>
   );
 }

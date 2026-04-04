@@ -36,12 +36,142 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-/* アプリのコンテナをbodyではなくラッパーdivで制御 */
+/* アプリの��ンテナをbodyではなくラッパーdivで制御 */
 #app-container {
-  max-width: 430px;
+  width: 100%;
   margin: 0 auto;
   min-height: 100dvh;
   min-height: 100vh;
   position: relative;
   overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
+
+/* Discovery animations */
+@keyframes sparkle {
+  0%, 100% { box-shadow: 0 0 4px rgba(124,106,232,0.2); }
+  50% { box-shadow: 0 0 16px rgba(124,106,232,0.6), 0 0 32px rgba(124,106,232,0.3); }
+}
+
+@keyframes golden-glow {
+  0%, 100% { box-shadow: 0 0 8px rgba(245,158,11,0.3); }
+  50% { box-shadow: 0 0 24px rgba(245,158,11,0.7), 0 0 48px rgba(245,158,11,0.3); }
+}
+
+@keyframes legendary-burst {
+  0% { opacity: 0.8; transform: scale(0.5); }
+  50% { opacity: 1; }
+  100% { opacity: 0; transform: scale(3); }
+}
+
+@keyframes float-up {
+  0% { opacity: 0; transform: translateY(20px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+
+.animate-sparkle { animation: sparkle 1.5s ease-in-out infinite; }
+.animate-golden-glow { animation: golden-glow 1.2s ease-in-out infinite; }
+.animate-legendary-burst { animation: legendary-burst 1s ease-out forwards; }
+.animate-float-up { animation: float-up 0.5s ease-out forwards; }
+@keyframes recent-glow {
+  0%, 100% { box-shadow: 0 0 6px rgba(91,191,173,0.3); }
+  50% { box-shadow: 0 0 16px rgba(91,191,173,0.6), 0 0 24px rgba(249,168,192,0.3); }
+}
+
+.animate-recent-glow { animation: recent-glow 2s ease-in-out infinite; }
+
+/* Combination resonance animations */
+@keyframes resonance-pulse {
+  0%, 100% { opacity: 0.5; transform: scale(0.85); }
+  50% { opacity: 1; transform: scale(1.25); }
+}
+
+@keyframes resonance-glow {
+  0%, 100% {
+    box-shadow: 0 0 6px rgba(91,191,173,0.2), 0 0 12px rgba(249,168,192,0.1);
+    border-color: rgba(91,191,173,0.25);
+  }
+  50% {
+    box-shadow: 0 0 14px rgba(91,191,173,0.45), 0 0 28px rgba(249,168,192,0.25);
+    border-color: rgba(91,191,173,0.55);
+  }
+}
+
+@keyframes pill-glow {
+  0%, 100% { box-shadow: 0 0 0px rgba(91,191,173,0); }
+  50% { box-shadow: 0 0 8px rgba(91,191,173,0.45); }
+}
+
+.animate-resonance-pulse { animation: resonance-pulse 1.8s ease-in-out infinite; }
+.animate-resonance-glow  { animation: resonance-glow 2.4s ease-in-out infinite; }
+.animate-pill-glow       { animation: pill-glow 2.4s ease-in-out infinite; }
+
+.animate-shimmer {
+  background: linear-gradient(90deg, #F59E0B 0%, #FDE68A 50%, #F59E0B 100%);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: shimmer 2s linear infinite;
+}
+
+/* Scan wizard animations */
+@keyframes pulse-ring {
+  0% { box-shadow: 0 0 0 0 rgba(91,191,173,0.4); }
+  70% { box-shadow: 0 0 0 20px rgba(91,191,173,0); }
+  100% { box-shadow: 0 0 0 0 rgba(91,191,173,0); }
+}
+
+@keyframes slide-up {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
+@keyframes slide-down {
+  from { transform: translateY(0); }
+  to { transform: translateY(100%); }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes fade-out {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+@keyframes ripple {
+  0% { transform: scale(0.8); opacity: 0.6; }
+  50% { transform: scale(1.2); opacity: 0.3; }
+  100% { transform: scale(0.8); opacity: 0.6; }
+}
+
+@keyframes stagger-in {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes check-pop {
+  0% { transform: scale(0); }
+  50% { transform: scale(1.2); }
+  100% { transform: scale(1); }
+}
+
+.animate-pulse-ring { animation: pulse-ring 2s ease-out infinite; }
+.animate-slide-up { animation: slide-up 0.3s ease-out forwards; }
+.animate-slide-down { animation: slide-down 0.3s ease-in forwards; }
+.animate-fade-in { animation: fade-in 0.2s ease-out forwards; }
+.animate-fade-out { animation: fade-out 0.2s ease-in forwards; }
+.animate-stagger-in { animation: stagger-in 0.4s ease-out forwards; }
+.animate-check-pop { animation: check-pop 0.4s ease-out forwards; }
+
+/* Hide scrollbar for genre chips */
+.hide-scrollbar::-webkit-scrollbar { display: none; }
+.hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }

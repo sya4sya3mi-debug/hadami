@@ -21,26 +21,31 @@ export default function ShareModal({ text, onClose }: ShareModalProps) {
   return (
     <div className="fixed inset-0 bg-black/40 z-50 flex items-end justify-center" onClick={onClose}>
       <div
-        className="bg-white w-full max-w-[430px] rounded-t-3xl p-6 pb-8"
-        style={{ boxShadow: "0 -4px 24px rgba(0,0,0,0.08)" }}
+        className="bg-white w-full max-w-[430px] rounded-t-3xl flex flex-col"
+        style={{ boxShadow: "0 -4px 24px rgba(0,0,0,0.08)", maxHeight: "85vh" }}
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Handle */}
-        <div className="w-10 h-1 rounded-full mx-auto mb-4" style={{ background: "#E0E0E0" }} />
-
-        <div className="flex justify-between items-center mb-4">
-          <h3 className="font-bold text-base" style={{ color: "#2D2D2D" }}>Xに投稿 🐦</h3>
-          <button onClick={onClose} className="text-xl" style={{ color: "#9B9B9B" }}>✕</button>
+        {/* Handle + Header（固定） */}
+        <div className="px-6 pt-4 pb-3 shrink-0">
+          <div className="w-10 h-1 rounded-full mx-auto mb-4" style={{ background: "#E0E0E0" }} />
+          <div className="flex justify-between items-center">
+            <h3 className="font-bold text-base" style={{ color: "#2D2D2D" }}>Xに投稿 🐦</h3>
+            <button onClick={onClose} className="text-xl" style={{ color: "#9B9B9B" }}>✕</button>
+          </div>
         </div>
 
-        <div
-          className="rounded-2xl p-4 mb-4 text-sm whitespace-pre-wrap leading-relaxed"
-          style={{ background: "#F9F9F9", color: "#2D2D2D" }}
-        >
-          {text}
+        {/* 投稿テキスト（スクロール可能） */}
+        <div className="overflow-y-auto px-6 flex-1">
+          <div
+            className="rounded-2xl p-4 mb-4 text-sm whitespace-pre-wrap leading-relaxed"
+            style={{ background: "#F9F9F9", color: "#2D2D2D" }}
+          >
+            {text}
+          </div>
         </div>
 
-        <div className="flex gap-3">
+        {/* ボタン（固定） */}
+        <div className="px-6 pb-8 pt-3 shrink-0 flex gap-3">
           <button
             onClick={handleCopy}
             className="flex-1 py-3 rounded-2xl text-sm font-medium"

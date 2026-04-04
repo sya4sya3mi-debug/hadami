@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useUser } from "@/lib/auth";
 
 export default function ProfileSetupPage() {
-  const { user, supabase, refreshProfile } = useUser();
+  const { user, supabase } = useUser();
   const [nickname, setNickname] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -26,8 +26,10 @@ export default function ProfileSetupPage() {
 
     const { error: dbError } = await supabase
       .from("profiles")
-      .update({ display_name: nickname.trim() })
-      .eq("id", user.id);
+      .upsert(
+        { id: user.id, display_name: nickname.trim() },
+        { onConflict: "id" }
+      );
 
     if (dbError) {
       setError("保存に失敗しました。もう一度お試しください。");
@@ -35,7 +37,6 @@ export default function ProfileSetupPage() {
       return;
     }
 
-    refreshProfile?.();
     window.location.href = "/";
   };
 

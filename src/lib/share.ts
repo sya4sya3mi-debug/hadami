@@ -25,7 +25,13 @@ export function shareDeck(
   categoryCount: number,
   ingredientCount: number
 ): string {
-  const routineLabel = routine === "morning" ? "☀️朝" : "🌙夜";
+  const ROUTINE_LABEL: Record<RoutineType, string> = {
+    morning: "☀️朝",
+    night: "🌙夜",
+    spring_summer: "🌸春夏",
+    autumn_winter: "🍂秋冬",
+  };
+  const routineLabel = ROUTINE_LABEL[routine];
   const lines = products.map((p) => `${p.emoji} ${p.name}`).join("\n");
   return `【マイスキンケアルーティン】${routineLabel}
 
