@@ -24,11 +24,16 @@ export default function LoginPage() {
         setMessage("確認メールを送信しました。メールのリンクをクリックしてください。");
       }
     } else {
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      const { data: authData, error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) {
         setMessage("メールアドレスまたはパスワードが正しくありません");
-      } else {
-        window.location.href = "/";
+      } else if (authData.user) {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("display_name")
+          .eq("id", authData.user.id)
+          .single();
+        window.location.href = profile?.display_name ? "/" : "/auth/profile";
       }
     }
     setLoading(false);

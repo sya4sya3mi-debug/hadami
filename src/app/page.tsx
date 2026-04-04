@@ -9,7 +9,7 @@ import Disclaimer from "@/components/ui/Disclaimer";
 import { useUser } from "@/lib/auth";
 
 export default function HomePage() {
-  const { user, supabase } = useUser();
+  const { user, profile, supabase } = useUser();
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -31,22 +31,29 @@ export default function HomePage() {
       <div className="px-5 pt-10 pb-6">
 
         {/* ログインボタン */}
-        <div className="flex justify-end mb-2">
+        <div className="flex items-center justify-end gap-2 mb-2">
           {user ? (
-            <button
-              onClick={handleLogout}
-              style={{
-                fontSize: "12px",
-                color: "var(--sub)",
-                background: "none",
-                border: "1px solid var(--border)",
-                borderRadius: "20px",
-                padding: "5px 12px",
-                cursor: "pointer",
-              }}
-            >
-              ログアウト
-            </button>
+            <>
+              {profile?.display_name && (
+                <span style={{ fontSize: "12px", color: "var(--foreground)", fontWeight: "600" }}>
+                  {profile.display_name} さん
+                </span>
+              )}
+              <button
+                onClick={handleLogout}
+                style={{
+                  fontSize: "12px",
+                  color: "var(--sub)",
+                  background: "none",
+                  border: "1px solid var(--border)",
+                  borderRadius: "20px",
+                  padding: "5px 12px",
+                  cursor: "pointer",
+                }}
+              >
+                ログアウト
+              </button>
+            </>
           ) : (
             <Link
               href="/auth/login"

@@ -24,7 +24,20 @@ export async function GET(request: NextRequest) {
         },
       }
     );
-    await supabase.auth.exchangeCodeForSession(code);
+    const { data: sessionData } = await supabase.auth.exchangeCodeForSession(code);
+
+    // プロフィール未設定ならプロフィール画面へ
+    if (sessionData?.user) {
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("display_name")
+        .eq("id", sessionData.user.id)
+        .single();
+
+      if (!profile?.display_name) {
+        return NextResponse.redirect(`${origin}/auth/profile`);
+      }
+    }
   }
 
   return NextResponse.redirect(`${origin}/`);
