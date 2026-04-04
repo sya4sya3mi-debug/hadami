@@ -32,7 +32,7 @@ export default function ProductDetailPage() {
       <div className="min-h-screen px-5 pt-10 text-center" style={{ background: "linear-gradient(160deg, #F0FDFA, #FFF0F5)" }}>
         <p style={{ color: "#9B9B9B" }}>製品が見つかりません</p>
         <Link href="/history" className="text-sm mt-2 inline-block font-medium" style={{ color: "#5BBFAD" }}>
-          履歴に戻る
+          Myコスメに戻る
         </Link>
       </div>
     );
@@ -54,7 +54,7 @@ export default function ProductDetailPage() {
     <div className="min-h-screen" style={{ background: "linear-gradient(160deg, #F0FDFA 0%, #FFF0F5 100%)" }}>
       <div className="px-5 pt-8 pb-6">
         <Link href="/history" className="text-sm font-medium mb-5 inline-block" style={{ color: "#5BBFAD" }}>
-          ← 履歴
+          ← Myコスメ
         </Link>
 
         {/* Product photo */}
