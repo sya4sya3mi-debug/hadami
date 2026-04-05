@@ -41,10 +41,9 @@ function TabIcon({ id, active }: { id: string; active: boolean }) {
     case "deck":
       return (
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round">
-          <rect x="2" y="3" width="20" height="14" rx="2" />
-          <path d="M8 21h8" />
-          <path d="M12 17v4" />
-          <path d="M7 8h2M7 12h6" />
+          <path d="M12 3l1.5 3.5L17 8l-3.5 1.5L12 13l-1.5-3.5L7 8l3.5-1.5z" />
+          <path d="M19 12l1 2.5 2.5 1-2.5 1L19 19l-1-2.5L15.5 15.5l2.5-1z" />
+          <path d="M5 17l.8 2 2 .8-2 .8L5 22.5l-.8-2-2-.8 2-.8z" />
         </svg>
       );
     case "cosme":
