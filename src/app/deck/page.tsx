@@ -330,7 +330,7 @@ export default function DeckPage() {
                   <span className="text-xs font-normal" style={{ color: "#9B9B9B" }}>({recommendedCombos.length}件)</span>
                 </h3>
                 <p className="text-xs mb-3" style={{ color: "#9B9B9B" }}>
-                  今使っている製品の成分同士が、組み合わせることでより高い効果を生み出しています
+                  今使っている製品の成分同士で、より良いはたらきが期待できる組み合わせが見つかりました
                 </p>
                 <div className="space-y-2.5 mb-4">
                   {comboWithSources
