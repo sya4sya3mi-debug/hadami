@@ -193,11 +193,12 @@ export default function DeckPage() {
     const products = productsByGenre[s.genre] || [];
     const genreInfo = getGenreByKey(s.genre);
     if (s.maxSlots > 1 && products.length > 0) {
-      return products.map(() => ({
+      return products.map((p) => ({
         icon: genreInfo?.icon || "",
         color: genreInfo?.color || "#ccc",
         filled: true,
         genre: genreInfo?.label || "",
+        image: p.packageImage || null,
       }));
     }
     return [{
@@ -205,6 +206,7 @@ export default function DeckPage() {
       color: genreInfo?.color || "#ccc",
       filled: products.length > 0,
       genre: genreInfo?.label || "",
+      image: products[0]?.packageImage || null,
     }];
   }).flat();
 
@@ -245,22 +247,24 @@ export default function DeckPage() {
           className="rounded-2xl px-2.5 pt-2.5 pb-1.5 mb-3 cursor-pointer"
           style={{ background: "rgba(255,255,255,0.7)", border: "1px solid #F5E6EF" }}
         >
-          <div className="flex justify-center gap-1">
+          <div className="flex justify-center gap-1.5">
             {handItems.map((item, i) => (
-              <div key={i} className="flex flex-col items-center gap-0.5" style={{ minWidth: 36 }}>
+              <div key={i} className="flex flex-col items-center gap-1" style={{ minWidth: 40 }}>
                 <div
-                  className="w-9 h-9 rounded-[10px] flex items-center justify-center"
+                  className="w-12 h-12 rounded-xl flex items-center justify-center overflow-hidden relative"
                   style={{
-                    fontSize: item.filled ? 16 : 12,
+                    fontSize: item.filled && !item.image ? 20 : 14,
                     border: item.filled ? `2px solid ${item.color}` : `1.5px dashed ${item.color}40`,
                     background: item.filled ? `linear-gradient(135deg, ${item.color}20, ${item.color}08)` : `${item.color}06`,
                     opacity: item.filled ? 1 : 0.4,
-                    boxShadow: item.filled ? `0 1px 4px ${item.color}20` : "none",
+                    boxShadow: item.filled ? `0 2px 6px ${item.color}25` : "none",
                   }}
                 >
-                  {item.filled ? item.icon : "\uFF0B"}
+                  {item.filled && item.image ? (
+                    <Image src={item.image} alt={item.genre} fill className="object-cover" sizes="48px" loading="lazy" />
+                  ) : item.filled ? item.icon : "\uFF0B"}
                 </div>
-                <span className="text-[7px] font-semibold whitespace-nowrap" style={{ color: item.filled ? item.color : "#C5C5C5" }}>
+                <span className="text-[8px] font-semibold whitespace-nowrap" style={{ color: item.filled ? item.color : "#C5C5C5" }}>
                   {item.genre}
                 </span>
               </div>
