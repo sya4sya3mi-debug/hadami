@@ -16,7 +16,7 @@ export default function ShareModal({ text, onClose }: ShareModalProps) {
   useEffect(() => {
     const container = document.getElementById("app-container");
     const nextDiv = document.getElementById("__next");
-    const scrollY = container ? container.scrollTop : 0;
+    const scrollY = window.scrollY;
     const topValue = `-${scrollY}px`;
     document.body.style.top = topValue;
     if (nextDiv) nextDiv.style.top = topValue;
@@ -59,8 +59,8 @@ export default function ShareModal({ text, onClose }: ShareModalProps) {
       if (nextDiv) nextDiv.style.top = "";
       if (container) {
         container.style.top = "";
-        container.scrollTop = scrollY;
       }
+      window.scrollTo(0, scrollY);
     };
   }, []);
 

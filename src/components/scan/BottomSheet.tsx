@@ -30,7 +30,7 @@ export default function BottomSheet({ open, onClose, children, footer, title, su
 
     const container = document.getElementById("app-container");
     const nextDiv = document.getElementById("__next");
-    const scrollY = container ? container.scrollTop : window.scrollY;
+    const scrollY = window.scrollY;
     const topValue = `-${scrollY}px`;
 
     document.body.style.top = topValue;
@@ -88,8 +88,8 @@ export default function BottomSheet({ open, onClose, children, footer, title, su
       if (nextDiv) nextDiv.style.top = "";
       if (container) {
         container.style.top = "";
-        container.scrollTop = scrollY;
       }
+      window.scrollTo(0, scrollY);
     };
   }, [open, handleKeyDown]);
 
