@@ -85,31 +85,14 @@ export default function ManualInputSheet({ open, onClose, onSubmit }: ManualInpu
     onClose();
   };
 
-  const footer = (
-    <button
-      onClick={handleSubmit}
-      disabled={!canSubmit}
-      className="w-full py-4 rounded-2xl text-white text-sm font-bold"
-      style={{
-        background: canSubmit ? "linear-gradient(135deg, #F9A8C0, #F48FB1)" : "#D0D0D0",
-        boxShadow: canSubmit ? "0 4px 16px rgba(249,168,192,0.4)" : "none",
-      }}
-    >
-      成分を解析する
-    </button>
-  );
-
   return (
     <BottomSheet
       open={open}
       onClose={onClose}
       title="成分を入力"
       subtitle="スキャン回数を消費しません"
-      footer={footer}
-      maxHeight="100dvh"
-      height="100dvh"
     >
-      <div className="flex min-h-full flex-col gap-3 pt-2 pb-2">
+      <div className="flex flex-col gap-3 pt-2 pb-4">
         {/* カメラ撮影 */}
         <button
           onClick={() => cameraInputRef.current?.click()}
@@ -181,6 +164,19 @@ export default function ManualInputSheet({ open, onClose, onSubmit }: ManualInpu
             style={{ background: "#FAFAFA", border: "1px solid #F2F2F2", color: "#2D2D2D" }}
           />
         </div>
+
+        {/* 解析ボタン */}
+        <button
+          onClick={handleSubmit}
+          disabled={!canSubmit}
+          className="w-full py-4 rounded-2xl text-white text-sm font-bold mt-1"
+          style={{
+            background: canSubmit ? "linear-gradient(135deg, #F9A8C0, #F48FB1)" : "#D0D0D0",
+            boxShadow: canSubmit ? "0 4px 16px rgba(249,168,192,0.4)" : "none",
+          }}
+        >
+          成分を解析する
+        </button>
       </div>
     </BottomSheet>
   );
