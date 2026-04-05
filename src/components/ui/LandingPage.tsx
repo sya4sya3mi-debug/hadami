@@ -94,6 +94,26 @@ export default function LandingPage() {
           無料ベータ版：1アカウント10回までスキャン無料
         </p>
 
+        {/* App purpose */}
+        <div
+          className="rounded-3xl p-5 mb-10"
+          style={{ background: "rgba(255,255,255,0.7)", border: "1px solid rgba(91,191,173,0.15)" }}
+        >
+          <p className="text-sm font-bold mb-3" style={{ color: "#2D2D2D" }}>
+            あなたは、毎日使っているコスメの成分を知っていますか？
+          </p>
+          <p className="text-xs leading-relaxed mb-3" style={{ color: "#6B6B6B" }}>
+            スキンケアをがんばっているのに「なぜか肌に合わない」「何が自分に合っているのかわからない」と感じたことはありませんか。
+          </p>
+          <p className="text-xs leading-relaxed mb-3" style={{ color: "#6B6B6B" }}>
+            HADAMIは、コスメをスキャンするか成分リストを入力するだけで、各成分の特徴・はたらきをわかりやすく確認できるアプリです。
+          </p>
+          <p className="text-xs leading-relaxed" style={{ color: "#6B6B6B" }}>
+            まずは手元にあるコスメを1本試してみてください。
+            「この成分にこんなはたらきがあったんだ」という小さな気づきが、自分の肌を理解する最初の一歩になります。
+          </p>
+        </div>
+
         {/* Features */}
         <div className="space-y-4 mb-10">
           {features.map((f) => (
