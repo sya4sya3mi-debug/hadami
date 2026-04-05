@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
+import { getAccountScanLimit } from "@/lib/db";
 
 const features = [
   {
@@ -34,6 +35,8 @@ const steps = [
 ];
 
 export default function LandingPage() {
+  const scanLimit = getAccountScanLimit();
+
   return (
     <div
       className="min-h-screen"
@@ -91,7 +94,7 @@ export default function LandingPage() {
           無料ではじめる
         </Link>
         <p className="text-center text-xs mb-10" style={{ color: "#9B9B9B" }}>
-          無料ベータ版：1アカウント10回までスキャン無料
+          無料ベータ版：1アカウント{scanLimit}回までスキャン無料
         </p>
 
         {/* App purpose */}
