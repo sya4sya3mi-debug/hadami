@@ -8,9 +8,11 @@ import Disclaimer from "@/components/ui/Disclaimer";
 import { useUser } from "@/lib/auth";
 import PageLoading from "@/components/ui/PageLoading";
 import AuthGuard from "@/components/ui/AuthGuard";
+import ShareModal from "@/components/ui/ShareModal";
 import { deleteProductFromDb, updateProductImageInDb, deleteProductImageFromDb, updateProductTypeInDb, toggleFavoriteInDb } from "@/lib/db";
 import { PRODUCT_GENRES, getGenreByKey } from "@/lib/productGenres";
 import { ProductGenre } from "@/types";
+import { shareFavoriteCosmetics } from "@/lib/share";
 
 type ViewMode = "list" | "grid";
 
@@ -30,6 +32,8 @@ export default function HistoryPage() {
   const [selectedGenre, setSelectedGenre] = useState<"all" | ProductGenre>("all");
   const [editingGenreId, setEditingGenreId] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
+  const [showShare, setShowShare] = useState(false);
+  const captureRef = useRef<HTMLDivElement>(null);
 
   if (loading) {
     return <PageLoading message="コスメ一覧を読み込んでいます..." />;
@@ -74,7 +78,7 @@ export default function HistoryPage() {
 
   const handleDeleteImage = async (productId: string) => {
     if (!user) return;
-    const confirmed = window.confirm("この製品の写真を削除しますか？");
+    const confirmed = window.confirm("このコスメの写真を削除しますか？");
     if (!confirmed) return;
 
     setDeletingImageId(productId);
@@ -114,7 +118,7 @@ export default function HistoryPage() {
     await updateProductTypeInDb(supabase, user.id, productId, newGenre);
   };
 
-  // ジャンル別の製品数を計算
+  // ジャンル別のコスメ数を計算
   const genreCounts = products.reduce<Record<string, number>>((acc, p) => {
     const genre = p.productType || "other";
     acc[genre] = (acc[genre] || 0) + 1;
@@ -133,7 +137,7 @@ export default function HistoryPage() {
     return 0;
   });
 
-  // 製品があるジャンルのみ表示
+  // コスメがあるジャンルのみ表示
   const activeGenres = PRODUCT_GENRES.filter((g) => genreCounts[g.key]);
   const favCount = products.filter((p) => p.isFavorite).length;
 
@@ -149,7 +153,16 @@ export default function HistoryPage() {
               {products.length}件
             </span>
           </h1>
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-2">
+            {favCount > 0 && (
+              <button
+                onClick={() => setShowShare(true)}
+                className="px-3 py-1.5 rounded-full text-sm font-medium"
+                style={{ background: "#5BBFAD", color: "#fff" }}
+              >
+                Xに投稿
+              </button>
+            )}
             <button
               onClick={() => setViewMode("grid")}
               className="w-8 h-8 rounded-lg flex items-center justify-center transition-all"
@@ -311,7 +324,7 @@ export default function HistoryPage() {
                           </div>
                         )}
 
-                        {/* 製品名オーバーレイ */}
+                        {/* コスメ名オーバーレイ */}
                         <div
                           className="absolute bottom-0 left-0 right-0 px-1.5 py-1.5"
                           style={{
@@ -491,8 +504,71 @@ export default function HistoryPage() {
         )}
 
         <Disclaimer />
+
+        {/* お気に入りキャプチャ用（画面外に配置） */}
+        <div
+          ref={captureRef}
+          style={{
+            position: "absolute",
+            left: "-9999px",
+            top: 0,
+            width: "360px",
+            background: "linear-gradient(160deg, #F0FDFA 0%, #FFF0F5 100%)",
+            borderRadius: 20,
+            padding: "16px",
+          }}
+        >
+          <div className="flex items-center gap-2 mb-3">
+            <span className="text-base font-bold" style={{ color: "#2D2D2D" }}>⭐ お気に入りコスメ</span>
+            <span className="text-xs px-2 py-0.5 rounded-full font-medium" style={{ background: "#FFF8E1", color: "#F59E0B" }}>
+              {favCount}件
+            </span>
+          </div>
+          <div className="grid grid-cols-3 gap-2">
+            {products.filter((p) => p.isFavorite).map((p) => {
+              const genre = getGenreByKey(p.productType || "other");
+              return (
+                <div
+                  key={p.id}
+                  className="relative rounded-xl overflow-hidden bg-white"
+                  style={{ border: "2px solid #F59E0B", aspectRatio: "1" }}
+                >
+                  {p.packageImage ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={p.packageImage} alt={p.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                  ) : (
+                    <div
+                      className="w-full h-full flex items-center justify-center text-2xl"
+                      style={{ background: "linear-gradient(135deg, #E8FAF8, #FFF0F5)" }}
+                    >
+                      {genre?.icon || "📦"}
+                    </div>
+                  )}
+                  <div
+                    className="absolute bottom-0 left-0 right-0 px-1.5 py-1"
+                    style={{ background: "linear-gradient(transparent, rgba(0,0,0,0.6))" }}
+                  >
+                    <div className="text-white font-bold truncate" style={{ fontSize: "9px" }}>{p.name}</div>
+                    <div className="text-white truncate" style={{ fontSize: "8px", opacity: 0.8 }}>{p.brand}</div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          <div className="mt-3 text-center text-xs font-medium" style={{ color: "#9B9B9B" }}>
+            #HADAMI #お気に入りコスメ #スキンケア
+          </div>
+        </div>
       </div>
     </div>
+
+    {showShare && (
+      <ShareModal
+        text={shareFavoriteCosmetics(products.filter((p) => p.isFavorite).map((p) => ({ name: p.name, brand: p.brand })))}
+        onClose={() => setShowShare(false)}
+        captureRef={captureRef}
+      />
+    )}
     </AuthGuard>
   );
 }

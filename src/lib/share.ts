@@ -13,7 +13,7 @@ ${stars} ${rarityInfo.label}
 
 export function shareProductCheck(product: Product, ingredientNames: string[]): string {
   const top3 = ingredientNames.slice(0, 3).join(" / ");
-  return `【製品チェック】${product.name}（${product.brand}）
+  return `【コスメチェック】${product.name}（${product.brand}）
 成分：${top3}
 
 #HADAMI #成分チェック`;
@@ -41,6 +41,14 @@ ${lines}
 🧪 ${ingredientCount}種の成分
 
 #HADAMI #スキンケアデッキ`;
+}
+
+export function shareFavoriteCosmetics(favorites: { name: string; brand: string }[]): string {
+  const lines = favorites.slice(0, 5).map((p) => `✨ ${p.name}（${p.brand}）`).join("\n");
+  return `【お気に入りコスメ】
+${lines}
+
+#HADAMI #スキンケア #お気に入りコスメ`;
 }
 
 export function shareZukanProgress(discovered: number, total: number): string {
