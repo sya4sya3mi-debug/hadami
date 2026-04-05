@@ -126,6 +126,12 @@ export default function HistoryPage() {
         <h1 className="font-bold text-lg mb-4 flex items-center gap-2" style={{ color: "#2D2D2D" }}>
           My コスメ
         </h1>
+        <div
+          className="rounded-2xl p-3 mb-4 text-xs"
+          style={{ background: "#E8FAF8", border: "1px solid rgba(91,191,173,0.15)", color: "#6B9E95" }}
+        >
+          💡 ベータ版では、最大20件までのコスメを登録できます
+        </div>
         <input
           ref={fileInputRef}
           type="file"
