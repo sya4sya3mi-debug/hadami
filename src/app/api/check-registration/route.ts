@@ -2,7 +2,7 @@ import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 
-const BETA_USER_LIMIT = 10;
+const BETA_USER_LIMIT = 15;
 
 export async function GET() {
   const cookieStore = await cookies();
