@@ -4,7 +4,7 @@ export const RARITY: Record<RarityKey, RarityInfo> = {
   common:    { label: "コモン",       star: 1, color: "#9CA3AF", icon: "🌱" },
   uncommon:  { label: "アンコモン",   star: 2, color: "#4CAF50", icon: "🌿" },
   rare:      { label: "レア",         star: 3, color: "#E91E8C", icon: "🌸" },
-  legendary: { label: "レジェンダリー", star: 4, color: "#F59E0B", icon: "✨" },
+  legendary: { label: "レジェンダリー", star: 4, color: "#F59E0B", icon: "🌟" },
 };
 
 export const MASTER_INGREDIENTS: Ingredient[] = [
