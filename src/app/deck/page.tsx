@@ -189,7 +189,7 @@ export default function DeckPage() {
   const nextDeck = () => setDeckIndex((i) => (i + 1) % DECK_OPTIONS.length);
 
   // Hand preview items
-  const handItems = GENRE_SLOT_CONFIG.filter((s) => s.section !== "special").map((s) => {
+  const handItems = GENRE_SLOT_CONFIG.map((s) => {
     const products = productsByGenre[s.genre] || [];
     const genreInfo = getGenreByKey(s.genre);
     if (s.maxSlots > 1 && products.length > 0) {
@@ -247,13 +247,13 @@ export default function DeckPage() {
           className="rounded-2xl px-2.5 pt-2.5 pb-1.5 mb-3 cursor-pointer"
           style={{ background: "rgba(255,255,255,0.7)", border: "1px solid #F5E6EF" }}
         >
-          <div className="grid grid-cols-5 gap-2 justify-items-center">
+          <div className="grid grid-cols-6 gap-x-2 gap-y-2.5 justify-items-center">
             {handItems.map((item, i) => (
               <div key={i} className="flex flex-col items-center gap-1">
                 <div
-                  className="w-14 h-14 rounded-xl flex items-center justify-center overflow-hidden relative"
+                  className="w-[52px] h-[52px] rounded-xl flex items-center justify-center overflow-hidden relative"
                   style={{
-                    fontSize: item.filled && !item.image ? 24 : 16,
+                    fontSize: item.filled && !item.image ? 22 : 16,
                     border: item.filled ? `2px solid ${item.color}` : `1.5px dashed ${item.color}40`,
                     background: item.filled ? `linear-gradient(135deg, ${item.color}20, ${item.color}08)` : `${item.color}06`,
                     opacity: item.filled ? 1 : 0.4,
@@ -261,10 +261,10 @@ export default function DeckPage() {
                   }}
                 >
                   {item.filled && item.image ? (
-                    <Image src={item.image} alt={item.genre} fill className="object-cover" sizes="56px" loading="lazy" />
+                    <Image src={item.image} alt={item.genre} fill className="object-cover" sizes="52px" loading="lazy" />
                   ) : item.filled ? item.icon : "\uFF0B"}
                 </div>
-                <span className="text-[9px] font-semibold whitespace-nowrap" style={{ color: item.filled ? item.color : "#C5C5C5" }}>
+                <span className="text-[10px] font-semibold whitespace-nowrap" style={{ color: item.filled ? item.color : "#C5C5C5" }}>
                   {item.genre}
                 </span>
               </div>
@@ -288,23 +288,6 @@ export default function DeckPage() {
             })}
           </div>
         </div>
-
-        {/* Stats */}
-        {deckProducts.length > 0 && (
-          <div className="grid grid-cols-4 gap-2 mb-5">
-            {[
-              { value: `${coveredCategories}/6`, label: "\u30AB\u30D0\u30FC", color: "#5BBFAD" },
-              { value: `${totalIngredients}`, label: "\u6210\u5206\u6570", color: "#F9A8C0" },
-              { value: `${deckProducts.length}`, label: "\u30A2\u30A4\u30C6\u30E0", color: "#B39DDB" },
-              { value: recommendedCombos.length > 0 ? `${recommendedCombos.length}` : "\u2212", label: "\u597D\u76F8\u6027", color: recommendedCombos.length > 0 ? "#5BBFAD" : "#C5C5C5" },
-            ].map((s) => (
-              <div key={s.label} className="text-center py-3 rounded-2xl bg-white shadow-sm" style={{ border: "1px solid #F5E6EF" }}>
-                <div className="text-lg font-bold" style={{ color: s.color }}>{s.value}</div>
-                <div className="text-[10px]" style={{ color: "#9B9B9B" }}>{s.label}</div>
-              </div>
-            ))}
-          </div>
-        )}
 
         {/* Routine Step Timeline */}
         {deckProducts.length > 0 && (
@@ -352,6 +335,23 @@ export default function DeckPage() {
                 </div>
               );
             })}
+          </div>
+        )}
+
+        {/* Stats */}
+        {deckProducts.length > 0 && (
+          <div className="grid grid-cols-4 gap-2 mb-5">
+            {[
+              { value: `${coveredCategories}/6`, label: "\u30AB\u30D0\u30FC", color: "#5BBFAD" },
+              { value: `${totalIngredients}`, label: "\u6210\u5206\u6570", color: "#F9A8C0" },
+              { value: `${deckProducts.length}`, label: "\u30A2\u30A4\u30C6\u30E0", color: "#B39DDB" },
+              { value: recommendedCombos.length > 0 ? `${recommendedCombos.length}` : "\u2212", label: "\u597D\u76F8\u6027", color: recommendedCombos.length > 0 ? "#5BBFAD" : "#C5C5C5" },
+            ].map((s) => (
+              <div key={s.label} className="text-center py-3 rounded-2xl bg-white shadow-sm" style={{ border: "1px solid #F5E6EF" }}>
+                <div className="text-lg font-bold" style={{ color: s.color }}>{s.value}</div>
+                <div className="text-[10px]" style={{ color: "#9B9B9B" }}>{s.label}</div>
+              </div>
+            ))}
           </div>
         )}
 
