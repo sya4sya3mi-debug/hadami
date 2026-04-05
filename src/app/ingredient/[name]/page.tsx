@@ -3,7 +3,7 @@
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { useState } from "react";
-import { getIngredientById, RARITY, getGenreInfo } from "@/lib/ingredients";
+import { getIngredientById, getGenreInfo } from "@/lib/ingredients";
 import { getCategoryByKey } from "@/lib/categories";
 import { useProductStore } from "@/stores/useProductStore";
 import { useZukanStore } from "@/stores/useZukanStore";
@@ -65,7 +65,6 @@ export default function IngredientDetailPage() {
     );
   }
 
-  const rarityInfo = RARITY[ingredient.rarity];
   const genreInfo = getGenreInfo(ingredient.genre);
   const containingProducts = products.filter((p) =>
     p.ingredients.some((pi) => pi.ingredientId === ingredient.id)
