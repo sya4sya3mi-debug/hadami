@@ -319,16 +319,19 @@ export default function DeckPage() {
           <div className="mb-5">
             {recommendedCombos.length > 0 && (
               <>
-                <h3 className="font-bold text-sm mb-3 flex items-center gap-2" style={{ color: "#2D2D2D" }}>
+                <h3 className="font-bold text-sm mb-1 flex items-center gap-2" style={{ color: "#2D2D2D" }}>
                   <span
                     className="w-5 h-5 rounded-full flex items-center justify-center text-[10px]"
                     style={{ background: "#E8FAF8", color: "#5BBFAD" }}
                   >
                     ✓
                   </span>
-                  おすすめの組み合わせ
+                  あなたのコスメが相乗効果を発揮中！
                   <span className="text-xs font-normal" style={{ color: "#9B9B9B" }}>({recommendedCombos.length}件)</span>
                 </h3>
+                <p className="text-xs mb-3" style={{ color: "#9B9B9B" }}>
+                  今使っている製品の成分同士が、組み合わせることでより高い効果を生み出しています
+                </p>
                 <div className="space-y-2.5 mb-4">
                   {comboWithSources
                     .filter((c) => c.combo.type === "recommended")
@@ -368,10 +371,11 @@ export default function DeckPage() {
         {/* Category list */}
         {deckProducts.length > 0 && (
           <div className="mb-5">
-            <h3 className="font-bold text-sm mb-3 flex items-center gap-2" style={{ color: "#2D2D2D" }}>
+            <h3 className="font-bold text-sm mb-1 flex items-center gap-2" style={{ color: "#2D2D2D" }}>
               <span className="w-1 h-4 rounded-full inline-block" style={{ background: "#5BBFAD" }} />
               カテゴリ別成分
             </h3>
+            <p className="text-xs mb-3" style={{ color: "#9B9B9B" }}>成分をタップすると詳細が確認できます</p>
             <div className="space-y-2">
               {CATEGORIES.map((cat) => {
                 const ings: { id: string; nameJa: string }[] = [];

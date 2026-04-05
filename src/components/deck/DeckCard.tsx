@@ -2,6 +2,7 @@ import Image from "next/image";
 import { Product } from "@/types";
 import { getIngredientById } from "@/lib/ingredients";
 import { getCategoryByKey } from "@/lib/categories";
+import { getGenreByKey } from "@/lib/productGenres";
 
 interface DeckCardProps {
   product: Product;
@@ -44,8 +45,21 @@ export default function DeckCard({ product, onRemove }: DeckCardProps) {
       )}
 
       <div className="flex-1 min-w-0">
-        <div className="text-sm font-bold truncate" style={{ color: "#2D2D2D" }}>
-          {product.name}
+        <div className="flex items-center gap-1.5 flex-wrap">
+          <div className="text-sm font-bold truncate" style={{ color: "#2D2D2D" }}>
+            {product.name}
+          </div>
+          {(() => {
+            const genre = getGenreByKey(product.productType || "other");
+            return genre ? (
+              <span
+                className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full shrink-0"
+                style={{ background: `${genre.color}18`, color: genre.color, fontSize: "10px" }}
+              >
+                {genre.icon} {genre.label}
+              </span>
+            ) : null;
+          })()}
         </div>
         <div className="text-xs mt-0.5" style={{ color: "#9B9B9B" }}>
           {product.brand}
