@@ -200,6 +200,7 @@ export default function DeckPage() {
         genre: genreInfo?.label || "",
         image: p.packageImage || null,
         section: s.section,
+        stepLabel: s.stepLabel,
       }));
     }
     return [{
@@ -209,6 +210,7 @@ export default function DeckPage() {
       genre: genreInfo?.label || "",
       image: products[0]?.packageImage || null,
       section: s.section,
+      stepLabel: s.stepLabel,
     }];
   }).flat();
 
@@ -275,6 +277,18 @@ export default function DeckPage() {
                   {item.filled && item.image ? (
                     <Image src={item.image} alt={item.genre} fill className="object-cover" sizes="64px" loading="lazy" />
                   ) : item.filled ? item.icon : "\uFF0B"}
+                  <div
+                    className="absolute top-1 left-1 w-4 h-4 rounded-full flex items-center justify-center"
+                    style={{
+                      background: item.filled ? item.color : "#D0D0D0",
+                      fontSize: "8px",
+                      fontWeight: 800,
+                      color: "#fff",
+                      opacity: item.filled ? 1 : 0.6,
+                    }}
+                  >
+                    {item.stepLabel}
+                  </div>
                 </div>
                 <span className="text-[10px] font-semibold whitespace-nowrap" style={{ color: item.filled ? item.color : "#C5C5C5" }}>
                   {item.genre}
