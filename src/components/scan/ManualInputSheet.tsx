@@ -106,8 +106,9 @@ export default function ManualInputSheet({ open, onClose, onSubmit }: ManualInpu
       title="成分を入力"
       subtitle="スキャン回数を消費しません"
       footer={footer}
+      maxHeight="100dvh"
     >
-      <div className="space-y-3 pt-2">
+      <div className="flex min-h-full flex-col gap-3 pt-2 pb-2">
         {/* カメラ撮影 */}
         <button
           onClick={() => cameraInputRef.current?.click()}
@@ -150,8 +151,8 @@ export default function ManualInputSheet({ open, onClose, onSubmit }: ManualInpu
           value={ingredientText}
           onChange={(e) => setIngredientText(e.target.value)}
           placeholder="成分をここにペースト&#10;例: 水、グリセリン、BG、ナイアシンアミド..."
-          rows={5}
-          className="w-full rounded-xl p-3 text-sm outline-none resize-none"
+          rows={10}
+          className="w-full flex-1 min-h-[34dvh] rounded-xl p-3 text-sm outline-none resize-y"
           style={{
             background: "#FAFAFA",
             border: "1.5px solid #F2F2F2",
