@@ -25,10 +25,10 @@ import { RoutineType, CategoryKey, Product, ProductGenre, RecommendationResult }
 
 // ── デッキ定義 ──
 const DECK_OPTIONS: { key: RoutineType; label: string; icon: string; gradient: string }[] = [
-  { key: "ss_morning", label: "\u6625\u590F\u30FB\u671D\u30C7\u30C3\u30AD", icon: "\uD83C\uDF38\u2600\uFE0F", gradient: "linear-gradient(135deg, #FFD580, #FFBE5C)" },
-  { key: "ss_night",   label: "\u6625\u590F\u30FB\u591C\u30C7\u30C3\u30AD", icon: "\uD83C\uDF38\uD83C\uDF19", gradient: "linear-gradient(135deg, #7B9FD4, #5B7BC4)" },
-  { key: "aw_morning", label: "\u79CB\u51AC\u30FB\u671D\u30C7\u30C3\u30AD", icon: "\uD83C\uDF42\u2600\uFE0F", gradient: "linear-gradient(135deg, #FFAB76, #E07B39)" },
-  { key: "aw_night",   label: "\u79CB\u51AC\u30FB\u591C\u30C7\u30C3\u30AD", icon: "\uD83C\uDF42\uD83C\uDF19", gradient: "linear-gradient(135deg, #9575CD, #7E57C2)" },
+  { key: "morning",        label: "\u671D\u30C7\u30C3\u30AD",         icon: "\u2600\uFE0F",                   gradient: "linear-gradient(135deg, #FFD580, #FFBE5C)" },
+  { key: "night",          label: "\u591C\u30C7\u30C3\u30AD",         icon: "\uD83C\uDF19",                   gradient: "linear-gradient(135deg, #7B9FD4, #5B7BC4)" },
+  { key: "spring_summer",  label: "\u6625\u590F\u30C7\u30C3\u30AD",   icon: "\uD83C\uDF38",                   gradient: "linear-gradient(135deg, #F9A8C0, #F06292)" },
+  { key: "autumn_winter",  label: "\u79CB\u51AC\u30C7\u30C3\u30AD",   icon: "\uD83C\uDF42",                   gradient: "linear-gradient(135deg, #FFAB76, #E07B39)" },
 ];
 
 export default function DeckPage() {
@@ -474,23 +474,23 @@ export default function DeckPage() {
               </div>
             </div>
 
+            {/* Auto recommend */}
+            {allProducts.length >= 2 && (
+              <button
+                onClick={handleAutoRecommend}
+                className="w-full py-3.5 rounded-2xl border-none text-sm font-bold text-white cursor-pointer mb-4"
+                style={{ background: "linear-gradient(135deg, #F9A8C0, #5BBFAD)", boxShadow: "0 2px 8px rgba(249,168,192,0.2)" }}
+              >
+                おすすめ自動選択
+              </button>
+            )}
+
             {/* Deck Tray */}
             <DeckTray
               productsByGenre={productsByGenre}
               onAddSlot={(genre) => openPicker(genre)}
               onRemoveProduct={(id) => { void handleRemoveItem(id); }}
             />
-
-            {/* Auto recommend */}
-            {allProducts.length >= 2 && (
-              <button
-                onClick={handleAutoRecommend}
-                className="w-full py-3.5 rounded-2xl border-none text-sm font-bold text-white cursor-pointer mt-2"
-                style={{ background: "linear-gradient(135deg, #F9A8C0, #5BBFAD)", boxShadow: "0 2px 8px rgba(249,168,192,0.2)" }}
-              >
-                おすすめ自動選択
-              </button>
-            )}
           </div>
         </div>
       )}

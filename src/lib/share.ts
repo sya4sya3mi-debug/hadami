@@ -30,10 +30,6 @@ export function shareDeck(
     night: "🌙夜",
     spring_summer: "🌸春夏",
     autumn_winter: "🍂秋冬",
-    ss_morning: "🌸☀️春夏・朝",
-    ss_night: "🌸🌙春夏・夜",
-    aw_morning: "🍂☀️秋冬・朝",
-    aw_night: "🍂🌙秋冬・夜",
   };
   const routineLabel = ROUTINE_LABEL[routine];
   const lines = products.map((p) => `${p.emoji} ${p.name}`).join("\n");

@@ -85,8 +85,7 @@ export interface ProductIngredient {
 }
 
 // ── デッキ ──
-export type RoutineType = "morning" | "night" | "spring_summer" | "autumn_winter"
-  | "ss_morning" | "ss_night" | "aw_morning" | "aw_night";
+export type RoutineType = "morning" | "night" | "spring_summer" | "autumn_winter";
 
 export interface DeckItem {
   productId: string;
