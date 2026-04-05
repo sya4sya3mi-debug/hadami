@@ -100,8 +100,8 @@ function ScanPageInner() {
     router.replace("/scan", { scroll: false });
   }, [searchParams, getProduct, router]);
 
-  // 未保存時の離脱アラート
-  const isUnsaved = step === 4 && !saved;
+  // 未保存時の離脱アラート（ステップ2以降〜保存完了まで）
+  const isUnsaved = step >= 2 && !saved;
   useEffect(() => {
     setUnsavedScan(isUnsaved);
     if (!isUnsaved) return;
@@ -407,7 +407,7 @@ function ScanPageInner() {
   }, [user, supabase, addProduct, productName, brand, productType, packageImage, packageImageColor, foundIngredients, unknownIngredients, userLimit, saved, setRecentlyFound, router]);
 
   const handleReset = useCallback(() => {
-    if (step === 4 && !saved) {
+    if (step >= 2 && !saved) {
       if (!window.confirm("スキャン結果がまだ保存されていません。破棄しますか？")) return;
     }
     setStep(1);

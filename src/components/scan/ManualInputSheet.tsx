@@ -153,7 +153,7 @@ export default function ManualInputSheet({ open, onClose, onSubmit }: ManualInpu
           onChange={(e) => setIngredientText(e.target.value)}
           placeholder="成分をここにペースト&#10;例: 水、グリセリン、BG、ナイアシンアミド..."
           rows={10}
-          className="w-full flex-1 min-h-[34dvh] rounded-xl p-3 text-sm outline-none resize-y"
+          className="w-full flex-1 min-h-[18dvh] rounded-xl p-3 text-sm outline-none resize-y"
           style={{
             background: "#FAFAFA",
             border: "1.5px solid #F2F2F2",
