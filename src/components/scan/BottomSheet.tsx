@@ -82,7 +82,7 @@ export default function BottomSheet({
             touchAction: "pan-y",
             WebkitOverflowScrolling: "touch",
             overscrollBehavior: "contain",
-            paddingBottom: footer ? "12px" : "calc(32px + env(safe-area-inset-bottom))",
+            paddingBottom: footer ? "12px" : "calc(80px + env(safe-area-inset-bottom))",
           }}
         >
           {children}
