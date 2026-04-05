@@ -226,9 +226,9 @@ export function getUserLimit() {
   return USER_LIMIT;
 }
 
-/** アカウント累計スキャン上限（デバッグ用: 1回） */
+/** アカウント累計スキャン上限 */
 export function getAccountScanLimit() {
-  return 1;
+  return 3;
 }
 
 /** @deprecated 後方互換のため残す */
