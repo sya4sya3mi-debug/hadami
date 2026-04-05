@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { useZukanStore, ZukanFilter } from "@/stores/useZukanStore";
 import { useProductStore } from "@/stores/useProductStore";
-import { MASTER_INGREDIENTS, INGREDIENT_GENRES } from "@/lib/ingredients";
+import { MASTER_INGREDIENTS, INGREDIENT_GENRES, GENRE_DESCRIPTIONS } from "@/lib/ingredients";
 import { IngredientGenre } from "@/types";
 import { shareZukanProgress } from "@/lib/share";
 import ZukanProgress from "@/components/zukan/ZukanProgress";
@@ -133,6 +133,35 @@ export default function ZukanPage() {
             </button>
           ))}
         </div>
+
+        {/* Genre description card */}
+        {genreFilter !== "all" && (() => {
+          const g = INGREDIENT_GENRES.find(gi => gi.key === genreFilter);
+          const desc = GENRE_DESCRIPTIONS[genreFilter];
+          if (!g || !desc) return null;
+          const totalInGenre = MASTER_INGREDIENTS.filter(i => i.genre === genreFilter).length;
+          const discoveredInGenre = MASTER_INGREDIENTS.filter(i => i.genre === genreFilter && discoveredIds.includes(i.id)).length;
+          return (
+            <div
+              className="rounded-2xl p-4 mb-4"
+              style={{ background: `${g.color}10`, border: `1px solid ${g.color}25` }}
+            >
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-xl">{g.icon}</span>
+                <span className="text-sm font-bold" style={{ color: g.color }}>{g.label}</span>
+                <span className="text-xs" style={{ color: "#9B9B9B" }}>
+                  {discoveredInGenre}/{totalInGenre}種 発見済み
+                </span>
+              </div>
+              <p className="text-xs font-medium mb-1.5" style={{ color: "#2D2D2D" }}>
+                {desc.summary}
+              </p>
+              <p className="text-xs leading-relaxed" style={{ color: "#6B6B6B" }}>
+                {desc.detail}
+              </p>
+            </div>
+          );
+        })()}
 
         {/* Grid */}
         <div className="grid grid-cols-3 gap-2.5 mb-6">
