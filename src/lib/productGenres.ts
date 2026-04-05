@@ -27,6 +27,41 @@ export function getGenreByKey(key: string): ProductGenreInfo | undefined {
   return PRODUCT_GENRES.find((g) => g.key === key);
 }
 
+// ── ジャンル別スロット設計 ──
+
+export interface GenreSlotConfig {
+  genre: ProductGenre;
+  maxSlots: number;
+  section: "base" | "intensive" | "protection" | "special";
+  stepLabel: string;
+}
+
+export const GENRE_SLOT_CONFIG: readonly GenreSlotConfig[] = [
+  { genre: "cleansing",  maxSlots: 1, section: "base",       stepLabel: "1" },
+  { genre: "face_wash",  maxSlots: 1, section: "base",       stepLabel: "2" },
+  { genre: "toner",      maxSlots: 1, section: "base",       stepLabel: "3" },
+  { genre: "serum",      maxSlots: 3, section: "intensive",  stepLabel: "4" },
+  { genre: "emulsion",   maxSlots: 1, section: "protection", stepLabel: "5" },
+  { genre: "cream",      maxSlots: 1, section: "protection", stepLabel: "6" },
+  { genre: "sunscreen",  maxSlots: 1, section: "protection", stepLabel: "7" },
+  { genre: "mask_pack",  maxSlots: 2, section: "special",    stepLabel: "S" },
+  { genre: "eye_care",   maxSlots: 2, section: "special",    stepLabel: "S" },
+  { genre: "oil",        maxSlots: 2, section: "special",    stepLabel: "S" },
+  { genre: "mist",       maxSlots: 1, section: "special",    stepLabel: "S" },
+  { genre: "other",      maxSlots: 2, section: "special",    stepLabel: "S" },
+] as const;
+
+export const SECTION_INFO: Record<string, { label: string; step: string }> = {
+  base:       { label: "\u30D9\u30FC\u30B9\u30B1\u30A2",     step: "STEP 1-3" },
+  intensive:  { label: "\u96C6\u4E2D\u30B1\u30A2",       step: "STEP 4" },
+  protection: { label: "\u4FDD\u8B77\u30B1\u30A2",       step: "STEP 5-7" },
+  special:    { label: "\u30B9\u30DA\u30B7\u30E3\u30EB\u30B1\u30A2", step: "SPECIAL" },
+};
+
+export function getSlotConfig(genre: ProductGenre): GenreSlotConfig | undefined {
+  return GENRE_SLOT_CONFIG.find((c) => c.genre === genre);
+}
+
 const SCAN_TYPE_MAP: Record<string, ProductGenre> = {
   "クレンジング": "cleansing",
   "メイク落とし": "cleansing",

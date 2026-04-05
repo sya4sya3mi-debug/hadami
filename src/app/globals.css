@@ -194,6 +194,19 @@ html.scroll-locked #app-container {
   width: 100% !important;
 }
 
+/* Deck card enter animation */
+@keyframes deck-card-enter {
+  from { opacity: 0; transform: scale(1.05); }
+  to { opacity: 1; transform: scale(1); }
+}
+.deck-card-enter { animation: deck-card-enter 0.2s ease-out; }
+
+@keyframes deck-editor-up {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+.animate-deck-editor-up { animation: deck-editor-up 0.3s ease-out; }
+
 /* Hide scrollbar for genre chips */
 .hide-scrollbar::-webkit-scrollbar { display: none; }
 .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }

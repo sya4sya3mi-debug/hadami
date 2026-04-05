@@ -74,6 +74,7 @@ export interface Product {
   brand: string;
   productType: ProductGenre;
   packageImage?: string;
+  isFavorite: boolean;
   createdAt: string;
   ingredients: ProductIngredient[];
 }
@@ -84,7 +85,8 @@ export interface ProductIngredient {
 }
 
 // ── デッキ ──
-export type RoutineType = "morning" | "night" | "spring_summer" | "autumn_winter";
+export type RoutineType = "morning" | "night" | "spring_summer" | "autumn_winter"
+  | "ss_morning" | "ss_night" | "aw_morning" | "aw_night";
 
 export interface DeckItem {
   productId: string;

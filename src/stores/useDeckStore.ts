@@ -2,7 +2,8 @@
 
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { DeckItem, RoutineType } from "@/types";
+import { DeckItem, RoutineType, ProductGenre } from "@/types";
+import { getSlotConfig } from "@/lib/productGenres";
 
 interface DeckState {
   items: DeckItem[];
@@ -12,6 +13,15 @@ interface DeckState {
   reorder: (routine: RoutineType, productIds: string[]) => void;
   replaceAll: (items: DeckItem[]) => void;
   clearAll: () => void;
+  /** ジャンル制限付き追加。genre指定でスロット上限をチェック */
+  addItemWithGenre: (
+    productId: string,
+    routine: RoutineType,
+    genre: ProductGenre,
+    getProductGenre: (id: string) => ProductGenre | undefined
+  ) => boolean;
+  /** スロット内の製品を入れ替え */
+  swapItem: (oldProductId: string, newProductId: string, routine: RoutineType) => void;
 }
 
 export const useDeckStore = create<DeckState>()(
@@ -32,6 +42,30 @@ export const useDeckStore = create<DeckState>()(
             ],
           };
         }),
+      addItemWithGenre: (productId, routine, genre, getProductGenre) => {
+        const state = get();
+        const exists = state.items.find(
+          (i) => i.productId === productId && i.routine === routine
+        );
+        if (exists) return false;
+
+        const config = getSlotConfig(genre);
+        if (config) {
+          const genreCount = state.items.filter(
+            (i) => i.routine === routine && getProductGenre(i.productId) === genre
+          ).length;
+          if (genreCount >= config.maxSlots) return false;
+        }
+
+        const routineItems = state.items.filter((i) => i.routine === routine);
+        set({
+          items: [
+            ...state.items,
+            { productId, routine, orderIndex: routineItems.length },
+          ],
+        });
+        return true;
+      },
       removeItem: (productId, routine) =>
         set((state) => {
           const remainingItems = state.items.filter(
@@ -59,6 +93,15 @@ export const useDeckStore = create<DeckState>()(
             if (item.routine !== routine) return item;
             const newIndex = productIds.indexOf(item.productId);
             return newIndex >= 0 ? { ...item, orderIndex: newIndex } : item;
+          }),
+        })),
+      swapItem: (oldProductId, newProductId, routine) =>
+        set((state) => ({
+          items: state.items.map((item) => {
+            if (item.productId === oldProductId && item.routine === routine) {
+              return { ...item, productId: newProductId };
+            }
+            return item;
           }),
         })),
       replaceAll: (items) => set({ items }),
