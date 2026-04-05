@@ -247,13 +247,13 @@ export default function DeckPage() {
           className="rounded-2xl px-2.5 pt-2.5 pb-1.5 mb-3 cursor-pointer"
           style={{ background: "rgba(255,255,255,0.7)", border: "1px solid #F5E6EF" }}
         >
-          <div className="flex justify-center gap-1.5">
+          <div className="grid grid-cols-5 gap-2 justify-items-center">
             {handItems.map((item, i) => (
-              <div key={i} className="flex flex-col items-center gap-1" style={{ minWidth: 40 }}>
+              <div key={i} className="flex flex-col items-center gap-1">
                 <div
-                  className="w-12 h-12 rounded-xl flex items-center justify-center overflow-hidden relative"
+                  className="w-14 h-14 rounded-xl flex items-center justify-center overflow-hidden relative"
                   style={{
-                    fontSize: item.filled && !item.image ? 20 : 14,
+                    fontSize: item.filled && !item.image ? 24 : 16,
                     border: item.filled ? `2px solid ${item.color}` : `1.5px dashed ${item.color}40`,
                     background: item.filled ? `linear-gradient(135deg, ${item.color}20, ${item.color}08)` : `${item.color}06`,
                     opacity: item.filled ? 1 : 0.4,
@@ -261,10 +261,10 @@ export default function DeckPage() {
                   }}
                 >
                   {item.filled && item.image ? (
-                    <Image src={item.image} alt={item.genre} fill className="object-cover" sizes="48px" loading="lazy" />
+                    <Image src={item.image} alt={item.genre} fill className="object-cover" sizes="56px" loading="lazy" />
                   ) : item.filled ? item.icon : "\uFF0B"}
                 </div>
-                <span className="text-[8px] font-semibold whitespace-nowrap" style={{ color: item.filled ? item.color : "#C5C5C5" }}>
+                <span className="text-[9px] font-semibold whitespace-nowrap" style={{ color: item.filled ? item.color : "#C5C5C5" }}>
                   {item.genre}
                 </span>
               </div>
