@@ -107,6 +107,7 @@ export default function ManualInputSheet({ open, onClose, onSubmit }: ManualInpu
       subtitle="スキャン回数を消費しません"
       footer={footer}
       maxHeight="100dvh"
+      height="100dvh"
     >
       <div className="flex min-h-full flex-col gap-3 pt-2 pb-2">
         {/* カメラ撮影 */}

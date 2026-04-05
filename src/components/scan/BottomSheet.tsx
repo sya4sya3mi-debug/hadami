@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useCallback, useRef } from "react";
+import { useScrollLock } from "@/lib/useScrollLock";
 
 interface BottomSheetProps {
   open: boolean;
@@ -9,12 +10,21 @@ interface BottomSheetProps {
   footer?: React.ReactNode;
   title?: string;
   subtitle?: string;
+  maxHeight?: string;
+  height?: string;
 }
 
-export default function BottomSheet({ open, onClose, children, footer, title, subtitle }: BottomSheetProps) {
-  const overlayRef = useRef<HTMLDivElement>(null);
+export default function BottomSheet({
+  open,
+  onClose,
+  children,
+  footer,
+  title,
+  subtitle,
+  maxHeight = "calc(100dvh - 2rem)",
+  height,
+}: BottomSheetProps) {
   const contentRef = useRef<HTMLDivElement>(null);
-  const startYRef = useRef(0);
 
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
@@ -23,80 +33,22 @@ export default function BottomSheet({ open, onClose, children, footer, title, su
     [onClose]
   );
 
+  useScrollLock(open, contentRef);
+
   useEffect(() => {
     if (!open) return;
 
     document.addEventListener("keydown", handleKeyDown);
 
-    const container = document.getElementById("app-container");
-    const nextDiv = document.getElementById("__next");
-    const scrollY = window.scrollY;
-    const topValue = `-${scrollY}px`;
-
-    document.body.style.top = topValue;
-    if (nextDiv) nextDiv.style.top = topValue;
-    if (container) container.style.top = topValue;
-    document.documentElement.classList.add("scroll-locked");
-
-    const overlay = overlayRef.current;
-    const content = contentRef.current;
-
-    // Track touch start position
-    const handleTouchStart = (e: TouchEvent) => {
-      startYRef.current = e.touches[0].clientY;
-    };
-
-    const handleTouchMove = (e: TouchEvent) => {
-      // If touch is inside scrollable content, allow scroll only within bounds
-      if (content && content.contains(e.target as Node)) {
-        const scrollTop = content.scrollTop;
-        const scrollHeight = content.scrollHeight;
-        const clientHeight = content.clientHeight;
-        const touchY = e.touches[0].clientY;
-        const deltaY = startYRef.current - touchY;
-
-        // At top and scrolling up -> block
-        if (scrollTop <= 0 && deltaY < 0) {
-          e.preventDefault();
-          return;
-        }
-        // At bottom and scrolling down -> block
-        if (scrollTop + clientHeight >= scrollHeight && deltaY > 0) {
-          e.preventDefault();
-          return;
-        }
-        // Otherwise allow scroll within content
-        return;
-      }
-      // Everything outside content -> block
-      e.preventDefault();
-    };
-
-    if (overlay) {
-      overlay.addEventListener("touchstart", handleTouchStart, { passive: true });
-      overlay.addEventListener("touchmove", handleTouchMove, { passive: false });
-    }
-
     return () => {
       document.removeEventListener("keydown", handleKeyDown);
-      if (overlay) {
-        overlay.removeEventListener("touchstart", handleTouchStart);
-        overlay.removeEventListener("touchmove", handleTouchMove);
-      }
-      document.documentElement.classList.remove("scroll-locked");
-      document.body.style.top = "";
-      if (nextDiv) nextDiv.style.top = "";
-      if (container) {
-        container.style.top = "";
-      }
-      window.scrollTo(0, scrollY);
     };
   }, [open, handleKeyDown]);
 
   if (!open) return null;
 
   return (
-    <div ref={overlayRef} className="fixed inset-0 z-50" style={{ touchAction: "none" }}>
+    <div className="fixed inset-0 z-50" style={{ touchAction: "none" }}>
       {/* Backdrop */}
       <div
         className="absolute inset-0 bg-black/50 animate-fade-in"
@@ -105,7 +57,7 @@ export default function BottomSheet({ open, onClose, children, footer, title, su
       {/* Sheet */}
       <div
         className="absolute bottom-0 left-0 right-0 bg-white rounded-t-3xl animate-slide-up flex flex-col"
-        style={{ maxHeight: "calc(100dvh - 2rem)" }}
+        style={{ maxHeight, height }}
       >
         {/* Drag handle + header */}
         <div className="shrink-0 px-6 pt-3 pb-4" style={{ borderBottom: title ? "1px solid #F5F5F5" : undefined }}>
