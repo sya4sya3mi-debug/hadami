@@ -20,7 +20,7 @@ const features = [
     bg: "linear-gradient(135deg, #FFF0F5, #F9C8D8)",
   },
   {
-    emoji: "🃏",
+    emoji: "🎴",
     title: "マイスキンケアデッキ",
     description: "朝・夜のスキンケアルーティンをデッキで管理。保湿・美白・バリアなど6カテゴリのカバー率をレーダーチャートで可視化。成分の相性チェックやAIおすすめ自動選択で、自分だけのベストな組み合わせを見つけよう。",
     color: "#7C6AEF",

@@ -207,7 +207,7 @@ export default function DeckPage() {
     <div className="min-h-screen" style={{ background: "linear-gradient(160deg, #F0FDFA 0%, #FFF0F5 100%)" }}>
       <div className="px-5 pt-8 pb-6">
         <div className="flex items-center justify-between mb-5">
-          <h1 className="font-bold text-lg" style={{ color: "#2D2D2D" }}>🃏 マイスキンケアデッキ</h1>
+          <h1 className="font-bold text-lg" style={{ color: "#2D2D2D" }}>🎴 マイスキンケアデッキ</h1>
           <button
             onClick={() => setShowShare(true)}
             className="px-3 py-1.5 rounded-full text-sm font-medium"
