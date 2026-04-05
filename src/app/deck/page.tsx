@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useDeckStore } from "@/stores/useDeckStore";
@@ -35,6 +35,7 @@ export default function DeckPage() {
   const [showPicker, setShowPicker] = useState(false);
   const [pickerGenreFilter, setPickerGenreFilter] = useState<ProductGenre | null>(null);
   const [showShare, setShowShare] = useState(false);
+  const captureRef = useRef<HTMLDivElement>(null);
   const [showAutoRecommend, setShowAutoRecommend] = useState(false);
   const [autoResult, setAutoResult] = useState<RecommendationResult | null>(null);
   const [pickerFilter, setPickerFilter] = useState("\u3059\u3079\u3066");
@@ -170,6 +171,7 @@ export default function DeckPage() {
     totalIngredients
   );
 
+
   // Picker products
   const availableProducts = allProducts.filter(
     (p) => !deckItems.some((item) => item.productId === p.id)
@@ -227,11 +229,14 @@ export default function DeckPage() {
           <button
             onClick={() => setShowShare(true)}
             className="px-3 py-1.5 rounded-full text-xs font-semibold border-none"
-            style={{ background: "linear-gradient(135deg, #F9A8C0, #5BBFAD)", color: "#fff" }}
+            style={{ background: "#5BBFAD", color: "#fff" }}
           >
-            共有
+            Xに投稿
           </button>
         </div>
+
+        {/* Capture area for share (Switcher + Hand + Bar + Stats only) */}
+        <div ref={captureRef} style={{ background: "linear-gradient(160deg, #F0FDFA 0%, #FFF0F5 100%)", borderRadius: 20, padding: "12px 8px 8px" }}>
 
         {/* Deck Switcher */}
         <div
@@ -295,6 +300,8 @@ export default function DeckPage() {
             })}
           </div>
         </div>
+
+        </div>{/* end captureRef */}
 
         {/* Routine Step Timeline */}
         {deckProducts.length > 0 && (
@@ -578,7 +585,7 @@ export default function DeckPage() {
         </div>
       </BottomSheet>
 
-      {showShare && <ShareModal text={shareText} onClose={() => setShowShare(false)} />}
+      {showShare && <ShareModal text={shareText} onClose={() => setShowShare(false)} captureRef={captureRef} />}
       {showAutoRecommend && autoResult && (
         <AutoRecommendModal
           result={autoResult}

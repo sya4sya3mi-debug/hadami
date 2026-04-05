@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import Link from "next/link";
 import { useZukanStore, ZukanFilter } from "@/stores/useZukanStore";
 import { useProductStore } from "@/stores/useProductStore";
@@ -17,6 +17,7 @@ import AuthGuard from "@/components/ui/AuthGuard";
 
 export default function ZukanPage() {
   const { loading } = useUser();
+  const captureRef = useRef<HTMLDivElement>(null);
   const discoveredIds = useZukanStore((s) => s.discoveredIds);
   const filter = useZukanStore((s) => s.filter);
   const setFilter = useZukanStore((s) => s.setFilter);
@@ -72,13 +73,15 @@ export default function ZukanPage() {
           <button
             onClick={() => setShowShare(true)}
             className="px-3 py-1.5 rounded-full text-sm font-medium"
-            style={{ background: "linear-gradient(135deg, #F9A8C0, #5BBFAD)", color: "#fff" }}
+            style={{ background: "#5BBFAD", color: "#fff" }}
           >
-            共有
+            Xに投稿
           </button>
         </div>
 
-        <ZukanProgress discoveredIds={discoveredIds} />
+        <div ref={captureRef}>
+          <ZukanProgress discoveredIds={discoveredIds} />
+        </div>
 
         {/* Filter */}
         <div className="flex gap-2 mb-5">
@@ -186,7 +189,7 @@ export default function ZukanPage() {
       </div>
 
       {showShare && (
-        <ShareModal text={shareText} onClose={() => setShowShare(false)} />
+        <ShareModal text={shareText} onClose={() => setShowShare(false)} captureRef={captureRef} />
       )}
     </div>
     </AuthGuard>
