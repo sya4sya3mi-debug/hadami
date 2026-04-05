@@ -1,10 +1,10 @@
 import { Ingredient, RarityKey, RarityInfo } from "@/types";
 
 export const RARITY: Record<RarityKey, RarityInfo> = {
-  common:    { label: "コモン",       star: 1, color: "#9CA3AF", icon: "🫧" },
-  uncommon:  { label: "アンコモン",   star: 2, color: "#2D9CDB", icon: "🧪" },
-  rare:      { label: "レア",         star: 3, color: "#7C6AE8", icon: "🔮" },
-  legendary: { label: "レジェンダリー", star: 4, color: "#F59E0B", icon: "💎" },
+  common:    { label: "コモン",       star: 1, color: "#9CA3AF", icon: "🌱" },
+  uncommon:  { label: "アンコモン",   star: 2, color: "#4CAF50", icon: "🌿" },
+  rare:      { label: "レア",         star: 3, color: "#E91E8C", icon: "🌸" },
+  legendary: { label: "レジェンダリー", star: 4, color: "#F59E0B", icon: "✨" },
 };
 
 export const MASTER_INGREDIENTS: Ingredient[] = [
