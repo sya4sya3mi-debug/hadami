@@ -61,7 +61,7 @@ async function searchIngredients(product: string, brand: string, lang: string) {
   }
 
   const searchMsg = await client.messages.create({
-    model: "claude-sonnet-4-6",
+    model: "claude-haiku-4-5-20251001",
     max_tokens: 4096,
     tools: [
       {
@@ -100,6 +100,13 @@ INGREDIENTS:
       },
     ],
   });
+
+  // web_search エラーチェック
+  const searchErrors = searchMsg.content.filter((b) => b.type === "web_search_tool_result" && (b as Record<string, unknown>).content && typeof (b as Record<string, unknown>).content === "object" && ((b as Record<string, unknown>).content as Record<string, unknown>)?.type === "web_search_tool_result_error");
+  if (searchErrors.length > 0) {
+    console.error("[web_search] error blocks:", JSON.stringify(searchErrors));
+  }
+  console.log("[web_search] stop_reason:", searchMsg.stop_reason, "content types:", searchMsg.content.map((b) => b.type).join(","));
 
   const allTextBlocks = searchMsg.content.filter((b) => b.type === "text");
   const allText = allTextBlocks.map((b) => (b as { type: "text"; text: string }).text).join("\n");
@@ -274,7 +281,11 @@ TYPE2: [製品タイプ]
     });
   } catch (error) {
     await rollbackScan(auth.supabase, auth.user.id, auth.user.email!);
-    console.error("Scan product error:", error);
+    if (error instanceof Error) {
+      console.error("Scan product error:", error.message, error.stack);
+    } else {
+      console.error("Scan product error (unknown):", JSON.stringify(error));
+    }
     return NextResponse.json(
       { error: "Failed to identify product" },
       { status: 500 }
