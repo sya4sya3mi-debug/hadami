@@ -1,7 +1,7 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 import { getSignedImageUrl } from "./storage";
 
-const USER_LIMIT = 20;
+const USER_LIMIT = 30;
 
 /**
  * 画像のデコードサイズ上限 (5MB)。
