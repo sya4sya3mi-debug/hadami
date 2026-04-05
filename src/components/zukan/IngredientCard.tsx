@@ -31,18 +31,18 @@ export default function IngredientCard({ ingredient, discovered, index, isRecent
     <div
       className={`rounded-2xl p-3 flex flex-col items-center justify-center aspect-square relative${isRecent ? " animate-recent-glow" : ""}`}
       style={{
-        background: `linear-gradient(145deg, ${ingredient.color}18, ${ingredient.color}08)`,
-        border: isRecent ? `2px solid ${ingredient.color}` : `1px solid ${ingredient.color}25`,
-        boxShadow: isRecent ? `0 0 12px ${ingredient.color}40` : undefined,
+        background: `linear-gradient(145deg, ${rarityInfo.color}18, ${rarityInfo.color}08)`,
+        border: isRecent ? `2px solid ${rarityInfo.color}` : `1px solid ${rarityInfo.color}25`,
+        boxShadow: isRecent ? `0 0 12px ${rarityInfo.color}40` : undefined,
       }}
     >
-      <span className="text-[9px] font-medium absolute top-1.5 left-2" style={{ color: ingredient.color + "99" }}>
+      <span className="text-[9px] font-medium absolute top-1.5 left-2" style={{ color: rarityInfo.color + "99" }}>
         No.{index}
       </span>
       {foundCount > 0 && (
         <span
           className="absolute top-1.5 right-2 text-[9px] font-bold px-1.5 py-0.5 rounded-full"
-          style={{ background: ingredient.color + "20", color: ingredient.color }}
+          style={{ background: rarityInfo.color + "20", color: rarityInfo.color }}
         >
           ×{foundCount}
         </span>
