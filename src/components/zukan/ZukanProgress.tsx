@@ -1,5 +1,6 @@
 import { RARITY, MASTER_INGREDIENTS } from "@/lib/ingredients";
 import { RarityKey } from "@/types";
+import { StarIcon } from "@/components/ui/Badge";
 
 interface ZukanProgressProps {
   discoveredIds: string[];
@@ -39,7 +40,11 @@ export default function ZukanProgress({ discoveredIds }: ZukanProgressProps) {
             className="text-center py-2 rounded-xl"
             style={{ background: r.color + "15" }}
           >
-            <span className="text-lg">{r.icon}</span>
+            <span className="inline-flex items-center justify-center gap-px">
+              {Array.from({ length: r.star }).map((_, i) => (
+                <StarIcon key={i} color={r.color} size={12} />
+              ))}
+            </span>
             <div className="text-xs font-bold mt-0.5" style={{ color: r.color }}>
               {r.found}/{r.total}
             </div>

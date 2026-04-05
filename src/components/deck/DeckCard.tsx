@@ -3,6 +3,7 @@ import { Product } from "@/types";
 import { getIngredientById } from "@/lib/ingredients";
 import { getCategoryByKey } from "@/lib/categories";
 import { getGenreByKey } from "@/lib/productGenres";
+import { StarIcon } from "@/components/ui/Badge";
 
 interface DeckCardProps {
   product: Product;
@@ -37,10 +38,10 @@ export default function DeckCard({ product, onRemove }: DeckCardProps) {
         </div>
       ) : (
         <div
-          className="w-11 h-11 rounded-xl flex items-center justify-center text-xl shrink-0"
+          className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0"
           style={{ background: "linear-gradient(135deg, #E8FAF8, #FFF0F5)" }}
         >
-          📦
+          <StarIcon color="#5BBFAD" size={22} />
         </div>
       )}
 

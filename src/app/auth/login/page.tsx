@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
 import { Suspense } from "react";
@@ -116,8 +117,8 @@ function LoginPageInner() {
       )}
 
       {/* ロゴ */}
-      <div style={{ marginBottom: "32px", textAlign: "center" }}>
-        <div style={{ fontSize: "36px", marginBottom: "8px" }}>🌿</div>
+      <div style={{ marginBottom: "32px", textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center" }}>
+        <Image src="/hadami-logo.png" alt="HADAMI" width={64} height={64} style={{ borderRadius: "16px", marginBottom: "8px" }} />
         <h1 style={{ fontSize: "28px", fontWeight: "700", color: "var(--primary)", margin: 0 }}>
           HADAMI
         </h1>

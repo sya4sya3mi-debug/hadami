@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Skincare Deck Mockup</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: linear-gradient(160deg, #F0FDFA 0%, #FFF0F5 100%);
+    min-height: 100vh;
+    max-width: 390px;
+    margin: 0 auto;
+    padding: 32px 20px 40px;
+    color: #2D2D2D;
+  }
+
+  /* Header */
+  .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+  .header h1 { font-size: 18px; font-weight: 700; }
+  .share-btn {
+    padding: 6px 14px; border-radius: 20px; border: none; font-size: 13px; font-weight: 600;
+    background: linear-gradient(135deg, #F9A8C0, #5BBFAD); color: #fff; cursor: pointer;
+  }
+
+  /* Routine tabs */
+  .routine-tabs {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
+    background: rgba(255,255,255,0.6); border-radius: 16px; padding: 4px; margin-bottom: 20px;
+  }
+  .routine-tab {
+    padding: 10px 0; border-radius: 12px; border: none; font-size: 13px; font-weight: 700;
+    cursor: pointer; background: none; color: #9B9B9B;
+  }
+  .routine-tab.active {
+    background: linear-gradient(135deg, #FFD580, #FFBE5C); color: #fff;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  }
+
+  /* Completion bar */
+  .completion {
+    background: rgba(255,255,255,0.7); border-radius: 16px; padding: 12px 16px; margin-bottom: 20px;
+    border: 1px solid #F5E6EF;
+  }
+  .completion-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+  .completion-label { font-size: 12px; font-weight: 600; color: #2D2D2D; }
+  .completion-count { font-size: 12px; font-weight: 700; color: #5BBFAD; }
+  .completion-bar { display: flex; gap: 3px; height: 6px; }
+  .completion-seg {
+    flex: 1; border-radius: 3px; transition: all 0.3s;
+  }
+  .completion-seg.filled { opacity: 1; }
+  .completion-seg.empty { opacity: 0.2; }
+
+  /* Section */
+  .section { margin-bottom: 16px; }
+  .section-header {
+    display: flex; align-items: center; gap: 8px; margin-bottom: 8px; padding-left: 4px;
+  }
+  .section-label { font-size: 11px; font-weight: 700; color: #9B9B9B; letter-spacing: 0.5px; text-transform: uppercase; }
+  .section-line { flex: 1; height: 1px; background: #E8E8E8; }
+  .section-step { font-size: 10px; color: #C5C5C5; font-weight: 600; }
+
+  /* Slot */
+  .slot { margin-bottom: 8px; border-radius: 16px; overflow: hidden; }
+
+  /* Empty slot */
+  .slot-empty {
+    height: 64px; display: flex; align-items: center; gap: 12px; padding: 0 16px;
+    border: 2px dashed; border-radius: 16px; cursor: pointer;
+    transition: all 0.2s;
+  }
+  .slot-empty:hover { transform: scale(1.01); }
+  .slot-empty .genre-icon { font-size: 22px; opacity: 0.3; width: 36px; text-align: center; }
+  .slot-empty .genre-name { font-size: 13px; color: #C5C5C5; font-weight: 500; flex: 1; }
+  .slot-empty .add-btn {
+    width: 28px; height: 28px; border-radius: 50%; border: none; font-size: 16px;
+    display: flex; align-items: center; justify-content: center; cursor: pointer;
+    animation: pulse-add 2s ease-in-out infinite;
+  }
+  @keyframes pulse-add {
+    0%, 100% { transform: scale(1); opacity: 0.8; }
+    50% { transform: scale(1.1); opacity: 1; }
+  }
+
+  /* Filled slot */
+  .slot-filled {
+    height: 72px; display: flex; align-items: center; position: relative;
+    background: #fff; border-radius: 16px; overflow: hidden;
+    border: 1px solid;
+    transition: all 0.2s;
+  }
+  .slot-filled:hover { transform: scale(1.01); }
+  .slot-filled .color-bar {
+    width: 4px; height: 100%; position: absolute; left: 0; top: 0;
+  }
+  .slot-filled .step-badge {
+    position: absolute; top: 6px; left: 10px;
+    width: 18px; height: 18px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 9px; font-weight: 800; color: #fff;
+  }
+  .slot-filled .product-img {
+    width: 44px; height: 44px; border-radius: 10px; margin-left: 14px;
+    object-fit: cover; flex-shrink: 0;
+  }
+  .slot-filled .product-placeholder {
+    width: 44px; height: 44px; border-radius: 10px; margin-left: 14px;
+    display: flex; align-items: center; justify-content: center; font-size: 20px;
+    flex-shrink: 0;
+  }
+  .slot-filled .product-info { flex: 1; min-width: 0; padding: 0 10px; }
+  .slot-filled .product-name { font-size: 13px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .slot-filled .product-brand { font-size: 11px; color: #9B9B9B; margin-top: 1px; }
+  .slot-filled .genre-badge {
+    display: inline-flex; align-items: center; gap: 2px;
+    padding: 2px 8px; border-radius: 10px; font-size: 10px; font-weight: 600; margin-top: 3px;
+  }
+  .slot-filled .cat-icons { display: flex; gap: 3px; margin-right: 10px; flex-shrink: 0; flex-direction: column; align-items: flex-end; }
+  .slot-filled .cat-row { display: flex; gap: 3px; }
+  .slot-filled .cat-icon {
+    font-size: 9px; padding: 2px 5px; border-radius: 8px;
+  }
+  .slot-filled .remove-btn {
+    width: 26px; height: 26px; border-radius: 50%; border: none;
+    background: #FFF3F3; color: #F48C8C; font-size: 11px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    margin-right: 10px; flex-shrink: 0;
+  }
+
+  /* Multi-slot add */
+  .add-more {
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+    padding: 8px; border-radius: 12px; border: 1.5px dashed; cursor: pointer;
+    font-size: 12px; font-weight: 500; margin-bottom: 8px; background: none;
+    width: 100%;
+  }
+
+  /* Auto recommend */
+  .auto-btn {
+    width: 100%; padding: 14px; border-radius: 16px; border: none;
+    background: linear-gradient(135deg, #F9A8C0, #5BBFAD);
+    color: #fff; font-size: 14px; font-weight: 700; cursor: pointer;
+    box-shadow: 0 2px 8px rgba(249,168,192,0.2);
+    margin-bottom: 20px;
+  }
+
+  /* Stats */
+  .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 20px; }
+  .stat {
+    text-align: center; padding: 12px 0; border-radius: 16px; background: #fff;
+    border: 1px solid #F5E6EF; box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+  }
+  .stat-value { font-size: 18px; font-weight: 700; }
+  .stat-label { font-size: 10px; color: #9B9B9B; margin-top: 2px; }
+
+  /* Rarity borders */
+  .rarity-common { box-shadow: inset 0 0 0 1px rgba(0,0,0,0.06); }
+  .rarity-uncommon { box-shadow: inset 0 0 0 1.5px rgba(76,175,80,0.3), 0 1px 4px rgba(76,175,80,0.08); }
+  .rarity-rare { box-shadow: inset 0 0 0 1.5px rgba(233,30,140,0.25), 0 1px 6px rgba(233,30,140,0.1); }
+  .rarity-legendary {
+    box-shadow: inset 0 0 0 1.5px rgba(245,158,11,0.4), 0 2px 8px rgba(245,158,11,0.15);
+    animation: holo 3s ease-in-out infinite;
+  }
+  @keyframes holo {
+    0%, 100% { box-shadow: inset 0 0 0 1.5px rgba(245,158,11,0.4), 0 2px 8px rgba(245,158,11,0.15); }
+    50% { box-shadow: inset 0 0 0 1.5px rgba(206,147,216,0.5), 0 2px 10px rgba(206,147,216,0.2); }
+  }
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="header">
+  <h1>&#10024; マイスキンケアデッキ</h1>
+  <button class="share-btn">共有</button>
+</div>
+
+<!-- Routine Tabs -->
+<div class="routine-tabs">
+  <button class="routine-tab active">&#9728;&#65039; 朝</button>
+  <button class="routine-tab">&#127769; 夜</button>
+  <button class="routine-tab">&#127800; 春夏</button>
+  <button class="routine-tab">&#127810; 秋冬</button>
+</div>
+
+<!-- Completion Bar -->
+<div class="completion">
+  <div class="completion-header">
+    <span class="completion-label">&#127183; デッキ完成度</span>
+    <span class="completion-count">5 / 8 スロット</span>
+  </div>
+  <div class="completion-bar">
+    <div class="completion-seg filled" style="background:#AB47BC"></div>
+    <div class="completion-seg filled" style="background:#42A5F5"></div>
+    <div class="completion-seg filled" style="background:#4FC3F7"></div>
+    <div class="completion-seg filled" style="background:#CE93D8"></div>
+    <div class="completion-seg empty" style="background:#FFB74D"></div>
+    <div class="completion-seg filled" style="background:#F9A8C0"></div>
+    <div class="completion-seg empty" style="background:#FFD54F"></div>
+    <div class="completion-seg empty" style="background:#80CBC4"></div>
+  </div>
+</div>
+
+<!-- SECTION: Base Care -->
+<div class="section">
+  <div class="section-header">
+    <span class="section-step">STEP 1-3</span>
+    <span class="section-label">ベースケア</span>
+    <div class="section-line"></div>
+  </div>
+
+  <!-- Cleansing - filled -->
+  <div class="slot">
+    <div class="slot-filled rarity-uncommon" style="border-color: #AB47BC20; background: linear-gradient(90deg, #fff, #AB47BC08);">
+      <div class="color-bar" style="background:#AB47BC"></div>
+      <div class="step-badge" style="background:#AB47BC">1</div>
+      <div class="product-placeholder" style="background: linear-gradient(135deg, #F3E5F5, #FFF0F5); margin-left: 14px;">&#129524;</div>
+      <div class="product-info">
+        <div class="product-name">DUO ザ クレンジングバーム</div>
+        <div class="product-brand">DUO</div>
+        <div class="genre-badge" style="background:#AB47BC18; color:#AB47BC">&#129524; クレンジング</div>
+      </div>
+      <button class="remove-btn">&#10005;</button>
+    </div>
+  </div>
+
+  <!-- Face wash - filled -->
+  <div class="slot">
+    <div class="slot-filled rarity-common" style="border-color: #42A5F520; background: linear-gradient(90deg, #fff, #42A5F508);">
+      <div class="color-bar" style="background:#42A5F5"></div>
+      <div class="step-badge" style="background:#42A5F5">2</div>
+      <div class="product-placeholder" style="background: linear-gradient(135deg, #E3F2FD, #FFF0F5); margin-left: 14px;">&#129527;</div>
+      <div class="product-info">
+        <div class="product-name">ロゼット 洗顔パスタ</div>
+        <div class="product-brand">ロゼット</div>
+        <div class="genre-badge" style="background:#42A5F518; color:#42A5F5">&#129527; 洗顔</div>
+      </div>
+      <button class="remove-btn">&#10005;</button>
+    </div>
+  </div>
+
+  <!-- Toner - filled -->
+  <div class="slot">
+    <div class="slot-filled rarity-rare" style="border-color: #4FC3F720; background: linear-gradient(90deg, #fff, #4FC3F708);">
+      <div class="color-bar" style="background:#4FC3F7"></div>
+      <div class="step-badge" style="background:#4FC3F7">3</div>
+      <div class="product-placeholder" style="background: linear-gradient(135deg, #E0F7FA, #FFF0F5); margin-left: 14px;">&#128167;</div>
+      <div class="product-info">
+        <div class="product-name">ナチュリエ ハトムギ化粧水</div>
+        <div class="product-brand">ナチュリエ</div>
+        <div class="genre-badge" style="background:#4FC3F718; color:#4FC3F7">&#128167; 化粧水</div>
+      </div>
+      <div class="cat-icons">
+        <div class="cat-row">
+          <span class="cat-icon" style="background:#4FC3F720; color:#4FC3F7">&#129531;</span>
+          <span class="cat-icon" style="background:#81C78420; color:#81C784">&#128737;&#65039;</span>
+        </div>
+      </div>
+      <button class="remove-btn">&#10005;</button>
+    </div>
+  </div>
+</div>
+
+<!-- SECTION: Intensive Care -->
+<div class="section">
+  <div class="section-header">
+    <span class="section-step">STEP 4</span>
+    <span class="section-label">集中ケア</span>
+    <div class="section-line"></div>
+  </div>
+
+  <!-- Serum 1 - filled (legendary) -->
+  <div class="slot">
+    <div class="slot-filled rarity-legendary" style="border-color: #CE93D820; background: linear-gradient(90deg, #fff, #CE93D810);">
+      <div class="color-bar" style="background:#CE93D8"></div>
+      <div class="step-badge" style="background:#CE93D8">4</div>
+      <div class="product-placeholder" style="background: linear-gradient(135deg, #F3E5F5, #FCE4EC); margin-left: 14px;">&#10024;</div>
+      <div class="product-info">
+        <div class="product-name">メラノCC 薬用しみ集中対策美容液</div>
+        <div class="product-brand">ロート製薬</div>
+        <div class="genre-badge" style="background:#CE93D818; color:#CE93D8">&#10024; 美容液</div>
+      </div>
+      <div class="cat-icons">
+        <div class="cat-row">
+          <span class="cat-icon" style="background:#CE93D820; color:#CE93D8">&#10024;</span>
+          <span class="cat-icon" style="background:#4FC3F720; color:#4FC3F7">&#129531;</span>
+          <span class="cat-icon" style="background:#FFB74D20; color:#FFB74D">&#128170;</span>
+        </div>
+      </div>
+      <button class="remove-btn">&#10005;</button>
+    </div>
+  </div>
+
+  <!-- Serum 2 - filled -->
+  <div class="slot">
+    <div class="slot-filled rarity-uncommon" style="border-color: #CE93D820; background: linear-gradient(90deg, #fff, #CE93D808);">
+      <div class="color-bar" style="background:#CE93D8"></div>
+      <div class="step-badge" style="background:#CE93D8">4</div>
+      <div class="product-placeholder" style="background: linear-gradient(135deg, #F3E5F5, #FCE4EC); margin-left: 14px;">&#10024;</div>
+      <div class="product-info">
+        <div class="product-name">SKIN1004 ヒアルロンアンプル</div>
+        <div class="product-brand">SKIN1004</div>
+        <div class="genre-badge" style="background:#CE93D818; color:#CE93D8">&#10024; 美容液</div>
+      </div>
+      <button class="remove-btn">&#10005;</button>
+    </div>
+  </div>
+
+  <!-- Add more serum -->
+  <button class="add-more" style="border-color: #CE93D840; color: #CE93D8;">
+    <span>＋</span> 美容液を追加（最大3）
+  </button>
+</div>
+
+<!-- SECTION: Protection -->
+<div class="section">
+  <div class="section-header">
+    <span class="section-step">STEP 5-7</span>
+    <span class="section-label">保護ケア</span>
+    <div class="section-line"></div>
+  </div>
+
+  <!-- Emulsion - empty -->
+  <div class="slot">
+    <div class="slot-empty" style="border-color: #FFB74D30; background: linear-gradient(90deg, rgba(255,255,255,0.5), #FFB74D06);">
+      <span class="genre-icon">&#129371;</span>
+      <span class="genre-name">乳液</span>
+      <button class="add-btn" style="background:#FFB74D18; color:#FFB74D;">＋</button>
+    </div>
+  </div>
+
+  <!-- Cream - filled -->
+  <div class="slot">
+    <div class="slot-filled rarity-common" style="border-color: #F9A8C020; background: linear-gradient(90deg, #fff, #F9A8C008);">
+      <div class="color-bar" style="background:#F9A8C0"></div>
+      <div class="step-badge" style="background:#F9A8C0">6</div>
+      <div class="product-placeholder" style="background: linear-gradient(135deg, #FCE4EC, #FFF0F5); margin-left: 14px;">&#129529;</div>
+      <div class="product-info">
+        <div class="product-name">キュレル 潤浸保湿フェイスクリーム</div>
+        <div class="product-brand">花王 キュレル</div>
+        <div class="genre-badge" style="background:#F9A8C018; color:#F9A8C0">&#129529; クリーム</div>
+      </div>
+      <div class="cat-icons">
+        <div class="cat-row">
+          <span class="cat-icon" style="background:#4FC3F720; color:#4FC3F7">&#129531;</span>
+          <span class="cat-icon" style="background:#81C78420; color:#81C784">&#128737;&#65039;</span>
+        </div>
+      </div>
+      <button class="remove-btn">&#10005;</button>
+    </div>
+  </div>
+
+  <!-- Sunscreen - empty -->
+  <div class="slot">
+    <div class="slot-empty" style="border-color: #FFD54F30; background: linear-gradient(90deg, rgba(255,255,255,0.5), #FFD54F06);">
+      <span class="genre-icon">&#9728;&#65039;</span>
+      <span class="genre-name">日焼け止め</span>
+      <button class="add-btn" style="background:#FFD54F18; color:#FFD54F;">＋</button>
+    </div>
+  </div>
+</div>
+
+<!-- SECTION: Special Care -->
+<div class="section">
+  <div class="section-header">
+    <span class="section-step">SPECIAL</span>
+    <span class="section-label">スペシャルケア</span>
+    <div class="section-line"></div>
+  </div>
+
+  <!-- Mask - empty -->
+  <div class="slot">
+    <div class="slot-empty" style="border-color: #80CBC430; background: linear-gradient(90deg, rgba(255,255,255,0.5), #80CBC406);">
+      <span class="genre-icon">&#127917;</span>
+      <span class="genre-name">パック・マスク</span>
+      <button class="add-btn" style="background:#80CBC418; color:#80CBC4;">＋</button>
+    </div>
+  </div>
+
+  <!-- Eye care - empty -->
+  <div class="slot">
+    <div class="slot-empty" style="border-color: #90A4AE30; background: linear-gradient(90deg, rgba(255,255,255,0.5), #90A4AE06);">
+      <span class="genre-icon">&#128065;&#65039;</span>
+      <span class="genre-name">アイケア</span>
+      <button class="add-btn" style="background:#90A4AE18; color:#90A4AE;">＋</button>
+    </div>
+  </div>
+
+  <!-- Oil - empty -->
+  <div class="slot">
+    <div class="slot-empty" style="border-color: #A5D6A730; background: linear-gradient(90deg, rgba(255,255,255,0.5), #A5D6A706);">
+      <span class="genre-icon">&#128155;</span>
+      <span class="genre-name">オイル</span>
+      <button class="add-btn" style="background:#A5D6A718; color:#A5D6A7;">＋</button>
+    </div>
+  </div>
+
+  <!-- Mist - empty -->
+  <div class="slot">
+    <div class="slot-empty" style="border-color: #B3E5FC30; background: linear-gradient(90deg, rgba(255,255,255,0.5), #B3E5FC06);">
+      <span class="genre-icon">&#127787;&#65039;</span>
+      <span class="genre-name">ミスト</span>
+      <button class="add-btn" style="background:#B3E5FC18; color:#B3E5FC;">＋</button>
+    </div>
+  </div>
+</div>
+
+<!-- Auto recommend -->
+<button class="auto-btn">おすすめ自動選択</button>
+
+<!-- Stats -->
+<div class="stats">
+  <div class="stat">
+    <div class="stat-value" style="color:#5BBFAD">4/6</div>
+    <div class="stat-label">カバー</div>
+  </div>
+  <div class="stat">
+    <div class="stat-value" style="color:#F9A8C0">28</div>
+    <div class="stat-label">成分数</div>
+  </div>
+  <div class="stat">
+    <div class="stat-value" style="color:#B39DDB">5</div>
+    <div class="stat-label">アイテム</div>
+  </div>
+  <div class="stat">
+    <div class="stat-value" style="color:#5BBFAD">3</div>
+    <div class="stat-label">好相性</div>
+  </div>
+</div>
+
+</body>
+</html>

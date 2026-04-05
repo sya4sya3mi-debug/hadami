@@ -2,9 +2,6 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
 export async function middleware(request: NextRequest) {
-  // CSP without nonce: Next.js production builds don't inject nonce attributes
-  // into script tags, and Vercel caches HTML responses (making nonces stale).
-  // Use 'unsafe-inline' for scripts until Next.js nonce support is reliable.
   const cspHeader = [
     "default-src 'self'",
     "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
@@ -25,33 +22,39 @@ export async function middleware(request: NextRequest) {
     request: { headers: requestHeaders },
   });
 
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return request.cookies.getAll();
-        },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value }) =>
-            request.cookies.set(name, value)
-          );
-          supabaseResponse = NextResponse.next({
-            request: { headers: requestHeaders },
-          });
-          cookiesToSet.forEach(({ name, value, options }) =>
-            supabaseResponse.cookies.set(name, value, options)
-          );
-        },
-      },
-    }
-  );
+  // クライアントサイドナビゲーション（RSC payload）ではセッションリフレッシュをスキップ
+  // クライアント側の AuthProvider が onAuthStateChange でトークン管理を行うため不要
+  const isRscRequest = request.headers.get("rsc") !== null;
+  const isAuthCallback = request.nextUrl.pathname.startsWith("/auth/callback");
 
-  // セッションのリフレッシュ（重要：getUser()を呼ぶことでトークンが自動更新される）
-  await supabase.auth.getUser();
+  if (!isRscRequest || isAuthCallback) {
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          getAll() {
+            return request.cookies.getAll();
+          },
+          setAll(cookiesToSet) {
+            cookiesToSet.forEach(({ name, value }) =>
+              request.cookies.set(name, value)
+            );
+            supabaseResponse = NextResponse.next({
+              request: { headers: requestHeaders },
+            });
+            cookiesToSet.forEach(({ name, value, options }) =>
+              supabaseResponse.cookies.set(name, value, options)
+            );
+          },
+        },
+      }
+    );
 
-  // Set security headers on response
+    // セッションのリフレッシュ（初回ページロード・auth callback時のみ）
+    await supabase.auth.getUser();
+  }
+
   supabaseResponse.headers.set("Content-Security-Policy", cspHeader);
 
   return supabaseResponse;

@@ -9,9 +9,37 @@ const USER_LIMIT = 30;
  */
 const MAX_PRODUCT_IMAGE_BYTES = 5 * 1024 * 1024;
 
+/** アップロード前に画像をリサイズ＆圧縮する最大辺 */
+const UPLOAD_MAX_DIMENSION = 800;
+const UPLOAD_JPEG_QUALITY = 0.75;
+
 function validateImageSize(base64Data: string): boolean {
   const estimatedBytes = Math.ceil(base64Data.length * 0.75);
   return estimatedBytes <= MAX_PRODUCT_IMAGE_BYTES;
+}
+
+/** Canvas を使って画像をリサイズ・圧縮し、base64 を返す */
+function compressImage(base64Full: string): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const img = new window.Image();
+    img.onload = () => {
+      let { width, height } = img;
+      if (width > UPLOAD_MAX_DIMENSION || height > UPLOAD_MAX_DIMENSION) {
+        const ratio = Math.min(UPLOAD_MAX_DIMENSION / width, UPLOAD_MAX_DIMENSION / height);
+        width = Math.round(width * ratio);
+        height = Math.round(height * ratio);
+      }
+      const canvas = document.createElement("canvas");
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return reject(new Error("Canvas context unavailable"));
+      ctx.drawImage(img, 0, 0, width, height);
+      resolve(canvas.toDataURL("image/jpeg", UPLOAD_JPEG_QUALITY));
+    };
+    img.onerror = () => reject(new Error("Image load failed"));
+    img.src = base64Full;
+  });
 }
 
 /** Supabaseに製品を保存 */
@@ -57,7 +85,11 @@ export async function saveProductToDb(
 
   // 写真をStorageにアップロード
   if (product.packageImageBase64) {
-    const base64Data = product.packageImageBase64.split(",")[1];
+    let imageDataUrl = product.packageImageBase64;
+    try {
+      imageDataUrl = await compressImage(imageDataUrl);
+    } catch { /* 圧縮失敗時は元画像をそのまま使う */ }
+    const base64Data = imageDataUrl.split(",")[1];
     if (base64Data) {
       if (!validateImageSize(base64Data)) {
         // 製品行を巻き戻して保存枠を無駄にしない
@@ -115,7 +147,11 @@ export async function updateProductImageInDb(
   productId: string,
   imageBase64: string
 ): Promise<{ error: string | null; imageUrl: string | null }> {
-  const base64Data = imageBase64.includes(",") ? imageBase64.split(",")[1] : imageBase64;
+  let imageDataUrl = imageBase64.includes(",") ? imageBase64 : `data:image/jpeg;base64,${imageBase64}`;
+  try {
+    imageDataUrl = await compressImage(imageDataUrl);
+  } catch { /* 圧縮失敗時は元画像をそのまま使う */ }
+  const base64Data = imageDataUrl.split(",")[1];
   if (!base64Data) return { error: "画像データが不正です", imageUrl: null };
 
   if (!validateImageSize(base64Data)) {
@@ -190,6 +226,21 @@ export async function updateProductTypeInDb(
   const { error } = await supabase
     .from("products")
     .update({ product_type: productType })
+    .eq("id", productId)
+    .eq("user_id", userId);
+  return { error: error?.message ?? null };
+}
+
+/** 製品のお気に入り状態を切り替え */
+export async function toggleFavoriteInDb(
+  supabase: SupabaseClient,
+  userId: string,
+  productId: string,
+  isFavorite: boolean
+): Promise<{ error: string | null }> {
+  const { error } = await supabase
+    .from("products")
+    .update({ is_favorite: isFavorite })
     .eq("id", productId)
     .eq("user_id", userId);
   return { error: error?.message ?? null };

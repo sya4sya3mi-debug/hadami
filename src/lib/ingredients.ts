@@ -1,10 +1,10 @@
 import { Ingredient, RarityKey, RarityInfo, IngredientGenre, IngredientGenreInfo } from "@/types";
 
 export const RARITY: Record<RarityKey, RarityInfo> = {
-  common:    { label: "コモン",       star: 1, color: "#9CA3AF", icon: "⭐" },
-  uncommon:  { label: "アンコモン",   star: 2, color: "#4CAF50", icon: "⭐" },
-  rare:      { label: "レア",         star: 3, color: "#E91E8C", icon: "⭐" },
-  legendary: { label: "レジェンダリー", star: 4, color: "#F59E0B", icon: "⭐" },
+  common:    { label: "コモン",       star: 1, color: "#9CA3AF", icon: "★" },
+  uncommon:  { label: "アンコモン",   star: 2, color: "#4CAF50", icon: "★★" },
+  rare:      { label: "レア",         star: 3, color: "#E91E8C", icon: "★★★" },
+  legendary: { label: "レジェンダリー", star: 4, color: "#F59E0B", icon: "★★★★" },
 };
 
 export const INGREDIENT_GENRES: IngredientGenreInfo[] = [
@@ -13,7 +13,7 @@ export const INGREDIENT_GENRES: IngredientGenreInfo[] = [
   { key: "vitamin",    label: "ビタミン",     icon: "🍊", color: "#FFB74D" },
   { key: "peptide",    label: "ペプチド",     icon: "🧪", color: "#E91E8C" },
   { key: "botanical",  label: "ボタニカル",   icon: "🌿", color: "#4CAF50" },
-  { key: "oil_lipid",  label: "オイル・脂質", icon: "🫧", color: "#81C784" },
+  { key: "oil_lipid",  label: "オイル・脂質", icon: "🫙", color: "#81C784" },
   { key: "ferment",    label: "発酵・バイオ", icon: "🧫", color: "#9C27B0" },
   { key: "acid",       label: "アシッド",     icon: "⚗️", color: "#90A4AE" },
   { key: "base",       label: "ベース",       icon: "⚙️", color: "#BDBDBD" },

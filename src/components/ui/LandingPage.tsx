@@ -3,6 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { getAccountScanLimit } from "@/lib/db";
+import { StarIcon } from "@/components/ui/Badge";
 
 const features = [
   {
@@ -20,7 +21,7 @@ const features = [
     bg: "linear-gradient(135deg, #FFF0F5, #F9C8D8)",
   },
   {
-    emoji: "🎴",
+    emoji: "⭐",
     title: "マイスキンケアデッキ",
     description: "朝・夜のスキンケアルーティンをデッキで管理。保湿・美白・バリアなど6カテゴリのカバー率をレーダーチャートで可視化。成分の相性チェックやAIおすすめ自動選択で、自分だけのベストな組み合わせを見つけよう。",
     color: "#7C6AEF",
@@ -130,7 +131,7 @@ export default function LandingPage() {
                   className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl flex-shrink-0"
                   style={{ background: f.bg }}
                 >
-                  {f.emoji}
+                  {f.emoji === "⭐" ? <StarIcon color={f.color} size={26} /> : f.emoji}
                 </div>
                 <div>
                   <div className="font-bold text-sm mb-1" style={{ color: f.color }}>

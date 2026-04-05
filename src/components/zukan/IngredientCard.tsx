@@ -1,5 +1,6 @@
 import { Ingredient } from "@/types";
 import { RARITY, getGenreInfo } from "@/lib/ingredients";
+import { StarIcon } from "@/components/ui/Badge";
 
 interface IngredientCardProps {
   ingredient: Ingredient;
@@ -29,7 +30,6 @@ export default function IngredientCard({ ingredient, discovered, index, isRecent
   }
 
   const cardColor = genreInfo?.color || rarityInfo.color;
-  const stars = "⭐".repeat(rarityInfo.star);
 
   return (
     <div
@@ -67,8 +67,10 @@ export default function IngredientCard({ ingredient, discovered, index, isRecent
       </span>
 
       {/* Rarity stars + label */}
-      <div className="flex items-center gap-0.5 mt-1">
-        <span className="text-[8px] leading-none">{stars}</span>
+      <div className="flex items-center gap-px mt-1">
+        {Array.from({ length: rarityInfo.star }).map((_, i) => (
+          <StarIcon key={i} color={rarityInfo.color} size={10} />
+        ))}
       </div>
       <span
         className="text-[9px] px-1.5 py-0.5 rounded-full"

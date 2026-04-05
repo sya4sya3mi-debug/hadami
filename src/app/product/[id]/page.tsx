@@ -5,7 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
 import { useProductStore } from "@/stores/useProductStore";
-import { getIngredientById, RARITY } from "@/lib/ingredients";
+import { getIngredientById } from "@/lib/ingredients";
 import { getCategoryByKey } from "@/lib/categories";
 import { findCombinations } from "@/lib/combinations";
 import { shareProductCheck } from "@/lib/share";
@@ -67,7 +67,7 @@ export default function ProductDetailPage() {
                 fill
                 className="object-contain"
                 sizes="(max-width: 430px) 100vw, 430px"
-
+                priority
               />
             </div>
           </div>
@@ -113,7 +113,6 @@ export default function ProductDetailPage() {
               className="flex items-center gap-3 bg-white rounded-2xl p-3.5 shadow-sm"
               style={{ border: "1px solid #F5E6EF" }}
             >
-              <span className="text-xl">{RARITY[ing.rarity].icon}</span>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
                   <span className="font-bold text-sm" style={{ color: "#2D2D2D" }}>{ing.nameJa}</span>

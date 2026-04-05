@@ -44,11 +44,11 @@ export const GENRE_SLOT_CONFIG: readonly GenreSlotConfig[] = [
   { genre: "emulsion",   maxSlots: 1, section: "protection", stepLabel: "5" },
   { genre: "cream",      maxSlots: 1, section: "protection", stepLabel: "6" },
   { genre: "sunscreen",  maxSlots: 1, section: "protection", stepLabel: "7" },
-  { genre: "mask_pack",  maxSlots: 2, section: "special",    stepLabel: "S" },
-  { genre: "eye_care",   maxSlots: 2, section: "special",    stepLabel: "S" },
-  { genre: "oil",        maxSlots: 2, section: "special",    stepLabel: "S" },
+  { genre: "mask_pack",  maxSlots: 1, section: "special",    stepLabel: "S" },
+  { genre: "eye_care",   maxSlots: 1, section: "special",    stepLabel: "S" },
+  { genre: "oil",        maxSlots: 1, section: "special",    stepLabel: "S" },
   { genre: "mist",       maxSlots: 1, section: "special",    stepLabel: "S" },
-  { genre: "other",      maxSlots: 2, section: "special",    stepLabel: "S" },
+  { genre: "other",      maxSlots: 1, section: "special",    stepLabel: "S" },
 ] as const;
 
 export const SECTION_INFO: Record<string, { label: string; step: string }> = {

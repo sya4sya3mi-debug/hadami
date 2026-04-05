@@ -32,7 +32,7 @@ export default function GenreSlot({ genre, stepLabel, product, onAdd, onRemove }
           background: `linear-gradient(90deg, rgba(255,255,255,0.5), ${color}06)`,
         }}
       >
-        <span className="text-[22px] opacity-30 w-9 text-center">{icon}</span>
+        <span className="text-[28px] opacity-40 w-9 text-center">{icon}</span>
         <span className="text-[13px] font-medium flex-1" style={{ color: "#C5C5C5" }}>{label}</span>
         <div
           className="w-7 h-7 rounded-full flex items-center justify-center text-base"
@@ -77,12 +77,12 @@ export default function GenreSlot({ genre, stepLabel, product, onAdd, onRemove }
       {/* Product image / icon */}
       <div className="ml-3.5 shrink-0">
         {product.packageImage ? (
-          <div className="w-11 h-11 rounded-[10px] overflow-hidden relative">
-            <Image src={product.packageImage} alt={product.name} fill className="object-cover" sizes="44px" loading="lazy" />
+          <div className="w-14 h-14 rounded-[10px] overflow-hidden relative">
+            <Image src={product.packageImage} alt={product.name} fill className="object-cover" sizes="56px" loading="lazy" />
           </div>
         ) : (
           <div
-            className="w-11 h-11 rounded-[10px] flex items-center justify-center text-xl"
+            className="w-14 h-14 rounded-[10px] flex items-center justify-center text-2xl"
             style={{ background: `linear-gradient(135deg, ${color}20, #FFF0F5)` }}
           >
             {icon}

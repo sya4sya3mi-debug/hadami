@@ -22,6 +22,7 @@ import {
   getUserLimit,
   getMonthlyScanLimit,
   getScanCountByEmail,
+  getProductCount,
 } from "@/lib/db";
 import { Ingredient, Combination, ProductGenre } from "@/types";
 import { normalizeGenreFromScan } from "@/lib/productGenres";
@@ -170,6 +171,17 @@ function ScanPageInner() {
       const allowed = await checkScanLimit();
       if (!allowed) return;
 
+      // Myコスメ保存枠チェック
+      if (user) {
+        const count = await getProductCount(supabase, user.id);
+        if (count >= userLimit) {
+          const proceed = window.confirm(
+            `Myコスメの保存枠（${userLimit}件）がいっぱいです。\nスキャンはできますが、保存するには古い製品を削除してください。\n\nスキャンを続けますか？`
+          );
+          if (!proceed) return;
+        }
+      }
+
       setPackageImage(imageData);
       setPackageImageColor(colorImage || imageData);
       setStep(2);
@@ -225,11 +237,13 @@ function ScanPageInner() {
         }
       } catch (error) {
         console.error("Product search error:", error);
+        // フロント側エラー時もスキャン枠を返却
+        fetch("/api/rollback-scan", { method: "POST" }).catch(() => {});
         setProgressMsg("検索に失敗しました");
         setTimeout(() => setShowFallback(true), 1000);
       }
     },
-    [processIngredients, checkScanLimit]
+    [processIngredients, checkScanLimit, user, supabase, userLimit]
   );
 
   // Step 2 fallback: 成分表直接撮影 → OCR
@@ -249,6 +263,13 @@ function ScanPageInner() {
         if (!ocrRes.ok) throw new Error("OCR API error");
         const { text } = await ocrRes.json();
 
+        // OCRでテキストが取れなかった場合、スキャン枠を消費しない
+        if (!text || !text.trim()) {
+          setProgressMsg("成分を読み取れませんでした。もう一度お試しください。");
+          setTimeout(() => setShowFallback(true), 1500);
+          return;
+        }
+
         setProgress(60);
         setProgressMsg("成分を照合しています...");
 
@@ -267,6 +288,8 @@ function ScanPageInner() {
         }, 500);
       } catch (error) {
         console.error("OCR error:", error);
+        // エラー時もスキャン枠を返却
+        fetch("/api/rollback-scan", { method: "POST" }).catch(() => {});
         setProgressMsg("エラーが発生しました。もう一度お試しください。");
         setTimeout(() => setShowFallback(true), 2000);
       }
@@ -352,6 +375,7 @@ function ScanPageInner() {
         brand: product.brand,
         productType: normalizeGenreFromScan(product.productType || ""),
         packageImage: result.imageUrl ?? undefined,
+        isFavorite: false,
         createdAt: new Date().toISOString(),
         ingredients: foundIngs.map((f) => ({ ingredientId: f.ingredient.id, orderIndex: f.orderIndex })),
       });
@@ -382,10 +406,12 @@ function ScanPageInner() {
 
     if (result.error === "limit_reached") {
       setSaveError(`保存上限（${userLimit}件）に達しています。古い製品を削除してください。`);
+      fetch("/api/rollback-scan", { method: "POST" }).catch(() => {});
       return;
     }
     if (result.error) {
       setSaveError("保存に失敗しました。もう一度お試しください。");
+      fetch("/api/rollback-scan", { method: "POST" }).catch(() => {});
       return;
     }
 
@@ -397,6 +423,7 @@ function ScanPageInner() {
       brand,
       productType,
       packageImage: result.imageUrl ?? undefined,
+      isFavorite: false,
       createdAt: new Date().toISOString(),
       ingredients: foundIngredients.map((f) => ({ ingredientId: f.ingredient.id, orderIndex: f.orderIndex })),
     });
@@ -536,6 +563,7 @@ function ScanPageInner() {
                 onSave={handleSave}
                 saved={saved}
                 imagePreview={packageImageColor || packageImage}
+                newDiscoveryIds={new Set(newDiscoveries.map((i) => i.id))}
               />
             </>
           )}

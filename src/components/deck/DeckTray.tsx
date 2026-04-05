@@ -17,7 +17,14 @@ export default function DeckTray({ productsByGenre, onAddSlot, onRemoveProduct }
     <div>
       {sections.map((section) => {
         const info = SECTION_INFO[section];
-        const slotsInSection = GENRE_SLOT_CONFIG.filter((s) => s.section === section);
+        let slotsInSection = GENRE_SLOT_CONFIG.filter((s) => s.section === section);
+
+        // For special section, only show slots that have products or the first 2 slots
+        if (section === "special") {
+          const slotsWithProducts = slotsInSection.filter((s) => (productsByGenre[s.genre]?.length || 0) > 0);
+          const emptySlots = slotsInSection.filter((s) => (productsByGenre[s.genre]?.length || 0) === 0);
+          slotsInSection = [...slotsWithProducts, ...emptySlots.slice(0, Math.max(0, 2 - slotsWithProducts.length))];
+        }
 
         return (
           <div key={section}>

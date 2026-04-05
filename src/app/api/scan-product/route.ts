@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { authenticateRequest, validateImagePayload } from "@/lib/apiAuth";
 import { tryReserveScan, rollbackScan, getScanCountByEmail, getAccountScanLimit } from "@/lib/db";
 import { rateLimit, getClientIp } from "@/lib/rateLimit";
+import { lookupIngredientCache, saveIngredientCache } from "@/lib/ingredientCache";
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
@@ -62,12 +63,12 @@ async function searchIngredients(product: string, brand: string, lang: string) {
 
   const searchMsg = await client.messages.create({
     model: "claude-haiku-4-5-20251001",
-    max_tokens: 4096,
+    max_tokens: 2048,
     tools: [
       {
         type: "web_search_20250305",
         name: "web_search",
-        max_uses: 5,
+        max_uses: 2,
       },
     ],
     messages: [
@@ -102,7 +103,14 @@ INGREDIENTS:
   });
 
   // web_search エラーチェック
-  const searchErrors = searchMsg.content.filter((b) => b.type === "web_search_tool_result" && (b as Record<string, unknown>).content && typeof (b as Record<string, unknown>).content === "object" && ((b as Record<string, unknown>).content as Record<string, unknown>)?.type === "web_search_tool_result_error");
+  const searchErrors = searchMsg.content.filter(
+    (b) => {
+      if (b.type !== "web_search_tool_result") return false;
+      const block = b as unknown as Record<string, unknown>;
+      const content = block.content;
+      return content && typeof content === "object" && !Array.isArray(content) && (content as Record<string, unknown>).type === "web_search_tool_result_error";
+    }
+  );
   if (searchErrors.length > 0) {
     console.error("[web_search] error blocks:", JSON.stringify(searchErrors));
   }
@@ -245,10 +253,30 @@ TYPE2: [製品タイプ]
       });
     }
 
-    // Step 2: Search ingredients for each product (in parallel)
+    // Step 2: Search ingredients for each product (cache first, then web search)
     const results = await Promise.all(
       identifiedProducts.map(async (p) => {
+        // キャッシュ検索
+        const cached = await lookupIngredientCache(auth.supabase, p.product, p.brand);
+        if (cached) {
+          console.log(`[cache hit] ${p.brand} ${p.product}`);
+          return {
+            productName: p.product,
+            brand: p.brand,
+            productType: p.type,
+            found: true,
+            ingredients: cached,
+          };
+        }
+
+        // キャッシュミス → WEB検索
         const { found, ingredients } = await searchIngredients(p.product, p.brand, p.lang);
+
+        // 成功時はキャッシュに保存
+        if (found && ingredients) {
+          await saveIngredientCache(auth.supabase, p.product, p.brand, ingredients);
+        }
+
         return {
           productName: p.product,
           brand: p.brand,

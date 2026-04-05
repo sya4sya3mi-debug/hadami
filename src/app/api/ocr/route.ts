@@ -84,6 +84,13 @@ export async function POST(req: NextRequest) {
 
     const text =
       message.content[0].type === "text" ? message.content[0].text : "";
+
+    // OCRで成分を読み取れなかった場合、スキャン枠を返却
+    const trimmed = text.replace(/[\s,、]/g, "");
+    if (!trimmed) {
+      await rollbackScan(auth.supabase, auth.user.id, auth.user.email!);
+    }
+
     return NextResponse.json({ text });
   } catch (error) {
     await rollbackScan(auth.supabase, auth.user.id, auth.user.email!);

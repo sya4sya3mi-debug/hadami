@@ -187,7 +187,7 @@ export default function DeckPage() {
   const nextDeck = () => setDeckIndex((i) => (i + 1) % DECK_OPTIONS.length);
 
   // Hand preview items
-  const handItems = GENRE_SLOT_CONFIG.map((s) => {
+  const allHandItems = GENRE_SLOT_CONFIG.map((s) => {
     const products = productsByGenre[s.genre] || [];
     const genreInfo = getGenreByKey(s.genre);
     if (s.maxSlots > 1 && products.length > 0) {
@@ -197,6 +197,7 @@ export default function DeckPage() {
         filled: true,
         genre: genreInfo?.label || "",
         image: p.packageImage || null,
+        section: s.section,
       }));
     }
     return [{
@@ -205,8 +206,16 @@ export default function DeckPage() {
       filled: products.length > 0,
       genre: genreInfo?.label || "",
       image: products[0]?.packageImage || null,
+      section: s.section,
     }];
   }).flat();
+
+  // Limit special section to max 2 items
+  const handItems = allHandItems.filter((item, idx) => {
+    if (item.section !== "special") return true;
+    const specialCount = allHandItems.filter((i, i2) => i2 <= idx && i.section === "special").length;
+    return specialCount <= 2;
+  });
 
   return (
     <AuthGuard>
@@ -249,9 +258,9 @@ export default function DeckPage() {
             {handItems.map((item, i) => (
               <div key={i} className="flex flex-col items-center gap-1">
                 <div
-                  className="w-[52px] h-[52px] rounded-xl flex items-center justify-center overflow-hidden relative"
+                  className="w-[64px] h-[64px] rounded-xl flex items-center justify-center overflow-hidden relative"
                   style={{
-                    fontSize: item.filled && !item.image ? 22 : 16,
+                    fontSize: item.filled && !item.image ? 28 : 20,
                     border: item.filled ? `2px solid ${item.color}` : `1.5px dashed ${item.color}40`,
                     background: item.filled ? `linear-gradient(135deg, ${item.color}20, ${item.color}08)` : `${item.color}06`,
                     opacity: item.filled ? 1 : 0.4,
@@ -259,7 +268,7 @@ export default function DeckPage() {
                   }}
                 >
                   {item.filled && item.image ? (
-                    <Image src={item.image} alt={item.genre} fill className="object-cover" sizes="52px" loading="lazy" />
+                    <Image src={item.image} alt={item.genre} fill className="object-cover" sizes="64px" loading="lazy" />
                   ) : item.filled ? item.icon : "\uFF0B"}
                 </div>
                 <span className="text-[10px] font-semibold whitespace-nowrap" style={{ color: item.filled ? item.color : "#C5C5C5" }}>

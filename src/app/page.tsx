@@ -199,8 +199,8 @@ export default function HomePage() {
           {/* Deck card */}
           <Link href="/deck" className="bg-white rounded-2xl p-4 shadow-sm border border-pink-50">
             <div className="flex items-center gap-1.5 mb-3">
-              <span className="text-lg">🎴</span>
-              <span className="text-sm font-bold" style={{ color: "#2D2D2D" }}>スキンケアデッキ</span>
+              <span className="text-lg">✨</span>
+              <span className="text-sm font-bold" style={{ color: "#2D2D2D" }}>マイスキンケアデッキ</span>
             </div>
             <div className="flex justify-center gap-4 mt-1">
               <div className="text-center">

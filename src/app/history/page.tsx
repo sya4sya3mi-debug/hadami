@@ -8,9 +8,11 @@ import Disclaimer from "@/components/ui/Disclaimer";
 import { useUser } from "@/lib/auth";
 import PageLoading from "@/components/ui/PageLoading";
 import AuthGuard from "@/components/ui/AuthGuard";
-import { deleteProductFromDb, updateProductImageInDb, deleteProductImageFromDb, updateProductTypeInDb } from "@/lib/db";
+import { deleteProductFromDb, updateProductImageInDb, deleteProductImageFromDb, updateProductTypeInDb, toggleFavoriteInDb } from "@/lib/db";
 import { PRODUCT_GENRES, getGenreByKey } from "@/lib/productGenres";
 import { ProductGenre } from "@/types";
+
+type ViewMode = "list" | "grid";
 
 export default function HistoryPage() {
   const { user, supabase, loading } = useUser();
@@ -18,6 +20,7 @@ export default function HistoryPage() {
   const removeProduct = useProductStore((s) => s.removeProduct);
   const updateProductImage = useProductStore((s) => s.updateProductImage);
   const updateProductType = useProductStore((s) => s.updateProductType);
+  const toggleFavorite = useProductStore((s) => s.toggleFavorite);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [updatingImageId, setUpdatingImageId] = useState<string | null>(null);
   const [deletingImageId, setDeletingImageId] = useState<string | null>(null);
@@ -26,6 +29,7 @@ export default function HistoryPage() {
   const pendingProductIdRef = useRef<string | null>(null);
   const [selectedGenre, setSelectedGenre] = useState<"all" | ProductGenre>("all");
   const [editingGenreId, setEditingGenreId] = useState<string | null>(null);
+  const [viewMode, setViewMode] = useState<ViewMode>("grid");
 
   if (loading) {
     return <PageLoading message="コスメ一覧を読み込んでいます..." />;
@@ -97,6 +101,12 @@ export default function HistoryPage() {
     setDeletingId(null);
   };
 
+  const handleToggleFavorite = async (productId: string, currentFav: boolean) => {
+    if (!user) return;
+    toggleFavorite(productId);
+    await toggleFavoriteInDb(supabase, user.id, productId, !currentFav);
+  };
+
   const handleGenreChange = async (productId: string, newGenre: ProductGenre) => {
     if (!user) return;
     updateProductType(productId, newGenre);
@@ -116,16 +126,64 @@ export default function HistoryPage() {
     ? products
     : products.filter((p) => (p.productType || "other") === selectedGenre);
 
+  // お気に入りを先頭にソート
+  const sortedProducts = [...filteredProducts].sort((a, b) => {
+    if (a.isFavorite && !b.isFavorite) return -1;
+    if (!a.isFavorite && b.isFavorite) return 1;
+    return 0;
+  });
+
   // 製品があるジャンルのみ表示
   const activeGenres = PRODUCT_GENRES.filter((g) => genreCounts[g.key]);
+  const favCount = products.filter((p) => p.isFavorite).length;
 
   return (
     <AuthGuard>
     <div className="min-h-screen" style={{ background: "linear-gradient(160deg, #F0FDFA 0%, #FFF0F5 100%)" }}>
       <div className="px-5 pt-8 pb-6">
-        <h1 className="font-bold text-lg mb-4 flex items-center gap-2" style={{ color: "#2D2D2D" }}>
-          My コスメ
-        </h1>
+        {/* ヘッダー */}
+        <div className="flex items-center justify-between mb-4">
+          <h1 className="font-bold text-lg flex items-center gap-2" style={{ color: "#2D2D2D" }}>
+            My コスメ
+            <span className="text-xs font-normal px-2 py-0.5 rounded-full" style={{ background: "#E8FAF8", color: "#5BBFAD" }}>
+              {products.length}件
+            </span>
+          </h1>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => setViewMode("grid")}
+              className="w-8 h-8 rounded-lg flex items-center justify-center transition-all"
+              style={{
+                background: viewMode === "grid" ? "#5BBFAD" : "rgba(255,255,255,0.7)",
+                color: viewMode === "grid" ? "#fff" : "#9B9B9B",
+              }}
+              title="グリッド表示"
+            >
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                <rect x="1" y="1" width="6" height="6" rx="1" />
+                <rect x="9" y="1" width="6" height="6" rx="1" />
+                <rect x="1" y="9" width="6" height="6" rx="1" />
+                <rect x="9" y="9" width="6" height="6" rx="1" />
+              </svg>
+            </button>
+            <button
+              onClick={() => setViewMode("list")}
+              className="w-8 h-8 rounded-lg flex items-center justify-center transition-all"
+              style={{
+                background: viewMode === "list" ? "#5BBFAD" : "rgba(255,255,255,0.7)",
+                color: viewMode === "list" ? "#fff" : "#9B9B9B",
+              }}
+              title="リスト表示"
+            >
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                <rect x="1" y="2" width="14" height="3" rx="1" />
+                <rect x="1" y="7" width="14" height="3" rx="1" />
+                <rect x="1" y="12" width="14" height="3" rx="1" />
+              </svg>
+            </button>
+          </div>
+        </div>
+
         <div
           className="rounded-2xl p-3 mb-4 text-xs"
           style={{ background: "#E8FAF8", border: "1px solid rgba(91,191,173,0.15)", color: "#6B9E95" }}
@@ -178,6 +236,15 @@ export default function HistoryPage() {
               >
                 すべて ({products.length})
               </button>
+              {favCount > 0 && (
+                <button
+                  onClick={() => setSelectedGenre("all")}
+                  className="shrink-0 px-3 py-1.5 rounded-full text-xs font-bold"
+                  style={{ background: "#FFF8E1", color: "#F59E0B", border: "1px solid #FBBF2420" }}
+                >
+                  ★ {favCount}
+                </button>
+              )}
               {activeGenres.map((g) => (
                 <button
                   key={g.key}
@@ -194,133 +261,232 @@ export default function HistoryPage() {
               ))}
             </div>
 
-            <div className="space-y-2.5">
-              {filteredProducts.map((p) => {
-                const genre = getGenreByKey(p.productType || "other");
-                return (
-                  <div
-                    key={p.id}
-                    className="bg-white rounded-2xl shadow-sm overflow-hidden"
-                    style={{
-                      border: "1px solid #F5E6EF",
-                      opacity: deletingId === p.id ? 0.5 : 1,
-                    }}
-                  >
-                    <Link
-                      href={`/product/${p.id}`}
-                      className="flex items-center gap-3 p-4"
+            {/* ===== グリッド表示 ===== */}
+            {viewMode === "grid" && (
+              <div className="grid grid-cols-3 gap-2">
+                {sortedProducts.map((p) => {
+                  const genre = getGenreByKey(p.productType || "other");
+                  return (
+                    <div
+                      key={p.id}
+                      className="relative rounded-2xl overflow-hidden bg-white shadow-sm"
+                      style={{
+                        border: p.isFavorite ? "2px solid #F59E0B" : "1px solid #F5E6EF",
+                        opacity: deletingId === p.id ? 0.5 : 1,
+                        aspectRatio: "1",
+                      }}
                     >
-                      {p.packageImage ? (
-                        <div className="w-20 h-20 rounded-xl overflow-hidden shrink-0 relative">
+                      <Link href={`/product/${p.id}`} className="block w-full h-full">
+                        {p.packageImage ? (
                           <Image
                             src={p.packageImage}
                             alt={p.name}
                             fill
                             className="object-cover"
-                            sizes="80px"
+                            sizes="(max-width: 430px) 33vw, 140px"
                             loading="lazy"
                           />
-                        </div>
-                      ) : (
+                        ) : (
+                          <div
+                            className="w-full h-full flex items-center justify-center text-3xl"
+                            style={{ background: "linear-gradient(135deg, #E8FAF8, #FFF0F5)" }}
+                          >
+                            {genre?.icon || "📦"}
+                          </div>
+                        )}
+
+                        {/* ジャンルバッジ */}
+                        {genre && (
+                          <div
+                            className="absolute top-1.5 left-1.5 px-1.5 py-0.5 rounded-full"
+                            style={{
+                              background: "rgba(255,255,255,0.9)",
+                              backdropFilter: "blur(4px)",
+                              fontSize: "9px",
+                              color: genre.color,
+                              fontWeight: 700,
+                            }}
+                          >
+                            {genre.label}
+                          </div>
+                        )}
+
+                        {/* 製品名オーバーレイ */}
                         <div
-                          className="w-20 h-20 rounded-xl flex items-center justify-center text-3xl shrink-0"
-                          style={{ background: "linear-gradient(135deg, #E8FAF8, #FFF0F5)" }}
+                          className="absolute bottom-0 left-0 right-0 px-1.5 py-1.5"
+                          style={{
+                            background: "linear-gradient(transparent, rgba(0,0,0,0.55))",
+                          }}
                         >
-                          {genre?.icon || "📦"}
+                          <div className="text-white font-bold truncate" style={{ fontSize: "10px", lineHeight: 1.2 }}>
+                            {p.name}
+                          </div>
+                          <div className="text-white truncate" style={{ fontSize: "8px", opacity: 0.8 }}>
+                            {p.brand}
+                          </div>
                         </div>
-                      )}
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <div className="font-medium truncate text-sm" style={{ color: "#2D2D2D" }}>{p.name}</div>
-                        </div>
-                        <div className="flex items-center gap-2 mt-0.5">
-                          <div className="text-xs" style={{ color: "#9B9B9B" }}>{p.brand}</div>
-                          {genre && (
-                            <span
-                              className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-xs"
-                              style={{ background: `${genre.color}18`, color: genre.color, fontSize: "10px" }}
-                            >
-                              {genre.icon} {genre.label}
-                            </span>
-                          )}
-                        </div>
-                        <div className="text-xs mt-0.5" style={{ color: "#C5C5C5" }}>
-                          {p.ingredients.length}成分 · {new Date(p.createdAt).toLocaleDateString("ja-JP")}
-                        </div>
-                      </div>
-                      <span className="text-lg" style={{ color: "#5BBFAD" }}>›</span>
-                    </Link>
+                      </Link>
 
-                    {/* ジャンル編集モーダル */}
-                    {editingGenreId === p.id && (
-                      <div
-                        className="px-4 py-3 border-t"
-                        style={{ borderColor: "#F5E6EF", background: "#FAFAFA" }}
-                      >
-                        <div className="text-xs font-medium mb-2" style={{ color: "#9B9B9B" }}>
-                          ジャンルを選択
-                        </div>
-                        <div className="flex flex-wrap gap-1.5">
-                          {PRODUCT_GENRES.map((g) => (
-                            <button
-                              key={g.key}
-                              onClick={() => handleGenreChange(p.id, g.key)}
-                              className="px-2.5 py-1 rounded-full text-xs font-medium transition-all"
-                              style={
-                                (p.productType || "other") === g.key
-                                  ? { background: g.color, color: "#fff" }
-                                  : { background: `${g.color}18`, color: g.color }
-                              }
-                            >
-                              {g.icon} {g.label}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    <div
-                      className="flex border-t px-2 py-1.5"
-                      style={{ borderColor: "#F5E6EF" }}
-                    >
+                      {/* お気に入りボタン */}
                       <button
-                        onClick={() => setEditingGenreId(editingGenreId === p.id ? null : p.id)}
-                        className="flex-1 text-xs font-medium py-1.5 rounded-lg"
-                        style={{ color: "#5BBFAD" }}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          handleToggleFavorite(p.id, p.isFavorite);
+                        }}
+                        className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full flex items-center justify-center"
+                        style={{
+                          background: "rgba(255,255,255,0.9)",
+                          backdropFilter: "blur(4px)",
+                          fontSize: "12px",
+                        }}
                       >
-                        {editingGenreId === p.id ? "✕ 閉じる" : "🏷 ジャンル"}
-                      </button>
-                      <button
-                        onClick={() => handlePhotoUpdate(p.id)}
-                        disabled={updatingImageId === p.id || deletingImageId === p.id}
-                        className="flex-1 text-xs font-medium py-1.5 rounded-lg"
-                        style={{ color: "#5BBFAD" }}
-                      >
-                        {updatingImageId === p.id ? "更新中..." : "📷 写真"}
-                      </button>
-                      {p.packageImage && (
-                        <button
-                          onClick={() => handleDeleteImage(p.id)}
-                          disabled={deletingImageId === p.id || updatingImageId === p.id}
-                          className="flex-1 text-xs font-medium py-1.5 rounded-lg"
-                          style={{ color: "#9B9B9B" }}
-                        >
-                          {deletingImageId === p.id ? "削除中..." : "🗑 写真削除"}
-                        </button>
-                      )}
-                      <button
-                        onClick={() => handleDelete(p.id, p.name)}
-                        disabled={deletingId === p.id}
-                        className="flex-1 text-xs font-medium py-1.5 rounded-lg"
-                        style={{ color: "#E57373" }}
-                      >
-                        🗑 削除
+                        {p.isFavorite ? "★" : "☆"}
                       </button>
                     </div>
-                  </div>
-                );
-              })}
-            </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* ===== リスト表示 ===== */}
+            {viewMode === "list" && (
+              <div className="space-y-2.5">
+                {sortedProducts.map((p) => {
+                  const genre = getGenreByKey(p.productType || "other");
+                  return (
+                    <div
+                      key={p.id}
+                      className="bg-white rounded-2xl shadow-sm overflow-hidden"
+                      style={{
+                        border: p.isFavorite ? "2px solid #F59E0B" : "1px solid #F5E6EF",
+                        opacity: deletingId === p.id ? 0.5 : 1,
+                      }}
+                    >
+                      <div className="flex items-center gap-3 p-4">
+                        {/* お気に入りボタン */}
+                        <button
+                          onClick={() => handleToggleFavorite(p.id, p.isFavorite)}
+                          className="shrink-0 text-lg"
+                          style={{ color: p.isFavorite ? "#F59E0B" : "#D4D4D4" }}
+                        >
+                          {p.isFavorite ? "★" : "☆"}
+                        </button>
+
+                        <Link
+                          href={`/product/${p.id}`}
+                          className="flex items-center gap-3 flex-1 min-w-0"
+                        >
+                          {p.packageImage ? (
+                            <div className="w-16 h-16 rounded-xl overflow-hidden shrink-0 relative">
+                              <Image
+                                src={p.packageImage}
+                                alt={p.name}
+                                fill
+                                className="object-cover"
+                                sizes="64px"
+                                loading="lazy"
+                              />
+                            </div>
+                          ) : (
+                            <div
+                              className="w-16 h-16 rounded-xl flex items-center justify-center text-2xl shrink-0"
+                              style={{ background: "linear-gradient(135deg, #E8FAF8, #FFF0F5)" }}
+                            >
+                              {genre?.icon || "📦"}
+                            </div>
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <div className="font-medium truncate text-sm" style={{ color: "#2D2D2D" }}>{p.name}</div>
+                            <div className="flex items-center gap-2 mt-0.5">
+                              <div className="text-xs" style={{ color: "#9B9B9B" }}>{p.brand}</div>
+                              {genre && (
+                                <span
+                                  className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-xs"
+                                  style={{ background: `${genre.color}18`, color: genre.color, fontSize: "10px" }}
+                                >
+                                  {genre.icon} {genre.label}
+                                </span>
+                              )}
+                            </div>
+                            <div className="text-xs mt-0.5" style={{ color: "#C5C5C5" }}>
+                              {p.ingredients.length}成分 · {new Date(p.createdAt).toLocaleDateString("ja-JP")}
+                            </div>
+                          </div>
+                          <span className="text-lg" style={{ color: "#5BBFAD" }}>›</span>
+                        </Link>
+                      </div>
+
+                      {/* ジャンル編集モーダル */}
+                      {editingGenreId === p.id && (
+                        <div
+                          className="px-4 py-3 border-t"
+                          style={{ borderColor: "#F5E6EF", background: "#FAFAFA" }}
+                        >
+                          <div className="text-xs font-medium mb-2" style={{ color: "#9B9B9B" }}>
+                            ジャンルを選択
+                          </div>
+                          <div className="flex flex-wrap gap-1.5">
+                            {PRODUCT_GENRES.map((g) => (
+                              <button
+                                key={g.key}
+                                onClick={() => handleGenreChange(p.id, g.key)}
+                                className="px-2.5 py-1 rounded-full text-xs font-medium transition-all"
+                                style={
+                                  (p.productType || "other") === g.key
+                                    ? { background: g.color, color: "#fff" }
+                                    : { background: `${g.color}18`, color: g.color }
+                                }
+                              >
+                                {g.icon} {g.label}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      <div
+                        className="flex border-t px-2 py-1.5"
+                        style={{ borderColor: "#F5E6EF" }}
+                      >
+                        <button
+                          onClick={() => setEditingGenreId(editingGenreId === p.id ? null : p.id)}
+                          className="flex-1 text-xs font-medium py-1.5 rounded-lg"
+                          style={{ color: "#5BBFAD" }}
+                        >
+                          {editingGenreId === p.id ? "✕ 閉じる" : "🏷 ジャンル"}
+                        </button>
+                        <button
+                          onClick={() => handlePhotoUpdate(p.id)}
+                          disabled={updatingImageId === p.id || deletingImageId === p.id}
+                          className="flex-1 text-xs font-medium py-1.5 rounded-lg"
+                          style={{ color: "#5BBFAD" }}
+                        >
+                          {updatingImageId === p.id ? "更新中..." : "📷 写真"}
+                        </button>
+                        {p.packageImage && (
+                          <button
+                            onClick={() => handleDeleteImage(p.id)}
+                            disabled={deletingImageId === p.id || updatingImageId === p.id}
+                            className="flex-1 text-xs font-medium py-1.5 rounded-lg"
+                            style={{ color: "#9B9B9B" }}
+                          >
+                            {deletingImageId === p.id ? "削除中..." : "🗑 写真削除"}
+                          </button>
+                        )}
+                        <button
+                          onClick={() => handleDelete(p.id, p.name)}
+                          disabled={deletingId === p.id}
+                          className="flex-1 text-xs font-medium py-1.5 rounded-lg"
+                          style={{ color: "#E57373" }}
+                        >
+                          🗑 削除
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </>
         )}
 

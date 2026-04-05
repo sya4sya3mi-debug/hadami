@@ -6,7 +6,7 @@ import { Ingredient, Combination, ProductGenre } from "@/types";
 import { RARITY } from "@/lib/ingredients";
 import { getCategoryByKey } from "@/lib/categories";
 import { getGenreByKey } from "@/lib/productGenres";
-import Badge from "@/components/ui/Badge";
+import Badge, { StarIcon } from "@/components/ui/Badge";
 import Disclaimer from "@/components/ui/Disclaimer";
 
 interface ScanResultProps {
@@ -19,6 +19,7 @@ interface ScanResultProps {
   onSave?: () => void;
   saved: boolean;
   imagePreview?: string;
+  newDiscoveryIds?: Set<string>;
 }
 
 export default function ScanResult({
@@ -31,6 +32,7 @@ export default function ScanResult({
   onSave,
   saved,
   imagePreview,
+  newDiscoveryIds,
 }: ScanResultProps) {
   const [showUnknown, setShowUnknown] = useState(false);
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set(["_all"]));
@@ -148,6 +150,7 @@ export default function ScanResult({
                           ingredient={ingredient}
                           orderIndex={orderIndex}
                           delay={Math.min(idx, 10) * 50}
+                          isNew={newDiscoveryIds?.has(ingredient.id)}
                         />
                       ))}
                     </div>
@@ -165,6 +168,7 @@ export default function ScanResult({
                 ingredient={ingredient}
                 orderIndex={orderIndex}
                 delay={Math.min(idx, 10) * 50}
+                isNew={newDiscoveryIds?.has(ingredient.id)}
               />
             ))}
           </div>
@@ -258,9 +262,9 @@ export default function ScanResult({
             }
           >
             {saved ? (
-              <span className="animate-check-pop inline-block">✓ 履歴に保存しました</span>
+              <span className="animate-check-pop inline-block">✓ Myコスメに保存しました</span>
             ) : (
-              "✨ 履歴に保存する"
+              "✨ Myコスメに保存する"
             )}
           </button>
         </div>
@@ -269,23 +273,33 @@ export default function ScanResult({
   );
 }
 
-function IngredientRow({ ingredient, orderIndex, delay }: { ingredient: Ingredient; orderIndex: number; delay: number }) {
+function IngredientRow({ ingredient, orderIndex, delay, isNew }: { ingredient: Ingredient; orderIndex: number; delay: number; isNew?: boolean }) {
   return (
     <Link
       href={`/ingredient/${ingredient.id}`}
-      className="flex items-center gap-3 bg-white rounded-2xl p-3 animate-stagger-in"
+      className="flex items-center gap-3 rounded-2xl p-3 animate-stagger-in"
       style={{
-        border: "1px solid #F5E6EF",
-        boxShadow: "0 1px 4px rgba(249,168,192,0.06)",
+        border: isNew ? "2px solid #5BBFAD" : "1px solid #F5E6EF",
+        boxShadow: isNew ? "0 2px 12px rgba(91,191,173,0.18)" : "0 1px 4px rgba(249,168,192,0.06)",
+        background: isNew ? "#F0FDFB" : "#fff",
         animationDelay: `${delay}ms`,
         opacity: 0,
       }}
     >
-      <span className="text-lg">{RARITY[ingredient.rarity].icon}</span>
+      <span className="inline-flex items-center gap-px">
+        {Array.from({ length: RARITY[ingredient.rarity].star }).map((_, i) => (
+          <StarIcon key={i} color={RARITY[ingredient.rarity].color} size={14} />
+        ))}
+      </span>
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 flex-wrap">
           <span className="font-bold text-sm" style={{ color: "#2D2D2D" }}>{ingredient.nameJa}</span>
           <Badge rarity={ingredient.rarity} size="sm" />
+          {isNew && (
+            <span className="text-[9px] px-1.5 py-0.5 rounded-full font-bold" style={{ background: "#5BBFAD", color: "#fff" }}>
+              NEW
+            </span>
+          )}
         </div>
         <div className="text-[11px] mt-0.5" style={{ color: "#9B9B9B" }}>{ingredient.nameInci}</div>
         <div className="flex gap-1 mt-1 flex-wrap">

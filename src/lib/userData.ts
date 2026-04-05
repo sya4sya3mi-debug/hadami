@@ -3,7 +3,7 @@ import type { DeckItem, Product, ProductGenre, RoutineType } from "@/types";
 import { useDeckStore } from "@/stores/useDeckStore";
 import { useProductStore } from "@/stores/useProductStore";
 import { useZukanStore } from "@/stores/useZukanStore";
-import { getSignedImageUrl, clearImageUrlCache } from "./storage";
+import { getSignedImageUrls, clearImageUrlCache } from "./storage";
 
 const PRODUCT_STORAGE_KEY = "hadami-products";
 const DECK_STORAGE_KEY = "hadami-deck";
@@ -17,6 +17,7 @@ type ProductRow = {
   product_type: string | null;
   ingredient_ids: string[] | null;
   package_image_url: string | null;
+  is_favorite: boolean | null;
   created_at: string | null;
 };
 
@@ -55,28 +56,28 @@ export function clearCachedUserData() {
 }
 
 async function mapProducts(supabase: SupabaseClient, rows: ProductRow[]): Promise<Product[]> {
-  const products = await Promise.all(
-    rows.map(async (row) => {
-      let packageImage: string | undefined;
-      if (row.package_image_url) {
-        const url = await getSignedImageUrl(supabase, row.package_image_url);
-        packageImage = url ?? undefined;
-      }
-      return {
-        id: row.id,
-        name: row.name ?? "未設定",
-        brand: row.brand ?? "",
-        productType: (row.product_type as ProductGenre) || "other",
-        packageImage,
-        createdAt: row.created_at ?? new Date(0).toISOString(),
-        ingredients: (row.ingredient_ids ?? []).map((ingredientId, index) => ({
-          ingredientId,
-          orderIndex: index,
-        })),
-      };
-    })
-  );
-  return products;
+  // 画像パスを収集して一括でsigned URLを取得（N回→1回のAPIコール）
+  const imagePaths = rows
+    .map((r) => r.package_image_url)
+    .filter((p): p is string => !!p);
+
+  const urlMap = imagePaths.length > 0
+    ? await getSignedImageUrls(supabase, imagePaths)
+    : {};
+
+  return rows.map((row) => ({
+    id: row.id,
+    name: row.name ?? "未設定",
+    brand: row.brand ?? "",
+    productType: (row.product_type as ProductGenre) || "other",
+    packageImage: row.package_image_url ? (urlMap[row.package_image_url] ?? undefined) : undefined,
+    isFavorite: row.is_favorite ?? false,
+    createdAt: row.created_at ?? new Date(0).toISOString(),
+    ingredients: (row.ingredient_ids ?? []).map((ingredientId, index) => ({
+      ingredientId,
+      orderIndex: index,
+    })),
+  }));
 }
 
 function mapDeckItems(rows: DeckRow[]): DeckItem[] {
@@ -91,7 +92,7 @@ export async function syncUserData(supabase: SupabaseClient, userId: string) {
   const [productsRes, discoveriesRes, deckRes] = await Promise.all([
     supabase
       .from("products")
-      .select("id, name, brand, product_type, ingredient_ids, package_image_url, created_at")
+      .select("id, name, brand, product_type, ingredient_ids, package_image_url, is_favorite, created_at")
       .eq("user_id", userId)
       .order("created_at", { ascending: false }),
     supabase
