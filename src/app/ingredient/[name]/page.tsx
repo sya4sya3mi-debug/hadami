@@ -3,7 +3,7 @@
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { useState } from "react";
-import { getIngredientById, RARITY } from "@/lib/ingredients";
+import { getIngredientById, RARITY, getGenreInfo } from "@/lib/ingredients";
 import { getCategoryByKey } from "@/lib/categories";
 import { useProductStore } from "@/stores/useProductStore";
 import { useZukanStore } from "@/stores/useZukanStore";
@@ -66,6 +66,7 @@ export default function IngredientDetailPage() {
   }
 
   const rarityInfo = RARITY[ingredient.rarity];
+  const genreInfo = getGenreInfo(ingredient.genre);
   const containingProducts = products.filter((p) =>
     p.ingredients.some((pi) => pi.ingredientId === ingredient.id)
   );
@@ -82,14 +83,22 @@ export default function IngredientDetailPage() {
         <div className="text-center mb-6">
           <div
             className="w-24 h-24 rounded-full flex items-center justify-center text-5xl mx-auto mb-3"
-            style={{ background: `linear-gradient(135deg, ${ingredient.color}20, ${ingredient.color}08)` }}
+            style={{ background: `linear-gradient(135deg, ${genreInfo?.color || ingredient.color}20, ${genreInfo?.color || ingredient.color}08)` }}
           >
-            {rarityInfo.icon}
+            {genreInfo?.icon || "📦"}
           </div>
           <h1 className="font-bold text-2xl" style={{ color: "#2D2D2D" }}>{ingredient.nameJa}</h1>
           <p className="text-sm mt-1" style={{ color: "#9B9B9B" }}>{ingredient.nameInci}</p>
-          <div className="flex items-center justify-center mt-2">
+          <div className="flex items-center justify-center gap-2 mt-2">
             <Badge rarity={ingredient.rarity} />
+            {genreInfo && (
+              <span
+                className="text-xs px-2.5 py-1 rounded-full font-medium"
+                style={{ background: genreInfo.color + "20", color: genreInfo.color }}
+              >
+                {genreInfo.icon} {genreInfo.label}
+              </span>
+            )}
           </div>
           <div className="flex gap-1.5 justify-center mt-2 flex-wrap">
             {ingredient.categories.map((cat) => {
