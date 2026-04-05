@@ -11,6 +11,7 @@ export default function ShareModal({ text, onClose }: ShareModalProps) {
   const [copied, setCopied] = useState(false);
   const overlayRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
+  const startYRef = useRef(0);
 
   useEffect(() => {
     const container = document.getElementById("app-container");
@@ -24,16 +25,35 @@ export default function ShareModal({ text, onClose }: ShareModalProps) {
 
     const overlay = overlayRef.current;
     const content = contentRef.current;
-    const blockTouch = (e: TouchEvent) => {
-      if (content && content.contains(e.target as Node)) return;
+
+    const handleTouchStart = (e: TouchEvent) => {
+      startYRef.current = e.touches[0].clientY;
+    };
+
+    const handleTouchMove = (e: TouchEvent) => {
+      if (content && content.contains(e.target as Node)) {
+        const scrollTop = content.scrollTop;
+        const scrollHeight = content.scrollHeight;
+        const clientHeight = content.clientHeight;
+        const touchY = e.touches[0].clientY;
+        const deltaY = startYRef.current - touchY;
+        if (scrollTop <= 0 && deltaY < 0) { e.preventDefault(); return; }
+        if (scrollTop + clientHeight >= scrollHeight && deltaY > 0) { e.preventDefault(); return; }
+        return;
+      }
       e.preventDefault();
     };
+
     if (overlay) {
-      overlay.addEventListener("touchmove", blockTouch, { passive: false });
+      overlay.addEventListener("touchstart", handleTouchStart, { passive: true });
+      overlay.addEventListener("touchmove", handleTouchMove, { passive: false });
     }
 
     return () => {
-      if (overlay) overlay.removeEventListener("touchmove", blockTouch);
+      if (overlay) {
+        overlay.removeEventListener("touchstart", handleTouchStart);
+        overlay.removeEventListener("touchmove", handleTouchMove);
+      }
       document.documentElement.classList.remove("scroll-locked");
       document.body.style.top = "";
       if (nextDiv) nextDiv.style.top = "";
@@ -73,7 +93,7 @@ export default function ShareModal({ text, onClose }: ShareModalProps) {
           </div>
         </div>
 
-        {/* 投稿テキスト（スクロール可能） */}
+        {/* Scrollable content */}
         <div
           ref={contentRef}
           className="overflow-y-auto px-6 flex-1 min-h-0"
@@ -87,7 +107,7 @@ export default function ShareModal({ text, onClose }: ShareModalProps) {
           </div>
         </div>
 
-        {/* ボタン */}
+        {/* Buttons */}
         <div className="px-6 pb-8 pt-3 shrink-0 flex gap-3">
           <button
             onClick={handleCopy}

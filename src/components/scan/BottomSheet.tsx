@@ -14,6 +14,7 @@ interface BottomSheetProps {
 export default function BottomSheet({ open, onClose, children, footer, title, subtitle }: BottomSheetProps) {
   const overlayRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
+  const startYRef = useRef(0);
 
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
@@ -37,22 +38,50 @@ export default function BottomSheet({ open, onClose, children, footer, title, su
     if (container) container.style.top = topValue;
     document.documentElement.classList.add("scroll-locked");
 
-    // overlayのtouchmoveをnon-passiveで直接ブロック
     const overlay = overlayRef.current;
     const content = contentRef.current;
-    const blockTouch = (e: TouchEvent) => {
-      // contentRef内のタッチはスクロール許可
-      if (content && content.contains(e.target as Node)) return;
+
+    // Track touch start position
+    const handleTouchStart = (e: TouchEvent) => {
+      startYRef.current = e.touches[0].clientY;
+    };
+
+    const handleTouchMove = (e: TouchEvent) => {
+      // If touch is inside scrollable content, allow scroll only within bounds
+      if (content && content.contains(e.target as Node)) {
+        const scrollTop = content.scrollTop;
+        const scrollHeight = content.scrollHeight;
+        const clientHeight = content.clientHeight;
+        const touchY = e.touches[0].clientY;
+        const deltaY = startYRef.current - touchY;
+
+        // At top and scrolling up -> block
+        if (scrollTop <= 0 && deltaY < 0) {
+          e.preventDefault();
+          return;
+        }
+        // At bottom and scrolling down -> block
+        if (scrollTop + clientHeight >= scrollHeight && deltaY > 0) {
+          e.preventDefault();
+          return;
+        }
+        // Otherwise allow scroll within content
+        return;
+      }
+      // Everything outside content -> block
       e.preventDefault();
     };
+
     if (overlay) {
-      overlay.addEventListener("touchmove", blockTouch, { passive: false });
+      overlay.addEventListener("touchstart", handleTouchStart, { passive: true });
+      overlay.addEventListener("touchmove", handleTouchMove, { passive: false });
     }
 
     return () => {
       document.removeEventListener("keydown", handleKeyDown);
       if (overlay) {
-        overlay.removeEventListener("touchmove", blockTouch);
+        overlay.removeEventListener("touchstart", handleTouchStart);
+        overlay.removeEventListener("touchmove", handleTouchMove);
       }
       document.documentElement.classList.remove("scroll-locked");
       document.body.style.top = "";
@@ -75,7 +104,8 @@ export default function BottomSheet({ open, onClose, children, footer, title, su
       />
       {/* Sheet */}
       <div
-        className="absolute bottom-0 left-0 right-0 bg-white rounded-t-3xl animate-slide-up max-h-[90vh] flex flex-col"
+        className="absolute bottom-0 left-0 right-0 bg-white rounded-t-3xl animate-slide-up flex flex-col"
+        style={{ maxHeight: "calc(100dvh - 2rem)" }}
       >
         {/* Drag handle + header */}
         <div className="shrink-0 px-6 pt-3 pb-4" style={{ borderBottom: title ? "1px solid #F5F5F5" : undefined }}>
@@ -92,7 +122,7 @@ export default function BottomSheet({ open, onClose, children, footer, title, su
             </div>
           )}
         </div>
-        {/* Content - ここだけスクロール許可 */}
+        {/* Content */}
         <div
           ref={contentRef}
           className="flex-1 min-h-0 overflow-y-auto px-5"
@@ -105,7 +135,7 @@ export default function BottomSheet({ open, onClose, children, footer, title, su
         >
           {children}
         </div>
-        {/* Footer（常時表示） */}
+        {/* Footer */}
         {footer && (
           <div
             className="shrink-0 px-5 pt-3"
