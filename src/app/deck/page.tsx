@@ -25,10 +25,8 @@ import { RoutineType, CategoryKey, Product, ProductGenre, RecommendationResult }
 
 // ── デッキ定義 ──
 const DECK_OPTIONS: { key: RoutineType; label: string; icon: string; gradient: string }[] = [
-  { key: "morning",        label: "\u671D\u30C7\u30C3\u30AD",         icon: "\u2600\uFE0F",                   gradient: "linear-gradient(135deg, #FFD580, #FFBE5C)" },
-  { key: "night",          label: "\u591C\u30C7\u30C3\u30AD",         icon: "\uD83C\uDF19",                   gradient: "linear-gradient(135deg, #7B9FD4, #5B7BC4)" },
-  { key: "spring_summer",  label: "\u6625\u590F\u30C7\u30C3\u30AD",   icon: "\uD83C\uDF38",                   gradient: "linear-gradient(135deg, #F9A8C0, #F06292)" },
-  { key: "autumn_winter",  label: "\u79CB\u51AC\u30C7\u30C3\u30AD",   icon: "\uD83C\uDF42",                   gradient: "linear-gradient(135deg, #FFAB76, #E07B39)" },
+  { key: "morning", label: "\u671D\u30C7\u30C3\u30AD", icon: "\u2600\uFE0F", gradient: "linear-gradient(135deg, #FFD580, #FFBE5C)" },
+  { key: "night",   label: "\u591C\u30C7\u30C3\u30AD", icon: "\uD83C\uDF19", gradient: "linear-gradient(135deg, #7B9FD4, #5B7BC4)" },
 ];
 
 export default function DeckPage() {

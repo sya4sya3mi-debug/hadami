@@ -6,12 +6,58 @@ import { useUser } from "@/lib/auth";
 import { useZukanStore } from "@/stores/useZukanStore";
 
 const TABS = [
-  { href: "/", label: "ホーム", icon: "🏠" },
-  { href: "/scan", label: "撮る", icon: "📷" },
-  { href: "/zukan", label: "集める", icon: "📖" },
-  { href: "/deck", label: "組む", icon: "✨" },
-  { href: "/history", label: "Myコスメ", icon: "🧴" },
+  { href: "/", label: "\u30DB\u30FC\u30E0", iconId: "home" },
+  { href: "/scan", label: "\u64AE\u308B", iconId: "scan" },
+  { href: "/zukan", label: "\u96C6\u3081\u308B", iconId: "zukan" },
+  { href: "/deck", label: "\u7D44\u3080", iconId: "deck" },
+  { href: "/history", label: "My\u30B3\u30B9\u30E1", iconId: "cosme" },
 ] as const;
+
+function TabIcon({ id, active }: { id: string; active: boolean }) {
+  const color = active ? "#5BBFAD" : "#9B9B9B";
+  const sw = active ? "2" : "1.5";
+  switch (id) {
+    case "home":
+      return (
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round">
+          <path d="M3 9.5L12 3l9 6.5V20a1 1 0 01-1 1H4a1 1 0 01-1-1z" />
+          <path d="M9 21V12h6v9" />
+        </svg>
+      );
+    case "scan":
+      return (
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round">
+          <path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z" />
+          <circle cx="12" cy="13" r="4" />
+        </svg>
+      );
+    case "zukan":
+      return (
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round">
+          <path d="M4 19.5A2.5 2.5 0 016.5 17H20" />
+          <path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z" />
+        </svg>
+      );
+    case "deck":
+      return (
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round">
+          <rect x="2" y="3" width="20" height="14" rx="2" />
+          <path d="M8 21h8" />
+          <path d="M12 17v4" />
+          <path d="M7 8h2M7 12h6" />
+        </svg>
+      );
+    case "cosme":
+      return (
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round">
+          <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" />
+          <circle cx="12" cy="7" r="4" />
+        </svg>
+      );
+    default:
+      return null;
+  }
+}
 
 export default function TabBar() {
   const pathname = usePathname();
@@ -91,7 +137,6 @@ export default function TabBar() {
                   width: "40px",
                   height: "28px",
                   borderRadius: "12px",
-                  fontSize: "20px",
                   background: isActive
                     ? "linear-gradient(135deg, #E8FAF8, #FFF0F5)"
                     : "transparent",
@@ -99,7 +144,7 @@ export default function TabBar() {
                   transition: "all 0.2s",
                 }}
               >
-                {tab.icon}
+                <TabIcon id={tab.iconId} active={isActive} />
               </span>
               <span
                 style={{
