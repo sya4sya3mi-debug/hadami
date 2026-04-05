@@ -228,7 +228,7 @@ export default function DeckPage() {
           <h1 className="font-bold text-base" style={{ color: "#2D2D2D" }}>{"\u2728"} マイデッキ</h1>
           <button
             onClick={() => setShowShare(true)}
-            className="px-3 py-1.5 rounded-full text-xs font-semibold border-none"
+            className="px-3 py-1.5 rounded-full text-sm font-medium border-none"
             style={{ background: "#5BBFAD", color: "#fff" }}
           >
             Xに投稿
