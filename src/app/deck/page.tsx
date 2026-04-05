@@ -401,6 +401,9 @@ export default function DeckPage() {
                       <span className="text-sm font-bold" style={{ color: cat.color }}>{cat.label}</span>
                       <span className="text-xs" style={{ color: "#9B9B9B" }}>({ings.length}種)</span>
                     </div>
+                    <p className="text-[11px] leading-relaxed mb-2" style={{ color: "#8B8B8B" }}>
+                      {cat.desc}
+                    </p>
                     <div className="flex flex-wrap gap-1 mt-1">
                       {ings.map((ing) => (
                         <Link
