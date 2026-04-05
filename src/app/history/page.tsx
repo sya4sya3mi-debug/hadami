@@ -524,32 +524,30 @@ export default function HistoryPage() {
               {favCount}件
             </span>
           </div>
-          <div className="grid grid-cols-3 gap-2">
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
             {products.filter((p) => p.isFavorite).map((p) => {
               const genre = getGenreByKey(p.productType || "other");
               return (
                 <div
                   key={p.id}
-                  className="relative rounded-xl overflow-hidden bg-white"
-                  style={{ border: "2px solid #F59E0B", aspectRatio: "1" }}
+                  className="bg-white"
+                  style={{ border: "2px solid #F59E0B", borderRadius: 14, overflow: "hidden" }}
                 >
-                  {p.packageImage ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={p.packageImage} alt={p.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                  ) : (
-                    <div
-                      className="w-full h-full flex items-center justify-center text-2xl"
-                      style={{ background: "linear-gradient(135deg, #E8FAF8, #FFF0F5)" }}
-                    >
-                      {genre?.icon || "📦"}
-                    </div>
-                  )}
-                  <div
-                    className="absolute bottom-0 left-0 right-0 px-1.5 py-1"
-                    style={{ background: "linear-gradient(transparent, rgba(0,0,0,0.6))" }}
-                  >
-                    <div className="text-white font-bold truncate" style={{ fontSize: "9px" }}>{p.name}</div>
-                    <div className="text-white truncate" style={{ fontSize: "8px", opacity: 0.8 }}>{p.brand}</div>
+                  <div style={{ position: "relative", aspectRatio: "1" }}>
+                    {p.packageImage ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={p.packageImage} alt={p.name} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+                    ) : (
+                      <div
+                        style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "2rem", background: "linear-gradient(135deg, #E8FAF8, #FFF0F5)" }}
+                      >
+                        {genre?.icon || "📦"}
+                      </div>
+                    )}
+                  </div>
+                  <div style={{ padding: "8px 10px 10px" }}>
+                    <div style={{ fontSize: "11px", fontWeight: 700, color: "#2D2D2D", lineHeight: 1.3, wordBreak: "break-all" }}>{p.name}</div>
+                    <div style={{ fontSize: "10px", color: "#9B9B9B", marginTop: 2, wordBreak: "break-all" }}>{p.brand}</div>
                   </div>
                 </div>
               );
