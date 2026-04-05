@@ -19,6 +19,25 @@ export interface RarityInfo {
   icon: string;
 }
 
+// ── 成分ジャンル（出自）──
+export type IngredientGenre =
+  | "amino_acid"
+  | "vitamin"
+  | "peptide"
+  | "botanical"
+  | "oil_lipid"
+  | "ferment"
+  | "acid"
+  | "base"
+  | "water";
+
+export interface IngredientGenreInfo {
+  key: IngredientGenre;
+  label: string;
+  icon: string;
+  color: string;
+}
+
 // ── 成分 ──
 export interface Ingredient {
   id: string;
@@ -26,6 +45,7 @@ export interface Ingredient {
   nameInci: string;
   categories: CategoryKey[];
   rarity: RarityKey;
+  genre: IngredientGenre;
   color: string;
   note: string;
   funFact?: string;

@@ -1,5 +1,5 @@
 import { Ingredient } from "@/types";
-import { RARITY } from "@/lib/ingredients";
+import { RARITY, getGenreInfo } from "@/lib/ingredients";
 
 interface IngredientCardProps {
   ingredient: Ingredient;
@@ -11,6 +11,7 @@ interface IngredientCardProps {
 
 export default function IngredientCard({ ingredient, discovered, index, isRecent, foundCount = 0 }: IngredientCardProps) {
   const rarityInfo = RARITY[ingredient.rarity];
+  const genreInfo = getGenreInfo(ingredient.genre);
 
   if (!discovered) {
     return (
@@ -27,35 +28,50 @@ export default function IngredientCard({ ingredient, discovered, index, isRecent
     );
   }
 
+  const cardColor = genreInfo?.color || rarityInfo.color;
+  const stars = "⭐".repeat(rarityInfo.star);
+
   return (
     <div
-      className={`rounded-2xl p-3 flex flex-col items-center justify-center aspect-square relative${isRecent ? " animate-recent-glow" : ""}`}
+      className={`rounded-2xl p-2.5 flex flex-col items-center justify-center aspect-square relative${isRecent ? " animate-recent-glow" : ""}`}
       style={{
-        background: `linear-gradient(145deg, ${rarityInfo.color}18, ${rarityInfo.color}08)`,
-        border: isRecent ? `2px solid ${rarityInfo.color}` : `1px solid ${rarityInfo.color}25`,
-        boxShadow: isRecent ? `0 0 12px ${rarityInfo.color}40` : undefined,
+        background: `linear-gradient(145deg, ${cardColor}18, ${cardColor}08)`,
+        border: isRecent ? `2px solid ${cardColor}` : `1px solid ${cardColor}25`,
+        boxShadow: isRecent ? `0 0 12px ${cardColor}40` : undefined,
       }}
     >
-      <span className="text-[9px] font-medium absolute top-1.5 left-2" style={{ color: rarityInfo.color + "99" }}>
+      {/* No. label */}
+      <span className="text-[9px] font-medium absolute top-1.5 left-2" style={{ color: cardColor + "99" }}>
         No.{index}
       </span>
+
+      {/* Found count */}
       {foundCount > 0 && (
         <span
           className="absolute top-1.5 right-2 text-[9px] font-bold px-1.5 py-0.5 rounded-full"
-          style={{ background: rarityInfo.color + "20", color: rarityInfo.color }}
+          style={{ background: cardColor + "20", color: cardColor }}
         >
           ×{foundCount}
         </span>
       )}
-      <span className="text-2xl">{rarityInfo.icon}</span>
+
+      {/* Genre icon (large) */}
+      <span className="text-2xl">{genreInfo?.icon || "📦"}</span>
+
+      {/* Ingredient name */}
       <span
         className="text-[11px] font-medium mt-1 text-center leading-tight"
         style={{ color: "#2D2D2D" }}
       >
         {ingredient.nameJa}
       </span>
+
+      {/* Rarity stars + label */}
+      <div className="flex items-center gap-0.5 mt-1">
+        <span className="text-[8px] leading-none">{stars}</span>
+      </div>
       <span
-        className="text-[10px] mt-1 px-1.5 py-0.5 rounded-full"
+        className="text-[9px] px-1.5 py-0.5 rounded-full"
         style={{ background: rarityInfo.color + "20", color: rarityInfo.color }}
       >
         {rarityInfo.label}

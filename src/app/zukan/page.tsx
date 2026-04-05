@@ -4,7 +4,8 @@ import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { useZukanStore, ZukanFilter } from "@/stores/useZukanStore";
 import { useProductStore } from "@/stores/useProductStore";
-import { MASTER_INGREDIENTS } from "@/lib/ingredients";
+import { MASTER_INGREDIENTS, INGREDIENT_GENRES } from "@/lib/ingredients";
+import { IngredientGenre } from "@/types";
 import { shareZukanProgress } from "@/lib/share";
 import ZukanProgress from "@/components/zukan/ZukanProgress";
 import IngredientCard from "@/components/zukan/IngredientCard";
@@ -23,6 +24,7 @@ export default function ZukanPage() {
   const clearRecentlyFound = useZukanStore((s) => s.clearRecentlyFound);
   const products = useProductStore((s) => s.products);
   const [showShare, setShowShare] = useState(false);
+  const [genreFilter, setGenreFilter] = useState<"all" | IngredientGenre>("all");
 
   // 成分ごとの発見回数を集計
   const ingredientCounts = useMemo(() => {
@@ -50,8 +52,9 @@ export default function ZukanPage() {
   }
 
   const filteredIngredients = MASTER_INGREDIENTS.filter((ing) => {
-    if (filter === "discovered") return discoveredIds.includes(ing.id);
-    if (filter === "undiscovered") return !discoveredIds.includes(ing.id);
+    if (filter === "discovered" && !discoveredIds.includes(ing.id)) return false;
+    if (filter === "undiscovered" && discoveredIds.includes(ing.id)) return false;
+    if (genreFilter !== "all" && ing.genre !== genreFilter) return false;
     return true;
   });
 
@@ -95,6 +98,38 @@ export default function ZukanPage() {
               }
             >
               {label}
+            </button>
+          ))}
+        </div>
+
+        {/* Genre filter */}
+        <div
+          className="flex gap-1.5 mb-4 pb-1.5 overflow-x-auto"
+          style={{ scrollbarWidth: "none", WebkitOverflowScrolling: "touch" }}
+        >
+          <button
+            onClick={() => setGenreFilter("all")}
+            className="shrink-0 px-2.5 py-1 rounded-full text-[11px] font-medium transition-all"
+            style={
+              genreFilter === "all"
+                ? { background: "linear-gradient(135deg, #5BBFAD, #7DD3C8)", color: "#fff" }
+                : { background: "#fff", color: "#9B9B9B", border: "1px solid #F0F0F0" }
+            }
+          >
+            全ジャンル
+          </button>
+          {INGREDIENT_GENRES.map((g) => (
+            <button
+              key={g.key}
+              onClick={() => setGenreFilter(g.key)}
+              className="shrink-0 px-2.5 py-1 rounded-full text-[11px] font-medium transition-all whitespace-nowrap"
+              style={
+                genreFilter === g.key
+                  ? { background: g.color, color: "#fff" }
+                  : { background: "#fff", color: "#9B9B9B", border: "1px solid #F0F0F0" }
+              }
+            >
+              {g.icon} {g.label}
             </button>
           ))}
         </div>
