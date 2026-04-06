@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useZukanStore, ZukanFilter } from "@/stores/useZukanStore";
 import { useProductStore } from "@/stores/useProductStore";
-import { MASTER_INGREDIENTS, INGREDIENT_GENRES, GENRE_DESCRIPTIONS, RARITY } from "@/lib/ingredients";
+import { MASTER_INGREDIENTS, INGREDIENT_GENRES, GENRE_DESCRIPTIONS, RARITY, getIngredientIndex } from "@/lib/ingredients";
 import { IngredientGenre, Ingredient } from "@/types";
 import { shareZukanProgress } from "@/lib/share";
 import ZukanProgress from "@/components/zukan/ZukanProgress";
@@ -17,14 +17,17 @@ import AuthGuard from "@/components/ui/AuthGuard";
 
 /* ── Card textures ── */
 const CARD_TEXTURES: Record<string, { bg: string; pattern: string; color: string; emoji: string; label: string }> = {
-  moisturizing: { bg: "linear-gradient(145deg, #E3F4EE 0%, #D4EDE3 50%, #C5E8D8 100%)", pattern: "radial-gradient(ellipse at 30% 60%, rgba(58,143,122,0.08) 0%, transparent 50%)", color: "#3A7D65", emoji: "💧", label: "保湿" },
-  soothing: { bg: "linear-gradient(145deg, #E8EFE3 0%, #D8E6CF 50%, #C8DEC0 100%)", pattern: "radial-gradient(ellipse at 40% 70%, rgba(90,122,74,0.08) 0%, transparent 50%)", color: "#5A7A4A", emoji: "🌿", label: "鎮静" },
-  turnover: { bg: "linear-gradient(145deg, #EDE3F0 0%, #E0D4EB 50%, #D5C8E2 100%)", pattern: "radial-gradient(ellipse at 60% 40%, rgba(107,74,138,0.08) 0%, transparent 50%)", color: "#6B4A8A", emoji: "🔬", label: "修復" },
-  brightening: { bg: "linear-gradient(145deg, #FFF5E5 0%, #FDECC8 50%, #FBE3B0 100%)", pattern: "radial-gradient(ellipse at 50% 50%, rgba(160,122,48,0.08) 0%, transparent 50%)", color: "#A07A30", emoji: "✨", label: "美白" },
-  barrier: { bg: "linear-gradient(145deg, #FDE8E0 0%, #F5D8CC 50%, #EECABC 100%)", pattern: "radial-gradient(ellipse at 40% 60%, rgba(160,90,64,0.08) 0%, transparent 50%)", color: "#A05A40", emoji: "🧪", label: "基剤" },
-  keratin: { bg: "linear-gradient(145deg, #E8E3F0 0%, #DAD4EB 50%, #CCC5E0 100%)", pattern: "radial-gradient(ellipse at 50% 50%, rgba(90,74,122,0.08) 0%, transparent 50%)", color: "#5A4A7A", emoji: "🧬", label: "角質" },
+  water:      { bg: "linear-gradient(145deg, #E3F4EE 0%, #D4EDE3 50%, #C5E8D8 100%)", pattern: "radial-gradient(ellipse at 30% 60%, rgba(58,143,122,0.08) 0%, transparent 50%)", color: "#3A7D65", emoji: "💧", label: "うるおい" },
+  amino_acid: { bg: "linear-gradient(145deg, #E3E8F4 0%, #D4DBEB 50%, #C5CEE2 100%)", pattern: "radial-gradient(ellipse at 40% 50%, rgba(74,90,138,0.08) 0%, transparent 50%)", color: "#4A5A8A", emoji: "🧬", label: "アミノ酸" },
+  vitamin:    { bg: "linear-gradient(145deg, #FFF5E5 0%, #FDECC8 50%, #FBE3B0 100%)", pattern: "radial-gradient(ellipse at 50% 50%, rgba(160,122,48,0.08) 0%, transparent 50%)", color: "#A07A30", emoji: "🍊", label: "ビタミン" },
+  peptide:    { bg: "linear-gradient(145deg, #F4E3F0 0%, #EBD4E8 50%, #E2C5DF 100%)", pattern: "radial-gradient(ellipse at 60% 40%, rgba(138,74,122,0.08) 0%, transparent 50%)", color: "#8A4A7A", emoji: "🧪", label: "ペプチド" },
+  botanical:  { bg: "linear-gradient(145deg, #E8EFE3 0%, #D8E6CF 50%, #C8DEC0 100%)", pattern: "radial-gradient(ellipse at 40% 70%, rgba(90,122,74,0.08) 0%, transparent 50%)", color: "#5A7A4A", emoji: "🌿", label: "ボタニカル" },
+  oil_lipid:  { bg: "linear-gradient(145deg, #EAF0E5 0%, #DDE8D4 50%, #D0E0C5 100%)", pattern: "radial-gradient(ellipse at 50% 60%, rgba(74,122,85,0.08) 0%, transparent 50%)", color: "#4A7A55", emoji: "🫙", label: "オイル・脂質" },
+  ferment:    { bg: "linear-gradient(145deg, #EDE3F0 0%, #E0D4EB 50%, #D5C8E2 100%)", pattern: "radial-gradient(ellipse at 60% 40%, rgba(107,74,138,0.08) 0%, transparent 50%)", color: "#6B4A8A", emoji: "🧫", label: "発酵・バイオ" },
+  acid:       { bg: "linear-gradient(145deg, #E8E3F0 0%, #DAD4EB 50%, #CCC5E0 100%)", pattern: "radial-gradient(ellipse at 50% 50%, rgba(90,74,122,0.08) 0%, transparent 50%)", color: "#5A4A7A", emoji: "⚗️", label: "アシッド" },
+  base:       { bg: "linear-gradient(145deg, #EDEDE8 0%, #E0E0D8 50%, #D5D5CC 100%)", pattern: "radial-gradient(ellipse at 50% 50%, rgba(107,107,90,0.08) 0%, transparent 50%)", color: "#6B6B5A", emoji: "⚙️", label: "ベース" },
 };
-const DEFAULT_TEX = { bg: "linear-gradient(145deg, #FDE8E0, #EECABC)", pattern: "", color: "#A05A40", emoji: "🧪", label: "その他" };
+const DEFAULT_TEX = { bg: "linear-gradient(145deg, #EDEDE8, #D5D5CC)", pattern: "", color: "#6B6B5A", emoji: "📦", label: "その他" };
 
 const RARITY_COLORS = ["", "#7E9389", "#6B8E7B", "#D4A853", "#C77DBA", "#E8A04C"];
 const RARITY_LABELS = ["", "よくある", "めずらしい", "レア", "希少", "伝説"];
@@ -108,9 +111,8 @@ export default function ZukanPage() {
   if (selectedCard) {
     const discovered = discoveredIds.includes(selectedCard.id);
     const rarityInfo = RARITY[selectedCard.rarity];
-    const mainCat = selectedCard.categories?.[0] || "";
-    const tex = CARD_TEXTURES[mainCat] || DEFAULT_TEX;
-    const globalIndex = MASTER_INGREDIENTS.indexOf(selectedCard) + 1;
+    const tex = CARD_TEXTURES[selectedCard.genre] || DEFAULT_TEX;
+    const globalIndex = getIngredientIndex(selectedCard.id);
     const cardIdx = filteredIngredients.indexOf(selectedCard);
     const prevCard = cardIdx > 0 ? filteredIngredients[cardIdx - 1] : null;
     const nextCard = cardIdx < filteredIngredients.length - 1 ? filteredIngredients[cardIdx + 1] : null;
@@ -305,12 +307,12 @@ export default function ZukanPage() {
   }
 
   // ─── Main: Mini Card Grid ───
-  // Category stats for filter pills
-  const catStats = Object.entries(CARD_TEXTURES).map(([catKey, tex]) => {
-    const total = MASTER_INGREDIENTS.filter((i) => i.categories?.[0] === catKey).length;
-    const disc = MASTER_INGREDIENTS.filter((i) => i.categories?.[0] === catKey && discoveredIds.includes(i.id)).length;
-    return { id: catKey, ...tex, discovered: disc, total };
-  }).filter((c) => c.total > 0);
+  // Genre stats for filter pills
+  const genreStats = Object.entries(CARD_TEXTURES).map(([genreKey, tex]) => {
+    const total = MASTER_INGREDIENTS.filter((i) => i.genre === genreKey).length;
+    const disc = MASTER_INGREDIENTS.filter((i) => i.genre === genreKey && discoveredIds.includes(i.id)).length;
+    return { id: genreKey, ...tex, discovered: disc, total };
+  }).filter((g) => g.total > 0);
 
   return (
     <AuthGuard>
@@ -341,7 +343,7 @@ export default function ZukanPage() {
             />
           </div>
 
-          {/* Category filter pills */}
+          {/* Genre filter pills */}
           <div className="flex gap-1.5 mb-4 overflow-x-auto pb-1" style={{ scrollbarWidth: "none" }}>
             <button
               onClick={() => { setGenreFilter("all"); setFilter("all"); }}
@@ -353,27 +355,22 @@ export default function ZukanPage() {
             >
               すべて
             </button>
-            {catStats.map((cs) => {
-              return (
-                <button
-                  key={cs.id}
-                  onClick={() => {
-                    // Use genre filter by matching categories
-                    setFilter("all");
-                    setGenreFilter("all");
-                    // We use a workaround: set genre filter through the existing genreFilter
-                    // But categories != genres. For simplicity, just toggle
-                  }}
-                  className="py-1.5 px-3 rounded-full border-none text-[10px] font-semibold font-sans cursor-pointer whitespace-nowrap shrink-0 flex items-center gap-1"
-                  style={{
-                    background: "white",
-                    color: "#7E9389",
-                  }}
-                >
-                  {cs.emoji} {cs.label} <span className="text-[9px] opacity-80">{cs.discovered}/{cs.total}</span>
-                </button>
-              );
-            })}
+            {genreStats.map((gs) => (
+              <button
+                key={gs.id}
+                onClick={() => {
+                  setFilter("all");
+                  setGenreFilter(gs.id as IngredientGenre);
+                }}
+                className="py-1.5 px-3 rounded-full border-none text-[10px] font-semibold font-sans cursor-pointer whitespace-nowrap shrink-0 flex items-center gap-1"
+                style={{
+                  background: genreFilter === gs.id ? gs.color : "white",
+                  color: genreFilter === gs.id ? "#fff" : "#7E9389",
+                }}
+              >
+                {gs.emoji} {gs.label} <span className="text-[9px] opacity-80">{gs.discovered}/{gs.total}</span>
+              </button>
+            ))}
           </div>
 
           {/* Discovery filter */}
@@ -394,35 +391,6 @@ export default function ZukanPage() {
                 }
               >
                 {label}
-              </button>
-            ))}
-          </div>
-
-          {/* Genre filter */}
-          <div className="flex gap-1.5 mb-4 pb-1 overflow-x-auto" style={{ scrollbarWidth: "none" }}>
-            <button
-              onClick={() => setGenreFilter("all")}
-              className="shrink-0 px-2.5 py-1 rounded-full text-[11px] font-medium transition-all border"
-              style={
-                genreFilter === "all"
-                  ? { background: "#3A8F7A", color: "#fff", borderColor: "#3A8F7A" }
-                  : { background: "#fff", color: "#7E9389", borderColor: "#E8F0EC" }
-              }
-            >
-              全ジャンル
-            </button>
-            {INGREDIENT_GENRES.map((g) => (
-              <button
-                key={g.key}
-                onClick={() => setGenreFilter(g.key)}
-                className="shrink-0 px-2.5 py-1 rounded-full text-[11px] font-medium transition-all whitespace-nowrap border"
-                style={
-                  genreFilter === g.key
-                    ? { background: g.color, color: "#fff", borderColor: g.color }
-                    : { background: "#fff", color: "#7E9389", borderColor: "#E8F0EC" }
-                }
-              >
-                {g.icon} {g.label}
               </button>
             ))}
           </div>
@@ -455,7 +423,7 @@ export default function ZukanPage() {
           {/* Mini Card Grid — 3 columns, Pokémon-style */}
           <div className="grid grid-cols-3 gap-2.5 mb-6">
             {filteredIngredients.map((ing, i) => {
-              const globalIndex = MASTER_INGREDIENTS.indexOf(ing) + 1;
+              const globalIndex = getIngredientIndex(ing.id);
               return (
                 <div
                   key={ing.id}
