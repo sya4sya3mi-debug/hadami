@@ -5,8 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
 import { useProductStore } from "@/stores/useProductStore";
-import { getIngredientById } from "@/lib/ingredients";
-import { getCategoryByKey } from "@/lib/categories";
+import { getIngredientById, getGenreInfo } from "@/lib/ingredients";
 import { findCombinations } from "@/lib/combinations";
 import { shareProductCheck } from "@/lib/share";
 import { getGenreByKey } from "@/lib/productGenres";
@@ -29,9 +28,9 @@ export default function ProductDetailPage() {
 
   if (!product) {
     return (
-      <div className="min-h-screen px-5 pt-10 text-center" style={{ background: "linear-gradient(160deg, #F0FDFA, #FFF0F5)" }}>
-        <p style={{ color: "#9B9B9B" }}>コスメが見つかりません</p>
-        <Link href="/history" className="text-sm mt-2 inline-block font-medium" style={{ color: "#5BBFAD" }}>
+      <div className="min-h-screen px-5 pt-10 text-center bg-bo-cream">
+        <p className="text-bo-ink-muted">コスメが見つかりません</p>
+        <Link href="/history" className="text-sm mt-2 inline-block font-medium text-bo-accent">
           Myコスメに戻る
         </Link>
       </div>
@@ -51,15 +50,15 @@ export default function ProductDetailPage() {
 
   return (
     <AuthGuard>
-    <div className="min-h-screen" style={{ background: "linear-gradient(160deg, #F0FDFA 0%, #FFF0F5 100%)" }}>
+    <div className="min-h-screen bg-bo-cream">
       <div className="px-5 pt-8 pb-6">
-        <Link href="/history" className="text-sm font-medium mb-5 inline-block" style={{ color: "#5BBFAD" }}>
+        <Link href="/history" className="text-sm font-medium mb-5 inline-block text-bo-accent">
           ← Myコスメ
         </Link>
 
         {/* Product photo */}
         {product.packageImage && (
-          <div className="mb-4 rounded-2xl overflow-hidden bg-white shadow-sm" style={{ border: "1px solid #F5E6EF" }}>
+          <div className="mb-4 rounded-2xl overflow-hidden bg-white shadow-sm border border-bo-parchment">
             <div className="relative w-full" style={{ aspectRatio: "4/3" }}>
               <Image
                 src={product.packageImage}
@@ -75,20 +74,18 @@ export default function ProductDetailPage() {
 
         {/* Product header */}
         <div
-          className="flex items-center gap-4 mb-6 bg-white rounded-2xl p-4 shadow-sm"
-          style={{ border: "1px solid #F5E6EF" }}
+          className="flex items-center gap-4 mb-6 bg-white rounded-2xl p-4 shadow-sm border border-bo-parchment"
         >
           {!product.packageImage && (
             <div
-              className="w-16 h-16 rounded-2xl flex items-center justify-center text-3xl shrink-0"
-              style={{ background: "linear-gradient(135deg, #E8FAF8, #FFF0F5)" }}
+              className="w-16 h-16 rounded-2xl flex items-center justify-center text-3xl shrink-0 bg-gradient-to-br from-bo-accent-soft to-bo-parchment"
             >
               📦
             </div>
           )}
           <div>
-            <h1 className="font-bold text-lg" style={{ color: "#2D2D2D" }}>{product.name}</h1>
-            <p className="text-sm" style={{ color: "#9B9B9B" }}>{product.brand}</p>
+            <h1 className="font-bold text-lg text-bo-ink">{product.name}</h1>
+            <p className="text-sm text-bo-ink-muted">{product.brand}</p>
             {genre && (
               <span
                 className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs mt-1"
@@ -101,8 +98,8 @@ export default function ProductDetailPage() {
         </div>
 
         {/* Ingredients list */}
-        <h2 className="font-bold text-sm mb-3 flex items-center gap-2" style={{ color: "#2D2D2D" }}>
-          <span className="w-1 h-4 rounded-full inline-block" style={{ background: "#5BBFAD" }} />
+        <h2 className="font-bold text-sm mb-3 flex items-center gap-2 text-bo-ink">
+          <span className="w-1 h-4 rounded-full inline-block bg-bo-accent" />
           全成分（{ingredients.length}種）
         </h2>
         <div className="space-y-2 mb-6">
@@ -110,31 +107,29 @@ export default function ProductDetailPage() {
             <Link
               key={ing.id}
               href={`/ingredient/${ing.id}`}
-              className="flex items-center gap-3 bg-white rounded-2xl p-3.5 shadow-sm"
-              style={{ border: "1px solid #F5E6EF" }}
+              className="flex items-center gap-3 bg-white rounded-2xl p-3.5 shadow-sm border border-bo-parchment"
             >
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <span className="font-bold text-sm" style={{ color: "#2D2D2D" }}>{ing.nameJa}</span>
+                  <span className="font-bold text-sm text-bo-ink">{ing.nameJa}</span>
                   <Badge rarity={ing.rarity} size="sm" />
                 </div>
-                <div className="text-xs mt-0.5" style={{ color: "#9B9B9B" }}>{ing.nameInci}</div>
-                <div className="flex gap-1 mt-1 flex-wrap">
-                  {ing.categories.map((cat) => {
-                    const c = getCategoryByKey(cat);
-                    return c ? (
+                <div className="text-xs mt-0.5 text-bo-ink-muted">{ing.nameInci}</div>
+                {(() => {
+                  const g = getGenreInfo(ing.genre);
+                  return g ? (
+                    <div className="flex gap-1 mt-1">
                       <span
-                        key={cat}
                         className="text-[10px] px-1.5 py-0.5 rounded-full"
-                        style={{ background: c.color + "20", color: c.color }}
+                        style={{ background: g.color + "20", color: g.color }}
                       >
-                        {c.icon} {c.label}
+                        {g.icon} {g.label}
                       </span>
-                    ) : null;
-                  })}
-                </div>
+                    </div>
+                  ) : null;
+                })()}
               </div>
-              <span className="text-xs font-medium shrink-0" style={{ color: "#BDBDBD" }}>
+              <span className="text-xs font-medium shrink-0 text-bo-ink-faint">
                 #{idx + 1}
               </span>
             </Link>
@@ -144,27 +139,26 @@ export default function ProductDetailPage() {
         {/* Combinations */}
         {combinations.length > 0 && (
           <div className="mb-6">
-            <h2 className="font-bold text-sm mb-3 flex items-center gap-2" style={{ color: "#2D2D2D" }}>
-              <span className="w-1 h-4 rounded-full inline-block" style={{ background: "#F9A8C0" }} />
+            <h2 className="font-bold text-sm mb-3 flex items-center gap-2 text-bo-ink">
+              <span className="w-1 h-4 rounded-full inline-block bg-bo-accent" />
               組み合わせ情報
             </h2>
             <div className="space-y-2">
               {combinations.map((combo, i) => (
                 <div
                   key={i}
-                  className="rounded-2xl p-3.5"
-                  style={
+                  className={`rounded-2xl p-3.5 ${
                     combo.type === "recommended"
-                      ? { background: "#E8FAF8", border: "1px solid #5BBFAD30" }
-                      : { background: "#FFF3F3", border: "1px solid #F48C8C30" }
-                  }
+                      ? "bg-bo-accent-soft border border-bo-accent/20"
+                      : "bg-bo-danger-bg border border-bo-danger/20"
+                  }`}
                 >
                   <div className="flex items-center gap-2 mb-1">
                     <span>{combo.type === "recommended" ? "📚" : "📋"}</span>
-                    <span className="font-bold text-sm" style={{ color: "#2D2D2D" }}>{combo.label}</span>
+                    <span className="font-bold text-sm text-bo-ink">{combo.label}</span>
                   </div>
-                  <p className="text-xs" style={{ color: "#9B9B9B" }}>{combo.desc}</p>
-                  <p className="text-xs mt-1" style={{ color: "#BDBDBD" }}>出典: {combo.source}</p>
+                  <p className="text-xs text-bo-ink-muted">{combo.desc}</p>
+                  <p className="text-xs mt-1 text-bo-ink-faint">出典: {combo.source}</p>
                 </div>
               ))}
             </div>
@@ -174,8 +168,7 @@ export default function ProductDetailPage() {
         <div className="flex gap-2 mb-4">
           <button
             onClick={() => setShowShare(true)}
-            className="flex-1 py-3 rounded-2xl text-sm font-medium"
-            style={{ border: "1.5px solid #F2F2F2", color: "#9B9B9B" }}
+            className="flex-1 py-3 rounded-2xl text-sm font-medium border border-bo-parchment text-bo-ink-muted"
           >
             Xに共有する 🐦
           </button>
@@ -185,8 +178,7 @@ export default function ProductDetailPage() {
               download={`${product.name}.jpg`}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex-1 py-3 rounded-2xl text-sm font-medium text-center"
-              style={{ border: "1.5px solid #E8FAF8", color: "#5BBFAD", background: "#F0FDFA" }}
+              className="flex-1 py-3 rounded-2xl text-sm font-medium text-center border border-bo-accent/20 text-bo-accent bg-bo-accent-soft"
             >
               写真を保存 📥
             </a>
