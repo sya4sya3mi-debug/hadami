@@ -94,7 +94,7 @@ export default function CameraView({ step, onCapture, packagePreview }: CameraVi
           <span>{isStep1 ? "パッケージ撮影" : "成分表撮影"}</span>
         </div>
         <span className="text-sm" style={{ color: "#9B9B9B" }}>
-          {isStep1 ? "製品名を自動で検索します" : "成分表を直接読み取ります"}
+          {isStep1 ? "コスメ名を自動で検索します" : "成分表を直接読み取ります"}
         </span>
       </div>
 

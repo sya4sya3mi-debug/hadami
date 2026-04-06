@@ -1,6 +1,17 @@
 import { Ingredient } from "@/types";
-import { RARITY, getGenreInfo } from "@/lib/ingredients";
-import { StarIcon } from "@/components/ui/Badge";
+import { RARITY } from "@/lib/ingredients";
+
+/* Card texture backgrounds per category type */
+const CARD_TEXTURES: Record<string, { bg: string; color: string; emoji: string; label: string }> = {
+  moisturizing: { bg: "linear-gradient(145deg, #E3F4EE 0%, #D4EDE3 50%, #C5E8D8 100%)", color: "#3A7D65", emoji: "💧", label: "保湿" },
+  soothing: { bg: "linear-gradient(145deg, #E8EFE3 0%, #D8E6CF 50%, #C8DEC0 100%)", color: "#5A7A4A", emoji: "🌿", label: "鎮静" },
+  turnover: { bg: "linear-gradient(145deg, #EDE3F0 0%, #E0D4EB 50%, #D5C8E2 100%)", color: "#6B4A8A", emoji: "🔬", label: "修復" },
+  brightening: { bg: "linear-gradient(145deg, #FFF5E5 0%, #FDECC8 50%, #FBE3B0 100%)", color: "#A07A30", emoji: "✨", label: "美白" },
+  barrier: { bg: "linear-gradient(145deg, #FDE8E0 0%, #F5D8CC 50%, #EECABC 100%)", color: "#A05A40", emoji: "🧪", label: "基剤" },
+  keratin: { bg: "linear-gradient(145deg, #E8E3F0 0%, #DAD4EB 50%, #CCC5E0 100%)", color: "#5A4A7A", emoji: "🧬", label: "角質" },
+};
+
+const DEFAULT_TEXTURE = { bg: "linear-gradient(145deg, #FDE8E0 0%, #F5D8CC 50%, #EECABC 100%)", color: "#A05A40", emoji: "🧪", label: "その他" };
 
 interface IngredientCardProps {
   ingredient: Ingredient;
@@ -12,72 +23,87 @@ interface IngredientCardProps {
 
 export default function IngredientCard({ ingredient, discovered, index, isRecent, foundCount = 0 }: IngredientCardProps) {
   const rarityInfo = RARITY[ingredient.rarity];
-  const genreInfo = getGenreInfo(ingredient.genre);
+  const mainCat = ingredient.categories?.[0] || "";
+  const tex = CARD_TEXTURES[mainCat] || DEFAULT_TEXTURE;
+
+  const rarityColors = ["", "#7E9389", "#6B8E7B", "#D4A853", "#C77DBA", "#E8A04C"];
+  const rarityIdx = rarityInfo.star;
 
   if (!discovered) {
     return (
       <div
-        className="rounded-2xl p-3 flex flex-col items-center justify-center aspect-square relative"
-        style={{ background: "#F5F5F5" }}
+        className="rounded-2xl overflow-hidden cursor-pointer relative flex flex-col items-center justify-center gap-1 p-2"
+        style={{
+          aspectRatio: "3/4",
+          background: "#E8F0EC",
+          border: "1.5px dashed #B5C7BE",
+        }}
       >
-        <span className="text-[9px] font-medium absolute top-1.5 left-2" style={{ color: "#BDBDBD" }}>
-          No.{index}
-        </span>
-        <span className="text-2xl">❓</span>
-        <span className="text-[10px] mt-1" style={{ color: "#BDBDBD" }}>未発見</span>
+        <div className="text-xl opacity-25">🔒</div>
+        <div className="text-[7px] text-[#D4A853] tracking-wider">
+          {"★".repeat(rarityIdx)}{"☆".repeat(5 - rarityIdx)}
+        </div>
+        <div className="text-[8px] text-bo-ink-faint font-sans">
+          #{String(index).padStart(3, "0")}
+        </div>
       </div>
     );
   }
 
-  const cardColor = genreInfo?.color || rarityInfo.color;
-
   return (
     <div
-      className={`rounded-2xl p-2.5 flex flex-col items-center justify-center aspect-square relative${isRecent ? " animate-recent-glow" : ""}`}
+      className="rounded-2xl overflow-hidden cursor-pointer relative flex flex-col items-center justify-center gap-1 p-2"
       style={{
-        background: `linear-gradient(145deg, ${cardColor}18, ${cardColor}08)`,
-        border: isRecent ? `2px solid ${cardColor}` : `1px solid ${cardColor}25`,
-        boxShadow: isRecent ? `0 0 12px ${cardColor}40` : undefined,
+        aspectRatio: "3/4",
+        background: tex.bg,
+        border: `1.5px solid ${tex.color}20`,
+        boxShadow: rarityIdx >= 4 ? `0 4px 16px ${rarityColors[rarityIdx]}25` : "0 1px 3px rgba(27,38,32,0.06)",
       }}
     >
-      {/* No. label */}
-      <span className="text-[9px] font-medium absolute top-1.5 left-2" style={{ color: cardColor + "99" }}>
-        No.{index}
-      </span>
+      {/* Number */}
+      <div
+        className="absolute top-1.5 left-2 text-[8px] font-black font-serif opacity-50"
+        style={{ color: tex.color }}
+      >
+        #{String(index).padStart(3, "0")}
+      </div>
+
+      {/* NEW dot */}
+      {isRecent && (
+        <div className="absolute top-1.5 right-2 w-[7px] h-[7px] rounded-full bg-bo-accent" />
+      )}
 
       {/* Found count */}
-      {foundCount > 0 && (
+      {foundCount > 1 && (
         <span
-          className="absolute top-1.5 right-2 text-[9px] font-bold px-1.5 py-0.5 rounded-full"
-          style={{ background: cardColor + "20", color: cardColor }}
+          className="absolute top-1.5 right-2 text-[8px] font-bold px-1.5 py-0.5 rounded-full"
+          style={{ background: tex.color + "20", color: tex.color }}
         >
           ×{foundCount}
         </span>
       )}
 
-      {/* Genre icon (large) */}
-      <span className="text-2xl">{genreInfo?.icon || "📦"}</span>
+      {/* Icon */}
+      <div
+        className="text-2xl"
+        style={{
+          filter: rarityIdx >= 4 ? `drop-shadow(0 0 6px ${rarityColors[rarityIdx]}60)` : "none",
+        }}
+      >
+        {tex.emoji}
+      </div>
 
-      {/* Ingredient name */}
-      <span
-        className="text-[11px] font-medium mt-1 text-center leading-tight"
-        style={{ color: "#2D2D2D" }}
+      {/* Name */}
+      <div
+        className="text-[9px] font-bold text-bo-ink font-sans text-center leading-tight max-w-[90%] overflow-hidden line-clamp-2"
       >
         {ingredient.nameJa}
-      </span>
-
-      {/* Rarity stars + label */}
-      <div className="flex items-center gap-px mt-1">
-        {Array.from({ length: rarityInfo.star }).map((_, i) => (
-          <StarIcon key={i} color={rarityInfo.color} size={10} />
-        ))}
       </div>
-      <span
-        className="text-[9px] px-1.5 py-0.5 rounded-full"
-        style={{ background: rarityInfo.color + "20", color: rarityInfo.color }}
-      >
-        {rarityInfo.label}
-      </span>
+
+      {/* Stars */}
+      <div className="text-[7px] text-[#D4A853] tracking-wider">
+        {"★".repeat(rarityIdx)}{"☆".repeat(5 - rarityIdx)}
+      </div>
     </div>
   );
 }

@@ -145,7 +145,7 @@ export default function IngredientDetailPage() {
           <div className="mb-4">
             <h2 className="font-bold text-sm mb-3 flex items-center gap-2" style={{ color: "#2D2D2D" }}>
               <span className="w-1 h-4 rounded-full inline-block" style={{ background: "#F9A8C0" }} />
-              この成分を含む保存済み製品
+              この成分を含む保存済みコスメ
             </h2>
             <div className="space-y-2">
               {containingProducts.map((p) => (

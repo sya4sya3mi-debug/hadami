@@ -17,7 +17,7 @@ export default function ManualInputSheet({ open, onClose, onSubmit }: ManualInpu
   const canSubmit = ingredientText.trim().length > 0;
 
   const handleSubmit = () => {
-    onSubmit(ingredientText, name || "手動入力した製品", brand || "");
+    onSubmit(ingredientText, name || "手動入力したコスメ", brand || "");
     setIngredientText("");
     setName("");
     setBrand("");
@@ -65,13 +65,13 @@ export default function ManualInputSheet({ open, onClose, onSubmit }: ManualInpu
           }}
         />
 
-        {/* 製品名・ブランド */}
+        {/* コスメ名・ブランド */}
         <div className="flex gap-2">
           <input
             type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder="製品名（任意）"
+            placeholder="コスメ名（任意）"
             className="flex-1 rounded-xl p-2.5 text-sm outline-none"
             style={{ background: "#FAFAFA", border: "1px solid #F2F2F2", color: "#2D2D2D" }}
           />

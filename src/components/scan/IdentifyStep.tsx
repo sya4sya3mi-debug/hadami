@@ -94,7 +94,7 @@ export default function IdentifyStep({
           className="w-[120px] h-[120px] rounded-2xl overflow-hidden"
           style={{ boxShadow: "0 4px 16px rgba(0,0,0,0.1)" }}
         >
-          <img src={imagePreview} alt="撮影した製品" className="w-full h-full object-cover" />
+          <img src={imagePreview} alt="撮影したコスメ" className="w-full h-full object-cover" />
         </div>
       )}
 
@@ -186,9 +186,9 @@ export default function IdentifyStep({
           <div className="space-y-3">
             <div className="text-center mb-2">
               <div className="text-lg font-bold" style={{ color: "#2D2D2D" }}>
-                📦 {multiProducts.length}つの製品を検出
+                📦 {multiProducts.length}つのコスメを検出
               </div>
-              <div className="text-xs mt-1" style={{ color: "#9B9B9B" }}>確認したい製品を選んでください</div>
+              <div className="text-xs mt-1" style={{ color: "#9B9B9B" }}>確認したいコスメを選んでください</div>
             </div>
             {multiProducts.map((p, i) => (
               <div

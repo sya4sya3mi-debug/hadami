@@ -68,7 +68,7 @@ export default function GenreSlot({ genre, stepLabel, product, onAdd, onRemove }
 
       {/* Step badge */}
       <div
-        className="absolute top-1.5 left-2.5 w-[18px] h-[18px] rounded-full flex items-center justify-center text-[9px] font-extrabold text-white"
+        className="absolute top-1.5 left-2.5 z-10 w-[18px] h-[18px] rounded-full flex items-center justify-center text-[9px] font-extrabold text-white"
         style={{ background: color }}
       >
         {stepLabel}

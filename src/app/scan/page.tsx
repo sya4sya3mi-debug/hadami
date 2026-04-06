@@ -176,7 +176,7 @@ function ScanPageInner() {
         const count = await getProductCount(supabase, user.id);
         if (count >= userLimit) {
           const proceed = window.confirm(
-            `Myコスメの保存枠（${userLimit}件）がいっぱいです。\nスキャンはできますが、保存するには古い製品を削除してください。\n\nスキャンを続けますか？`
+            `Myコスメの保存枠（${userLimit}件）がいっぱいです。\nスキャンはできますが、保存するには古いコスメを削除してください。\n\nスキャンを続けますか？`
           );
           if (!proceed) return;
         }
@@ -186,7 +186,7 @@ function ScanPageInner() {
       setPackageImageColor(colorImage || imageData);
       setStep(2);
       setProgress(10);
-      setProgressMsg("製品を特定しています...");
+      setProgressMsg("コスメを特定しています...");
       setShowFallback(false);
 
       try {
@@ -207,7 +207,7 @@ function ScanPageInner() {
         if (foundProducts.length > 1) {
           setMultiProducts(foundProducts);
           setProgress(100);
-          setProgressMsg("複数の製品を検出しました！");
+          setProgressMsg("複数のコスメを検出しました！");
           setTimeout(() => setShowMultiSheet(true), 500);
         } else if (foundProducts.length === 1) {
           const p = foundProducts[0];
@@ -217,7 +217,7 @@ function ScanPageInner() {
 
           const discoveries = await processIngredients(
             p.ingredients,
-            p.productName || "スキャンした製品",
+            p.productName || "スキャンしたコスメ",
             p.brand || "ブランド不明"
           );
 
@@ -230,7 +230,7 @@ function ScanPageInner() {
           }, 500);
         } else {
           const first = products[0] || data;
-          setProductName(first.productName || "スキャンした製品");
+          setProductName(first.productName || "スキャンしたコスメ");
           setBrand(first.brand || "ブランド不明");
           setProductType(normalizeGenreFromScan(first.productType || ""));
           setShowFallback(true);
@@ -275,7 +275,7 @@ function ScanPageInner() {
 
         const discoveries = await processIngredients(
           text,
-          productName || "スキャンした製品",
+          productName || "スキャンしたコスメ",
           brand || "ブランド不明"
         );
 
@@ -317,7 +317,7 @@ function ScanPageInner() {
     [processIngredients]
   );
 
-  // 複数製品から1つ選択
+  // 複数コスメから1つ選択
   const handleSelectProduct = useCallback(
     async (product: ScannedProduct) => {
       setShowMultiSheet(false);
@@ -327,7 +327,7 @@ function ScanPageInner() {
 
       const discoveries = await processIngredients(
         product.ingredients,
-        product.productName || "スキャンした製品",
+        product.productName || "スキャンしたコスメ",
         product.brand || "ブランド不明"
       );
 
@@ -342,7 +342,7 @@ function ScanPageInner() {
     [processIngredients]
   );
 
-  // 複数製品を一括保存
+  // 複数コスメを一括保存
   const handleSaveMulti = useCallback(
     async (product: ScannedProduct, index: number) => {
       if (!user || multiSavedIndexes.has(index)) return;
@@ -405,7 +405,7 @@ function ScanPageInner() {
     });
 
     if (result.error === "limit_reached") {
-      setSaveError(`保存上限（${userLimit}件）に達しています。古い製品を削除してください。`);
+      setSaveError(`保存上限（${userLimit}件）に達しています。古いコスメを削除してください。`);
       fetch("/api/rollback-scan", { method: "POST" }).catch(() => {});
       return;
     }

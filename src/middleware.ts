@@ -8,7 +8,7 @@ export async function middleware(request: NextRequest) {
     "style-src 'self' 'unsafe-inline'",
     "img-src 'self' data: blob: https://*.supabase.co",
     "font-src 'self'",
-    "connect-src 'self' https://*.supabase.co wss://*.supabase.co",
+    "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.twitter.com https://upload.twitter.com",
     "frame-ancestors 'none'",
     "base-uri 'self'",
     "form-action 'self'",

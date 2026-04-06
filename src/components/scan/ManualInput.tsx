@@ -186,7 +186,7 @@ export default function ManualInput({ onSubmit, disabled }: ManualInputProps) {
         style={{ background: "rgba(255,255,255,0.8)", border: "1px solid #F5E6EF" }}
       >
         <label className="block text-xs font-medium mb-1" style={{ color: "#9B9B9B" }}>
-          製品名（任意）
+          コスメ名（任意）
         </label>
         <input
           type="text"
@@ -210,7 +210,7 @@ export default function ManualInput({ onSubmit, disabled }: ManualInputProps) {
       </div>
 
       <button
-        onClick={() => onSubmit(ingredientText, name || "手動入力した製品", brand || "")}
+        onClick={() => onSubmit(ingredientText, name || "手動入力したコスメ", brand || "")}
         disabled={!canSubmit}
         className="w-full py-3.5 rounded-2xl text-white text-center text-sm font-bold"
         style={{

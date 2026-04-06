@@ -24,13 +24,13 @@ export default function ProductDetailPage() {
   const [showShare, setShowShare] = useState(false);
 
   if (loading) {
-    return <PageLoading message="製品情報を読み込んでいます..." />;
+    return <PageLoading message="コスメ情報を読み込んでいます..." />;
   }
 
   if (!product) {
     return (
       <div className="min-h-screen px-5 pt-10 text-center" style={{ background: "linear-gradient(160deg, #F0FDFA, #FFF0F5)" }}>
-        <p style={{ color: "#9B9B9B" }}>製品が見つかりません</p>
+        <p style={{ color: "#9B9B9B" }}>コスメが見つかりません</p>
         <Link href="/history" className="text-sm mt-2 inline-block font-medium" style={{ color: "#5BBFAD" }}>
           Myコスメに戻る
         </Link>

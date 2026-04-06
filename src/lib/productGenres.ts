@@ -40,7 +40,7 @@ export const GENRE_SLOT_CONFIG: readonly GenreSlotConfig[] = [
   { genre: "cleansing",  maxSlots: 1, section: "base",       stepLabel: "1" },
   { genre: "face_wash",  maxSlots: 1, section: "base",       stepLabel: "2" },
   { genre: "toner",      maxSlots: 1, section: "base",       stepLabel: "3" },
-  { genre: "serum",      maxSlots: 3, section: "intensive",  stepLabel: "4" },
+  { genre: "serum",      maxSlots: 2, section: "intensive",  stepLabel: "4" },
   { genre: "emulsion",   maxSlots: 1, section: "protection", stepLabel: "5" },
   { genre: "cream",      maxSlots: 1, section: "protection", stepLabel: "6" },
   { genre: "sunscreen",  maxSlots: 1, section: "protection", stepLabel: "7" },

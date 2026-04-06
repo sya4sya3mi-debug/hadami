@@ -70,11 +70,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const supabase = supabaseRef.current;
 
   const fetchProfile = useCallback(async (userId: string) => {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("profiles")
       .select("id, display_name, avatar_url")
       .eq("id", userId)
       .single();
+    if (error) throw error;
     return data;
   }, [supabase]);
 
@@ -107,6 +108,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (syncId === syncSequence.current) {
           setProfile(profileData ?? null);
         }
+      }).catch((error) => {
+        console.warn("Background profile fetch failed, keeping current state:", error);
       });
       syncUserData(supabase, nextUser.id).catch((error) =>
         console.error("Background sync failed:", error)

@@ -109,7 +109,7 @@ export default function CaptureStep({ onCapture, onManualInput, preview, disable
           </div>
           <div className="text-center">
             <div className="font-bold text-[15px]" style={{ color: "#2D2D2D" }}>
-              タップして製品を撮影
+              タップしてコスメを撮影
             </div>
             <div className="text-xs mt-1.5" style={{ color: "#9B9B9B" }}>
               パッケージ正面がベストです
@@ -128,7 +128,7 @@ export default function CaptureStep({ onCapture, onManualInput, preview, disable
         >
           <img
             src={displayPreview}
-            alt="撮影した製品"
+            alt="撮影したコスメ"
             className="w-full h-full object-cover"
           />
           <div className="absolute inset-0" style={{ background: "linear-gradient(to top, rgba(0,0,0,0.3) 0%, transparent 40%)" }} />

@@ -11,4 +11,4 @@ export function checkCompliance(text: string): { ok: boolean; issues: string[] }
 }
 
 export const DISCLAIMER_TEXT =
-  "※本アプリは成分の分類と一般的な特性を紹介するものであり、特定の製品の効能効果を評価・保証するものではありません。";
+  "※本アプリは成分の分類と一般的な特性を紹介するものであり、特定のコスメの効能効果を評価・保証するものではありません。";

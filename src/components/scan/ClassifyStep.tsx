@@ -49,14 +49,14 @@ export default function ClassifyStep({
           {/* Editable fields */}
           <div className="flex-1 min-w-0 space-y-2">
             <div>
-              <label className="block text-[10px] font-medium mb-0.5" style={{ color: "#9B9B9B" }}>製品名</label>
+              <label className="block text-[10px] font-medium mb-0.5" style={{ color: "#9B9B9B" }}>コスメ名</label>
               <input
                 type="text"
                 value={productName}
                 onChange={(e) => onProductNameChange(e.target.value)}
                 className="w-full text-sm font-bold outline-none border-b pb-1"
                 style={{ borderColor: "#F2F2F2", color: "#2D2D2D" }}
-                placeholder="製品名を入力"
+                placeholder="コスメ名を入力"
               />
             </div>
             <div>
@@ -77,7 +77,7 @@ export default function ClassifyStep({
       {/* Genre selector */}
       <div>
         <div className="text-xs font-bold mb-3" style={{ color: "#2D2D2D" }}>
-          製品タイプを選択
+          コスメタイプを選択
         </div>
         <div className="flex gap-2 overflow-x-auto hide-scrollbar pb-2" style={{ WebkitOverflowScrolling: "touch" }}>
           {PRODUCT_GENRES.map((genre) => {
