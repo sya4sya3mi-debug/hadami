@@ -30,7 +30,6 @@ function LoginPageInner() {
     setMessage("");
 
     if (isSignUp) {
-      // 登録上限チェック
       const res = await fetch("/api/check-registration");
       const { allowed } = await res.json();
       if (!allowed) {
@@ -49,7 +48,6 @@ function LoginPageInner() {
       if (error) {
         setMessage(error.message);
       } else if (signUpData.user && signUpData.user.identities?.length === 0) {
-        // 既に登録済みのメールアドレス（Supabaseはエラーを返さずidentities空で返す）
         setMessage("このメールアドレスは既に登録されています。ログインしてください。");
       } else {
         setMessage("確認メールを送信しました。メールのリンクをクリックしてください。");
@@ -67,7 +65,6 @@ function LoginPageInner() {
           setMessage("ログインに失敗しました。しばらく待ってからもう一度お試しください。");
         }
       } else if (authData.user) {
-        // プロフィールチェックはホームページ側で行うためここでは即遷移
         router.push("/");
       }
     }
@@ -76,7 +73,6 @@ function LoginPageInner() {
 
   const handleGoogleLogin = async () => {
     setLoading(true);
-    // 新規/既存の判定はcallback側で行う（ここでブロックすると既存ユーザーもログイン不能になる）
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
@@ -88,77 +84,33 @@ function LoginPageInner() {
   };
 
   return (
-    <div style={{
-      minHeight: "100vh",
-      display: "flex",
-      flexDirection: "column",
-      alignItems: "center",
-      justifyContent: "center",
-      padding: "24px",
-      background: "var(--background)",
-    }}>
-      {/* 登録締め切りバナー */}
+    <div className="min-h-screen flex flex-col items-center justify-center px-6 bg-bo-cream">
       {registrationClosed && (
-        <div style={{
-          width: "100%",
-          maxWidth: "360px",
-          background: "#FFF3F3",
-          border: "1px solid #F48C8C",
-          borderRadius: "12px",
-          padding: "12px 16px",
-          marginBottom: "16px",
-          textAlign: "center",
-          fontSize: "13px",
-          color: "#E57373",
-        }}>
+        <div className="w-full max-w-[360px] bg-bo-danger-bg border border-bo-danger rounded-r1 py-3 px-4 mb-4 text-center text-[13px] text-bo-danger">
           現在ベータ版の新規登録を停止しています。<br />
           登録受付再開をお待ちください。
         </div>
       )}
 
-      {/* ロゴ */}
-      <div style={{ marginBottom: "32px", textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center" }}>
-        <Image src="/hadami-logo.png" alt="HADAMI" width={64} height={64} style={{ borderRadius: "16px", marginBottom: "8px" }} />
-        <h1 style={{ fontSize: "28px", fontWeight: "700", color: "var(--primary)", margin: 0 }}>
+      <div className="mb-8 text-center flex flex-col items-center">
+        <Image src="/hadami-logo.png" alt="HADAMI" width={64} height={64} className="rounded-2xl mb-2" />
+        <h1 className="text-[28px] font-black font-serif text-bo-accent m-0">
           HADAMI
         </h1>
-        <p style={{ fontSize: "13px", color: "var(--sub)", marginTop: "4px" }}>
+        <p className="text-[13px] text-bo-ink-muted mt-1">
           成分図鑑・マイスキンケアデッキ
         </p>
       </div>
 
-      {/* カード */}
-      <div style={{
-        width: "100%",
-        maxWidth: "360px",
-        background: "var(--card)",
-        borderRadius: "16px",
-        padding: "28px 24px",
-        boxShadow: "0 2px 16px rgba(0,0,0,0.08)",
-      }}>
-        <h2 style={{ fontSize: "18px", fontWeight: "700", marginBottom: "20px", textAlign: "center" }}>
+      <div className="w-full max-w-[360px] bg-white rounded-r2 py-7 px-6 shadow-bo2">
+        <h2 className="text-[18px] font-bold mb-5 text-center text-bo-ink">
           {isSignUp ? "新規登録" : "ログイン"}
         </h2>
 
-        {/* Googleログイン */}
         <button
           onClick={handleGoogleLogin}
           disabled={loading}
-          style={{
-            width: "100%",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: "10px",
-            padding: "12px",
-            border: "1.5px solid var(--border)",
-            borderRadius: "12px",
-            background: "#fff",
-            fontSize: "15px",
-            fontWeight: "600",
-            cursor: "pointer",
-            marginBottom: "20px",
-          }}
+          className="w-full flex items-center justify-center gap-2.5 py-3 border-[1.5px] border-bo-parchment rounded-r1 bg-white text-[15px] font-semibold cursor-pointer mb-5 hover:bg-bo-cream/50 transition-colors disabled:opacity-70"
         >
           <svg width="18" height="18" viewBox="0 0 18 18">
             <path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.615z"/>
@@ -166,64 +118,39 @@ function LoginPageInner() {
             <path fill="#FBBC05" d="M3.964 10.707c-.18-.54-.282-1.117-.282-1.707s.102-1.167.282-1.707V4.961H.957C.347 6.175 0 7.55 0 9s.348 2.825.957 4.039l3.007-2.332z"/>
             <path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0 5.482 0 2.438 2.017.957 4.961L3.964 7.293C4.672 5.166 6.656 3.58 9 3.58z"/>
           </svg>
-          Googleでログイン
+          Google{isSignUp ? "で登録" : "でログイン"}
         </button>
 
-        {/* 区切り */}
-        <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "20px" }}>
-          <div style={{ flex: 1, height: "1px", background: "var(--border)" }} />
-          <span style={{ fontSize: "12px", color: "var(--sub)" }}>または</span>
-          <div style={{ flex: 1, height: "1px", background: "var(--border)" }} />
+        <div className="flex items-center gap-3 mb-5">
+          <div className="flex-1 h-px bg-bo-parchment" />
+          <span className="text-xs text-bo-ink-muted">または</span>
+          <div className="flex-1 h-px bg-bo-parchment" />
         </div>
 
-        {/* メール・パスワード */}
         <form onSubmit={handleEmailAuth}>
-          <div style={{ marginBottom: "12px" }}>
+          <div className="mb-3">
             <input
               type="email"
               placeholder="メールアドレス"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              style={{
-                width: "100%",
-                padding: "12px",
-                border: "1.5px solid var(--border)",
-                borderRadius: "12px",
-                fontSize: "15px",
-                background: "#fff",
-                outline: "none",
-                boxSizing: "border-box",
-              }}
+              className="w-full p-3 border-[1.5px] border-bo-parchment rounded-r1 text-[15px] bg-white outline-none focus:border-bo-accent focus:ring-1 focus:ring-bo-accent/30 transition-colors"
             />
           </div>
-          <div style={{ marginBottom: "16px" }}>
+          <div className="mb-4">
             <input
               type="password"
               placeholder="パスワード（6文字以上）"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              style={{
-                width: "100%",
-                padding: "12px",
-                border: "1.5px solid var(--border)",
-                borderRadius: "12px",
-                fontSize: "15px",
-                background: "#fff",
-                outline: "none",
-                boxSizing: "border-box",
-              }}
+              className="w-full p-3 border-[1.5px] border-bo-parchment rounded-r1 text-[15px] bg-white outline-none focus:border-bo-accent focus:ring-1 focus:ring-bo-accent/30 transition-colors"
             />
           </div>
 
           {message && (
-            <p style={{
-              fontSize: "13px",
-              color: message.includes("送信") ? "var(--primary)" : "var(--warning)",
-              marginBottom: "12px",
-              textAlign: "center",
-            }}>
+            <p className={`text-[13px] mb-3 text-center ${message.includes("送信") ? "text-bo-accent" : "text-bo-caution"}`}>
               {message}
             </p>
           )}
@@ -231,46 +158,25 @@ function LoginPageInner() {
           <button
             type="submit"
             disabled={loading}
-            style={{
-              width: "100%",
-              padding: "13px",
-              background: "var(--primary)",
-              color: "#fff",
-              border: "none",
-              borderRadius: "12px",
-              fontSize: "15px",
-              fontWeight: "700",
-              cursor: "pointer",
-              opacity: loading ? 0.7 : 1,
-            }}
+            className="w-full py-3.5 bg-bo-accent text-white border-none rounded-r1 text-[15px] font-bold cursor-pointer shadow-bo-accent disabled:opacity-70 hover:bg-bo-accent-dark transition-colors"
           >
             {loading ? "処理中..." : isSignUp ? "登録する" : "ログイン"}
           </button>
         </form>
 
-        {/* 切り替え */}
-        <p style={{ textAlign: "center", marginTop: "16px", fontSize: "13px", color: "var(--sub)" }}>
+        <p className="text-center mt-4 text-[13px] text-bo-ink-muted">
           {isSignUp ? "すでにアカウントをお持ちの方は" : "アカウントをお持ちでない方は"}
           <button
             onClick={() => { setIsSignUp(!isSignUp); setMessage(""); }}
-            style={{
-              background: "none",
-              border: "none",
-              color: "var(--primary)",
-              fontWeight: "700",
-              cursor: "pointer",
-              fontSize: "13px",
-              marginLeft: "4px",
-            }}
+            className="bg-transparent border-none text-bo-accent font-bold cursor-pointer text-[13px] ml-1"
           >
             {isSignUp ? "ログイン" : "新規登録"}
           </button>
         </p>
       </div>
 
-      {/* 同意テキスト */}
-      <p style={{ textAlign: "center", marginTop: "16px", fontSize: "11px", color: "#9B9B9B", maxWidth: "360px", lineHeight: "1.6" }}>
-        登録することで、<Link href="/privacy" style={{ color: "#5BBFAD" }}>プライバシーポリシー</Link>と<Link href="/terms" style={{ color: "#5BBFAD" }}>利用規約</Link>に同意したものとみなします。
+      <p className="text-center mt-4 text-[11px] text-bo-ink-faint max-w-[360px] leading-relaxed">
+        登録することで、<Link href="/privacy" className="text-bo-accent font-semibold">プライバシーポリシー</Link>と<Link href="/terms" className="text-bo-accent font-semibold">利用規約</Link>に同意したものとみなします。
       </p>
     </div>
   );

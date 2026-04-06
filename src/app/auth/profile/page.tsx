@@ -24,7 +24,6 @@ export default function ProfileSetupPage() {
     setLoading(true);
     setError("");
 
-    // 既存プロフィールの有無を確認
     const { data: existing } = await supabase
       .from("profiles")
       .select("id")
@@ -32,7 +31,6 @@ export default function ProfileSetupPage() {
       .single();
 
     if (!existing) {
-      // 新規ユーザー：ベータ登録上限チェック
       const { count } = await supabase
         .from("profiles")
         .select("*", { count: "exact", head: true });
@@ -61,40 +59,25 @@ export default function ProfileSetupPage() {
   };
 
   return (
-    <div style={{
-      minHeight: "100vh",
-      display: "flex",
-      flexDirection: "column",
-      alignItems: "center",
-      justifyContent: "center",
-      padding: "24px",
-      background: "var(--background)",
-    }}>
-      <div style={{ marginBottom: "32px", textAlign: "center" }}>
-        <div style={{ fontSize: "36px", marginBottom: "8px" }}>🌿</div>
-        <h1 style={{ fontSize: "28px", fontWeight: "700", color: "var(--primary)", margin: 0 }}>
+    <div className="min-h-screen flex flex-col items-center justify-center px-6 bg-bo-cream">
+      <div className="mb-8 text-center">
+        <div className="text-4xl mb-2">🌿</div>
+        <h1 className="text-[28px] font-black font-serif text-bo-accent m-0">
           HADAMI
         </h1>
-        <p style={{ fontSize: "13px", color: "var(--sub)", marginTop: "4px" }}>
+        <p className="text-[13px] text-bo-ink-muted mt-1">
           ようこそ！あなたのことを教えてください
         </p>
       </div>
 
-      <div style={{
-        width: "100%",
-        maxWidth: "360px",
-        background: "var(--card)",
-        borderRadius: "16px",
-        padding: "28px 24px",
-        boxShadow: "0 2px 16px rgba(0,0,0,0.08)",
-      }}>
-        <h2 style={{ fontSize: "18px", fontWeight: "700", marginBottom: "20px", textAlign: "center" }}>
+      <div className="w-full max-w-[360px] bg-white rounded-r2 py-7 px-6 shadow-bo2">
+        <h2 className="text-[18px] font-bold mb-5 text-center text-bo-ink">
           プロフィール設定
         </h2>
 
         <form onSubmit={handleSubmit}>
-          <div style={{ marginBottom: "8px" }}>
-            <label style={{ fontSize: "13px", fontWeight: "600", color: "var(--foreground)", marginBottom: "6px", display: "block" }}>
+          <div className="mb-2">
+            <label className="text-[13px] font-semibold text-bo-ink mb-1.5 block">
               ニックネーム
             </label>
             <input
@@ -103,29 +86,15 @@ export default function ProfileSetupPage() {
               value={nickname}
               onChange={(e) => setNickname(e.target.value)}
               maxLength={20}
-              style={{
-                width: "100%",
-                padding: "12px",
-                border: "1.5px solid var(--border)",
-                borderRadius: "12px",
-                fontSize: "15px",
-                background: "#fff",
-                outline: "none",
-                boxSizing: "border-box",
-              }}
+              className="w-full p-3 border-[1.5px] border-bo-parchment rounded-r1 text-[15px] bg-white outline-none focus:border-bo-accent focus:ring-1 focus:ring-bo-accent/30 transition-colors"
             />
           </div>
-          <p style={{ fontSize: "11px", color: "var(--sub)", marginBottom: "16px" }}>
+          <p className="text-[11px] text-bo-ink-muted mb-4">
             20文字以内で入力してください。後から変更できます。
           </p>
 
           {error && (
-            <p style={{
-              fontSize: "13px",
-              color: "var(--warning)",
-              marginBottom: "12px",
-              textAlign: "center",
-            }}>
+            <p className="text-[13px] text-bo-caution mb-3 text-center">
               {error}
             </p>
           )}
@@ -133,18 +102,7 @@ export default function ProfileSetupPage() {
           <button
             type="submit"
             disabled={loading}
-            style={{
-              width: "100%",
-              padding: "13px",
-              background: "var(--primary)",
-              color: "#fff",
-              border: "none",
-              borderRadius: "12px",
-              fontSize: "15px",
-              fontWeight: "700",
-              cursor: "pointer",
-              opacity: loading ? 0.7 : 1,
-            }}
+            className="w-full py-3.5 bg-bo-accent text-white border-none rounded-r1 text-[15px] font-bold cursor-pointer shadow-bo-accent disabled:opacity-70 hover:bg-bo-accent-dark transition-colors"
           >
             {loading ? "保存中..." : "はじめる"}
           </button>

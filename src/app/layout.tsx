@@ -3,7 +3,7 @@ import "./globals.css";
 import TabBar from "@/components/ui/TabBar";
 import PwaRegister from "@/components/PwaRegister";
 import { AuthProvider } from "@/lib/auth";
-import OnboardingGate from "@/components/ui/OnboardingGate";
+
 
 export const metadata: Metadata = {
   title: "HADAMI（ハダミ）- 成分図鑑",
@@ -44,7 +44,7 @@ export default function RootLayout({
       <body>
         <AuthProvider>
           <PwaRegister />
-          <OnboardingGate />
+
           <div id="app-container">
             <main className="pb-[calc(72px+env(safe-area-inset-bottom))]">
               {children}
