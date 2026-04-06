@@ -7,7 +7,7 @@ import { useProductStore } from "@/stores/useProductStore";
 import { useZukanStore } from "@/stores/useZukanStore";
 import { useDeckStore } from "@/stores/useDeckStore";
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { MASTER_INGREDIENTS } from "@/lib/ingredients";
+import { MASTER_INGREDIENTS, INGREDIENT_GENRES } from "@/lib/ingredients";
 import { getScanCountByEmail } from "@/lib/db";
 import Disclaimer from "@/components/ui/Disclaimer";
 import InstallBanner from "@/components/ui/InstallBanner";
@@ -32,10 +32,8 @@ interface RoutineStep {
   ingredients: { name: string; icon: string; cat: string }[];
 }
 
-const ALL_CATS = ["保湿", "鎮静", "修復", "美白", "UV防御", "エイジング"] as const;
-const CAT_ICONS: Record<string, string> = {
-  "保湿": "💧", "鎮静": "🌿", "修復": "🩹", "美白": "✨", "UV防御": "🛡️", "エイジング": "🔬",
-};
+const ALL_GENRES = INGREDIENT_GENRES.map((g) => g.label);
+const GENRE_ICONS: Record<string, string> = Object.fromEntries(INGREDIENT_GENRES.map((g) => [g.label, g.icon]));
 
 const TIPS = [
   { icon: "💡", text: "パンテノール（ビタミンB5）は保湿と修復の両方を担う万能成分。朝晩どちらでも効果的です。" },
@@ -86,7 +84,7 @@ export default function HomePage() {
   const [checkedSteps, setCheckedSteps] = useState<Set<number>>(new Set());
   const [particles, setParticles] = useState<Particle[]>([]);
   const [absorbedCats, setAbsorbedCats] = useState<Record<string, number>>(
-    Object.fromEntries(ALL_CATS.map((c) => [c, 0]))
+    Object.fromEntries(ALL_GENRES.map((c) => [c, 0]))
   );
 
   useEffect(() => {
@@ -118,11 +116,15 @@ export default function HomePage() {
       name: prod?.name || "不明な製品",
       brand: prod?.brand || "",
       type: prod?.productType || "",
-      ingredients: (prod?.ingredients || []).slice(0, 3).map((ing) => ({
-        name: ing.ingredientId || "",
-        icon: "💧",
-        cat: "保湿",
-      })),
+      ingredients: (prod?.ingredients || []).slice(0, 3).map((pi) => {
+        const ing = MASTER_INGREDIENTS.find((i) => i.id === pi.ingredientId);
+        const genreInfo = ing ? INGREDIENT_GENRES.find((g) => g.key === ing.genre) : null;
+        return {
+          name: ing?.nameJa || pi.ingredientId || "",
+          icon: genreInfo?.icon || "💧",
+          cat: genreInfo?.label || "うるおい",
+        };
+      }),
     };
   });
 
@@ -171,7 +173,7 @@ export default function HomePage() {
   };
 
   const todayTip = TIPS[new Date().getDate() % TIPS.length];
-  const totalGauge = ALL_CATS.reduce((sum, c) => sum + (absorbedCats[c] || 0), 0) / (ALL_CATS.length * 100) * 100;
+  const totalGauge = ALL_GENRES.reduce((sum, g) => sum + (absorbedCats[g] || 0), 0) / (ALL_GENRES.length * 100) * 100;
 
   const greeting = (() => {
     const h = new Date().getHours();
@@ -240,11 +242,11 @@ export default function HomePage() {
             </span>
           </div>
           <div className="grid grid-cols-3 gap-1.5">
-            {ALL_CATS.map((cat) => {
+            {ALL_GENRES.map((cat) => {
               const val = absorbedCats[cat] || 0;
               return (
                 <div key={cat} className="text-center">
-                  <div className="text-xs mb-0.5">{CAT_ICONS[cat]}</div>
+                  <div className="text-xs mb-0.5">{GENRE_ICONS[cat]}</div>
                   <div className="h-[3px] rounded-full bg-bo-parchment overflow-hidden mb-0.5">
                     <div
                       className="h-full rounded-full bg-bo-accent transition-[width] duration-500"
@@ -344,29 +346,6 @@ export default function HomePage() {
         )}
 
         {/* Scan CTA */}
-        <Link
-          href="/scan"
-          className="block relative rounded-r3 overflow-hidden mb-6 cursor-pointer bg-gradient-to-br from-bo-accent-soft via-[#EAF5F0] to-bo-parchment border border-bo-accent/15 shadow-[0_8px_32px_rgba(58,143,122,0.08)] no-underline"
-        >
-          <div className="absolute -top-[30px] -right-[10px] w-[120px] h-[120px] rounded-full bg-[radial-gradient(circle,rgba(58,143,122,0.1)_0%,transparent_70%)]" />
-          <div className="relative py-5 px-5 z-[1]">
-            <div className="flex items-center gap-3.5">
-              <div className="w-[46px] h-[46px] rounded-[14px] bg-white/70 backdrop-blur-xl border border-white/50 flex items-center justify-center text-[22px] shadow-bo1">
-                📸
-              </div>
-              <div className="flex-1">
-                <div className="text-[15px] font-bold text-bo-ink font-sans mb-0.5">成分をスキャン</div>
-                <div className="text-[11px] text-bo-ink-muted font-sans">パッケージを撮影 → AI が成分を検索</div>
-              </div>
-              <div className="w-[34px] h-[34px] rounded-[11px] bg-bo-accent flex items-center justify-center shadow-bo-accent">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" aria-hidden="true">
-                  <path d="M5 12h14M12 5l7 7-7 7" />
-                </svg>
-              </div>
-            </div>
-          </div>
-        </Link>
-
         {/* Stats row */}
         <div className="grid grid-cols-3 gap-2.5 mb-6">
           {[
