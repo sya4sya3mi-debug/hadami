@@ -1,18 +1,21 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useMemo } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useDeckStore } from "@/stores/useDeckStore";
 import { useProductStore } from "@/stores/useProductStore";
-import { getIngredientById } from "@/lib/ingredients";
+import { getIngredientById, INGREDIENT_GENRES } from "@/lib/ingredients";
 import { findCombinations } from "@/lib/combinations";
 import { recommendDeck } from "@/lib/deckRecommender";
-import { CATEGORIES } from "@/lib/categories";
 import { getGenreByKey, GENRE_SLOT_CONFIG } from "@/lib/productGenres";
 import { shareDeck } from "@/lib/share";
 import DeckTray from "@/components/deck/DeckTray";
-import CoverageChart from "@/components/deck/CoverageChart";
+import dynamic from "next/dynamic";
+const CoverageChart = dynamic(() => import("@/components/deck/CoverageChart"), {
+  loading: () => <div className="bg-white rounded-xl p-4 border border-border h-[300px] flex items-center justify-center text-sm text-bo-ink-muted">チャート読み込み中...</div>,
+  ssr: false,
+});
 import CombinationCard from "@/components/deck/CombinationCard";
 import AutoRecommendModal from "@/components/deck/AutoRecommendModal";
 import ShareModal from "@/components/ui/ShareModal";
@@ -22,7 +25,7 @@ import { useUser } from "@/lib/auth";
 import AuthGuard from "@/components/ui/AuthGuard";
 import BottomSheet from "@/components/scan/BottomSheet";
 import Glass from "@/components/ui/Glass";
-import { RoutineType, CategoryKey, Product, ProductGenre, RecommendationResult } from "@/types";
+import { RoutineType, IngredientGenre, Product, ProductGenre, RecommendationResult } from "@/types";
 
 const TYPE_LABELS: Record<string, string> = {
   cream: "クリーム", serum: "美容液", mask_pack: "マスク",
@@ -58,10 +61,6 @@ export default function DeckPage() {
   const replaceDeckItems = useDeckStore((s) => s.replaceAll);
   const allProducts = useProductStore((s) => s.products);
 
-  if (loading) {
-    return <PageLoading message="マイスキンケアデッキを読み込んでいます..." />;
-  }
-
   const getProduct = (id: string) => allProducts.find((p) => p.id === id);
 
   const deckItems = allDeckItems
@@ -72,6 +71,50 @@ export default function DeckPage() {
     .map((item) => getProduct(item.productId))
     .filter((p): p is Product => p !== undefined);
 
+  const { genreCounts, coveredGenres, totalIngredients, combinations, recommendedCombos, cautionCombos, comboWithSources } = useMemo(() => {
+    const genreCounts: Record<IngredientGenre, number> = {
+      water: 0, amino_acid: 0, vitamin: 0, peptide: 0, botanical: 0,
+      oil_lipid: 0, ferment: 0, acid: 0, base: 0,
+    };
+    const allIngredientNames: string[] = [];
+    const genreSet = new Set<string>();
+    deckProducts.forEach((product) => {
+      product.ingredients.forEach((pi) => {
+        const ing = getIngredientById(pi.ingredientId);
+        if (ing) {
+          allIngredientNames.push(ing.nameJa);
+          genreCounts[ing.genre]++;
+          genreSet.add(ing.genre);
+        }
+      });
+    });
+    const coveredGenres = Object.values(genreCounts).filter((c) => c > 0).length;
+    const totalIngredients = new Set(allIngredientNames).size;
+    const combinations = findCombinations(Array.from(new Set(allIngredientNames)));
+    const recommendedCombos = combinations.filter((c) => c.type === "recommended");
+    const cautionCombos = combinations.filter((c) => c.type === "note");
+
+    const comboWithSources = combinations.map((combo) => {
+      const sources: [string[], string[]] = [[], []];
+      combo.pair.forEach((ingredientName, pairIdx) => {
+        deckProducts.forEach((product) => {
+          const hasIngredient = product.ingredients.some((pi) => {
+            const ing = getIngredientById(pi.ingredientId);
+            return ing?.nameJa === ingredientName;
+          });
+          if (hasIngredient) sources[pairIdx].push(product.name);
+        });
+      });
+      return { combo, sources };
+    });
+
+    return { genreCounts, coveredGenres, totalIngredients, combinations, recommendedCombos, cautionCombos, comboWithSources };
+  }, [deckProducts]);
+
+  if (loading) {
+    return <PageLoading message="マイスキンケアデッキを読み込んでいます..." />;
+  }
+
   const productsByGenre: Record<ProductGenre, Product[]> = {} as Record<ProductGenre, Product[]>;
   GENRE_SLOT_CONFIG.forEach((s) => { productsByGenre[s.genre] = []; });
   deckProducts.forEach((p) => {
@@ -80,55 +123,9 @@ export default function DeckPage() {
     productsByGenre[genre].push(p);
   });
 
-  const categoryCounts: Record<CategoryKey, number> = {
-    moisturizing: 0, brightening: 0, turnover: 0,
-    barrier: 0, soothing: 0, keratin: 0,
-  };
-  const allIngredientNames: string[] = [];
-  deckProducts.forEach((product) => {
-    product.ingredients.forEach((pi) => {
-      const ing = getIngredientById(pi.ingredientId);
-      if (ing) {
-        allIngredientNames.push(ing.nameJa);
-        ing.categories.forEach((cat) => { categoryCounts[cat]++; });
-      }
-    });
-  });
-  const coveredCategories = Object.values(categoryCounts).filter((c) => c > 0).length;
-  const totalIngredients = new Set(allIngredientNames).size;
-  const combinations = findCombinations(Array.from(new Set(allIngredientNames)));
-  const recommendedCombos = combinations.filter((c) => c.type === "recommended");
-  const cautionCombos = combinations.filter((c) => c.type === "note");
-
-  const comboWithSources = combinations.map((combo) => {
-    const sources: [string[], string[]] = [[], []];
-    combo.pair.forEach((ingredientName, pairIdx) => {
-      deckProducts.forEach((product) => {
-        const hasIngredient = product.ingredients.some((pi) => {
-          const ing = getIngredientById(pi.ingredientId);
-          return ing?.nameJa === ingredientName;
-        });
-        if (hasIngredient) sources[pairIdx].push(product.name);
-      });
-    });
-    return { combo, sources };
-  });
-
-  const allCategories = ["保湿", "美白", "鎮静", "エイジング", "UV防御", "修復"];
-  const coveredCats = Array.from(new Set(deckProducts.flatMap((p) => {
-    const cats: string[] = [];
-    p.ingredients.forEach((pi) => {
-      const ing = getIngredientById(pi.ingredientId);
-      if (ing) {
-        ing.categories.forEach((c) => {
-          const cat = CATEGORIES.find((cc) => cc.key === c);
-          if (cat) cats.push(cat.label);
-        });
-      }
-    });
-    return cats;
-  })));
-  const coveragePercent = deckProducts.length > 0 ? Math.round((coveredCats.length / allCategories.length) * 100) : 0;
+  const allGenreLabels = INGREDIENT_GENRES.map((g) => g.label);
+  const coveredGenreLabels = INGREDIENT_GENRES.filter((g) => genreCounts[g.key] > 0).map((g) => g.label);
+  const coveragePercent = deckProducts.length > 0 ? Math.round((coveredGenreLabels.length / allGenreLabels.length) * 100) : 0;
 
   // Handlers
   const handleAddItem = async (productId: string) => {
@@ -185,7 +182,7 @@ export default function DeckPage() {
   const shareText = shareDeck(
     routine,
     deckProducts.map((p) => ({ emoji: "📦", name: p.name })),
-    coveredCategories,
+    coveredGenres,
     totalIngredients
   );
 
@@ -276,7 +273,7 @@ export default function DeckPage() {
                   <span className="text-[13px] font-black text-bo-accent font-serif">{deckProducts.length}ステップ</span>
                 </div>
                 <div className="flex justify-between items-center mb-1.5">
-                  <span className="text-[10px] text-bo-ink-muted font-sans">カテゴリカバー率</span>
+                  <span className="text-[10px] text-bo-ink-muted font-sans">ジャンルカバー率</span>
                   <span className="text-[11px] font-black font-serif" style={{ color: coveragePercent >= 80 ? "#3A8F7A" : "#D4A853" }}>
                     {coveragePercent}%
                   </span>
@@ -288,8 +285,8 @@ export default function DeckPage() {
                   />
                 </div>
                 <div className="flex gap-1.5 flex-wrap">
-                  {allCategories.map((cat) => {
-                    const covered = coveredCats.includes(cat);
+                  {allGenreLabels.map((cat) => {
+                    const covered = coveredGenreLabels.includes(cat);
                     return (
                       <span
                         key={cat}
@@ -440,13 +437,14 @@ export default function DeckPage() {
             <div className="mt-3 animate-fade-up">
               {/* Category breakdown */}
               <div className="bg-white rounded-r2 border border-bo-parchment shadow-bo1 p-5 mb-3">
-                <div className="text-[13px] font-bold text-bo-ink font-sans mb-3.5">カテゴリ別の成分カバー</div>
-                {allCategories.map((cat) => {
-                  const covered = coveredCats.includes(cat);
+                <div className="text-[13px] font-bold text-bo-ink font-sans mb-3.5">ジャンル別の成分カバー</div>
+                {INGREDIENT_GENRES.map((genre) => {
+                  const cat = genre.label;
+                  const covered = genreCounts[genre.key] > 0;
                   const prodCount = deckProducts.filter((d) => {
                     return d.ingredients.some((pi) => {
                       const ing = getIngredientById(pi.ingredientId);
-                      return ing && CATEGORIES.some((c) => c.key === ing.categories[0] && c.label === cat);
+                      return ing && ing.genre === genre.key;
                     });
                   }).length;
                   return (
@@ -474,7 +472,7 @@ export default function DeckPage() {
           {deckProducts.length > 0 && (
             <div className="grid grid-cols-4 gap-2 mt-5 mb-5">
               {[
-                { value: `${coveredCategories}/6`, label: "カバー", color: "#3A8F7A" },
+                { value: `${coveredGenres}/${INGREDIENT_GENRES.length}`, label: "カバー", color: "#3A8F7A" },
                 { value: `${totalIngredients}`, label: "成分数", color: "#D4A853" },
                 { value: `${deckProducts.length}`, label: "アイテム", color: "#6B4A8A" },
                 { value: recommendedCombos.length > 0 ? `${recommendedCombos.length}` : "−", label: "好相性", color: recommendedCombos.length > 0 ? "#3A8F7A" : "#B5C7BE" },
@@ -525,26 +523,26 @@ export default function DeckPage() {
           {/* Coverage chart */}
           {deckProducts.length > 0 && (
             <div className="mb-5">
-              <CoverageChart categoryCounts={categoryCounts} />
+              <CoverageChart genreCounts={genreCounts} />
             </div>
           )}
 
-          {/* Category list */}
+          {/* Genre list */}
           {deckProducts.length > 0 && (
             <div className="mb-5">
               <h3 className="font-bold text-sm text-bo-ink mb-1 flex items-center gap-2">
                 <span className="w-1 h-4 rounded-full bg-bo-accent inline-block" />
-                カテゴリ別成分
+                ジャンル別成分
               </h3>
               <p className="text-xs text-bo-ink-muted mb-3">成分をタップすると詳細が確認できます</p>
               <div className="space-y-2">
-                {CATEGORIES.map((cat) => {
+                {INGREDIENT_GENRES.map((genre) => {
                   const ings: { id: string; nameJa: string }[] = [];
                   const seen = new Set<string>();
                   deckProducts.forEach((p) => {
                     p.ingredients.forEach((pi) => {
                       const ing = getIngredientById(pi.ingredientId);
-                      if (ing?.categories.includes(cat.key) && !seen.has(ing.id)) {
+                      if (ing?.genre === genre.key && !seen.has(ing.id)) {
                         seen.add(ing.id);
                         ings.push({ id: ing.id, nameJa: ing.nameJa });
                       }
@@ -552,16 +550,16 @@ export default function DeckPage() {
                   });
                   if (ings.length === 0) return null;
                   return (
-                    <div key={cat.key} className="rounded-r2 p-3 border" style={{ background: cat.color + "12", borderColor: cat.color + "20" }}>
+                    <div key={genre.key} className="rounded-r2 p-3 border" style={{ background: genre.color + "12", borderColor: genre.color + "20" }}>
                       <div className="flex items-center gap-1.5 mb-1">
-                        <span>{cat.icon}</span>
-                        <span className="text-sm font-bold" style={{ color: cat.color }}>{cat.label}</span>
+                        <span>{genre.icon}</span>
+                        <span className="text-sm font-bold" style={{ color: genre.color }}>{genre.label}</span>
                         <span className="text-xs text-bo-ink-muted">({ings.length}種)</span>
                       </div>
-                      <p className="text-[11px] leading-relaxed text-bo-ink-muted mb-2">{cat.desc}</p>
+                      <p className="text-[11px] leading-relaxed text-bo-ink-muted mb-2">{genre.desc}</p>
                       <div className="flex flex-wrap gap-1 mt-1">
                         {ings.map((ing) => (
-                          <Link key={ing.id} href={`/ingredient/${ing.id}`} className="text-xs px-2 py-0.5 rounded-full no-underline" style={{ background: cat.color + "25", color: cat.color }}>
+                          <Link key={ing.id} href={`/ingredient/${ing.id}`} className="text-xs px-2 py-0.5 rounded-full no-underline" style={{ background: genre.color + "25", color: genre.color }}>
                             {ing.nameJa}
                           </Link>
                         ))}
