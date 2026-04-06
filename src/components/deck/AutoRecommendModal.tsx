@@ -77,8 +77,7 @@ export default function AutoRecommendModal({
   return (
     <div
       ref={overlayRef}
-      className="fixed inset-0 bg-black/40 z-50 flex items-end justify-center"
-      style={{ touchAction: "none" }}
+      className="fixed inset-0 bg-black/40 z-50 flex items-end justify-center touch-none"
       onClick={onClose}
     >
       <div
@@ -87,19 +86,12 @@ export default function AutoRecommendModal({
       >
         {/* Header */}
         <div className="px-6 pt-4 pb-3 shrink-0">
-          <div
-            className="w-10 h-1 rounded-full mx-auto mb-4"
-            style={{ background: "#E0E0E0" }}
-          />
+          <div className="w-10 h-1 rounded-full mx-auto mb-4 bg-bo-parchment" />
           <div className="flex justify-between items-center">
-            <h3 className="font-bold text-base" style={{ color: "#2D2D2D" }}>
+            <h3 className="font-bold text-base text-bo-ink font-sans">
               おすすめスキンケアデッキ
             </h3>
-            <button
-              onClick={onClose}
-              className="text-xl"
-              style={{ color: "#9B9B9B" }}
-            >
+            <button onClick={onClose} className="text-xl text-bo-ink-muted">
               ✕
             </button>
           </div>
@@ -108,61 +100,41 @@ export default function AutoRecommendModal({
         {/* Scrollable content */}
         <div
           ref={contentRef}
-          className="overflow-y-auto px-6 pb-8 flex-1 min-h-0"
-          style={{ touchAction: "pan-y", WebkitOverflowScrolling: "touch", overscrollBehavior: "contain" }}
+          className="overflow-y-auto px-6 pb-8 flex-1 min-h-0 touch-pan-y overscroll-contain"
         >
           {/* Score summary */}
           <div className="flex gap-3 mb-4">
-            <div
-              className="flex-1 text-center py-2.5 rounded-2xl"
-              style={{ background: "#E8FAF8", border: "1px solid #5BBFAD30" }}
-            >
-              <div
-                className="text-lg font-bold"
-                style={{ color: "#5BBFAD" }}
-              >
+            <div className="flex-1 text-center py-2.5 rounded-r2 bg-bo-accent-soft border border-bo-accent/20">
+              <div className="text-lg font-bold text-bo-accent font-serif">
                 {result.recommendedCombinations.length}件
               </div>
-              <div className="text-[10px]" style={{ color: "#9B9B9B" }}>
+              <div className="text-[10px] text-bo-ink-muted font-sans">
                 推奨の組み合わせ
               </div>
             </div>
             <div
-              className="flex-1 text-center py-2.5 rounded-2xl"
-              style={{
-                background:
-                  result.cautionCombinations.length > 0
-                    ? "#FFF3F3"
-                    : "#F5F5F5",
-                border: `1px solid ${result.cautionCombinations.length > 0 ? "#F48C8C30" : "#E0E0E0"}`,
-              }}
+              className={`flex-1 text-center py-2.5 rounded-r2 border ${
+                result.cautionCombinations.length > 0
+                  ? "bg-bo-danger-bg border-bo-danger/20"
+                  : "bg-bo-parchment border-bo-parchment"
+              }`}
             >
               <div
-                className="text-lg font-bold"
-                style={{
-                  color:
-                    result.cautionCombinations.length > 0
-                      ? "#F48C8C"
-                      : "#9B9B9B",
-                }}
+                className={`text-lg font-bold font-serif ${
+                  result.cautionCombinations.length > 0 ? "text-bo-danger" : "text-bo-ink-muted"
+                }`}
               >
                 {result.cautionCombinations.length}件
               </div>
-              <div className="text-[10px]" style={{ color: "#9B9B9B" }}>
+              <div className="text-[10px] text-bo-ink-muted font-sans">
                 注意の組み合わせ
               </div>
             </div>
-            <div
-              className="flex-1 text-center py-2.5 rounded-2xl"
-              style={{ background: "#F5F0FF", border: "1px solid #B39DDB30" }}
-            >
-              <div
-                className="text-lg font-bold"
-                style={{ color: "#B39DDB" }}
-              >
+            <div className="flex-1 text-center py-2.5 rounded-r2 bg-[#F0EDF5] border border-[#B39DDB30]">
+              <div className="text-lg font-bold text-[#7B68A8] font-serif">
                 {result.coveredCategoryCount}/6
               </div>
-              <div className="text-[10px]" style={{ color: "#9B9B9B" }}>
+              <div className="text-[10px] text-bo-ink-muted font-sans">
                 カテゴリカバー
               </div>
             </div>
@@ -179,36 +151,23 @@ export default function AutoRecommendModal({
           {(result.recommendedCombinations.length > 0 ||
             result.cautionCombinations.length > 0) && (
             <div className="mb-4">
-              <h4
-                className="font-bold text-sm mb-2 flex items-center gap-2"
-                style={{ color: "#2D2D2D" }}
-              >
-                <span
-                  className="w-1 h-4 rounded-full inline-block"
-                  style={{ background: "#F9A8C0" }}
-                />
+              <h4 className="font-bold text-sm mb-2 flex items-center gap-2 text-bo-ink font-sans">
+                <span className="w-1 h-4 rounded-full inline-block bg-bo-accent" />
                 組み合わせ情報
               </h4>
               <div className="space-y-2">
                 {result.recommendedCombinations.map((combo, i) => (
                   <div
                     key={`rec-${i}`}
-                    className="rounded-2xl p-3"
-                    style={{
-                      background: "#E8FAF8",
-                      border: "1px solid #5BBFAD30",
-                    }}
+                    className="rounded-r2 p-3 bg-bo-accent-soft border border-bo-accent/20"
                   >
                     <div className="flex items-center gap-2 mb-1">
                       <span>📚</span>
-                      <span
-                        className="font-bold text-xs"
-                        style={{ color: "#2D2D2D" }}
-                      >
+                      <span className="font-bold text-xs text-bo-ink font-sans">
                         {combo.label}
                       </span>
                     </div>
-                    <p className="text-[11px]" style={{ color: "#9B9B9B" }}>
+                    <p className="text-[11px] text-bo-ink-muted font-sans">
                       {combo.desc}
                     </p>
                   </div>
@@ -216,22 +175,15 @@ export default function AutoRecommendModal({
                 {result.cautionCombinations.map((combo, i) => (
                   <div
                     key={`cau-${i}`}
-                    className="rounded-2xl p-3"
-                    style={{
-                      background: "#FFF3F3",
-                      border: "1px solid #F48C8C30",
-                    }}
+                    className="rounded-r2 p-3 bg-bo-danger-bg border border-bo-danger/20"
                   >
                     <div className="flex items-center gap-2 mb-1">
                       <span>📋</span>
-                      <span
-                        className="font-bold text-xs"
-                        style={{ color: "#2D2D2D" }}
-                      >
+                      <span className="font-bold text-xs text-bo-ink font-sans">
                         {combo.label}
                       </span>
                     </div>
-                    <p className="text-[11px]" style={{ color: "#9B9B9B" }}>
+                    <p className="text-[11px] text-bo-ink-muted font-sans">
                       {combo.desc}
                     </p>
                   </div>
@@ -241,10 +193,7 @@ export default function AutoRecommendModal({
           )}
 
           {/* Disclaimer */}
-          <p
-            className="text-[10px] text-center mb-4"
-            style={{ color: "#C5C5C5" }}
-          >
+          <p className="text-[10px] text-center mb-4 text-bo-ink-faint font-sans">
             ※一般的な成分の相性情報に基づく参考提案です。個人の肌の状態により適切なケアは異なります。
           </p>
 
@@ -252,18 +201,13 @@ export default function AutoRecommendModal({
           <div className="space-y-2">
             <button
               onClick={onConfirm}
-              className="w-full py-3.5 rounded-2xl text-sm font-bold text-white"
-              style={{
-                background: "linear-gradient(135deg, #F9A8C0, #F48FB1)",
-                boxShadow: "0 2px 8px rgba(249,168,192,0.35)",
-              }}
+              className="w-full py-3.5 rounded-r2 text-sm font-bold text-white font-sans bg-gradient-to-br from-bo-accent to-bo-accent-dark shadow-bo-accent"
             >
               この組み合わせを使う
             </button>
             <button
               onClick={onClose}
-              className="w-full py-3 rounded-2xl text-sm font-medium"
-              style={{ color: "#9B9B9B" }}
+              className="w-full py-3 rounded-r2 text-sm font-medium text-bo-ink-muted font-sans"
             >
               キャンセル
             </button>

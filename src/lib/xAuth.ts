@@ -2,11 +2,13 @@ import OAuth from "oauth-1.0a";
 import crypto from "crypto";
 
 export function createOAuthClient() {
+  const key = process.env.X_API_KEY;
+  const secret = process.env.X_API_SECRET;
+  if (!key || !secret) {
+    throw new Error("X API環境変数が未設定です: X_API_KEY, X_API_SECRET");
+  }
   return new OAuth({
-    consumer: {
-      key: process.env.X_API_KEY!,
-      secret: process.env.X_API_SECRET!,
-    },
+    consumer: { key, secret },
     signature_method: "HMAC-SHA1",
     hash_function(baseString, key) {
       return crypto.createHmac("sha1", key).update(baseString).digest("base64");

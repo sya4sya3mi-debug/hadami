@@ -22,6 +22,7 @@ export default function SettingsPage() {
   const [xLinked, setXLinked] = useState<boolean | null>(null);
   const [xScreenName, setXScreenName] = useState<string | null>(null);
   const [xUnlinking, setXUnlinking] = useState(false);
+  const [xLinkError, setXLinkError] = useState("");
 
   useEffect(() => {
     fetch("/api/x-auth/status")
@@ -34,10 +35,17 @@ export default function SettingsPage() {
   }, []);
 
   const handleXLink = async () => {
-    const res = await fetch("/api/x-auth/request-token");
-    const data = await res.json();
-    if (data.authUrl) {
-      window.location.href = data.authUrl;
+    setXLinkError("");
+    try {
+      const res = await fetch("/api/x-auth/request-token");
+      const data = await res.json();
+      if (data.authUrl) {
+        window.location.href = data.authUrl;
+      } else {
+        setXLinkError(data.error || "X連携に失敗しました");
+      }
+    } catch {
+      setXLinkError("通信エラーが発生しました");
     }
   };
 
@@ -247,6 +255,9 @@ export default function SettingsPage() {
                 <p className="text-[11px] text-bo-ink-muted font-sans leading-relaxed mb-3">
                   Xアカウントを連携すると、成分図鑑やデッキの情報を画像付きでXに投稿できます。
                 </p>
+                {xLinkError && (
+                  <p className="text-xs text-bo-danger font-sans mb-2">{xLinkError}</p>
+                )}
                 <button
                   onClick={handleXLink}
                   className="w-full py-3 rounded-r1 border-none bg-[#1DA1F2] text-white text-[13px] font-bold font-sans cursor-pointer"

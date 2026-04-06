@@ -82,67 +82,44 @@ export default function CaptureStep({ onCapture, onManualInput, preview, disable
   }, []);
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-5 animate-fade-up">
       {/* Hero capture card */}
       {!displayPreview ? (
         <button
           onClick={() => { if (!disabled) fileInputRef.current?.click(); }}
           disabled={disabled}
-          className="w-full rounded-3xl flex flex-col items-center justify-center gap-5 relative overflow-hidden"
-          style={{
-            height: 200,
-            background: "rgba(255,255,255,0.7)",
-            backdropFilter: "blur(12px)",
-            WebkitBackdropFilter: "blur(12px)",
-            border: "1px solid rgba(91,191,173,0.2)",
-            boxShadow: "0 4px 24px rgba(91,191,173,0.08)",
-            cursor: disabled ? "not-allowed" : "pointer",
-            opacity: disabled ? 0.5 : 1,
-          }}
+          className={`w-full h-[200px] rounded-r3 flex flex-col items-center justify-center gap-5 relative overflow-hidden bg-white/70 backdrop-blur-[12px] border border-bo-accent/20 shadow-[0_4px_24px_rgba(58,143,122,0.08)] ${
+            disabled ? "cursor-not-allowed opacity-50" : "cursor-pointer"
+          }`}
         >
-          {/* Pulse ring */}
-          <div
-            className="w-20 h-20 rounded-full flex items-center justify-center animate-pulse-ring"
-            style={{ background: "linear-gradient(135deg, #E8FAF8, #D4F5EF)" }}
-          >
-            <span className="text-4xl">📷</span>
+          <div className="w-[72px] h-[72px] rounded-full flex items-center justify-center text-[32px] bg-gradient-to-br from-bo-accent-soft to-[#D4F5EF] animate-pulse-ring">
+            <span>📸</span>
           </div>
           <div className="text-center">
-            <div className="font-bold text-[15px]" style={{ color: "#2D2D2D" }}>
+            <div className="font-bold text-[15px] text-bo-ink font-sans">
               タップしてコスメを撮影
             </div>
-            <div className="text-xs mt-1.5" style={{ color: "#9B9B9B" }}>
+            <div className="text-xs mt-1.5 text-bo-ink-muted font-sans">
               パッケージ正面がベストです
             </div>
           </div>
         </button>
       ) : (
-        /* Image preview */
-        <div
-          className="w-full rounded-3xl relative overflow-hidden"
-          style={{
-            height: 200,
-            border: "1px solid rgba(91,191,173,0.2)",
-            boxShadow: "0 4px 24px rgba(91,191,173,0.08)",
-          }}
-        >
+        <div className="w-full h-[200px] rounded-r3 relative overflow-hidden border border-bo-accent/20 shadow-[0_4px_24px_rgba(58,143,122,0.08)]">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={displayPreview}
             alt="撮影したコスメ"
             className="w-full h-full object-cover"
           />
-          <div className="absolute inset-0" style={{ background: "linear-gradient(to top, rgba(0,0,0,0.3) 0%, transparent 40%)" }} />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
           <button
             onClick={handleRetake}
-            className="absolute bottom-4 right-4 px-4 py-2 rounded-full text-xs font-bold text-white"
-            style={{ background: "rgba(0,0,0,0.5)", backdropFilter: "blur(8px)" }}
+            className="absolute bottom-4 right-4 px-4 py-2 rounded-full text-xs font-bold text-white bg-black/50 backdrop-blur-lg"
           >
             📷 撮り直す
           </button>
-          <div
-            className="absolute top-4 left-4 px-3 py-1.5 rounded-full text-xs font-bold text-white"
-            style={{ background: "rgba(91,191,173,0.85)", backdropFilter: "blur(8px)" }}
-          >
+          <div className="absolute top-4 left-4 px-3 py-1.5 rounded-full text-xs font-bold text-white bg-bo-accent/85 backdrop-blur-lg">
             ✓ 撮影完了
           </div>
         </div>
@@ -160,50 +137,34 @@ export default function CaptureStep({ onCapture, onManualInput, preview, disable
       {/* Manual input card */}
       <button
         onClick={onManualInput}
-        className="w-full rounded-2xl p-4 text-left"
-        style={{
-          background: "rgba(255,255,255,0.85)",
-          border: "1.5px solid rgba(249,168,192,0.4)",
-          boxShadow: "0 2px 12px rgba(249,168,192,0.1)",
-        }}
+        className="w-full rounded-r2 p-4 text-left bg-white/85 border-[1.5px] border-bo-accent/15 shadow-[0_2px_12px_rgba(58,143,122,0.06)]"
       >
         <div className="flex items-center gap-3">
-          <div
-            className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0"
-            style={{ background: "linear-gradient(135deg, #FDE8F0, #FCE4EC)" }}
-          >
+          <div className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0 bg-bo-accent-soft">
             <span className="text-2xl">📋</span>
           </div>
           <div className="flex-1 min-w-0">
-            <div className="text-[14px] font-bold" style={{ color: "#2D2D2D" }}>
+            <div className="text-[14px] font-bold text-bo-ink font-sans">
               成分リストを直接入力
             </div>
-            <div className="text-xs mt-0.5" style={{ color: "#9B9B9B" }}>
+            <div className="text-xs mt-0.5 text-bo-ink-muted font-sans">
               スキャン回数を消費しません
             </div>
           </div>
-          <span className="text-[#C8C8C8] text-lg">›</span>
+          <span className="text-bo-ink-faint text-lg">›</span>
         </div>
-        <div
-          className="mt-3 rounded-xl px-3 py-2 text-xs"
-          style={{ background: "rgba(249,168,192,0.1)", color: "#C97A9A" }}
-        >
+        <div className="mt-3 rounded-xl px-3 py-2 text-xs bg-bo-accent-soft/40 text-bo-accent font-sans">
           💡 iPhoneの写真でテキストを長押しコピー → 貼り付けるだけ
         </div>
       </button>
 
       {/* Tips */}
-      <div
-        className="rounded-2xl p-4"
-        style={{ background: "#E8FAF8", border: "1px solid rgba(91,191,173,0.15)" }}
-      >
-        <div className="text-xs font-bold mb-2" style={{ color: "#5BBFAD" }}>
+      <div className="rounded-r1 p-4 bg-bo-accent-soft border border-bo-accent/10">
+        <div className="text-xs font-bold mb-2 text-bo-accent font-sans">
           💡 撮影のコツ
         </div>
-        <div className="space-y-1.5 text-xs" style={{ color: "#6B9E95" }}>
-          <div>• パッケージ正面を明るい場所で撮影</div>
-          <div>• 文字がはっきり読める距離で</div>
-          <div>• ブレないようしっかり固定</div>
+        <div className="space-y-1.5 text-xs text-bo-ink-soft font-sans leading-[1.8]">
+          <div>パッケージ正面を明るい場所で撮影。商品名・ブランド名が読める距離で、ブレないようしっかり固定。</div>
         </div>
       </div>
     </div>

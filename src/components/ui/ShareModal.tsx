@@ -18,6 +18,7 @@ export default function ShareModal({ text, onClose, captureRef }: ShareModalProp
   const [postResult, setPostResult] = useState<{ success: boolean; message: string } | null>(null);
   const [cardImage, setCardImage] = useState<string | null>(null);
   const [capturing, setCapturing] = useState(false);
+  const [linkError, setLinkError] = useState<string | null>(null);
   const MAX_CHARS = 280;
   const isOverLimit = editableText.length > MAX_CHARS;
   const overlayRef = useRef<HTMLDivElement>(null);
@@ -118,10 +119,17 @@ export default function ShareModal({ text, onClose, captureRef }: ShareModalProp
   };
 
   const handleXLink = useCallback(async () => {
-    const res = await fetch("/api/x-auth/request-token");
-    const data = await res.json();
-    if (data.authUrl) {
-      window.location.href = data.authUrl;
+    setLinkError(null);
+    try {
+      const res = await fetch("/api/x-auth/request-token");
+      const data = await res.json();
+      if (data.authUrl) {
+        window.location.href = data.authUrl;
+      } else {
+        setLinkError(data.error || "X連携に失敗しました");
+      }
+    } catch {
+      setLinkError("通信エラーが発生しました");
     }
   }, []);
 
@@ -250,17 +258,27 @@ export default function ShareModal({ text, onClose, captureRef }: ShareModalProp
 
           {/* X link prompt */}
           {xLinked === false && (
-            <button
-              onClick={handleXLink}
-              className="w-full py-3 rounded-2xl text-sm font-bold"
-              style={{
-                background: "#F9F9F9",
-                color: "#2D2D2D",
-                border: "1.5px solid #E0E0E0",
-              }}
-            >
-              Xアカウントを連携して画像付き投稿
-            </button>
+            <>
+              <button
+                onClick={handleXLink}
+                className="w-full py-3 rounded-2xl text-sm font-bold"
+                style={{
+                  background: "#F9F9F9",
+                  color: "#2D2D2D",
+                  border: "1.5px solid #E0E0E0",
+                }}
+              >
+                Xアカウントを連携して画像付き投稿
+              </button>
+              {linkError && (
+                <div
+                  className="rounded-xl p-3 mt-2 text-sm font-medium text-center"
+                  style={{ background: "#FFEBEE", color: "#C62828" }}
+                >
+                  {linkError}
+                </div>
+              )}
+            </>
           )}
 
           <div className="flex gap-3">

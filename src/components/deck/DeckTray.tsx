@@ -30,9 +30,9 @@ export default function DeckTray({ productsByGenre, onAddSlot, onRemoveProduct }
           <div key={section}>
             {/* Section header */}
             <div className="flex items-center gap-2 mb-2 pl-1 mt-1">
-              <span className="text-[10px] font-semibold" style={{ color: "#C5C5C5" }}>{info.step}</span>
-              <span className="text-[11px] font-bold tracking-wide" style={{ color: "#9B9B9B" }}>{info.label}</span>
-              <div className="flex-1 h-px" style={{ background: "#E8E8E8" }} />
+              <span className="text-[10px] font-semibold text-bo-ink-faint font-serif">{info.step}</span>
+              <span className="text-[11px] font-bold tracking-wide text-bo-ink-muted font-sans">{info.label}</span>
+              <div className="flex-1 h-px bg-bo-parchment" />
             </div>
 
             {slotsInSection.map((slotConfig) => {
@@ -66,14 +66,13 @@ export default function DeckTray({ productsByGenre, onAddSlot, onRemoveProduct }
                   {slotConfig.maxSlots > 1 && products.length > 0 && products.length < slotConfig.maxSlots && (
                     <button
                       onClick={() => onAddSlot(slotConfig.genre)}
-                      className="flex items-center justify-center gap-1.5 w-full py-2 rounded-xl border-none cursor-pointer text-xs font-medium mb-2"
+                      className="flex items-center justify-center gap-1.5 w-full py-2 rounded-xl cursor-pointer text-xs font-medium mb-2 bg-transparent font-sans"
                       style={{
-                        border: `1.5px dashed ${genreInfo?.color || "#ccc"}40`,
-                        background: "none",
-                        color: genreInfo?.color || "#ccc",
+                        border: `1.5px dashed ${genreInfo?.color || "#B5C7BE"}40`,
+                        color: genreInfo?.color || "#B5C7BE",
                       }}
                     >
-                      ＋ {genreInfo?.label}を追加（最大{slotConfig.maxSlots}）
+                      + {genreInfo?.label}を追加（最大{slotConfig.maxSlots}）
                     </button>
                   )}
                 </div>

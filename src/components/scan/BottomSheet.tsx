@@ -60,17 +60,20 @@ export default function BottomSheet({
         style={{ maxHeight, height }}
       >
         {/* Drag handle + header */}
-        <div className="shrink-0 px-6 pt-3 pb-4" style={{ borderBottom: title ? "1px solid #F5F5F5" : undefined }}>
+        <div
+          className="shrink-0 px-6 pt-3 pb-4"
+          style={{ borderBottom: title ? "1px solid #E8F0EC" : undefined }}
+        >
           <div className="flex justify-center mb-3">
-            <div className="w-10 h-1 rounded-full" style={{ background: "#E0E0E0" }} />
+            <div className="w-10 h-1 rounded-full bg-bo-parchment" />
           </div>
           {title && (
             <div className="flex justify-between items-center">
               <div>
-                <h3 className="font-bold text-base" style={{ color: "#2D2D2D" }}>{title}</h3>
-                {subtitle && <p className="text-xs mt-0.5" style={{ color: "#9B9B9B" }}>{subtitle}</p>}
+                <h3 className="font-bold text-base text-bo-ink">{title}</h3>
+                {subtitle && <p className="text-xs mt-0.5 text-bo-ink-muted">{subtitle}</p>}
               </div>
-              <button onClick={onClose} className="text-xl" style={{ color: "#9B9B9B" }}>✕</button>
+              <button onClick={onClose} className="text-xl text-bo-ink-muted">✕</button>
             </div>
           )}
         </div>

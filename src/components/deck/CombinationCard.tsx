@@ -18,7 +18,7 @@ function getPrimaryCategory(nameJa: string) {
 function IngredientTag({ name, products }: { name: string; products: string[] }) {
   const cat = getPrimaryCategory(name);
   const bg = cat ? `${cat.color}1A` : "rgba(200,200,200,0.15)";
-  const color = cat ? cat.color : "#9B9B9B";
+  const color = cat ? cat.color : "#7E9389";
 
   return (
     <div className="flex-1 min-w-0">
@@ -27,17 +27,17 @@ function IngredientTag({ name, products }: { name: string; products: string[] })
         style={{ background: bg, border: `1px solid ${color}30` }}
       >
         {cat && (
-          <div className="text-[10px] mb-0.5" style={{ color }}>
+          <div className="text-[10px] mb-0.5 font-sans" style={{ color }}>
             {cat.icon} {cat.label}
           </div>
         )}
-        <div className="text-xs font-bold truncate" style={{ color: "#2D2D2D" }}>
+        <div className="text-xs font-bold truncate text-bo-ink font-sans">
           {name}
         </div>
       </div>
       {products.length > 0 && (
-        <div className="text-[10px] text-center mt-1 px-1 leading-tight" style={{ color: "#9B9B9B" }}>
-          {products.map((p, i) => <span key={i}>{i > 0 && "、"}{p}</span>)}
+        <div className="text-[10px] text-center mt-1 px-1 leading-tight text-bo-ink-muted font-sans">
+          {products.map((p, i) => <span key={i}>{i > 0 && "\u3001"}{p}</span>)}
         </div>
       )}
     </div>
@@ -49,12 +49,11 @@ export default function CombinationCard({ combo, ingredientProducts }: Props) {
 
   return (
     <div
-      className="rounded-2xl p-4"
-      style={
+      className={`rounded-r2 p-4 ${
         isRecommended
-          ? { background: "#FFFFFF", border: "1px solid #E8E8E8", boxShadow: "0 1px 6px rgba(0,0,0,0.05)" }
-          : { background: "linear-gradient(135deg, #FFF8F0 0%, #FFF5F5 100%)", border: "1px solid rgba(244,140,140,0.25)" }
-      }
+          ? "bg-white border border-bo-parchment shadow-bo1"
+          : "bg-gradient-to-br from-[#FFF8F0] to-bo-danger-bg border border-bo-danger/25"
+      }`}
     >
       {/* 成分ペア */}
       <div className="flex items-start gap-2 mb-3">
@@ -63,12 +62,11 @@ export default function CombinationCard({ combo, ingredientProducts }: Props) {
         {/* コネクター */}
         <div className="flex items-center justify-center pt-3 shrink-0">
           <span
-            className="text-[10px] font-bold w-6 h-6 rounded-full flex items-center justify-center"
-            style={
+            className={`text-[10px] font-bold w-6 h-6 rounded-full flex items-center justify-center ${
               isRecommended
-                ? { background: "rgba(91,191,173,0.15)", color: "#5BBFAD" }
-                : { background: "rgba(244,140,140,0.15)", color: "#E07B7B" }
-            }
+                ? "bg-bo-accent/15 text-bo-accent"
+                : "bg-bo-danger/15 text-bo-danger"
+            }`}
           >
             {isRecommended ? "+" : "!"}
           </span>
@@ -78,13 +76,10 @@ export default function CombinationCard({ combo, ingredientProducts }: Props) {
       </div>
 
       {/* ラベルと説明 */}
-      <div
-        className="text-xs font-bold mb-0.5"
-        style={{ color: isRecommended ? "#2D2D2D" : "#B85050" }}
-      >
+      <div className={`text-xs font-bold mb-0.5 font-sans ${isRecommended ? "text-bo-ink" : "text-bo-danger"}`}>
         {combo.label}
       </div>
-      <p className="text-xs leading-relaxed" style={{ color: "#9B9B9B" }}>
+      <p className="text-xs leading-relaxed text-bo-ink-muted font-sans">
         {combo.desc}
       </p>
     </div>

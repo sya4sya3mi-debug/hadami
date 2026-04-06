@@ -25,48 +25,41 @@ export default function ClassifyStep({
   onContinue,
 }: ClassifyStepProps) {
   return (
-    <div className="space-y-5 animate-float-up">
+    <div className="space-y-5 animate-fade-up">
       {/* Product info card */}
-      <div
-        className="bg-white rounded-2xl p-4"
-        style={{ border: "1px solid #F5E6EF", boxShadow: "0 2px 8px rgba(249,168,192,0.08)" }}
-      >
-        <div className="flex gap-4">
+      <div className="bg-white rounded-r2 p-[18px] border border-bo-parchment shadow-bo1">
+        <div className="flex gap-3.5">
           {/* Thumbnail */}
           {imagePreview ? (
-            <div className="w-20 h-20 rounded-xl overflow-hidden shrink-0">
+            <div className="w-[72px] h-[72px] rounded-[14px] overflow-hidden shrink-0">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={imagePreview} alt="" className="w-full h-full object-cover" />
             </div>
           ) : (
-            <div
-              className="w-20 h-20 rounded-xl shrink-0 flex items-center justify-center text-3xl"
-              style={{ background: "linear-gradient(135deg, #E8FAF8, #FFF0F5)" }}
-            >
+            <div className="w-[72px] h-[72px] rounded-[14px] shrink-0 flex items-center justify-center text-[28px] bg-gradient-to-br from-bo-accent-soft to-bo-parchment">
               📦
             </div>
           )}
 
           {/* Editable fields */}
-          <div className="flex-1 min-w-0 space-y-2">
+          <div className="flex-1 min-w-0 space-y-2.5">
             <div>
-              <label className="block text-[10px] font-medium mb-0.5" style={{ color: "#9B9B9B" }}>コスメ名</label>
+              <label className="block text-[9px] font-medium mb-0.5 text-bo-ink-muted font-sans">コスメ名</label>
               <input
                 type="text"
                 value={productName}
                 onChange={(e) => onProductNameChange(e.target.value)}
-                className="w-full text-sm font-bold outline-none border-b pb-1"
-                style={{ borderColor: "#F2F2F2", color: "#2D2D2D" }}
+                className="w-full text-[13px] font-bold outline-none border-b-[1.5px] border-bo-parchment pb-1 bg-transparent text-bo-ink font-sans"
                 placeholder="コスメ名を入力"
               />
             </div>
             <div>
-              <label className="block text-[10px] font-medium mb-0.5" style={{ color: "#9B9B9B" }}>ブランド</label>
+              <label className="block text-[9px] font-medium mb-0.5 text-bo-ink-muted font-sans">ブランド</label>
               <input
                 type="text"
                 value={brand}
                 onChange={(e) => onBrandChange(e.target.value)}
-                className="w-full text-xs outline-none border-b pb-1"
-                style={{ borderColor: "#F2F2F2", color: "#2D2D2D" }}
+                className="w-full text-xs outline-none border-b-[1.5px] border-bo-parchment pb-1 bg-transparent text-bo-ink font-sans"
                 placeholder="ブランド名を入力"
               />
             </div>
@@ -76,30 +69,21 @@ export default function ClassifyStep({
 
       {/* Genre selector */}
       <div>
-        <div className="text-xs font-bold mb-3" style={{ color: "#2D2D2D" }}>
+        <div className="text-xs font-bold mb-2.5 text-bo-ink font-sans">
           コスメタイプを選択
         </div>
-        <div className="flex gap-2 overflow-x-auto hide-scrollbar pb-2" style={{ WebkitOverflowScrolling: "touch" }}>
+        <div className="flex gap-2 overflow-x-auto hide-scrollbar pb-2">
           {PRODUCT_GENRES.map((genre) => {
             const isSelected = productType === genre.key;
             return (
               <button
                 key={genre.key}
                 onClick={() => onProductTypeChange(genre.key)}
-                className="flex items-center gap-1.5 px-3.5 py-2 rounded-full text-xs font-medium whitespace-nowrap shrink-0 transition-all duration-200"
-                style={
+                className={`flex items-center gap-1.5 px-3.5 py-2 rounded-[20px] text-[11px] font-semibold whitespace-nowrap shrink-0 transition-all duration-200 font-sans ${
                   isSelected
-                    ? {
-                        background: "linear-gradient(135deg, #5BBFAD, #7DD3C8)",
-                        color: "#fff",
-                        boxShadow: "0 2px 8px rgba(91,191,173,0.3)",
-                      }
-                    : {
-                        background: "#fff",
-                        color: "#9B9B9B",
-                        border: "1px solid #F2F2F2",
-                      }
-                }
+                    ? "bg-bo-accent text-white shadow-bo-accent"
+                    : "bg-white text-bo-ink-muted shadow-bo1 border border-bo-parchment"
+                }`}
               >
                 <span>{genre.icon}</span>
                 <span>{genre.label}</span>
@@ -112,11 +96,7 @@ export default function ClassifyStep({
       {/* Continue button */}
       <button
         onClick={onContinue}
-        className="w-full py-4 rounded-2xl text-white text-sm font-bold"
-        style={{
-          background: "linear-gradient(135deg, #5BBFAD, #7DD3C8)",
-          boxShadow: "0 4px 16px rgba(91,191,173,0.35)",
-        }}
+        className="w-full py-3.5 rounded-r1 bg-bo-accent text-white text-[13px] font-bold font-sans shadow-bo-accent"
       >
         成分を確認する →
       </button>

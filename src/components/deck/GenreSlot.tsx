@@ -23,22 +23,19 @@ export default function GenreSlot({ genre, stepLabel, product, onAdd, onRemove }
     return (
       <div
         onClick={onAdd}
-        className="flex items-center gap-3 px-4 cursor-pointer"
+        className="flex items-center gap-3 px-4 h-16 rounded-2xl mb-2 cursor-pointer"
         style={{
-          height: 64,
           border: `2px dashed ${color}30`,
-          borderRadius: 16,
-          marginBottom: 8,
           background: `linear-gradient(90deg, rgba(255,255,255,0.5), ${color}06)`,
         }}
       >
         <span className="text-[28px] opacity-40 w-9 text-center">{icon}</span>
-        <span className="text-[13px] font-medium flex-1" style={{ color: "#C5C5C5" }}>{label}</span>
+        <span className="text-[13px] font-medium flex-1 text-bo-ink-faint font-sans">{label}</span>
         <div
-          className="w-7 h-7 rounded-full flex items-center justify-center text-base"
+          className="w-7 h-7 rounded-full flex items-center justify-center text-base font-sans"
           style={{ background: `${color}18`, color }}
         >
-          ＋
+          +
         </div>
       </div>
     );
@@ -53,12 +50,9 @@ export default function GenreSlot({ genre, stepLabel, product, onAdd, onRemove }
 
   return (
     <div
-      className="flex items-center relative overflow-hidden deck-card-enter"
+      className="flex items-center relative overflow-hidden deck-card-enter h-[72px] rounded-2xl mb-2"
       style={{
-        height: 72,
         background: `linear-gradient(90deg, #fff, ${color}08)`,
-        borderRadius: 16,
-        marginBottom: 8,
         border: `1px solid ${color}20`,
         boxShadow: `inset 0 0 0 1px ${color}15`,
       }}
@@ -68,7 +62,7 @@ export default function GenreSlot({ genre, stepLabel, product, onAdd, onRemove }
 
       {/* Step badge */}
       <div
-        className="absolute top-1.5 left-2.5 z-10 w-[18px] h-[18px] rounded-full flex items-center justify-center text-[9px] font-extrabold text-white"
+        className="absolute top-1.5 left-2.5 z-10 w-[18px] h-[18px] rounded-full flex items-center justify-center text-[9px] font-extrabold text-white font-serif"
         style={{ background: color }}
       >
         {stepLabel}
@@ -83,7 +77,7 @@ export default function GenreSlot({ genre, stepLabel, product, onAdd, onRemove }
         ) : (
           <div
             className="w-14 h-14 rounded-[10px] flex items-center justify-center text-2xl"
-            style={{ background: `linear-gradient(135deg, ${color}20, #FFF0F5)` }}
+            style={{ background: `linear-gradient(135deg, ${color}20, ${color}08)` }}
           >
             {icon}
           </div>
@@ -92,10 +86,10 @@ export default function GenreSlot({ genre, stepLabel, product, onAdd, onRemove }
 
       {/* Info */}
       <div className="flex-1 min-w-0 px-2.5">
-        <div className="text-[13px] font-bold truncate">{product.name}</div>
-        <div className="text-[11px] mt-0.5" style={{ color: "#9B9B9B" }}>{product.brand}</div>
+        <div className="text-[13px] font-bold truncate text-bo-ink font-sans">{product.name}</div>
+        <div className="text-[11px] mt-0.5 text-bo-ink-muted font-sans">{product.brand}</div>
         <span
-          className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-[10px] text-[10px] font-semibold mt-0.5"
+          className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-[10px] text-[10px] font-semibold mt-0.5 font-sans"
           style={{ background: `${color}18`, color }}
         >
           {icon} {label}
@@ -110,7 +104,7 @@ export default function GenreSlot({ genre, stepLabel, product, onAdd, onRemove }
             return c ? (
               <span
                 key={cat}
-                className="text-[9px] px-1 py-0.5 rounded-md"
+                className="text-[9px] px-1 py-0.5 rounded-md font-sans"
                 style={{ background: `${c.color}20`, color: c.color }}
               >
                 {c.icon}
@@ -124,8 +118,7 @@ export default function GenreSlot({ genre, stepLabel, product, onAdd, onRemove }
       {onRemove && (
         <button
           onClick={onRemove}
-          className="w-[26px] h-[26px] rounded-full border-none flex items-center justify-center text-[11px] cursor-pointer mr-2.5 shrink-0"
-          style={{ background: "#FFF3F3", color: "#F48C8C" }}
+          className="w-[26px] h-[26px] rounded-full border-none flex items-center justify-center text-[11px] cursor-pointer mr-2.5 shrink-0 bg-bo-danger-bg text-bo-danger"
         >
           ✕
         </button>

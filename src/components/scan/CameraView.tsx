@@ -82,59 +82,49 @@ export default function CameraView({ step, onCapture, packagePreview }: CameraVi
       {/* Step indicator */}
       <div className="flex items-center gap-3 w-full">
         <div
-          className="flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium"
+          className="flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium text-white"
           style={{
-            background: isStep1
-              ? "linear-gradient(135deg, #5BBFAD, #7DD3C8)"
-              : "linear-gradient(135deg, #F9A8C0, #E879A0)",
-            color: "#fff",
+            background: "linear-gradient(135deg, #3A8F7A, #7DD3C8)",
           }}
         >
-          <span>{isStep1 ? "📦" : "📋"}</span>
-          <span>{isStep1 ? "パッケージ撮影" : "成分表撮影"}</span>
+          <span>{isStep1 ? "\uD83D\uDCE6" : "\uD83D\uDCCB"}</span>
+          <span>{isStep1 ? "\u30D1\u30C3\u30B1\u30FC\u30B8\u64AE\u5F71" : "\u6210\u5206\u8868\u64AE\u5F71"}</span>
         </div>
-        <span className="text-sm" style={{ color: "#9B9B9B" }}>
-          {isStep1 ? "コスメ名を自動で検索します" : "成分表を直接読み取ります"}
+        <span className="text-sm text-bo-ink-muted">
+          {isStep1 ? "\u30B3\u30B9\u30E1\u540D\u3092\u81EA\u52D5\u3067\u691C\u7D2B\u3057\u307E\u3059" : "\u6210\u5206\u8868\u3092\u76F4\u63A5\u8AAD\u307F\u53D6\u308A\u307E\u3059"}
         </span>
       </div>
 
       {/* Package done badge */}
       {step === 2 && packagePreview && (
-        <div
-          className="flex items-center gap-2 w-full px-3 py-2 rounded-xl text-sm"
-          style={{ background: "#E8FAF8", color: "#5BBFAD" }}
-        >
-          <span>✅</span>
-          <span className="font-medium">パッケージ撮影完了！</span>
+        <div className="flex items-center gap-2 w-full px-3 py-2 rounded-xl text-sm bg-bo-accent-soft text-bo-accent">
+          <span>{"\u2705"}</span>
+          <span className="font-medium">{"\u30D1\u30C3\u30B1\u30FC\u30B8\u64AE\u5F71\u5B8C\u4E86\uFF01"}</span>
         </div>
       )}
 
       {/* Camera area */}
       <button
         onClick={() => fileInputRef.current?.click()}
-        className="w-full rounded-3xl flex flex-col items-center justify-center gap-4 py-16"
+        className="w-full rounded-3xl flex flex-col items-center justify-center gap-4 py-16 border-[2.5px] border-dashed border-bo-accent shadow-[0_4px_20px_rgba(0,0,0,0.04)]"
         style={{
           background: "rgba(255,255,255,0.8)",
-          border: `2.5px dashed ${isStep1 ? "#5BBFAD" : "#F9A8C0"}`,
-          boxShadow: "0 4px 20px rgba(0,0,0,0.04)",
         }}
       >
         <div
           className="w-20 h-20 rounded-full flex items-center justify-center text-4xl"
           style={{
-            background: isStep1
-              ? "linear-gradient(135deg, #E8FAF8, #B2E8E0)"
-              : "linear-gradient(135deg, #FFF0F5, #F9C8D8)",
+            background: "linear-gradient(135deg, #D6EDE6, #B2E8E0)",
           }}
         >
-          {isStep1 ? "📦" : "📋"}
+          {isStep1 ? "\uD83D\uDCE6" : "\uD83D\uDCCB"}
         </div>
         <div className="text-center">
-          <div className="font-bold text-sm" style={{ color: "#2D2D2D" }}>
-            タップして撮影
+          <div className="font-bold text-sm text-bo-ink">
+            {"\u30BF\u30C3\u30D7\u3057\u3066\u64AE\u5F71"}
           </div>
-          <div className="text-xs mt-1" style={{ color: "#9B9B9B" }}>
-            カメラまたはアルバムから選択
+          <div className="text-xs mt-1 text-bo-ink-muted">
+            {"\u30AB\u30E1\u30E9\u307E\u305F\u306F\u30A2\u30EB\u30D0\u30E0\u304B\u3089\u9078\u629E"}
           </div>
         </div>
       </button>

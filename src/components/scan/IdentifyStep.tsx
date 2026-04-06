@@ -87,13 +87,11 @@ export default function IdentifyStep({
   );
 
   return (
-    <div className="flex flex-col items-center gap-6 py-8">
+    <div className="flex flex-col items-center gap-6 py-8 animate-fade-up">
       {/* Image preview */}
       {imagePreview && (
-        <div
-          className="w-[120px] h-[120px] rounded-2xl overflow-hidden"
-          style={{ boxShadow: "0 4px 16px rgba(0,0,0,0.1)" }}
-        >
+        <div className="w-[120px] h-[120px] rounded-2xl overflow-hidden shadow-bo2">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={imagePreview} alt="撮影したコスメ" className="w-full h-full object-cover" />
         </div>
       )}
@@ -102,70 +100,45 @@ export default function IdentifyStep({
         <>
           {/* Animated rings */}
           <div className="relative w-20 h-20 flex items-center justify-center">
-            <div
-              className="absolute inset-0 rounded-full"
-              style={{ border: "2px solid rgba(91,191,173,0.3)", animation: "ripple 2s ease-in-out infinite" }}
-            />
-            <div
-              className="absolute rounded-full"
-              style={{ inset: 6, border: "2px solid rgba(249,168,192,0.3)", animation: "ripple 2s ease-in-out infinite 0.4s" }}
-            />
-            <div
-              className="absolute rounded-full"
-              style={{ inset: 12, border: "2px solid rgba(91,191,173,0.3)", animation: "ripple 2s ease-in-out infinite 0.8s" }}
-            />
+            <div className="absolute inset-0 rounded-full border-2 border-bo-accent/30 animate-[ripple_2s_ease-in-out_infinite]" />
+            <div className="absolute inset-[6px] rounded-full border-2 border-bo-accent/20 animate-[ripple_2s_ease-in-out_infinite_0.4s]" />
+            <div className="absolute inset-3 rounded-full border-2 border-bo-accent/30 animate-[ripple_2s_ease-in-out_infinite_0.8s]" />
             <span className="text-2xl relative z-10">✨</span>
           </div>
 
           {/* Progress bar */}
           <div className="w-full max-w-[240px]">
-            <div className="h-1.5 rounded-full overflow-hidden" style={{ background: "#F2F2F2" }}>
+            <div className="h-1.5 rounded-full overflow-hidden bg-bo-parchment">
               <div
-                className="h-full rounded-full transition-all duration-700 ease-out"
-                style={{ width: `${progress}%`, background: "linear-gradient(90deg, #5BBFAD, #F9A8C0)" }}
+                className="h-full rounded-full transition-all duration-700 ease-out bg-gradient-to-r from-bo-accent to-[#7DD3C8]"
+                style={{ width: `${progress}%` }}
               />
             </div>
           </div>
 
           {/* Status message */}
-          <p
-            key={message}
-            className="text-sm font-medium text-center animate-float-up"
-            style={{ color: "#5BBFAD" }}
-          >
+          <p key={message} className="text-sm font-medium text-center animate-float-up text-bo-accent font-sans">
             {message}
           </p>
         </>
       ) : (
         /* Fallback: capture ingredients photo */
         <div className="w-full space-y-4">
-          <div
-            className="flex items-center gap-2 w-full px-4 py-3 rounded-xl text-sm"
-            style={{ background: "#FFF8E1", color: "#F59E0B", border: "1px solid #FDE68A" }}
-          >
+          <div className="flex items-center gap-2 w-full px-4 py-3 rounded-xl text-sm bg-bo-caution-bg text-bo-caution border border-[#F0D78C]">
             <span>⚠️</span>
-            <span>成分情報が見つかりませんでした</span>
+            <span className="font-sans">成分情報が見つかりませんでした</span>
           </div>
 
           <button
             onClick={() => fileInputRef.current?.click()}
-            className="w-full rounded-2xl flex flex-col items-center justify-center gap-3 py-10"
-            style={{
-              background: "rgba(255,255,255,0.7)",
-              backdropFilter: "blur(12px)",
-              border: "1px solid rgba(249,168,192,0.3)",
-              boxShadow: "0 4px 16px rgba(249,168,192,0.08)",
-            }}
+            className="w-full rounded-r2 flex flex-col items-center justify-center gap-3 py-10 bg-white/70 backdrop-blur-[12px] border border-bo-accent/20 shadow-[0_4px_16px_rgba(58,143,122,0.08)]"
           >
-            <div
-              className="w-14 h-14 rounded-full flex items-center justify-center"
-              style={{ background: "linear-gradient(135deg, #FFF0F5, #F9C8D8)" }}
-            >
+            <div className="w-14 h-14 rounded-full flex items-center justify-center bg-gradient-to-br from-bo-accent-soft to-[#C5E8D8]">
               <span className="text-2xl">📋</span>
             </div>
             <div className="text-center">
-              <div className="font-bold text-sm" style={{ color: "#2D2D2D" }}>成分表を撮影してください</div>
-              <div className="text-xs mt-1" style={{ color: "#9B9B9B" }}>裏面の成分一覧を直接読み取ります</div>
+              <div className="font-bold text-sm text-bo-ink font-sans">成分表を撮影してください</div>
+              <div className="text-xs mt-1 text-bo-ink-muted font-sans">裏面の成分一覧を直接読み取ります</div>
             </div>
           </button>
 
@@ -185,35 +158,33 @@ export default function IdentifyStep({
         <BottomSheet open={!!showMultiSheet} onClose={onCloseMultiSheet || (() => {})}>
           <div className="space-y-3">
             <div className="text-center mb-2">
-              <div className="text-lg font-bold" style={{ color: "#2D2D2D" }}>
+              <div className="text-lg font-bold text-bo-ink font-sans">
                 📦 {multiProducts.length}つのコスメを検出
               </div>
-              <div className="text-xs mt-1" style={{ color: "#9B9B9B" }}>確認したいコスメを選んでください</div>
+              <div className="text-xs mt-1 text-bo-ink-muted font-sans">確認したいコスメを選んでください</div>
             </div>
             {multiProducts.map((p, i) => (
               <div
                 key={i}
-                className="bg-white rounded-2xl p-4"
-                style={{ border: "1px solid #F5E6EF" }}
+                className="bg-white rounded-r2 p-4 border border-bo-parchment"
               >
-                <div className="font-bold text-sm" style={{ color: "#2D2D2D" }}>{p.productName}</div>
-                <div className="text-xs mt-0.5" style={{ color: "#9B9B9B" }}>{p.brand} · {p.productType}</div>
+                <div className="font-bold text-sm text-bo-ink font-sans">{p.productName}</div>
+                <div className="text-xs mt-0.5 text-bo-ink-muted font-sans">{p.brand} · {p.productType}</div>
                 <div className="flex gap-2 mt-3">
                   <button
                     onClick={() => onSelectProduct?.(p)}
-                    className="flex-1 py-2.5 rounded-xl text-xs font-bold text-white"
-                    style={{ background: "linear-gradient(135deg, #5BBFAD, #7DD3C8)" }}
+                    className="flex-1 py-2.5 rounded-xl text-xs font-bold text-white font-sans bg-gradient-to-br from-bo-accent to-[#7DD3C8]"
                   >
                     詳細を見る
                   </button>
                   <button
                     onClick={() => onSaveMulti?.(p, i)}
                     disabled={multiSavedIndexes?.has(i)}
-                    className="flex-1 py-2.5 rounded-xl text-xs font-bold"
-                    style={{
-                      background: multiSavedIndexes?.has(i) ? "#F2F2F2" : "#E8FAF8",
-                      color: multiSavedIndexes?.has(i) ? "#9B9B9B" : "#5BBFAD",
-                    }}
+                    className={`flex-1 py-2.5 rounded-xl text-xs font-bold font-sans ${
+                      multiSavedIndexes?.has(i)
+                        ? "bg-bo-parchment text-bo-ink-muted"
+                        : "bg-bo-accent-soft text-bo-accent"
+                    }`}
                   >
                     {multiSavedIndexes?.has(i) ? "✓ 保存済み" : "保存する"}
                   </button>

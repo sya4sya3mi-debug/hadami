@@ -102,6 +102,7 @@ const config: Config = {
         "gauge-glow": "gaugeGlow 2s ease infinite",
         "fade-up": "fadeUp 0.35s ease forwards",
         "pop-in": "popIn 0.3s ease forwards",
+        "landing-float": "landingFloat 4s ease-in-out infinite",
       },
       keyframes: {
         particleFly: {
@@ -129,6 +130,10 @@ const config: Config = {
           "0%": { transform: "scale(0.8)", opacity: "0" },
           "50%": { transform: "scale(1.05)" },
           "100%": { transform: "scale(1)", opacity: "1" },
+        },
+        landingFloat: {
+          "0%, 100%": { transform: "translateY(0)" },
+          "50%": { transform: "translateY(-12px)" },
         },
       },
     },
