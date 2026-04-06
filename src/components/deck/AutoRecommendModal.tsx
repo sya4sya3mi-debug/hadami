@@ -132,10 +132,10 @@ export default function AutoRecommendModal({
             </div>
             <div className="flex-1 text-center py-2.5 rounded-r2 bg-[#F0EDF5] border border-[#B39DDB30]">
               <div className="text-lg font-bold text-[#7B68A8] font-serif">
-                {result.coveredCategoryCount}/6
+                {result.coveredGenreCount}/9
               </div>
               <div className="text-[10px] text-bo-ink-muted font-sans">
-                カテゴリカバー
+                ジャンルカバー
               </div>
             </div>
           </div>

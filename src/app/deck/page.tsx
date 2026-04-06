@@ -5,7 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useDeckStore } from "@/stores/useDeckStore";
 import { useProductStore } from "@/stores/useProductStore";
-import { getIngredientById, INGREDIENT_GENRES } from "@/lib/ingredients";
+import { getIngredientById, INGREDIENT_GENRES, GENRE_DESCRIPTIONS } from "@/lib/ingredients";
 import { findCombinations } from "@/lib/combinations";
 import { recommendDeck } from "@/lib/deckRecommender";
 import { getGenreByKey, GENRE_SLOT_CONFIG } from "@/lib/productGenres";
@@ -556,7 +556,7 @@ export default function DeckPage() {
                         <span className="text-sm font-bold" style={{ color: genre.color }}>{genre.label}</span>
                         <span className="text-xs text-bo-ink-muted">({ings.length}種)</span>
                       </div>
-                      <p className="text-[11px] leading-relaxed text-bo-ink-muted mb-2">{genre.desc}</p>
+                      <p className="text-[11px] leading-relaxed text-bo-ink-muted mb-2">{GENRE_DESCRIPTIONS[genre.key]?.summary}</p>
                       <div className="flex flex-wrap gap-1 mt-1">
                         {ings.map((ing) => (
                           <Link key={ing.id} href={`/ingredient/${ing.id}`} className="text-xs px-2 py-0.5 rounded-full no-underline" style={{ background: genre.color + "25", color: genre.color }}>

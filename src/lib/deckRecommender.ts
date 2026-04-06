@@ -1,35 +1,41 @@
-import { Product, Ingredient, CategoryKey, RecommendationResult, Combination } from "@/types";
+import { Product, Ingredient, IngredientGenre, RecommendationResult, Combination } from "@/types";
 import { findCombinations } from "@/lib/combinations";
+
 
 interface ProductProfile {
   product: Product;
   ingredientNames: string[];
-  categories: CategoryKey[];
+  genres: IngredientGenre[];
 }
 
 const WEIGHT_RECOMMENDED = 3.0;
 const WEIGHT_CAUTION = -5.0;
-const WEIGHT_CATEGORY = 2.0;
+const WEIGHT_GENRE = 2.0;
+
+const EMPTY_GENRE_COVERAGE: Record<IngredientGenre, number> = {
+  water: 0, amino_acid: 0, vitamin: 0, peptide: 0, botanical: 0,
+  oil_lipid: 0, ferment: 0, acid: 0, base: 0,
+};
 
 function buildProfile(
   product: Product,
   getIngredient: (id: string) => Ingredient | undefined
 ): ProductProfile {
   const ingredientNames: string[] = [];
-  const categorySet: Record<string, boolean> = {};
+  const genreSet: Record<string, boolean> = {};
 
   for (const pi of product.ingredients) {
     const ing = getIngredient(pi.ingredientId);
     if (ing) {
       ingredientNames.push(ing.nameJa);
-      for (const cat of ing.categories) categorySet[cat] = true;
+      genreSet[ing.genre] = true;
     }
   }
 
   return {
     product,
     ingredientNames,
-    categories: Object.keys(categorySet) as CategoryKey[],
+    genres: Object.keys(genreSet) as IngredientGenre[],
   };
 }
 
@@ -37,32 +43,29 @@ function computeScore(profiles: ProductProfile[]): {
   score: number;
   recommended: Combination[];
   cautions: Combination[];
-  categoryCoverage: Record<CategoryKey, number>;
+  genreCoverage: Record<IngredientGenre, number>;
   coveredCount: number;
 } {
   const nameSet: Record<string, boolean> = {};
-  const categoryCoverage: Record<CategoryKey, number> = {
-    moisturizing: 0, brightening: 0, turnover: 0,
-    barrier: 0, soothing: 0, keratin: 0,
-  };
+  const genreCoverage: Record<IngredientGenre, number> = { ...EMPTY_GENRE_COVERAGE };
 
   for (const p of profiles) {
     for (const name of p.ingredientNames) nameSet[name] = true;
-    for (const cat of p.categories) categoryCoverage[cat]++;
+    for (const genre of p.genres) genreCoverage[genre]++;
   }
 
   const allNames = Object.keys(nameSet);
   const combos = findCombinations(allNames);
   const recommended = combos.filter((c) => c.type === "recommended");
   const cautions = combos.filter((c) => c.type === "note");
-  const coveredCount = Object.values(categoryCoverage).filter((c) => c > 0).length;
+  const coveredCount = Object.values(genreCoverage).filter((c) => c > 0).length;
 
   const score =
     WEIGHT_RECOMMENDED * recommended.length +
     WEIGHT_CAUTION * cautions.length +
-    WEIGHT_CATEGORY * coveredCount;
+    WEIGHT_GENRE * coveredCount;
 
-  return { score, recommended, cautions, categoryCoverage, coveredCount };
+  return { score, recommended, cautions, genreCoverage, coveredCount };
 }
 
 export function recommendDeck(
@@ -75,11 +78,8 @@ export function recommendDeck(
       score: 0,
       recommendedCombinations: [],
       cautionCombinations: [],
-      categoryCoverage: {
-        moisturizing: 0, brightening: 0, turnover: 0,
-        barrier: 0, soothing: 0, keratin: 0,
-      },
-      coveredCategoryCount: 0,
+      genreCoverage: { ...EMPTY_GENRE_COVERAGE },
+      coveredGenreCount: 0,
     };
   }
 
@@ -92,8 +92,8 @@ export function recommendDeck(
       score: result.score,
       recommendedCombinations: result.recommended,
       cautionCombinations: result.cautions,
-      categoryCoverage: result.categoryCoverage,
-      coveredCategoryCount: result.coveredCount,
+      genreCoverage: result.genreCoverage,
+      coveredGenreCount: result.coveredCount,
     };
   }
 
@@ -155,7 +155,7 @@ export function recommendDeck(
     score: finalResult.score,
     recommendedCombinations: finalResult.recommended,
     cautionCombinations: finalResult.cautions,
-    categoryCoverage: finalResult.categoryCoverage,
-    coveredCategoryCount: finalResult.coveredCount,
+    genreCoverage: finalResult.genreCoverage,
+    coveredGenreCount: finalResult.coveredCount,
   };
 }
