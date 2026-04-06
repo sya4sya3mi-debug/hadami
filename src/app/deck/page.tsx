@@ -215,23 +215,17 @@ export default function DeckPage() {
               <div className="flex bg-bo-parchment rounded-[10px] p-0.5 gap-0.5">
                 <button
                   onClick={() => setViewMode("hand")}
-                  className="w-8 h-7 rounded-lg border-none flex items-center justify-center cursor-pointer text-sm"
-                  style={{
-                    background: viewMode === "hand" ? "white" : "transparent",
-                    color: viewMode === "hand" ? "#1B2620" : "#B5C7BE",
-                    boxShadow: viewMode === "hand" ? "0 1px 3px rgba(27,38,32,0.06)" : "none",
-                  }}
+                  className={`w-8 h-7 rounded-lg border-none flex items-center justify-center cursor-pointer text-sm ${
+                    viewMode === "hand" ? "bg-white text-bo-ink shadow-bo1" : "bg-transparent text-bo-ink-faint"
+                  }`}
                 >
                   🃏
                 </button>
                 <button
                   onClick={() => setViewMode("list")}
-                  className="w-8 h-7 rounded-lg border-none flex items-center justify-center cursor-pointer"
-                  style={{
-                    background: viewMode === "list" ? "white" : "transparent",
-                    color: viewMode === "list" ? "#1B2620" : "#B5C7BE",
-                    boxShadow: viewMode === "list" ? "0 1px 3px rgba(27,38,32,0.06)" : "none",
-                  }}
+                  className={`w-8 h-7 rounded-lg border-none flex items-center justify-center cursor-pointer ${
+                    viewMode === "list" ? "bg-white text-bo-ink shadow-bo1" : "bg-transparent text-bo-ink-faint"
+                  }`}
                 >
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><circle cx="3.5" cy="6" r="1.5"/><circle cx="3.5" cy="12" r="1.5"/><circle cx="3.5" cy="18" r="1.5"/></svg>
                 </button>
@@ -251,12 +245,9 @@ export default function DeckPage() {
               <button
                 key={opt.key}
                 onClick={() => { setDeckIndex(i); setShowAnalysis(false); }}
-                className="flex-1 py-3 rounded-r1 border-none text-[13px] font-bold font-sans cursor-pointer"
-                style={{
-                  background: deckIndex === i ? "#3A8F7A" : "white",
-                  color: deckIndex === i ? "#fff" : "#7E9389",
-                  boxShadow: deckIndex === i ? "0 4px 16px rgba(58,143,122,0.2)" : "0 1px 3px rgba(27,38,32,0.06)",
-                }}
+                className={`flex-1 py-3 rounded-r1 border-none text-[13px] font-bold font-sans cursor-pointer ${
+                  deckIndex === i ? "bg-bo-accent text-white shadow-bo-accent" : "bg-white text-bo-ink-muted shadow-bo1"
+                }`}
               >
                 {opt.icon} {opt.label}
               </button>
@@ -274,7 +265,7 @@ export default function DeckPage() {
                 </div>
                 <div className="flex justify-between items-center mb-1.5">
                   <span className="text-[10px] text-bo-ink-muted font-sans">ジャンルカバー率</span>
-                  <span className="text-[11px] font-black font-serif" style={{ color: coveragePercent >= 80 ? "#3A8F7A" : "#D4A853" }}>
+                  <span className={`text-[11px] font-black font-serif ${coveragePercent >= 80 ? "text-bo-accent" : "text-bo-caution"}`}>
                     {coveragePercent}%
                   </span>
                 </div>
@@ -290,11 +281,9 @@ export default function DeckPage() {
                     return (
                       <span
                         key={cat}
-                        className="text-[9px] font-semibold font-sans py-0.5 px-2 rounded"
-                        style={{
-                          background: covered ? "#E8F5F1" : "#E8F0EC",
-                          color: covered ? "#3A8F7A" : "#B5C7BE",
-                        }}
+                        className={`text-[9px] font-semibold font-sans py-0.5 px-2 rounded ${
+                          covered ? "bg-bo-safe-bg text-bo-accent" : "bg-bo-parchment text-bo-ink-faint"
+                        }`}
                       >
                         {covered ? "✓ " : ""}{cat}
                       </span>
@@ -308,7 +297,7 @@ export default function DeckPage() {
           {/* Hand view */}
           {deckProducts.length > 0 && viewMode === "hand" && (
             <div>
-              <div className="flex gap-3.5 overflow-x-auto -mx-5 px-5 py-5 pb-7.5" style={{ scrollbarWidth: "none", scrollSnapType: "x mandatory" }}>
+              <div className="flex gap-3.5 overflow-x-auto -mx-5 px-5 py-5 pb-7.5 hide-scrollbar snap-x snap-mandatory">
                 {deckProducts.map((item, i) => {
                   const rotation = (i - (deckProducts.length - 1) / 2) * 3;
                   const translateY = Math.abs(i - (deckProducts.length - 1) / 2) * 6;
@@ -316,17 +305,15 @@ export default function DeckPage() {
                     <div
                       key={item.id}
                       onClick={() => setSelectedCard({ ...item, stepNum: i + 1 })}
-                      className="min-w-[150px] max-w-[150px] shrink-0 cursor-pointer animate-fade-up"
+                      className="min-w-[150px] max-w-[150px] shrink-0 cursor-pointer animate-fade-up snap-center transition-transform duration-300"
                       style={{
-                        scrollSnapAlign: "center",
                         transform: `rotate(${rotation}deg) translateY(${translateY}px)`,
-                        transition: "transform 0.3s cubic-bezier(0.4,0,0.2,1)",
                         animationDelay: `${i * 80}ms`,
                       }}
                     >
                       <div className="rounded-[20px] overflow-hidden bg-white border-[1.5px] border-bo-parchment shadow-bo2">
                         <div className="relative">
-                          <div className="bg-bo-parchment overflow-hidden" style={{ aspectRatio: "3/4" }}>
+                          <div className="bg-bo-parchment overflow-hidden aspect-[3/4]">
                             {item.packageImage ? (
                               <Image src={item.packageImage} alt={item.name} width={150} height={200} className="w-full h-full object-cover block" />
                             ) : (
@@ -413,18 +400,14 @@ export default function DeckPage() {
           {deckProducts.length > 0 && (
             <button
               onClick={() => setShowAnalysis(!showAnalysis)}
-              className="w-full mt-6 py-3.5 rounded-r1 border-[1.5px] text-[13px] font-bold font-sans cursor-pointer flex items-center justify-center gap-2 transition-all"
-              style={{
-                borderColor: showAnalysis ? "#3A8F7A" : "#E8F0EC",
-                background: showAnalysis ? "#E8F5F1" : "white",
-                color: showAnalysis ? "#3A8F7A" : "#5A6B62",
-              }}
+              className={`w-full mt-6 py-3.5 rounded-r1 border-[1.5px] text-[13px] font-bold font-sans cursor-pointer flex items-center justify-center gap-2 transition-all ${
+                showAnalysis ? "border-bo-accent bg-bo-safe-bg text-bo-accent" : "border-bo-parchment bg-white text-bo-ink-soft"
+              }`}
             >
               <span className="text-base">📊</span>デッキ分析
               <svg
                 width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"
-                className="transition-transform duration-300"
-                style={{ transform: showAnalysis ? "rotate(180deg)" : "rotate(0)" }}
+                className={`transition-transform duration-300 ${showAnalysis ? "rotate-180" : ""}`}
                 aria-hidden="true"
               >
                 <path d="M6 9l6 6 6-6" />
@@ -450,7 +433,7 @@ export default function DeckPage() {
                   return (
                     <div key={cat} className="mb-2.5">
                       <div className="flex justify-between items-center mb-1">
-                        <span className="text-[11px] font-semibold font-sans" style={{ color: covered ? "#5A6B62" : "#B5C7BE" }}>
+                        <span className={`text-[11px] font-semibold font-sans ${covered ? "text-bo-ink-soft" : "text-bo-ink-faint"}`}>
                           {covered ? "✓" : "✗"} {cat}
                         </span>
                         <span className="text-[10px] text-bo-ink-muted font-sans">{covered ? `${prodCount}製品` : "未カバー"}</span>
@@ -574,7 +557,7 @@ export default function DeckPage() {
           {/* Empty state */}
           {deckProducts.length === 0 && (
             <div className="text-center py-12 rounded-r2 bg-white border-[1.5px] border-dashed border-bo-ink-faint">
-              <div className="w-16 h-16 rounded-[20px] mx-auto mb-3.5 flex items-center justify-center text-3xl" style={{ background: "linear-gradient(135deg, #F0E8F5, #E8E0F0)" }}>
+              <div className="w-16 h-16 rounded-[20px] mx-auto mb-3.5 flex items-center justify-center text-3xl bg-gradient-to-br from-[#F0E8F5] to-[#E8E0F0]">
                 {routine === "morning" ? "☀️" : "🌙"}
               </div>
               <div className="text-sm font-bold text-bo-ink font-sans mb-1.5">
@@ -694,17 +677,14 @@ export default function DeckPage() {
         <BottomSheet open={showPicker} onClose={() => setShowPicker(false)} title={pickerGenreFilter ? `${getGenreByKey(pickerGenreFilter)?.label || ""}を追加` : "製品を追加"}>
           <div className="pb-4">
             {!pickerGenreFilter && productTypes.length > 2 && (
-              <div className="mb-4 -mx-1 flex gap-1.5 overflow-x-auto px-1" style={{ scrollbarWidth: "none" }}>
+              <div className="mb-4 -mx-1 flex gap-1.5 overflow-x-auto px-1 hide-scrollbar">
                 {productTypes.map((type) => (
                   <button
                     key={type}
                     onClick={() => setPickerFilter(type)}
-                    className="px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap border-none cursor-pointer"
-                    style={
-                      pickerFilter === type
-                        ? { background: "#3A8F7A", color: "#fff" }
-                        : { background: "#E8F0EC", color: "#7E9389" }
-                    }
+                    className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap border-none cursor-pointer ${
+                      pickerFilter === type ? "bg-bo-accent text-white" : "bg-bo-parchment text-bo-ink-muted"
+                    }`}
                   >
                     {type}
                   </button>
