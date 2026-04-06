@@ -460,18 +460,17 @@ function ScanPageInner() {
 
   return (
     <AuthGuard>
-      <div className="min-h-screen" style={{ background: "linear-gradient(160deg, #F0FDFA 0%, #FFF0F5 100%)" }}>
+      <div className="min-h-screen bg-bo-cream">
         <div className="px-5 pt-8 pb-6">
           {/* Header */}
           <div className="flex items-center justify-between mb-5">
-            <h1 className="font-bold text-lg" style={{ color: "#2D2D2D" }}>
+            <h1 className="font-bold text-lg text-bo-ink">
               成分スキャン
             </h1>
             {step > 1 && (
               <button
                 onClick={handleReset}
-                className="px-3 py-1.5 rounded-full text-xs font-medium"
-                style={{ background: "#F0FDFA", color: "#5BBFAD" }}
+                className="px-3 py-1.5 rounded-full text-xs font-medium bg-bo-accent-soft text-bo-accent"
               >
                 最初から
               </button>
@@ -483,15 +482,12 @@ function ScanPageInner() {
 
           {/* Scan limit warning */}
           {scanLimitReached && step === 1 && (
-            <div
-              className="rounded-2xl p-4 mb-4 text-center"
-              style={{ background: "#FFF3F3", border: "1px solid #F9A8C0" }}
-            >
+            <div className="rounded-r2 p-4 mb-4 text-center bg-red-50 border border-red-200">
               <div className="text-2xl mb-2">🚫</div>
-              <div className="font-bold text-sm mb-1" style={{ color: "#E57373" }}>
+              <div className="font-bold text-sm mb-1 text-red-400">
                 無料スキャン上限（{monthlyScanLimit}回）に達しました
               </div>
-              <div className="text-xs" style={{ color: "#9B9B9B" }}>
+              <div className="text-xs text-bo-ink-muted">
                 ベータ版では1アカウントにつき{monthlyScanLimit}回まで無料です
               </div>
             </div>
@@ -541,15 +537,7 @@ function ScanPageInner() {
           {step === 4 && (
             <>
               {saveError && (
-                <div style={{
-                  background: "#FFF3F3",
-                  border: "1px solid #F9A8C0",
-                  borderRadius: "12px",
-                  padding: "12px 16px",
-                  marginBottom: "12px",
-                  fontSize: "13px",
-                  color: "#E57373",
-                }}>
+                <div className="bg-red-50 border border-red-200 rounded-r1 py-3 px-4 mb-3 text-[13px] text-red-400">
                   {saveError}
                 </div>
               )}
