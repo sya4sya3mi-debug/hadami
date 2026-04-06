@@ -2,9 +2,8 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Ingredient, Combination, ProductGenre } from "@/types";
-import { RARITY } from "@/lib/ingredients";
-import { getCategoryByKey } from "@/lib/categories";
+import { Ingredient, Combination, ProductGenre, IngredientGenre } from "@/types";
+import { RARITY, getGenreInfo } from "@/lib/ingredients";
 import { getGenreByKey } from "@/lib/productGenres";
 import Badge, { StarIcon } from "@/components/ui/Badge";
 import Disclaimer from "@/components/ui/Disclaimer";
@@ -39,12 +38,12 @@ export default function ScanResult({
 
   const genre = getGenreByKey(productType);
 
-  // Group ingredients by first category
+  // Group ingredients by genre
   const grouped = new Map<string, { ingredient: Ingredient; orderIndex: number }[]>();
   for (const item of foundIngredients) {
-    const cat = item.ingredient.categories[0] || "_uncategorized";
-    if (!grouped.has(cat)) grouped.set(cat, []);
-    grouped.get(cat)!.push(item);
+    const genreKey = item.ingredient.genre || "_uncategorized";
+    if (!grouped.has(genreKey)) grouped.set(genreKey, []);
+    grouped.get(genreKey)!.push(item);
   }
 
   const toggleCategory = (key: string) => {
@@ -117,19 +116,19 @@ export default function ScanResult({
         {showGrouped ? (
           <div className="space-y-2">
             {Array.from(grouped.entries()).map(([catKey, items]) => {
-              const cat = getCategoryByKey(catKey);
+              const genre = getGenreInfo(catKey as IngredientGenre);
               const isOpen = expandedCategories.has(catKey);
               return (
                 <div key={catKey}>
                   <button
                     onClick={() => toggleCategory(catKey)}
                     className="w-full flex items-center justify-between rounded-xl px-3 py-2.5 text-sm"
-                    style={{ background: cat ? cat.color + "10" : "#F4F9F6" }}
+                    style={{ background: genre ? genre.color + "10" : "#F4F9F6" }}
                   >
                     <div className="flex items-center gap-2">
-                      <span>{cat?.icon || "📋"}</span>
-                      <span className="font-bold text-xs font-sans" style={{ color: cat?.color || "#1B2620" }}>
-                        {cat?.label || "その他"} ({items.length})
+                      <span>{genre?.icon || "📋"}</span>
+                      <span className="font-bold text-xs font-sans" style={{ color: genre?.color || "#1B2620" }}>
+                        {genre?.label || "その他"} ({items.length})
                       </span>
                     </div>
                     <span className="text-xs text-bo-ink-faint">{isOpen ? "▲" : "▼"}</span>
@@ -276,20 +275,19 @@ function IngredientRow({ ingredient, orderIndex, delay, isNew }: { ingredient: I
           )}
         </div>
         <div className="text-[11px] mt-0.5 text-bo-ink-muted font-sans">{ingredient.nameInci}</div>
-        <div className="flex gap-1 mt-1 flex-wrap">
-          {ingredient.categories.map((cat) => {
-            const c = getCategoryByKey(cat);
-            return c ? (
+        {(() => {
+          const g = getGenreInfo(ingredient.genre);
+          return g ? (
+            <div className="flex gap-1 mt-1">
               <span
-                key={cat}
                 className="text-[9px] px-1.5 py-0.5 rounded-full font-medium font-sans"
-                style={{ background: c.color + "18", color: c.color }}
+                style={{ background: g.color + "18", color: g.color }}
               >
-                {c.icon} {c.label}
+                {g.icon} {g.label}
               </span>
-            ) : null;
-          })}
-        </div>
+            </div>
+          ) : null;
+        })()}
       </div>
       <span className="text-[10px] font-medium shrink-0 text-bo-ink-faint font-sans">#{orderIndex + 1}</span>
     </Link>
