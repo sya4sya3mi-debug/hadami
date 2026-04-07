@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useEffect, useMemo, useRef } from "react";
+import { useState, useEffect, useMemo, useRef, Fragment, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useZukanStore, ZukanFilter } from "@/stores/useZukanStore";
 import { useProductStore } from "@/stores/useProductStore";
-import { MASTER_INGREDIENTS, INGREDIENT_GENRES, GENRE_DESCRIPTIONS, RARITY, getIngredientIndex } from "@/lib/ingredients";
+import { MASTER_INGREDIENTS, INGREDIENT_GENRES, GENRE_DESCRIPTIONS, RARITY, getIngredientIndex, getIngredientById, INGREDIENT_COUNT, getGenreTotal } from "@/lib/ingredients";
 import { IngredientGenre, Ingredient } from "@/types";
 import { shareZukanProgress } from "@/lib/share";
 import ZukanProgress from "@/components/zukan/ZukanProgress";
@@ -29,34 +29,35 @@ const CARD_TEXTURES: Record<string, { bg: string; pattern: string; color: string
 };
 const DEFAULT_TEX = { bg: "linear-gradient(145deg, #EDEDE8, #D5D5CC)", pattern: "", color: "#6B6B5A", emoji: "📦", label: "その他" };
 
-const RARITY_COLORS = ["", "#7E9389", "#6B8E7B", "#D4A853", "#C77DBA", "#E8A04C"];
-const RARITY_LABELS = ["", "よくある", "めずらしい", "レア", "希少", "伝説"];
+/* Rarity colors/labels aligned with RARITY (4 tiers: ★1 コモン ~ ★4 レジェンダリー) */
+const RARITY_COLORS: Record<number, string> = { 1: "#9CA3AF", 2: "#4CAF50", 3: "#E91E8C", 4: "#F59E0B" };
+const RARITY_LABELS: Record<number, string> = { 1: "コモン", 2: "アンコモン", 3: "レア", 4: "レジェンダリー" };
 
 /* ── Achievements ── */
 function getAchievements(discoveredIds: string[]) {
   const count = discoveredIds.length;
-  const rareCounts = MASTER_INGREDIENTS.filter(
-    (i) => RARITY[i.rarity].star >= 3 && discoveredIds.includes(i.id)
-  ).length;
-  const legendCount = MASTER_INGREDIENTS.filter(
-    (i) => RARITY[i.rarity].star >= 4 && discoveredIds.includes(i.id)
-  ).length;
-  const mythicCount = MASTER_INGREDIENTS.filter(
-    (i) => RARITY[i.rarity].star >= 5 && discoveredIds.includes(i.id)
-  ).length;
-  const genres = new Set(
-    MASTER_INGREDIENTS.filter((i) => discoveredIds.includes(i.id)).map((i) => i.genre)
-  );
+  const idSet = new Set(discoveredIds);
+  let rareCounts = 0;
+  let legendCount = 0;
+  const genres = new Set<string>();
+  idSet.forEach((id) => {
+    const ing = getIngredientById(id);
+    if (!ing) return;
+    const star = RARITY[ing.rarity].star;
+    if (star >= 3) rareCounts++;
+    if (star >= 4) legendCount++;
+    genres.add(ing.genre);
+  });
 
   return [
     { name: "はじめの一歩", desc: "初めて成分を発見した", icon: "🌱", done: count >= 1 },
     { name: "10種コレクト", desc: "成分を10種集めた", icon: "📗", done: count >= 10 },
     { name: "50種コレクト", desc: "成分を50種集めた", icon: "📙", done: count >= 50 },
-    { name: "★3ハンター", desc: "★3以上を5種発見", icon: "⭐", done: rareCounts >= 5, progress: rareCounts < 5 ? `${rareCounts}/5` : undefined },
-    { name: "★4ハンター", desc: "★4以上を3種発見", icon: "🌟", done: legendCount >= 3, progress: legendCount < 3 ? `${legendCount}/3` : undefined },
-    { name: "伝説の出会い", desc: "★5の成分を発見", icon: "💎", done: mythicCount >= 1 },
+    { name: "★3ハンター", desc: "レア以上を5種発見", icon: "⭐", done: rareCounts >= 5, progress: rareCounts < 5 ? `${rareCounts}/5` : undefined },
+    { name: "★4ハンター", desc: "レジェンダリーを3種発見", icon: "🌟", done: legendCount >= 3, progress: legendCount < 3 ? `${legendCount}/3` : undefined },
+    { name: "伝説の出会い", desc: "レジェンダリーの成分を発見", icon: "💎", done: legendCount >= 1 },
     { name: "全タイプ発見", desc: "全ジャンルで成分を発見", icon: "🗺️", done: genres.size >= INGREDIENT_GENRES.length },
-    { name: "成分博士", desc: `${MASTER_INGREDIENTS.length}種すべて発見`, icon: "🏆", done: count >= MASTER_INGREDIENTS.length },
+    { name: "成分博士", desc: `${INGREDIENT_COUNT}種すべて発見`, icon: "🏆", done: count >= INGREDIENT_COUNT },
   ];
 }
 
@@ -64,6 +65,7 @@ export default function ZukanPage() {
   const { loading } = useUser();
   const router = useRouter();
   const captureRef = useRef<HTMLDivElement>(null);
+  const detailRef = useRef<HTMLDivElement>(null);
   const discoveredIds = useZukanStore((s) => s.discoveredIds);
   const filter = useZukanStore((s) => s.filter);
   const setFilter = useZukanStore((s) => s.setFilter);
@@ -74,6 +76,29 @@ export default function ZukanPage() {
   const [genreFilter, setGenreFilter] = useState<"all" | IngredientGenre>("all");
   const [selectedCard, setSelectedCard] = useState<Ingredient | null>(null);
   const [showAchievements, setShowAchievements] = useState(false);
+  const [showScrollTop, setShowScrollTop] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setShowScrollTop(window.scrollY > 400);
+    };
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  // Scroll to inline detail when selectedCard changes
+  useEffect(() => {
+    if (selectedCard && detailRef.current) {
+      setTimeout(() => {
+        detailRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      }, 60);
+    }
+  }, [selectedCard]);
+
+  // Toggle card selection (same card → close, different → switch)
+  const handleCardTap = useCallback((ing: Ingredient) => {
+    setSelectedCard((prev) => (prev?.id === ing.id ? null : ing));
+  }, []);
 
   const ingredientCounts = useMemo(() => {
     const counts: Record<string, number> = {};
@@ -96,171 +121,22 @@ export default function ZukanPage() {
     return <PageLoading message="図鑑を読み込んでいます..." />;
   }
 
+  const discoveredIdSet = new Set(discoveredIds);
   const filteredIngredients = MASTER_INGREDIENTS.filter((ing) => {
-    if (filter === "discovered" && !discoveredIds.includes(ing.id)) return false;
-    if (filter === "undiscovered" && discoveredIds.includes(ing.id)) return false;
+    if (filter === "discovered" && !discoveredIdSet.has(ing.id)) return false;
+    if (filter === "undiscovered" && discoveredIdSet.has(ing.id)) return false;
     if (genreFilter !== "all" && ing.genre !== genreFilter) return false;
     return true;
   });
 
-  const shareText = shareZukanProgress(discoveredIds.length, MASTER_INGREDIENTS.length);
+  const shareText = shareZukanProgress(discoveredIds.length, INGREDIENT_COUNT);
   const achievements = getAchievements(discoveredIds);
   const doneCount = achievements.filter((a) => a.done).length;
 
-  // ─── Card Detail View ───
-  if (selectedCard) {
-    const discovered = discoveredIds.includes(selectedCard.id);
-    const rarityInfo = RARITY[selectedCard.rarity];
-    const tex = CARD_TEXTURES[selectedCard.genre] || DEFAULT_TEX;
-    const globalIndex = getIngredientIndex(selectedCard.id);
-    const cardIdx = filteredIngredients.indexOf(selectedCard);
-    const prevCard = cardIdx > 0 ? filteredIngredients[cardIdx - 1] : null;
-    const nextCard = cardIdx < filteredIngredients.length - 1 ? filteredIngredients[cardIdx + 1] : null;
-
-    // Products containing this ingredient
-    const containingProducts = products.filter((p) =>
-      p.ingredients.some((pi) => pi.ingredientId === selectedCard.id)
-    );
-
-    if (!discovered) {
-      return (
-        <AuthGuard>
-          <div className="min-h-screen bg-bo-cream px-5 pt-4 pb-24 animate-fade-up">
-            <div className="flex items-center justify-between mb-6">
-              <button onClick={() => setSelectedCard(null)} className="flex items-center gap-1.5 bg-bo-parchment border-none rounded-[10px] py-2 px-3.5 cursor-pointer text-[13px] text-bo-ink-soft font-sans font-semibold">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#5A6B62" strokeWidth="2" strokeLinecap="round" aria-hidden="true"><path d="M19 12H5M12 19l-7-7 7-7" /></svg>
-                戻る
-              </button>
-              <span className="text-xs text-bo-ink-muted font-sans">#{String(globalIndex).padStart(3, "0")} / {MASTER_INGREDIENTS.length}</span>
-            </div>
-            <div
-              className="rounded-3xl overflow-hidden mb-6 relative flex flex-col items-center justify-center border-2 border-dashed border-bo-ink-faint"
-              style={{ aspectRatio: "3/4", background: "#E8F0EC" }}
-            >
-              <div className="text-5xl mb-3 opacity-30">🔒</div>
-              <div className="text-xs text-[#D4A853] tracking-wider mb-1">
-                {"★".repeat(rarityInfo.star)}{"☆".repeat(5 - rarityInfo.star)}
-              </div>
-              <span className="text-xs font-bold font-sans" style={{ color: RARITY_COLORS[rarityInfo.star] }}>{RARITY_LABELS[rarityInfo.star]}</span>
-              <div className="absolute top-3.5 right-3.5 text-[10px] font-bold font-sans py-0.5 px-2.5 rounded-md" style={{ background: tex.bg, color: tex.color }}>{tex.emoji} {tex.label}</div>
-            </div>
-            <div className="text-center mb-5">
-              <div className="text-[22px] font-extrabold font-serif text-bo-ink-muted">？？？？？</div>
-            </div>
-            <div className="py-4 px-4.5 rounded-r2 bg-white border border-bo-parchment mb-4">
-              <div className="text-[11px] font-bold text-bo-accent font-sans mb-1.5">💡 ヒント</div>
-              <p className="text-xs text-bo-ink-soft font-sans leading-relaxed m-0">この成分を含むコスメをスキャンすると発見できます</p>
-            </div>
-            <button
-              onClick={() => { setSelectedCard(null); router.push("/scan"); }}
-              className="w-full py-3.5 rounded-r1 border-none bg-bo-accent text-white text-[13px] font-bold font-sans cursor-pointer shadow-bo-accent"
-            >
-              📸 コスメをスキャンして探す
-            </button>
-          </div>
-        </AuthGuard>
-      );
-    }
-
-    // Discovered card detail
-    return (
-      <AuthGuard>
-        <div className="min-h-screen bg-bo-cream px-5 pt-4 pb-24 animate-fade-up">
-          <div className="flex items-center justify-between mb-5">
-            <button onClick={() => setSelectedCard(null)} className="flex items-center gap-1.5 bg-bo-parchment border-none rounded-[10px] py-2 px-3.5 cursor-pointer text-[13px] text-bo-ink-soft font-sans font-semibold">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#5A6B62" strokeWidth="2" strokeLinecap="round" aria-hidden="true"><path d="M19 12H5M12 19l-7-7 7-7" /></svg>
-              戻る
-            </button>
-            <span className="text-xs text-bo-ink-muted font-sans">#{String(globalIndex).padStart(3, "0")} / {MASTER_INGREDIENTS.length}</span>
-          </div>
-
-          {/* Card visual */}
-          <div
-            className="rounded-3xl overflow-hidden mb-6 relative"
-            style={{
-              aspectRatio: "3/4",
-              background: tex.bg,
-              boxShadow: rarityInfo.star >= 4 ? `0 8px 32px ${RARITY_COLORS[rarityInfo.star]}30` : "0 2px 12px rgba(27,38,32,0.08)",
-            }}
-          >
-            <div className="absolute inset-0 opacity-50" style={{ background: tex.pattern }} />
-            {rarityInfo.star >= 4 && (
-              <div className="absolute inset-0 rounded-3xl" style={{ border: `2px solid ${RARITY_COLORS[rarityInfo.star]}40` }} />
-            )}
-            <div className="relative h-full flex flex-col items-center justify-center p-6">
-              <div
-                className="text-[56px] mb-4"
-                style={{ filter: rarityInfo.star >= 4 ? `drop-shadow(0 0 12px ${RARITY_COLORS[rarityInfo.star]}80)` : "none" }}
-              >
-                {tex.emoji}
-              </div>
-              <div className="text-xl font-extrabold font-serif text-bo-ink text-center mb-1">{selectedCard.nameJa}</div>
-              <div className="text-[10px] text-bo-ink-muted font-sans tracking-wider mb-3">{selectedCard.nameInci}</div>
-              <div className="text-sm text-[#D4A853] tracking-wider mb-1">
-                {"★".repeat(rarityInfo.star)}{"☆".repeat(5 - rarityInfo.star)}
-              </div>
-              <span className="text-[11px] font-bold font-sans" style={{ color: RARITY_COLORS[rarityInfo.star] }}>
-                {RARITY_LABELS[rarityInfo.star]}
-              </span>
-            </div>
-            <div className="absolute top-4 left-4 bg-white/70 backdrop-blur-lg rounded-lg py-1 px-2.5 text-[10px] font-bold font-sans" style={{ color: tex.color }}>{tex.emoji} {tex.label}</div>
-            <div className="absolute top-4 right-4 bg-white/70 backdrop-blur-lg rounded-lg py-1 px-2.5 text-[10px] font-black font-serif text-bo-ink">#{String(globalIndex).padStart(3, "0")}</div>
-            {recentlyFoundIds.includes(selectedCard.id) && (
-              <div className="absolute bottom-4 left-4 bg-bo-accent text-white rounded-md py-0.5 px-2.5 text-[10px] font-extrabold font-sans">NEW</div>
-            )}
-          </div>
-
-          {/* Description */}
-          <div className="py-4.5 px-4.5 rounded-r2 bg-white border border-bo-parchment shadow-bo1 mb-4">
-            <p className="text-[13px] text-bo-ink-soft font-sans leading-relaxed m-0">
-              {selectedCard.note || "この成分の詳細情報はまだ登録されていません。"}
-            </p>
-          </div>
-
-          {/* Products containing this ingredient */}
-          {containingProducts.length > 0 && (
-            <div className="mb-4">
-              <div className="text-xs font-bold text-bo-ink font-sans mb-2.5">この成分を含むMyコスメ</div>
-              <div className="flex gap-2.5 overflow-x-auto" style={{ scrollbarWidth: "none" }}>
-                {containingProducts.map((p) => (
-                  <div key={p.id} className="min-w-[90px] text-center cursor-pointer shrink-0">
-                    <div className="w-[90px] h-[90px] rounded-r1 overflow-hidden bg-bo-parchment mb-1">
-                      {p.packageImage ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img src={p.packageImage} alt={p.name} className="w-full h-full object-cover block" />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center text-2xl">📦</div>
-                      )}
-                    </div>
-                    <div className="text-[9px] font-bold text-bo-ink font-sans leading-tight">{p.name}</div>
-                    <div className="text-[8px] text-bo-ink-muted font-sans">{p.brand}</div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Prev / Next */}
-          <div className="flex gap-2.5">
-            <button
-              onClick={() => prevCard && setSelectedCard(prevCard)}
-              disabled={!prevCard}
-              className="flex-1 py-3 rounded-r1 border border-bo-parchment bg-white text-bo-ink text-[11px] font-semibold font-sans cursor-pointer disabled:opacity-40 disabled:cursor-default"
-            >
-              ← 前の成分
-            </button>
-            <button
-              onClick={() => nextCard && setSelectedCard(nextCard)}
-              disabled={!nextCard}
-              className="flex-1 py-3 rounded-r1 border border-bo-parchment bg-white text-bo-ink text-[11px] font-semibold font-sans cursor-pointer disabled:opacity-40 disabled:cursor-default"
-            >
-              次の成分 →
-            </button>
-          </div>
-        </div>
-      </AuthGuard>
-    );
-  }
+  // Selected card index in filtered list (for inline detail insertion)
+  const selectedIdx = selectedCard ? filteredIngredients.indexOf(selectedCard) : -1;
+  // Insert detail panel after the last card in the same row (5 cols)
+  const detailInsertAfter = selectedIdx >= 0 ? Math.floor(selectedIdx / 5) * 5 + 4 : -1;
 
   // ─── Achievements View ───
   if (showAchievements) {
@@ -308,9 +184,14 @@ export default function ZukanPage() {
 
   // ─── Main: Mini Card Grid ───
   // Genre stats for filter pills
+  const discoveredSet = new Set(discoveredIds);
   const genreStats = Object.entries(CARD_TEXTURES).map(([genreKey, tex]) => {
-    const total = MASTER_INGREDIENTS.filter((i) => i.genre === genreKey).length;
-    const disc = MASTER_INGREDIENTS.filter((i) => i.genre === genreKey && discoveredIds.includes(i.id)).length;
+    const total = getGenreTotal(genreKey);
+    let disc = 0;
+    discoveredSet.forEach((id) => {
+      const ing = getIngredientById(id);
+      if (ing && ing.genre === genreKey) disc++;
+    });
     return { id: genreKey, ...tex, discovered: disc, total };
   }).filter((g) => g.total > 0);
 
@@ -330,7 +211,7 @@ export default function ZukanPage() {
               </button>
             </div>
             <p className="text-xs text-bo-ink-muted font-sans m-0">
-              {discoveredIds.length} / {MASTER_INGREDIENTS.length} 種コレクト
+              {discoveredIds.length} / {INGREDIENT_COUNT} 種コレクト
             </p>
           </div>
 
@@ -400,8 +281,8 @@ export default function ZukanPage() {
             const g = INGREDIENT_GENRES.find((gi) => gi.key === genreFilter);
             const desc = GENRE_DESCRIPTIONS[genreFilter];
             if (!g || !desc) return null;
-            const totalInGenre = MASTER_INGREDIENTS.filter((i) => i.genre === genreFilter).length;
-            const discoveredInGenre = MASTER_INGREDIENTS.filter((i) => i.genre === genreFilter && discoveredIds.includes(i.id)).length;
+            const totalInGenre = getGenreTotal(genreFilter);
+            const discoveredInGenre = genreStats.find((gs) => gs.id === genreFilter)?.discovered || 0;
             return (
               <div
                 className="rounded-r2 p-4 mb-4 border"
@@ -420,25 +301,195 @@ export default function ZukanPage() {
             );
           })()}
 
-          {/* Mini Card Grid — 3 columns, Pokémon-style */}
-          <div className="grid grid-cols-3 gap-2.5 mb-6">
+          {/* Mini Card Grid — 5 columns */}
+          <div className="grid grid-cols-5 gap-1.5 mb-6">
             {filteredIngredients.map((ing, i) => {
               const globalIndex = getIngredientIndex(ing.id);
+              const isSelected = selectedCard?.id === ing.id;
+              const cardTex = CARD_TEXTURES[ing.genre] || DEFAULT_TEX;
+
+              // Show detail after the last card in the selected card's row
+              const shouldShowDetail = selectedCard && (
+                i === detailInsertAfter ||
+                (i === filteredIngredients.length - 1 && selectedIdx >= 0 && detailInsertAfter >= filteredIngredients.length)
+              );
+
               return (
-                <div
-                  key={ing.id}
-                  onClick={() => setSelectedCard(ing)}
-                  className="animate-fade-up"
-                  style={{ animationDelay: `${i * 40}ms` }}
-                >
-                  <IngredientCard
-                    ingredient={ing}
-                    discovered={discoveredIds.includes(ing.id)}
-                    index={globalIndex}
-                    isRecent={recentlyFoundIds.includes(ing.id)}
-                    foundCount={ingredientCounts[ing.id] || 0}
-                  />
-                </div>
+                <Fragment key={ing.id}>
+                  <div
+                    onClick={() => handleCardTap(ing)}
+                    className="animate-fade-up"
+                    style={{
+                      animationDelay: `${Math.min(i, 30) * 15}ms`,
+                      outline: isSelected ? `2px solid ${cardTex.color}` : "none",
+                      borderRadius: 12,
+                      outlineOffset: -1,
+                    }}
+                  >
+                    <IngredientCard
+                      ingredient={ing}
+                      discovered={discoveredIdSet.has(ing.id)}
+                      index={globalIndex}
+                      isRecent={recentlyFoundIds.includes(ing.id)}
+                      foundCount={ingredientCounts[ing.id] || 0}
+                    />
+                  </div>
+
+                  {shouldShowDetail && (() => {
+                    const sc = selectedCard!;
+                    const isDiscovered = discoveredIdSet.has(sc.id);
+                    const tex = CARD_TEXTURES[sc.genre] || DEFAULT_TEX;
+                    const rarityInfo = RARITY[sc.rarity];
+                    const scIndex = getIngredientIndex(sc.id);
+                    const containingProducts = products.filter((p) =>
+                      p.ingredients.some((pi) => pi.ingredientId === sc.id)
+                    );
+
+                    return (
+                      <div
+                        ref={detailRef}
+                        className="col-span-5 rounded-xl p-4 border animate-fade-up relative"
+                        style={{
+                          background: tex.bg,
+                          borderColor: `${tex.color}30`,
+                        }}
+                      >
+                        {/* Close button */}
+                        <button
+                          onClick={(e) => { e.stopPropagation(); setSelectedCard(null); }}
+                          className="absolute top-2 right-2 w-6 h-6 rounded-full border-none cursor-pointer flex items-center justify-center text-xs"
+                          style={{ background: `${tex.color}15`, color: tex.color }}
+                          aria-label="閉じる"
+                        >
+                          ✕
+                        </button>
+
+                        {isDiscovered ? (
+                          <>
+                            {/* Header: emoji + name + INCI */}
+                            <div className="flex items-start gap-3 mb-3 pr-6">
+                              <span
+                                className="text-3xl shrink-0"
+                                style={{
+                                  filter: rarityInfo.star >= 4
+                                    ? `drop-shadow(0 0 6px ${RARITY_COLORS[rarityInfo.star]}60)`
+                                    : "none",
+                                }}
+                              >
+                                {tex.emoji}
+                              </span>
+                              <div className="min-w-0">
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  <span className="text-[10px] font-black font-serif opacity-50" style={{ color: tex.color }}>
+                                    #{String(scIndex).padStart(3, "0")}
+                                  </span>
+                                  <span
+                                    className="text-[9px] font-bold px-1.5 py-0.5 rounded-full"
+                                    style={{ background: `${RARITY_COLORS[rarityInfo.star]}20`, color: RARITY_COLORS[rarityInfo.star] }}
+                                  >
+                                    {RARITY_LABELS[rarityInfo.star]}
+                                  </span>
+                                </div>
+                                <h3 className="text-sm font-bold font-sans m-0 mt-0.5" style={{ color: tex.color }}>
+                                  {sc.nameJa}
+                                </h3>
+                                <p className="text-[10px] text-bo-ink-muted font-sans m-0 mt-0.5 italic">
+                                  {sc.nameInci}
+                                </p>
+                              </div>
+                            </div>
+
+                            {/* Stars */}
+                            <div className="text-sm text-[#D4A853] tracking-wider mb-3">
+                              {"★".repeat(rarityInfo.star)}{"☆".repeat(4 - rarityInfo.star)}
+                            </div>
+
+                            {/* Note */}
+                            <p className="text-xs leading-relaxed text-bo-ink font-sans m-0 mb-2">
+                              {sc.note}
+                            </p>
+
+                            {/* Fun fact */}
+                            {sc.funFact && (
+                              <div
+                                className="rounded-lg p-2.5 mb-2 text-[11px] leading-relaxed font-sans"
+                                style={{ background: `${tex.color}08`, color: tex.color }}
+                              >
+                                💡 {sc.funFact}
+                              </div>
+                            )}
+
+                            {/* Caution */}
+                            {sc.caution && (
+                              <div className="rounded-lg p-2.5 mb-2 text-[11px] leading-relaxed font-sans bg-amber-50 text-amber-700">
+                                ⚠️ {sc.caution}
+                              </div>
+                            )}
+
+                            {/* Genre badge */}
+                            <div className="flex items-center gap-1.5 mb-3">
+                              <span
+                                className="text-[10px] font-bold px-2 py-1 rounded-full"
+                                style={{ background: `${tex.color}15`, color: tex.color }}
+                              >
+                                {tex.emoji} {tex.label}
+                              </span>
+                            </div>
+
+                            {/* Containing products */}
+                            {containingProducts.length > 0 && (
+                              <div className="border-t pt-2.5" style={{ borderColor: `${tex.color}15` }}>
+                                <p className="text-[10px] font-bold text-bo-ink-muted mb-1.5 m-0">
+                                  📦 この成分を含む製品（{containingProducts.length}件）
+                                </p>
+                                <div className="flex flex-col gap-1">
+                                  {containingProducts.slice(0, 5).map((prod) => (
+                                    <button
+                                      key={prod.id}
+                                      onClick={(e) => { e.stopPropagation(); router.push(`/product/${prod.id}`); }}
+                                      className="text-left text-[11px] font-sans px-2.5 py-1.5 rounded-lg border-none cursor-pointer truncate"
+                                      style={{ background: `${tex.color}08`, color: tex.color }}
+                                    >
+                                      {prod.name}
+                                    </button>
+                                  ))}
+                                  {containingProducts.length > 5 && (
+                                    <span className="text-[10px] text-bo-ink-faint pl-2">
+                                      …ほか{containingProducts.length - 5}件
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            )}
+                          </>
+                        ) : (
+                          /* Undiscovered state */
+                          <div className="flex flex-col items-center py-4 text-center">
+                            <span className="text-3xl mb-2 opacity-30">🔒</span>
+                            <p className="text-xs font-bold text-bo-ink-muted mb-1 m-0">
+                              #{String(scIndex).padStart(3, "0")} — 未発見の成分
+                            </p>
+                            <div className="text-sm text-[#D4A853] tracking-wider mb-2">
+                              {"★".repeat(rarityInfo.star)}{"☆".repeat(4 - rarityInfo.star)}
+                              <span className="text-[10px] ml-1.5" style={{ color: RARITY_COLORS[rarityInfo.star] }}>
+                                {RARITY_LABELS[rarityInfo.star]}
+                              </span>
+                            </div>
+                            <p className="text-[11px] text-bo-ink-faint mb-3 m-0">
+                              この成分はまだ発見されていません
+                            </p>
+                            <button
+                              onClick={(e) => { e.stopPropagation(); router.push("/scan"); }}
+                              className="px-4 py-2 rounded-full text-xs font-bold border-none bg-bo-accent text-white cursor-pointer"
+                            >
+                              📷 スキャンして見つけよう
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })()}
+                </Fragment>
               );
             })}
           </div>
@@ -455,6 +506,19 @@ export default function ZukanPage() {
 
         {showShare && (
           <ShareModal text={shareText} onClose={() => setShowShare(false)} captureRef={captureRef} />
+        )}
+
+        {/* Scroll to top button */}
+        {showScrollTop && (
+          <button
+            onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+            className="fixed bottom-[calc(16px+env(safe-area-inset-bottom)+56px)] right-4 z-30 w-10 h-10 rounded-full bg-bo-accent text-white shadow-bo-accent flex items-center justify-center border-none cursor-pointer animate-fade-in"
+            aria-label="上へ戻る"
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" aria-hidden="true">
+              <path d="M18 15l-6-6-6 6" />
+            </svg>
+          </button>
         )}
       </div>
     </AuthGuard>
