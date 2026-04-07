@@ -7,19 +7,23 @@ import type { RakutenProduct } from "@/types";
 
 interface Props {
   enabled: boolean;
+  /** 商品がない場合・ローディング中は何も表示しない（スキャンページ用） */
+  hideIfEmpty?: boolean;
 }
 
-export default function RecommendSection({ enabled }: Props) {
+export default function RecommendSection({ enabled, hideIfEmpty = false }: Props) {
   const { data, loading, error } = useRecommendations(enabled);
 
   if (!enabled) return null;
-
   if (error) return null;
 
   const hasProducts =
     data &&
     ((data.similar.products?.length ?? 0) > 0 ||
       (data.discovery.products?.length ?? 0) > 0);
+
+  // スキャンページでは商品なし・ローディング中は非表示
+  if (hideIfEmpty && (loading || !hasProducts)) return null;
 
   if (!loading && !hasProducts) {
     return (

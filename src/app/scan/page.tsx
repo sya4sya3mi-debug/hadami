@@ -8,6 +8,7 @@ import ManualInputSheet from "@/components/scan/ManualInputSheet";
 import IdentifyStep from "@/components/scan/IdentifyStep";
 import ClassifyStep from "@/components/scan/ClassifyStep";
 import ScanResult from "@/components/scan/ScanResult";
+import RecommendSection from "@/components/recommendations/RecommendSection";
 import DiscoveryModal from "@/components/ui/DiscoveryModal";
 import AuthGuard from "@/components/ui/AuthGuard";
 import { extractIngredients } from "@/lib/ocr";
@@ -514,11 +515,16 @@ function ScanPageInner() {
 
           {/* Step 1: Capture */}
           {step === 1 && (
-            <CaptureStep
-              onCapture={handlePackageCapture}
-              onManualInput={() => setShowManualSheet(true)}
-              disabled={scanLimitReached}
-            />
+            <>
+              <CaptureStep
+                onCapture={handlePackageCapture}
+                onManualInput={() => setShowManualSheet(true)}
+                disabled={scanLimitReached}
+              />
+              <div className="mt-6">
+                <RecommendSection enabled={true} hideIfEmpty />
+              </div>
+            </>
           )}
 
           {/* Step 2: Identify */}
