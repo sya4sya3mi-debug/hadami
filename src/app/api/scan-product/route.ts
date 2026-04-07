@@ -1,11 +1,18 @@
-import Anthropic from "@anthropic-ai/sdk";
+import { GoogleGenAI } from "@google/genai";
 import { NextRequest, NextResponse } from "next/server";
 import { authenticateRequest, validateImagePayload } from "@/lib/apiAuth";
 import { tryReserveScan, rollbackScan, getScanCountByEmail, getAccountScanLimit } from "@/lib/db";
 import { rateLimit, getClientIp } from "@/lib/rateLimit";
 import { lookupIngredientCache, saveIngredientCache } from "@/lib/ingredientCache";
 
-const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+const client = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+
+function withTimeout<T>(promise: Promise<T>, ms: number, msg: string): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<never>((_, reject) => setTimeout(() => reject(new Error(msg)), ms)),
+  ]);
+}
 
 interface IdentifiedProduct {
   product: string;
@@ -61,22 +68,13 @@ async function searchIngredients(product: string, brand: string, lang: string) {
     searchQueries.push(`${brand} ${product} ingredients`);
   }
 
-  const searchMsg = await client.messages.create({
-    model: "claude-haiku-4-5-20251001",
-    max_tokens: 2048,
-    tools: [
-      {
-        type: "web_search_20250305",
-        name: "web_search",
-        max_uses: 2,
-      },
-    ],
-    messages: [
+  const searchMsg = await withTimeout(client.models.generateContent({
+    model: "gemini-3.1-flash-lite",
+    contents: [
       {
         role: "user",
-        content: [
+        parts: [
           {
-            type: "text",
             text: `化粧品「${brand} ${product}」の全成分リストをネットで検索してください。
 
 以下の検索クエリを順番に試してください（見つかったらそこで止めてOK）：
@@ -100,24 +98,20 @@ INGREDIENTS:
         ],
       },
     ],
-  });
+    config: {
+      tools: [{ googleSearch: {} }],
+      maxOutputTokens: 2048,
+    },
+  }), 25000, "成分検索がタイムアウトしました");
 
-  // web_search エラーチェック
-  const searchErrors = searchMsg.content.filter(
-    (b) => {
-      if (b.type !== "web_search_tool_result") return false;
-      const block = b as unknown as Record<string, unknown>;
-      const content = block.content;
-      return content && typeof content === "object" && !Array.isArray(content) && (content as Record<string, unknown>).type === "web_search_tool_result_error";
-    }
-  );
-  if (searchErrors.length > 0) {
-    console.error("[web_search] error blocks:", JSON.stringify(searchErrors));
+  const groundingMeta = searchMsg.candidates?.[0]?.groundingMetadata;
+  console.log("[googleSearch] webSearchQueries:", groundingMeta?.webSearchQueries);
+  console.log("[googleSearch] allText:", searchMsg.text?.slice(0, 300));
+  if (!groundingMeta?.webSearchQueries?.length) {
+    console.warn("[googleSearch] grounding may not have fired");
   }
-  console.log("[web_search] stop_reason:", searchMsg.stop_reason, "content types:", searchMsg.content.map((b) => b.type).join(","));
 
-  const allTextBlocks = searchMsg.content.filter((b) => b.type === "text");
-  const allText = allTextBlocks.map((b) => (b as { type: "text"; text: string }).text).join("\n");
+  const allText = searchMsg.text ?? "";
 
   const foundMatch = allText.match(/FOUND:\s*(true|false)/i);
   const found = foundMatch?.[1]?.toLowerCase() === "true";
@@ -147,6 +141,8 @@ export async function POST(req: NextRequest) {
       { status: 429, headers: { "Retry-After": String(Math.ceil(rl.retryAfterMs / 1000)) } }
     );
   }
+
+  console.log("[DEBUG] GEMINI_API_KEY set:", !!process.env.GEMINI_API_KEY, "length:", process.env.GEMINI_API_KEY?.length ?? 0);
 
   // 2. Auth check
   const auth = await authenticateRequest();
@@ -186,23 +182,19 @@ export async function POST(req: NextRequest) {
 
   try {
     // Step 1: Identify product(s) from package photo
-    const identifyMsg = await client.messages.create({
-      model: "claude-haiku-4-5-20251001",
-      max_tokens: 512,
-      messages: [
+    const identifyMsg = await withTimeout(client.models.generateContent({
+      model: "gemini-3.1-flash-lite",
+      contents: [
         {
           role: "user",
-          content: [
+          parts: [
             {
-              type: "image",
-              source: {
-                type: "base64",
-                media_type: "image/jpeg",
+              inlineData: {
+                mimeType: "image/jpeg",
                 data: validation.base64Data,
               },
             },
             {
-              type: "text",
               text: `この写真に写っている化粧品を全て特定してください。
 韓国語・英語・日本語のいずれでもOKです。
 
@@ -232,10 +224,10 @@ TYPE2: [製品タイプ]
           ],
         },
       ],
-    });
+      config: { maxOutputTokens: 512 },
+    }), 15000, "製品の特定がタイムアウトしました");
 
-    const identifyText =
-      identifyMsg.content.find((b) => b.type === "text")?.text || "";
+    const identifyText = identifyMsg.text ?? "";
 
     const identifiedProducts = parseIdentifiedProducts(identifyText);
 

@@ -1,10 +1,10 @@
-import Anthropic from "@anthropic-ai/sdk";
+import { GoogleGenAI } from "@google/genai";
 import { NextRequest, NextResponse } from "next/server";
 import { authenticateRequest, validateImagePayload } from "@/lib/apiAuth";
 import { tryReserveScan, rollbackScan, getScanCountByEmail, getAccountScanLimit } from "@/lib/db";
 import { rateLimit, getClientIp } from "@/lib/rateLimit";
 
-const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+const client = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
 export async function POST(req: NextRequest) {
   // 1. IP rate limit
@@ -53,25 +53,21 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // 5. Call Claude OCR
+  // 5. Call Gemini OCR
   try {
-    const message = await client.messages.create({
-      model: "claude-haiku-4-5-20251001",
-      max_tokens: 1024,
-      messages: [
+    const response = await client.models.generateContent({
+      model: "gemini-3.1-flash-lite",
+      contents: [
         {
           role: "user",
-          content: [
+          parts: [
             {
-              type: "image",
-              source: {
-                type: "base64",
-                media_type: "image/jpeg",
+              inlineData: {
+                mimeType: "image/jpeg",
                 data: validation.base64Data,
               },
             },
             {
-              type: "text",
               text: `この画像から化粧品の成分表（全成分）のテキストだけを抽出してください。
 成分名のみをカンマ区切りで列挙し、ブランド名・説明文・住所・注意書きなどは含めないでください。
 成分表が見当たらない場合は空文字を返してください。
@@ -80,10 +76,10 @@ export async function POST(req: NextRequest) {
           ],
         },
       ],
+      config: { maxOutputTokens: 1024 },
     });
 
-    const text =
-      message.content[0].type === "text" ? message.content[0].text : "";
+    const text = response.text ?? "";
 
     // OCRで成分を読み取れなかった場合、スキャン枠を返却
     const trimmed = text.replace(/[\s,、]/g, "");
