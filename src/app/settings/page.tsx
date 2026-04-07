@@ -7,6 +7,7 @@ import { useUser } from "@/lib/auth";
 import PageLoading from "@/components/ui/PageLoading";
 import AuthGuard from "@/components/ui/AuthGuard";
 import { clearCachedUserData } from "@/lib/userData";
+import { getScanCountByEmail, getProductCount, getAccountScanLimit, getUserLimit } from "@/lib/db";
 
 
 export default function SettingsPage() {
@@ -23,6 +24,8 @@ export default function SettingsPage() {
   const [xScreenName, setXScreenName] = useState<string | null>(null);
   const [xUnlinking, setXUnlinking] = useState(false);
   const [xLinkError, setXLinkError] = useState("");
+  const [scanCount, setScanCount] = useState<number | null>(null);
+  const [productCount, setProductCount] = useState<number | null>(null);
 
   useEffect(() => {
     fetch("/api/x-auth/status")
@@ -33,6 +36,14 @@ export default function SettingsPage() {
       })
       .catch(() => setXLinked(false));
   }, []);
+
+  useEffect(() => {
+    if (!user) return;
+    if (user.email) {
+      getScanCountByEmail(supabase, user.email).then(setScanCount);
+    }
+    getProductCount(supabase, user.id).then(setProductCount);
+  }, [user, supabase]);
 
   const handleXLink = async () => {
     setXLinkError("");
@@ -273,12 +284,12 @@ export default function SettingsPage() {
             <h2 className="text-[13px] font-bold text-bo-ink font-sans mb-3.5">利用状況</h2>
             <div className="flex gap-2.5">
               {[
-                { label: "スキャン回数", icon: "📸" },
-                { label: "保存コスメ", icon: "📦" },
+                { label: "スキャン回数", icon: "📸", value: scanCount !== null ? `${scanCount}/${getAccountScanLimit()}` : "..." },
+                { label: "保存コスメ", icon: "📦", value: productCount !== null ? `${productCount}/${getUserLimit()}` : "..." },
               ].map((s, i) => (
                 <div key={i} className="flex-1 py-3.5 px-3 rounded-r1 bg-bo-cream text-center">
                   <div className="text-sm mb-1">{s.icon}</div>
-                  <div className="text-sm font-black font-serif text-bo-accent">—</div>
+                  <div className="text-sm font-black font-serif text-bo-accent">{s.value}</div>
                   <div className="text-[9px] text-bo-ink-muted font-sans mt-0.5">{s.label}</div>
                 </div>
               ))}
