@@ -565,7 +565,7 @@ export default function LandingPage() {
       </section>
 
       {/* ─── PRODUCED BY ─── */}
-      <section className="px-6 pb-[60px] bg-bo-cream text-center">
+      <section className="px-6 pb-0 bg-bo-cream text-center">
         <Reveal>
           <div className="max-w-[400px] mx-auto p-7 px-6 rounded-[20px] bg-white border border-bo-parchment shadow-bo1 flex flex-col items-center">
             <div className="text-[9px] text-bo-ink-muted font-sans tracking-[0.15em] uppercase mb-2.5">
@@ -613,9 +613,7 @@ export default function LandingPage() {
       {/* ─── FOOTER ─── */}
       <footer className="py-10 px-6 bg-bo-ink text-center">
         <div className="flex items-center justify-center gap-2 mb-4">
-          <div className="w-6 h-6 rounded-[7px] bg-bo-accent flex items-center justify-center text-white text-[10px] font-black">
-            H
-          </div>
+          <Image src="/hadami-logo.png" alt="HADAMI" width={24} height={24} className="rounded-[7px]" />
           <span className="text-sm font-extrabold font-serif text-bo-accent-soft">
             HADAMI
           </span>
