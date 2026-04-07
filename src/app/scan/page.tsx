@@ -450,8 +450,7 @@ function ScanPageInner() {
 
     setSaved(true);
     setRecentlyFound(foundIngredients.map((f) => f.ingredient.id));
-    setTimeout(() => router.push("/zukan"), 1500);
-  }, [user, supabase, addProduct, productName, brand, productType, packageImage, packageImageColor, foundIngredients, unknownIngredients, userLimit, saved, setRecentlyFound, router]);
+  }, [user, supabase, addProduct, productName, brand, productType, packageImage, packageImageColor, foundIngredients, unknownIngredients, userLimit, saved, setRecentlyFound]);
 
   const handleReset = useCallback(() => {
     if (step >= 2 && !saved) {

@@ -229,26 +229,39 @@ export default function ScanResult({
 
       <Disclaimer />
 
-      {/* Sticky save bar */}
-      {onSave && (
-        <div className="fixed left-0 right-0 z-40 bottom-0 px-5 pt-4 pb-[calc(16px+env(safe-area-inset-bottom)+56px)] bg-gradient-to-t from-white via-white/90 to-transparent">
+      {/* Sticky bottom bar */}
+      <div className="fixed left-0 right-0 z-40 bottom-0 px-5 pt-4 pb-[calc(16px+env(safe-area-inset-bottom)+56px)] bg-gradient-to-t from-white via-white/90 to-transparent">
+        {saved ? (
+          /* 保存完了 → 遷移先を選ぶボタン */
+          <div className="space-y-2 animate-fade-up">
+            <p className="text-center text-xs font-medium text-bo-ink-muted font-sans mb-1">
+              <span className="text-bo-accent font-bold">✓ 保存しました</span>　次はどこへ？
+            </p>
+            <div className="flex gap-2">
+              <Link
+                href="/history"
+                className="flex-1 py-3.5 rounded-r2 font-bold text-sm font-sans text-center bg-gradient-to-br from-bo-accent to-bo-accent-dark text-white shadow-bo-accent no-underline"
+              >
+                📦 マイコスメを見る
+              </Link>
+              <Link
+                href="/zukan"
+                className="flex-1 py-3.5 rounded-r2 font-bold text-sm font-sans text-center bg-white border border-bo-accent text-bo-accent no-underline"
+              >
+                🌿 成分図鑑へ
+              </Link>
+            </div>
+          </div>
+        ) : onSave ? (
+          /* 未保存 → 保存ボタン */
           <button
             onClick={handleSave}
-            disabled={saved}
-            className={`w-full py-4 rounded-r2 font-bold text-sm font-sans transition-all duration-300 ${
-              saved
-                ? "bg-bo-accent-soft text-bo-accent"
-                : "bg-gradient-to-br from-bo-accent to-bo-accent-dark text-white shadow-bo-accent"
-            }`}
+            className="w-full py-4 rounded-r2 font-bold text-sm font-sans bg-gradient-to-br from-bo-accent to-bo-accent-dark text-white shadow-bo-accent"
           >
-            {saved ? (
-              <span className="animate-check-pop inline-block">✓ マイコスメに保存しました</span>
-            ) : (
-              "✨ マイコスメに保存する"
-            )}
+            ✨ マイコスメに保存する
           </button>
-        </div>
-      )}
+        ) : null}
+      </div>
     </div>
   );
 }
