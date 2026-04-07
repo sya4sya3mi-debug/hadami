@@ -246,6 +246,48 @@ export async function toggleFavoriteInDb(
   return { error: error?.message ?? null };
 }
 
+/** スキャン履歴を保存（scan_history + scan_ingredients） */
+export async function saveScanHistory(
+  supabase: SupabaseClient,
+  userId: string,
+  productName: string,
+  brand: string,
+  ingredientIds: string[]
+): Promise<void> {
+  const { data: scan, error: scanError } = await supabase
+    .from("scan_history")
+    .insert({
+      user_id: userId,
+      product_name: productName,
+      brand: brand,
+    })
+    .select("id")
+    .single();
+
+  if (scanError || !scan) {
+    console.error("Failed to save scan history:", scanError);
+    return;
+  }
+
+  if (ingredientIds.length > 0) {
+    const rows = ingredientIds.map((id) => ({
+      scan_id: scan.id,
+      ingredient_id: id,
+    }));
+
+    const { error: ingError } = await supabase
+      .from("scan_ingredients")
+      .insert(rows);
+
+    if (ingError) {
+      console.error("Failed to save scan ingredients:", ingError);
+    }
+  }
+
+  // MV更新（fire-and-forget）
+  fetch("/api/refresh-profile", { method: "POST" }).catch(() => {});
+}
+
 /** Supabaseに図鑑発見を保存 */
 export async function saveDiscoveriesToDb(
   supabase: SupabaseClient,

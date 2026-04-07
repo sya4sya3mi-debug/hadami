@@ -6,9 +6,9 @@ export async function middleware(request: NextRequest) {
     "default-src 'self'",
     "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
     "style-src 'self' 'unsafe-inline'",
-    "img-src 'self' data: blob: https://*.supabase.co",
+    "img-src 'self' data: blob: https://*.supabase.co https://thumbnail.image.rakuten.co.jp",
     "font-src 'self'",
-    "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.twitter.com https://upload.twitter.com",
+    "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.twitter.com https://upload.twitter.com https://app.rakuten.co.jp",
     "frame-ancestors 'none'",
     "base-uri 'self'",
     "form-action 'self'",
@@ -27,7 +27,9 @@ export async function middleware(request: NextRequest) {
   const isRscRequest = request.headers.get("rsc") !== null;
   const isAuthCallback = request.nextUrl.pathname.startsWith("/auth/callback");
 
-  if (!isRscRequest || isAuthCallback) {
+  const isPublicPath = ["/privacy", "/terms"].some((p) => request.nextUrl.pathname.startsWith(p));
+
+  if ((!isRscRequest && !isPublicPath) || isAuthCallback) {
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,

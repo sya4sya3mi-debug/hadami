@@ -7,6 +7,8 @@ import { RARITY, getGenreInfo } from "@/lib/ingredients";
 import { getGenreByKey } from "@/lib/productGenres";
 import Badge, { StarIcon } from "@/components/ui/Badge";
 import Disclaimer from "@/components/ui/Disclaimer";
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+import RecommendSection from "@/components/recommendations/RecommendSection";
 
 interface ScanResultProps {
   productName: string;
@@ -222,6 +224,9 @@ export default function ScanResult({
         </div>
       )}
 
+      {/* レコメンドセクション（保存後に表示） */}
+      {saved && <RecommendSection enabled={saved} />}
+
       <Disclaimer />
 
       {/* Sticky save bar */}
@@ -237,9 +242,9 @@ export default function ScanResult({
             }`}
           >
             {saved ? (
-              <span className="animate-check-pop inline-block">✓ Myコスメに保存しました</span>
+              <span className="animate-check-pop inline-block">✓ マイコスメに保存しました</span>
             ) : (
-              "✨ Myコスメに保存する"
+              "✨ マイコスメに保存する"
             )}
           </button>
         </div>

@@ -110,8 +110,18 @@ export interface RecommendationResult {
   score: number;
   recommendedCombinations: Combination[];
   cautionCombinations: Combination[];
-  categoryCoverage: Record<CategoryKey, number>;
-  coveredCategoryCount: number;
+  genreCoverage: Record<IngredientGenre, number>;
+  coveredGenreCount: number;
+}
+
+// ── 楽天商品 ──
+export interface RakutenProduct {
+  name: string;
+  price: number;
+  imageUrl: string | null;
+  affiliateUrl: string;
+  reviewScore: number;
+  shopName: string;
 }
 
 // ── スキャン結果 ──

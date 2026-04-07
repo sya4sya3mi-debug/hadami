@@ -19,6 +19,7 @@ import { useUser } from "@/lib/auth";
 import {
   saveProductToDb,
   saveDiscoveriesToDb,
+  saveScanHistory,
   getUserLimit,
   getMonthlyScanLimit,
   getScanCountByEmail,
@@ -171,12 +172,12 @@ function ScanPageInner() {
       const allowed = await checkScanLimit();
       if (!allowed) return;
 
-      // Myコスメ保存枠チェック
+      // マイコスメ保存枠チェック
       if (user) {
         const count = await getProductCount(supabase, user.id);
         if (count >= userLimit) {
           const proceed = window.confirm(
-            `Myコスメの保存枠（${userLimit}件）がいっぱいです。\nスキャンはできますが、保存するには古いコスメを削除してください。\n\nスキャンを続けますか？`
+            `マイコスメの保存枠（${userLimit}件）がいっぱいです。\nスキャンはできますが、保存するには古いコスメを削除してください。\n\nスキャンを続けますか？`
           );
           if (!proceed) return;
         }
@@ -369,6 +370,15 @@ function ScanPageInner() {
       discover(foundIngs.map((f) => f.ingredient.id));
       await saveDiscoveriesToDb(supabase, user.id, foundIngs.map((f) => f.ingredient.id));
 
+      // スキャン履歴保存（レコメンド用）
+      saveScanHistory(
+        supabase,
+        user.id,
+        product.productName,
+        product.brand,
+        foundIngs.map((f) => f.ingredient.id)
+      ).catch((e) => console.error("scan history save error:", e));
+
       addProduct({
         id: result.productId!,
         name: product.productName,
@@ -417,6 +427,15 @@ function ScanPageInner() {
 
     await saveDiscoveriesToDb(supabase, user.id, foundIngredients.map((f) => f.ingredient.id));
 
+    // スキャン履歴保存（レコメンド用）
+    saveScanHistory(
+      supabase,
+      user.id,
+      productName,
+      brand,
+      foundIngredients.map((f) => f.ingredient.id)
+    ).catch((e) => console.error("scan history save error:", e));
+
     addProduct({
       id: result.productId!,
       name: productName,
@@ -461,10 +480,10 @@ function ScanPageInner() {
   return (
     <AuthGuard>
       <div className="min-h-screen bg-bo-cream">
-        <div className="px-5 pt-8 pb-6">
+        <div className="px-5 pt-4 pb-6">
           {/* Header */}
           <div className="flex items-center justify-between mb-5">
-            <h1 className="font-bold text-lg text-bo-ink">
+            <h1 className="text-2xl font-extrabold font-serif text-bo-ink m-0">
               成分スキャン
             </h1>
             {step > 1 && (
