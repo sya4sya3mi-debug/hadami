@@ -565,37 +565,23 @@ export default function LandingPage() {
       </section>
 
       {/* ─── PRODUCED BY ─── */}
-      <section className="px-6 pb-0 bg-bo-cream text-center">
+      <section className="px-6 py-10 bg-bo-cream text-center">
         <Reveal>
-          <div className="max-w-[400px] mx-auto p-7 px-6 rounded-[20px] bg-white border border-bo-parchment shadow-bo1 flex flex-col items-center">
-            <div className="text-[9px] text-bo-ink-muted font-sans tracking-[0.15em] uppercase mb-2.5">
+          <div className="flex flex-col items-center gap-1.5">
+            <div className="text-[9px] text-bo-ink-muted font-sans tracking-[0.15em] uppercase">
               Produced by
             </div>
-            <div className="text-lg font-extrabold font-serif text-bo-ink mb-1.5">
+            <div className="text-base font-extrabold font-serif text-bo-ink">
               {"\u307F\u304A\u306E\u30DF\u30CF\u30C0\u30CE\u30FC\u30C8"}
             </div>
-            <p className="text-[11px] text-bo-ink-muted font-sans leading-[1.8] mb-3.5 text-center">
-              {"30\u4EE3\u304B\u3089\u306E\u7F8E\u5BB9\u3092\u300C\u6210\u5206\u300D\u3067\u9078\u3076\u3002"}
-              <br />
-              {"\u30B9\u30AD\u30F3\u30B1\u30A2\u30FB\u7F8E\u5BB9\u533B\u7642\u30FB\u30B3\u30B9\u30E1\u306E\u60C5\u5831\u3092\u767A\u4FE1\u4E2D\u3002"}
-            </p>
             <a
               href="https://blog-engine.com"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 text-xs font-bold text-bo-accent font-sans"
+              className="inline-flex items-center gap-1 text-[11px] font-bold text-bo-accent font-sans mt-1"
             >
               {"\u30D6\u30ED\u30B0\u3092\u8AAD\u3080"}
-              <svg
-                width="14"
-                height="14"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                aria-hidden="true"
-              >
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
                 <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3" />
               </svg>
             </a>
