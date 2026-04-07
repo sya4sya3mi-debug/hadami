@@ -56,7 +56,7 @@ export async function POST(req: NextRequest) {
   // 5. Call Gemini OCR
   try {
     const response = await client.models.generateContent({
-      model: "gemini-3.1-flash-lite",
+      model: "gemini-2.5-flash-lite",
       contents: [
         {
           role: "user",

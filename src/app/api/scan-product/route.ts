@@ -69,7 +69,7 @@ async function searchIngredients(product: string, brand: string, lang: string) {
   }
 
   const searchMsg = await withTimeout(client.models.generateContent({
-    model: "gemini-3.1-flash-lite",
+    model: "gemini-2.5-flash-lite",
     contents: [
       {
         role: "user",
@@ -183,7 +183,7 @@ export async function POST(req: NextRequest) {
   try {
     // Step 1: Identify product(s) from package photo
     const identifyMsg = await withTimeout(client.models.generateContent({
-      model: "gemini-3.1-flash-lite",
+      model: "gemini-2.5-flash-lite",
       contents: [
         {
           role: "user",
