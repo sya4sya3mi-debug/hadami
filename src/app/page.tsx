@@ -39,6 +39,7 @@ const TIPS = [
 ];
 
 const STREAK_KEY = "hadami-routine-streak";
+const ROUTINE_CHECK_KEY = "hadami-routine-checks";
 
 function getStreakData(): { lastDate: string; count: number } {
   if (typeof window === "undefined") return { lastDate: "", count: 0 };
@@ -52,6 +53,28 @@ function getStreakData(): { lastDate: string; count: number } {
 function saveStreakData(data: { lastDate: string; count: number }) {
   if (typeof window === "undefined") return;
   localStorage.setItem(STREAK_KEY, JSON.stringify(data));
+}
+
+function getRoutineChecks(routine: string): Set<number> {
+  if (typeof window === "undefined") return new Set();
+  try {
+    const raw = localStorage.getItem(ROUTINE_CHECK_KEY);
+    if (raw) {
+      const data = JSON.parse(raw);
+      if (data.routine === routine) {
+        return new Set(data.checked as number[]);
+      }
+    }
+  } catch { /* ignore */ }
+  return new Set();
+}
+
+function saveRoutineChecks(routine: string, checked: Set<number>) {
+  if (typeof window === "undefined") return;
+  localStorage.setItem(ROUTINE_CHECK_KEY, JSON.stringify({
+    routine,
+    checked: Array.from(checked),
+  }));
 }
 
 function Counter({ to, dur = 900 }: { to: number; dur?: number }) {
@@ -84,7 +107,7 @@ export default function HomePage() {
   const autoRoutine = currentHour < 15 ? "morning" : "night";
 
   // Routine checklist state
-  const [checkedSteps, setCheckedSteps] = useState<Set<number>>(new Set());
+  const [checkedSteps, setCheckedSteps] = useState<Set<number>>(() => getRoutineChecks(autoRoutine));
   const [particles, setParticles] = useState<Particle[]>([]);
   const [showCelebration, setShowCelebration] = useState(false);
   const [streak, setStreak] = useState(0);
@@ -142,6 +165,7 @@ export default function HomePage() {
     const next = new Set(checkedSteps);
     if (next.has(i)) { next.delete(i); } else { next.add(i); }
     setCheckedSteps(next);
+    saveRoutineChecks(autoRoutine, next);
 
     if (!wasChecked && routineSteps[i]) {
       const step = routineSteps[i];
