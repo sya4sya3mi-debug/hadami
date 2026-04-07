@@ -3,7 +3,6 @@
 import { useParams } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
 import { useProductStore } from "@/stores/useProductStore";
 import { getIngredientById, getGenreInfo } from "@/lib/ingredients";
 import { findCombinations } from "@/lib/combinations";
