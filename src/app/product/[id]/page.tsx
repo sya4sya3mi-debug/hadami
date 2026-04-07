@@ -7,11 +7,9 @@ import { useState } from "react";
 import { useProductStore } from "@/stores/useProductStore";
 import { getIngredientById, getGenreInfo } from "@/lib/ingredients";
 import { findCombinations } from "@/lib/combinations";
-import { shareProductCheck } from "@/lib/share";
 import { getGenreByKey } from "@/lib/productGenres";
 import Badge, { StarIcon } from "@/components/ui/Badge";
 import { RARITY } from "@/lib/ingredients";
-import ShareModal from "@/components/ui/ShareModal";
 import Disclaimer from "@/components/ui/Disclaimer";
 import { useUser } from "@/lib/auth";
 import PageLoading from "@/components/ui/PageLoading";
@@ -21,7 +19,6 @@ export default function ProductDetailPage() {
   const { loading } = useUser();
   const { id } = useParams<{ id: string }>();
   const product = useProductStore((s) => s.getProduct(id));
-  const [showShare, setShowShare] = useState(false);
 
   if (loading) {
     return <PageLoading message="コスメ情報を読み込んでいます..." />;
@@ -47,8 +44,6 @@ export default function ProductDetailPage() {
 
   const ingredientNames = ingredients.map((i) => i.nameJa);
   const combinations = findCombinations(ingredientNames);
-  const shareText = shareProductCheck(product, ingredientNames);
-
   return (
     <AuthGuard>
     <div className="min-h-screen bg-bo-cream">

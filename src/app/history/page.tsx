@@ -8,13 +8,11 @@ import Disclaimer from "@/components/ui/Disclaimer";
 import { useUser } from "@/lib/auth";
 import PageLoading from "@/components/ui/PageLoading";
 import AuthGuard from "@/components/ui/AuthGuard";
-import ShareModal from "@/components/ui/ShareModal";
 import Glass from "@/components/ui/Glass";
 import ProductDetail from "@/components/ui/ProductDetail";
 import { deleteProductFromDb, updateProductImageInDb, deleteProductImageFromDb, updateProductTypeInDb, toggleFavoriteInDb } from "@/lib/db";
 import { PRODUCT_GENRES, getGenreByKey } from "@/lib/productGenres";
 import { ProductGenre, Product } from "@/types";
-import { shareFavoriteCosmetics } from "@/lib/share";
 
 type ViewMode = "photo" | "list";
 
@@ -56,7 +54,6 @@ export default function HistoryPage() {
   const [activeFilter, setActiveFilter] = useState<"all" | ProductGenre>("all");
   const [favOnly, setFavOnly] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>("photo");
-  const [showShare, setShowShare] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [editMode, setEditMode] = useState(false);
   const [editingGenreId, setEditingGenreId] = useState<string | null>(null);

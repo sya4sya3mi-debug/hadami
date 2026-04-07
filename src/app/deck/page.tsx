@@ -10,7 +10,6 @@ import { findCombinations } from "@/lib/combinations";
 import { recommendDeck } from "@/lib/deckRecommender";
 import { getGenreByKey, GENRE_SLOT_CONFIG } from "@/lib/productGenres";
 import { SKIN_CONCERNS } from "@/lib/concerns";
-import { shareDeck } from "@/lib/share";
 import DeckEditor from "@/components/deck/DeckEditor";
 import dynamic from "next/dynamic";
 const CoverageChart = dynamic(() => import("@/components/deck/CoverageChart"), {
@@ -19,7 +18,6 @@ const CoverageChart = dynamic(() => import("@/components/deck/CoverageChart"), {
 });
 import CombinationCard from "@/components/deck/CombinationCard";
 import AutoRecommendModal from "@/components/deck/AutoRecommendModal";
-import ShareModal from "@/components/ui/ShareModal";
 import Disclaimer from "@/components/ui/Disclaimer";
 import PageLoading from "@/components/ui/PageLoading";
 import { useUser } from "@/lib/auth";
@@ -44,7 +42,6 @@ export default function DeckPage() {
   const [showEditor, setShowEditor] = useState(false);
   const [showPicker, setShowPicker] = useState(false);
   const [pickerGenreFilter, setPickerGenreFilter] = useState<ProductGenre | null>(null);
-  const [showShare, setShowShare] = useState(false);
   const [showAnalysis, setShowAnalysis] = useState(false);
   const [selectedCard, setSelectedCard] = useState<(Product & { stepNum: number }) | null>(null);
   const captureRef = useRef<HTMLDivElement>(null);
@@ -179,13 +176,6 @@ export default function DeckPage() {
     setPickerFilter("すべて");
     setShowPicker(true);
   };
-
-  const shareText = shareDeck(
-    routine,
-    deckProducts.map((p) => ({ emoji: "📦", name: p.name })),
-    coveredGenres,
-    totalIngredients
-  );
 
   const availableProducts = allProducts.filter(
     (p) => !deckItems.some((item) => item.productId === p.id)
