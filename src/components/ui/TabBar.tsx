@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useTransition } from "react";
+import { useTransition } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { useUser } from "@/lib/auth";
 import { useZukanStore } from "@/stores/useZukanStore";
@@ -44,7 +44,7 @@ const TABS = [
   },
   {
     href: "/history",
-    label: "Myコスメ",
+    label: "マイコスメ",
     ariaLabel: "保存したコスメ一覧",
     paths: [
       "M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2",
@@ -59,10 +59,6 @@ export default function TabBar() {
   const { user, loading } = useUser();
   const unsavedScan = useZukanStore((s) => s.unsavedScan);
   const [, startTransition] = useTransition();
-
-  useEffect(() => {
-    TABS.forEach((tab) => router.prefetch(tab.href));
-  }, [router]);
 
   if (!loading && !user) return null;
 

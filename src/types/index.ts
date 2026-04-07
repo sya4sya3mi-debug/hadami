@@ -74,6 +74,7 @@ export interface Product {
   brand: string;
   productType: ProductGenre;
   packageImage?: string;
+  packageImagePath?: string;
   isFavorite: boolean;
   createdAt: string;
   ingredients: ProductIngredient[];

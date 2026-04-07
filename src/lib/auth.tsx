@@ -52,14 +52,20 @@ function readStoredUser(): User | null {
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const storedUser = useMemo(() => readStoredUser(), []);
-  const hasCacheOwner =
+  const cacheMatchesUser =
     typeof window !== "undefined" &&
-    localStorage.getItem("hadami-cache-owner") !== null;
+    storedUser !== null &&
+    localStorage.getItem("hadami-cache-owner") === storedUser.id;
+
+  // If cache belongs to a different user, clear it before first render
+  if (typeof window !== "undefined" && !cacheMatchesUser && localStorage.getItem("hadami-cache-owner") !== null) {
+    clearCachedUserData();
+  }
 
   const [user, setUser] = useState<User | null>(storedUser);
   const [profile, setProfile] = useState<Profile | null | undefined>(undefined);
-  // If we have both a stored session and cached data, skip the loading screen
-  const [loading, setLoading] = useState(!(storedUser && hasCacheOwner));
+  // If we have both a stored session and matching cached data, skip the loading screen
+  const [loading, setLoading] = useState(!(storedUser && cacheMatchesUser));
   const syncSequence = useRef(0);
   const supabaseRef = useRef<ReturnType<typeof createClient> | null>(null);
 

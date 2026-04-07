@@ -3,7 +3,7 @@ import type { DeckItem, Product, ProductGenre, RoutineType } from "@/types";
 import { useDeckStore } from "@/stores/useDeckStore";
 import { useProductStore } from "@/stores/useProductStore";
 import { useZukanStore } from "@/stores/useZukanStore";
-import { getSignedImageUrls, clearImageUrlCache } from "./storage";
+import { clearImageUrlCache, getSignedImageUrls } from "./storage";
 
 const PRODUCT_STORAGE_KEY = "hadami-products";
 const DECK_STORAGE_KEY = "hadami-deck";
@@ -55,22 +55,15 @@ export function clearCachedUserData() {
   window.localStorage.removeItem(CACHE_OWNER_KEY);
 }
 
-async function mapProducts(supabase: SupabaseClient, rows: ProductRow[]): Promise<Product[]> {
-  // 画像パスを収集して一括でsigned URLを取得（N回→1回のAPIコール）
-  const imagePaths = rows
-    .map((r) => r.package_image_url)
-    .filter((p): p is string => !!p);
-
-  const urlMap = imagePaths.length > 0
-    ? await getSignedImageUrls(supabase, imagePaths)
-    : {};
-
+function mapProducts(rows: ProductRow[]): Product[] {
+  // 署名URLはコンポーネント側で遅延取得する（useSignedImageUrl フック経由）
   return rows.map((row) => ({
     id: row.id,
     name: row.name ?? "未設定",
     brand: row.brand ?? "",
     productType: (row.product_type as ProductGenre) || "other",
-    packageImage: row.package_image_url ? (urlMap[row.package_image_url] ?? undefined) : undefined,
+    packageImagePath: row.package_image_url ?? undefined,
+    packageImage: undefined,
     isFavorite: row.is_favorite ?? false,
     createdAt: row.created_at ?? new Date(0).toISOString(),
     ingredients: (row.ingredient_ids ?? []).map((ingredientId, index) => ({
@@ -111,8 +104,23 @@ export async function syncUserData(supabase: SupabaseClient, userId: string) {
   if (productsRes.error) {
     errors.push(`products sync failed: ${productsRes.error.message}`);
   } else {
-    const products = await mapProducts(supabase, (productsRes.data ?? []) as ProductRow[]);
+    const products = mapProducts((productsRes.data ?? []) as ProductRow[]);
     useProductStore.getState().replaceAll(products);
+
+    // 署名URLをバックグラウンドで解決し、完了後にストアを更新
+    const imagePaths = products
+      .map((p) => p.packageImagePath)
+      .filter((p): p is string => !!p);
+    if (imagePaths.length > 0) {
+      getSignedImageUrls(supabase, imagePaths).then((urlMap) => {
+        const store = useProductStore.getState();
+        for (const product of store.products) {
+          if (product.packageImagePath && urlMap[product.packageImagePath]) {
+            store.updateProductImage(product.id, urlMap[product.packageImagePath]!);
+          }
+        }
+      }).catch((err) => console.warn("Background image URL resolution failed:", err));
+    }
   }
 
   if (discoveriesRes.error) {
