@@ -1,525 +1,567 @@
 "use client";
 
-import { useState, useEffect, useMemo, useRef, Fragment, useCallback } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { useZukanStore, ZukanFilter } from "@/stores/useZukanStore";
+import { useZukanStore } from "@/stores/useZukanStore";
 import { useProductStore } from "@/stores/useProductStore";
-import { MASTER_INGREDIENTS, INGREDIENT_GENRES, GENRE_DESCRIPTIONS, RARITY, getIngredientIndex, getIngredientById, INGREDIENT_COUNT, getGenreTotal } from "@/lib/ingredients";
-import { IngredientGenre, Ingredient } from "@/types";
-import { shareZukanProgress } from "@/lib/share";
-import ZukanProgress from "@/components/zukan/ZukanProgress";
-import IngredientCard from "@/components/zukan/IngredientCard";
-import ShareModal from "@/components/ui/ShareModal";
-import Disclaimer from "@/components/ui/Disclaimer";
+import {
+  MASTER_INGREDIENTS,
+  INGREDIENT_GENRES,
+  INGREDIENT_COUNT,
+  getGenreTotal,
+  getIngredientById,
+} from "@/lib/ingredients";
+import { SKIN_CONCERNS } from "@/lib/concerns";
+import { IngredientGenre, RarityKey, Product } from "@/types";
 import { useUser } from "@/lib/auth";
 import PageLoading from "@/components/ui/PageLoading";
 import AuthGuard from "@/components/ui/AuthGuard";
+import Disclaimer from "@/components/ui/Disclaimer";
 
-/* ── Card textures ── */
-const CARD_TEXTURES: Record<string, { bg: string; pattern: string; color: string; emoji: string; label: string }> = {
-  water:      { bg: "linear-gradient(145deg, #E3F4EE 0%, #D4EDE3 50%, #C5E8D8 100%)", pattern: "radial-gradient(ellipse at 30% 60%, rgba(58,143,122,0.08) 0%, transparent 50%)", color: "#3A7D65", emoji: "💧", label: "うるおい" },
-  amino_acid: { bg: "linear-gradient(145deg, #E3E8F4 0%, #D4DBEB 50%, #C5CEE2 100%)", pattern: "radial-gradient(ellipse at 40% 50%, rgba(74,90,138,0.08) 0%, transparent 50%)", color: "#4A5A8A", emoji: "🧬", label: "アミノ酸" },
-  vitamin:    { bg: "linear-gradient(145deg, #FFF5E5 0%, #FDECC8 50%, #FBE3B0 100%)", pattern: "radial-gradient(ellipse at 50% 50%, rgba(160,122,48,0.08) 0%, transparent 50%)", color: "#A07A30", emoji: "🍊", label: "ビタミン" },
-  peptide:    { bg: "linear-gradient(145deg, #F4E3F0 0%, #EBD4E8 50%, #E2C5DF 100%)", pattern: "radial-gradient(ellipse at 60% 40%, rgba(138,74,122,0.08) 0%, transparent 50%)", color: "#8A4A7A", emoji: "🧪", label: "ペプチド" },
-  botanical:  { bg: "linear-gradient(145deg, #E8EFE3 0%, #D8E6CF 50%, #C8DEC0 100%)", pattern: "radial-gradient(ellipse at 40% 70%, rgba(90,122,74,0.08) 0%, transparent 50%)", color: "#5A7A4A", emoji: "🌿", label: "ボタニカル" },
-  oil_lipid:  { bg: "linear-gradient(145deg, #EAF0E5 0%, #DDE8D4 50%, #D0E0C5 100%)", pattern: "radial-gradient(ellipse at 50% 60%, rgba(74,122,85,0.08) 0%, transparent 50%)", color: "#4A7A55", emoji: "🫙", label: "オイル・脂質" },
-  ferment:    { bg: "linear-gradient(145deg, #EDE3F0 0%, #E0D4EB 50%, #D5C8E2 100%)", pattern: "radial-gradient(ellipse at 60% 40%, rgba(107,74,138,0.08) 0%, transparent 50%)", color: "#6B4A8A", emoji: "🧫", label: "発酵・バイオ" },
-  acid:       { bg: "linear-gradient(145deg, #E8E3F0 0%, #DAD4EB 50%, #CCC5E0 100%)", pattern: "radial-gradient(ellipse at 50% 50%, rgba(90,74,122,0.08) 0%, transparent 50%)", color: "#5A4A7A", emoji: "⚗️", label: "アシッド" },
-  base:       { bg: "linear-gradient(145deg, #EDEDE8 0%, #E0E0D8 50%, #D5D5CC 100%)", pattern: "radial-gradient(ellipse at 50% 50%, rgba(107,107,90,0.08) 0%, transparent 50%)", color: "#6B6B5A", emoji: "⚙️", label: "ベース" },
+/* ── Rarity sort order ── */
+const RARITY_ORDER: RarityKey[] = ["legendary", "rare", "uncommon", "common"];
+
+/* ── Rarity visual config ── */
+const RARITY_VIS: Record<
+  RarityKey,
+  { star: number; color: string; bg: string; border: string }
+> = {
+  common: {
+    star: 1,
+    color: "#9CA3AF",
+    bg: "rgba(156,163,175,0.07)",
+    border: "rgba(156,163,175,0.15)",
+  },
+  uncommon: {
+    star: 2,
+    color: "#4CAF50",
+    bg: "rgba(76,175,80,0.07)",
+    border: "rgba(76,175,80,0.15)",
+  },
+  rare: {
+    star: 3,
+    color: "#E91E8C",
+    bg: "rgba(233,30,140,0.07)",
+    border: "rgba(233,30,140,0.18)",
+  },
+  legendary: {
+    star: 4,
+    color: "#F59E0B",
+    bg: "rgba(245,158,11,0.07)",
+    border: "rgba(245,158,11,0.22)",
+  },
 };
-const DEFAULT_TEX = { bg: "linear-gradient(145deg, #EDEDE8, #D5D5CC)", pattern: "", color: "#6B6B5A", emoji: "📦", label: "その他" };
 
-/* Rarity colors/labels aligned with RARITY (4 tiers: ★1 コモン ~ ★4 レジェンダリー) */
-const RARITY_COLORS: Record<number, string> = { 1: "#9CA3AF", 2: "#4CAF50", 3: "#E91E8C", 4: "#F59E0B" };
-const RARITY_LABELS: Record<number, string> = { 1: "コモン", 2: "アンコモン", 3: "レア", 4: "レジェンダリー" };
+/* ═══════════════════════════════════════
+   Tab 1: Genre Explorer
+   ═══════════════════════════════════════ */
+function GenreExplorer({
+  discoveredIds,
+}: {
+  discoveredIds: string[];
+}) {
+  const router = useRouter();
+  const [selectedGenre, setSelectedGenre] = useState<IngredientGenre>("water");
+  const discoveredSet = useMemo(() => new Set(discoveredIds), [discoveredIds]);
 
-/* ── Achievements ── */
-function getAchievements(discoveredIds: string[]) {
-  const count = discoveredIds.length;
-  const idSet = new Set(discoveredIds);
-  let rareCounts = 0;
-  let legendCount = 0;
-  const genres = new Set<string>();
-  idSet.forEach((id) => {
-    const ing = getIngredientById(id);
-    if (!ing) return;
-    const star = RARITY[ing.rarity].star;
-    if (star >= 3) rareCounts++;
-    if (star >= 4) legendCount++;
-    genres.add(ing.genre);
-  });
+  /* Genre stats */
+  const genreStats = useMemo(() => {
+    return INGREDIENT_GENRES.map((g) => {
+      const total = getGenreTotal(g.key);
+      let disc = 0;
+      discoveredSet.forEach((id) => {
+        const ing = getIngredientById(id);
+        if (ing && ing.genre === g.key) disc++;
+      });
+      return { ...g, total, disc, pct: total > 0 ? Math.round((disc / total) * 100) : 0 };
+    });
+  }, [discoveredSet]);
 
-  return [
-    { name: "はじめの一歩", desc: "初めて成分を発見した", icon: "🌱", done: count >= 1 },
-    { name: "10種コレクト", desc: "成分を10種集めた", icon: "📗", done: count >= 10 },
-    { name: "50種コレクト", desc: "成分を50種集めた", icon: "📙", done: count >= 50 },
-    { name: "★3ハンター", desc: "レア以上を5種発見", icon: "⭐", done: rareCounts >= 5, progress: rareCounts < 5 ? `${rareCounts}/5` : undefined },
-    { name: "★4ハンター", desc: "レジェンダリーを3種発見", icon: "🌟", done: legendCount >= 3, progress: legendCount < 3 ? `${legendCount}/3` : undefined },
-    { name: "伝説の出会い", desc: "レジェンダリーの成分を発見", icon: "💎", done: legendCount >= 1 },
-    { name: "全タイプ発見", desc: "全ジャンルで成分を発見", icon: "🗺️", done: genres.size >= INGREDIENT_GENRES.length },
-    { name: "成分博士", desc: `${INGREDIENT_COUNT}種すべて発見`, icon: "🏆", done: count >= INGREDIENT_COUNT },
-  ];
+  /* Sorted ingredients for selected genre */
+  const genreIngredients = useMemo(() => {
+    const items = MASTER_INGREDIENTS.filter((i) => i.genre === selectedGenre);
+    return items.sort((a, b) => {
+      const ra = RARITY_ORDER.indexOf(a.rarity);
+      const rb = RARITY_ORDER.indexOf(b.rarity);
+      if (ra !== rb) return ra - rb;
+      const aDisc = discoveredSet.has(a.id) ? 0 : 1;
+      const bDisc = discoveredSet.has(b.id) ? 0 : 1;
+      return aDisc - bDisc;
+    });
+  }, [selectedGenre, discoveredSet]);
+
+  const currentGenre = genreStats.find((g) => g.key === selectedGenre);
+
+  return (
+    <div>
+      {/* Horizontal icon selector */}
+      <div
+        className="flex gap-1 overflow-x-auto py-3.5 px-4"
+        style={{ WebkitOverflowScrolling: "touch", scrollbarWidth: "none" }}
+      >
+        {genreStats.map((genre) => {
+          const active = selectedGenre === genre.key;
+          return (
+            <button
+              key={genre.key}
+              onClick={() => setSelectedGenre(genre.key)}
+              className={`shrink-0 flex flex-col items-center gap-[3px] px-2.5 pt-2 pb-1.5 border-none cursor-pointer transition-all duration-200 min-w-[52px] ${
+                active ? "bg-white shadow-bo2 rounded-2xl" : "bg-transparent rounded-2xl"
+              }`}
+            >
+              <div
+                className="w-[34px] h-[34px] rounded-[10px] flex items-center justify-center text-[15px] transition-all duration-200"
+                style={{
+                  background: `${genre.color}${active ? "20" : "0C"}`,
+                  border: `1.5px solid ${genre.color}${active ? "50" : "15"}`,
+                }}
+              >
+                {genre.icon}
+              </div>
+              <span
+                className={`text-[9px] font-sans whitespace-nowrap ${
+                  active ? "font-bold text-bo-ink" : "font-medium text-bo-ink-muted"
+                }`}
+              >
+                {genre.label}
+              </span>
+              <span
+                className="text-[9px] font-bold font-sans"
+                style={{ color: active ? genre.color : "#B5C7BE" }}
+              >
+                {genre.pct}%
+              </span>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Selected genre detail */}
+      {currentGenre && (
+        <div key={currentGenre.key} className="px-4 pb-2 animate-fade-up">
+          {/* Genre header */}
+          <div className="flex items-center justify-between mb-2.5">
+            <div className="flex items-baseline gap-2">
+              <span className="text-base font-extrabold text-bo-ink font-serif">
+                {currentGenre.label}
+              </span>
+              <span className="text-[11px] text-bo-ink-muted font-sans">
+                {currentGenre.disc}/{currentGenre.total}
+              </span>
+            </div>
+            <div className="h-1 w-[72px] rounded-sm bg-bo-parchment overflow-hidden">
+              <div
+                className="h-full rounded-sm transition-[width] duration-[600ms] ease-out"
+                style={{
+                  width: `${currentGenre.pct}%`,
+                  background: `linear-gradient(90deg, ${currentGenre.color}, ${currentGenre.color}AA)`,
+                }}
+              />
+            </div>
+          </div>
+
+          {/* Ingredient list */}
+          <div className="flex flex-col gap-[5px]">
+            {genreIngredients.map((ing) => {
+              const r = RARITY_VIS[ing.rarity];
+              const found = discoveredSet.has(ing.id);
+              const isLeg = ing.rarity === "legendary";
+              return (
+                <div
+                  key={ing.id}
+                  onClick={() => {
+                    if (found) router.push(`/ingredient/${ing.id}`);
+                  }}
+                  className={`flex items-center gap-2.5 px-3 py-2.5 rounded-[13px] relative overflow-hidden ${
+                    found ? "cursor-pointer" : ""
+                  }`}
+                  style={{
+                    background: found ? r.bg : "rgba(232,240,236,0.4)",
+                    border: `1px solid ${found ? r.border : "transparent"}`,
+                    opacity: found ? 1 : 0.5,
+                  }}
+                >
+                  {/* Legendary shimmer */}
+                  {isLeg && found && (
+                    <div
+                      className="absolute inset-0 opacity-10 animate-shimmer-legend"
+                      style={{
+                        background:
+                          "linear-gradient(135deg, transparent 25%, rgba(245,158,11,0.5) 50%, transparent 75%)",
+                      }}
+                    />
+                  )}
+
+                  {/* Stars */}
+                  <span
+                    className="text-[10px] shrink-0 w-[34px] text-center relative"
+                    style={{ color: r.color }}
+                  >
+                    {"★".repeat(r.star)}
+                    <span className="text-bo-parchment">
+                      {"★".repeat(4 - r.star)}
+                    </span>
+                  </span>
+
+                  {/* Name + note */}
+                  <div className="flex-1 min-w-0 relative">
+                    <div
+                      className={`text-[13px] font-semibold font-sans truncate ${
+                        found ? "text-bo-ink" : "text-bo-ink-faint"
+                      }`}
+                    >
+                      {found ? ing.nameJa : "？？？"}
+                    </div>
+                    {(found ? ing.note : ing.funFact) && (
+                      <div
+                        className="text-[10px] font-sans mt-px truncate"
+                        style={{ color: found ? "#7E9389" : "#B08D3A" }}
+                      >
+                        {found ? ing.note : `💡 ${ing.funFact}`}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+    </div>
+  );
 }
 
+/* ═══════════════════════════════════════
+   Tab 2: Concern View
+   ═══════════════════════════════════════ */
+function ConcernView({
+  discoveredIds,
+  products,
+}: {
+  discoveredIds: string[];
+  products: Product[];
+}) {
+  const router = useRouter();
+  const [selectedConcern, setSelectedConcern] = useState<string | null>(null);
+  const [expandedIng, setExpandedIng] = useState<string | null>(null);
+  const discoveredSet = useMemo(() => new Set(discoveredIds), [discoveredIds]);
+
+  /* Reverse lookup: ingredientId → products containing it */
+  const getProductsWithIngredient = useCallback(
+    (ingredientId: string): Product[] => {
+      return products.filter((p) =>
+        p.ingredients.some((pi) => pi.ingredientId === ingredientId)
+      );
+    },
+    [products]
+  );
+
+  const concern = SKIN_CONCERNS.find((c) => c.label === selectedConcern);
+
+  /* ── Step 1: Concern list ── */
+  if (!concern) {
+    return (
+      <div className="flex flex-col gap-2 px-4 py-3.5">
+        {SKIN_CONCERNS.map((c) => {
+          const covered = c.keyIngredients.filter(
+            (k) => getProductsWithIngredient(k.id).length > 0
+          ).length;
+          const coverPct = Math.round((covered / c.keyIngredients.length) * 100);
+          return (
+            <button
+              key={c.label}
+              onClick={() => setSelectedConcern(c.label)}
+              className="flex items-center gap-3 py-3.5 px-4 rounded-2xl border border-bo-parchment bg-white shadow-bo1 cursor-pointer text-left w-full"
+            >
+              <div
+                className="w-10 h-10 rounded-xl shrink-0 flex items-center justify-center text-lg"
+                style={{
+                  background: `${c.color}12`,
+                  border: `1px solid ${c.color}22`,
+                }}
+              >
+                {c.icon}
+              </div>
+              <div className="flex-1">
+                <div className="text-sm font-bold text-bo-ink font-sans">
+                  {c.label}
+                </div>
+                <div className="text-[10px] text-bo-ink-muted font-sans mt-0.5">
+                  Myコスメカバー {covered}/{c.keyIngredients.length}
+                </div>
+              </div>
+              <div
+                className="w-9 h-9 rounded-[10px] shrink-0 flex items-center justify-center text-sm font-extrabold font-serif"
+                style={{
+                  background: `${c.color}10`,
+                  color: c.color,
+                }}
+              >
+                {coverPct}
+              </div>
+            </button>
+          );
+        })}
+      </div>
+    );
+  }
+
+  /* ── Step 2: Key ingredients for selected concern ── */
+  const covered = concern.keyIngredients.filter(
+    (k) => getProductsWithIngredient(k.id).length > 0
+  ).length;
+  const coverPct = Math.round((covered / concern.keyIngredients.length) * 100);
+
+  return (
+    <div className="py-3 animate-fade-up">
+      {/* Header */}
+      <div className="flex items-center gap-2 px-4 pb-3">
+        <button
+          onClick={() => {
+            setSelectedConcern(null);
+            setExpandedIng(null);
+          }}
+          className="w-[30px] h-[30px] rounded-[9px] border border-bo-parchment bg-white cursor-pointer flex items-center justify-center shrink-0"
+        >
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="#7E9389"
+            strokeWidth="2.5"
+            strokeLinecap="round"
+          >
+            <path d="M15 18l-6-6 6-6" />
+          </svg>
+        </button>
+        <span className="text-lg">{concern.icon}</span>
+        <span className="text-base font-extrabold text-bo-ink font-serif flex-1">
+          {concern.label}
+        </span>
+        <div
+          className="py-[3px] px-2.5 rounded-lg text-xs font-extrabold font-serif"
+          style={{ background: `${concern.color}12`, color: concern.color }}
+        >
+          {coverPct}%
+        </div>
+      </div>
+
+      {/* Tip */}
+      <div
+        className="mx-4 mb-3 py-2.5 px-3.5 rounded-r1 text-[11px] text-bo-ink-soft font-sans leading-relaxed"
+        style={{
+          background: `${concern.color}08`,
+          border: `1px solid ${concern.color}12`,
+        }}
+      >
+        💡 {concern.tip}
+      </div>
+
+      {/* Key Ingredients */}
+      <div className="flex flex-col gap-1.5 px-4">
+        {concern.keyIngredients.map((ing) => {
+          const r = RARITY_VIS[ing.rarity];
+          const found = discoveredSet.has(ing.id);
+          const matchedProducts = getProductsWithIngredient(ing.id);
+          const hasProducts = matchedProducts.length > 0;
+          const open = expandedIng === ing.id;
+
+          return (
+            <div
+              key={ing.id}
+              className="rounded-[14px] overflow-hidden bg-white border border-bo-parchment shadow-bo1"
+            >
+              {/* Row */}
+              <div
+                onClick={() => setExpandedIng(open ? null : ing.id)}
+                className="flex items-center gap-2.5 py-3 px-3.5 cursor-pointer"
+              >
+                <div
+                  className="w-6 h-6 rounded-[7px] shrink-0 flex items-center justify-center text-[11px]"
+                  style={{
+                    background: found
+                      ? "rgba(58,143,122,0.08)"
+                      : "rgba(181,199,190,0.15)",
+                  }}
+                >
+                  {found ? "✅" : "🔒"}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-1">
+                    <span
+                      className={`text-[13px] font-bold font-sans ${
+                        found ? "text-bo-ink" : "text-bo-ink-faint"
+                      }`}
+                    >
+                      {found ? ing.name : "？？？"}
+                    </span>
+                    <span className="text-[9px]" style={{ color: r.color }}>
+                      {"★".repeat(r.star)}
+                    </span>
+                  </div>
+                  <div className="text-[10px] text-bo-ink-muted font-sans mt-px truncate">
+                    {ing.role}
+                  </div>
+                </div>
+                {hasProducts ? (
+                  <span className="text-[10px] font-bold text-bo-accent font-sans shrink-0 py-0.5 px-2 rounded-md bg-bo-accent/[0.08]">
+                    {matchedProducts.length}件
+                  </span>
+                ) : (
+                  <span className="text-[10px] text-bo-ink-faint font-sans shrink-0">
+                    {found ? "未配合" : "未発見"}
+                  </span>
+                )}
+              </div>
+
+              {/* Accordion: Matching products */}
+              <div
+                className="overflow-hidden transition-[max-height] duration-300 ease-in-out"
+                style={{ maxHeight: open ? 300 : 0 }}
+              >
+                <div className="px-3.5 pb-3 border-t border-bo-parchment">
+                  {hasProducts ? (
+                    matchedProducts.map((p) => (
+                      <div
+                        key={p.id}
+                        onClick={() => router.push(`/product/${p.id}`)}
+                        className="flex items-center gap-2 py-2 px-2.5 rounded-[10px] mt-1.5 bg-bo-accent-pale cursor-pointer"
+                      >
+                        <span className="text-[13px]">📦</span>
+                        <div className="flex-1 min-w-0">
+                          <div className="text-[11px] font-semibold text-bo-ink font-sans truncate">
+                            {p.name}
+                          </div>
+                          <div className="text-[10px] text-bo-ink-muted font-sans">
+                            {p.brand}
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="py-2.5 text-center">
+                      <button
+                        onClick={() => router.push("/scan")}
+                        className="py-2 px-5 rounded-[10px] border-none bg-bo-accent text-white text-[11px] font-bold font-sans cursor-pointer"
+                      >
+                        📸 スキャンして探す
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Coverage bar */}
+      <div className="flex items-center gap-2.5 mx-4 mt-3">
+        <div className="flex-1 h-1 rounded-sm bg-bo-parchment overflow-hidden">
+          <div
+            className="h-full rounded-sm transition-[width] duration-[800ms] ease-out"
+            style={{
+              width: `${coverPct}%`,
+              background: `linear-gradient(90deg, ${concern.color}, ${concern.color}AA)`,
+            }}
+          />
+        </div>
+        <span className="text-[10px] text-bo-ink-muted font-sans">
+          <span className="font-bold" style={{ color: concern.color }}>
+            {covered}
+          </span>
+          /{concern.keyIngredients.length} カバー
+        </span>
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════
+   Main Page
+   ═══════════════════════════════════════ */
 export default function ZukanPage() {
   const { loading } = useUser();
-  const router = useRouter();
-  const captureRef = useRef<HTMLDivElement>(null);
-  const detailRef = useRef<HTMLDivElement>(null);
+  const [tab, setTab] = useState<"genre" | "concern">("genre");
   const discoveredIds = useZukanStore((s) => s.discoveredIds);
-  const filter = useZukanStore((s) => s.filter);
-  const setFilter = useZukanStore((s) => s.setFilter);
-  const recentlyFoundIds = useZukanStore((s) => s.recentlyFoundIds);
-  const clearRecentlyFound = useZukanStore((s) => s.clearRecentlyFound);
   const products = useProductStore((s) => s.products);
-  const [showShare, setShowShare] = useState(false);
-  const [genreFilter, setGenreFilter] = useState<"all" | IngredientGenre>("all");
-  const [selectedCard, setSelectedCard] = useState<Ingredient | null>(null);
-  const [showAchievements, setShowAchievements] = useState(false);
-  const [showScrollTop, setShowScrollTop] = useState(false);
-
-  useEffect(() => {
-    const handleScroll = () => {
-      setShowScrollTop(window.scrollY > 400);
-    };
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
-
-  // Scroll to inline detail when selectedCard changes
-  useEffect(() => {
-    if (selectedCard && detailRef.current) {
-      setTimeout(() => {
-        detailRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
-      }, 60);
-    }
-  }, [selectedCard]);
-
-  // Toggle card selection (same card → close, different → switch)
-  const handleCardTap = useCallback((ing: Ingredient) => {
-    setSelectedCard((prev) => (prev?.id === ing.id ? null : ing));
-  }, []);
-
-  const ingredientCounts = useMemo(() => {
-    const counts: Record<string, number> = {};
-    for (const product of products) {
-      for (const pi of product.ingredients) {
-        counts[pi.ingredientId] = (counts[pi.ingredientId] || 0) + 1;
-      }
-    }
-    return counts;
-  }, [products]);
-
-  useEffect(() => {
-    if (recentlyFoundIds.length > 0) {
-      setFilter("discovered");
-    }
-    return () => { clearRecentlyFound(); };
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (loading) {
     return <PageLoading message="図鑑を読み込んでいます..." />;
   }
 
-  const discoveredIdSet = new Set(discoveredIds);
-  const filteredIngredients = MASTER_INGREDIENTS.filter((ing) => {
-    if (filter === "discovered" && !discoveredIdSet.has(ing.id)) return false;
-    if (filter === "undiscovered" && discoveredIdSet.has(ing.id)) return false;
-    if (genreFilter !== "all" && ing.genre !== genreFilter) return false;
-    return true;
-  });
-
-  const shareText = shareZukanProgress(discoveredIds.length, INGREDIENT_COUNT);
-  const achievements = getAchievements(discoveredIds);
-  const doneCount = achievements.filter((a) => a.done).length;
-
-  // Selected card index in filtered list (for inline detail insertion)
-  const selectedIdx = selectedCard ? filteredIngredients.indexOf(selectedCard) : -1;
-  // Insert detail panel after the last card in the same row (5 cols)
-  const detailInsertAfter = selectedIdx >= 0 ? Math.floor(selectedIdx / 5) * 5 + 4 : -1;
-
-  // ─── Achievements View ───
-  if (showAchievements) {
-    return (
-      <AuthGuard>
-        <div className="min-h-screen bg-bo-cream px-5 pt-4 pb-24 animate-fade-up">
-          <div className="flex items-center gap-3 mb-6">
-            <button onClick={() => setShowAchievements(false)} className="flex items-center gap-1.5 bg-bo-parchment border-none rounded-[10px] py-2 px-3.5 cursor-pointer text-[13px] text-bo-ink-soft font-sans font-semibold">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#5A6B62" strokeWidth="2" strokeLinecap="round" aria-hidden="true"><path d="M19 12H5M12 19l-7-7 7-7" /></svg>
-              戻る
-            </button>
-            <h1 className="text-xl font-extrabold font-serif text-bo-ink m-0">🏆 実績</h1>
-          </div>
-          <div className="flex flex-col gap-2">
-            {achievements.map((a, i) => (
-              <div
-                key={i}
-                className="flex items-center gap-3.5 py-3.5 px-4 rounded-r1 border animate-fade-up"
-                style={{
-                  background: a.done ? "#E8F5F1" : "white",
-                  borderColor: a.done ? "rgba(58,143,122,0.25)" : "#E8F0EC",
-                  opacity: a.done ? 1 : 0.5,
-                  animationDelay: `${i * 50}ms`,
-                }}
-              >
-                <span className="text-2xl" style={{ filter: a.done ? "none" : "grayscale(1)" }}>{a.icon}</span>
-                <div className="flex-1">
-                  <div className="text-[13px] font-bold font-sans" style={{ color: a.done ? "#1B2620" : "#7E9389" }}>{a.name}</div>
-                  <div className="text-[10px] text-bo-ink-muted font-sans">{a.desc}</div>
-                </div>
-                {a.done ? (
-                  <span className="text-[10px] font-bold text-bo-accent">✓</span>
-                ) : a.progress ? (
-                  <span className="text-[10px] text-bo-ink-muted">{a.progress}</span>
-                ) : (
-                  <span className="text-[10px]">🔒</span>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-      </AuthGuard>
-    );
-  }
-
-  // ─── Main: Mini Card Grid ───
-  // Genre stats for filter pills
-  const discoveredSet = new Set(discoveredIds);
-  const genreStats = Object.entries(CARD_TEXTURES).map(([genreKey, tex]) => {
-    const total = getGenreTotal(genreKey);
-    let disc = 0;
-    discoveredSet.forEach((id) => {
-      const ing = getIngredientById(id);
-      if (ing && ing.genre === genreKey) disc++;
-    });
-    return { id: genreKey, ...tex, discovered: disc, total };
-  }).filter((g) => g.total > 0);
+  const totalDisc = discoveredIds.length;
+  const totalAll = INGREDIENT_COUNT;
+  const pct = totalAll > 0 ? Math.round((totalDisc / totalAll) * 100) : 0;
 
   return (
     <AuthGuard>
-      <div className="min-h-screen bg-bo-cream">
-        <div className="px-5 pt-4 pb-24">
-          {/* Header */}
-          <div className="mb-4">
-            <div className="flex items-center justify-between mb-1">
-              <h1 className="text-2xl font-extrabold font-serif text-bo-ink m-0">成分図鑑</h1>
-              <button
-                onClick={() => setShowShare(true)}
-                className="px-3 py-1.5 rounded-full text-[11px] font-bold border-none bg-bo-accent text-white cursor-pointer"
-              >
-                Xに投稿
-              </button>
+      <div className="min-h-screen bg-bo-cream pb-24">
+        {/* ── Header ── */}
+        <div
+          className="pt-[50px] px-5 pb-4"
+          style={{
+            background: "linear-gradient(180deg, #EAF5F1 0%, #F4F9F6 100%)",
+          }}
+        >
+          <div className="flex items-baseline justify-between mb-3">
+            <span className="text-[15px] font-bold text-bo-ink font-sans">
+              成分図鑑
+            </span>
+            <div>
+              <span className="text-[28px] font-extrabold text-bo-accent font-serif leading-none">
+                {pct}
+              </span>
+              <span className="text-xs font-medium text-bo-ink-muted font-sans">
+                % <span className="ml-1">{totalDisc}/{totalAll}</span>
+              </span>
             </div>
-            <p className="text-xs text-bo-ink-muted font-sans m-0">
-              {discoveredIds.length} / {INGREDIENT_COUNT} 種コレクト
-            </p>
           </div>
-
-          <div ref={captureRef}>
-            <ZukanProgress
-              discoveredIds={discoveredIds}
-              onShowAchievements={() => setShowAchievements(true)}
-              achievementsDone={doneCount}
-              achievementsTotal={achievements.length}
+          <div className="h-[5px] rounded-[3px] bg-bo-parchment overflow-hidden">
+            <div
+              className="h-full rounded-[3px] transition-[width] duration-[1200ms]"
+              style={{
+                width: `${pct}%`,
+                background: "linear-gradient(90deg, #3A8F7A, #4A9B7F)",
+                transitionTimingFunction: "cubic-bezier(0.34, 1.56, 0.64, 1)",
+              }}
             />
           </div>
-
-          {/* Genre filter pills */}
-          <div className="flex gap-1.5 mb-4 overflow-x-auto pb-1" style={{ scrollbarWidth: "none" }}>
-            <button
-              onClick={() => { setGenreFilter("all"); setFilter("all"); }}
-              className="py-1.5 px-3.5 rounded-full border-none text-[10px] font-semibold font-sans cursor-pointer whitespace-nowrap shrink-0"
-              style={{
-                background: genreFilter === "all" && filter === "all" ? "#1B2620" : "white",
-                color: genreFilter === "all" && filter === "all" ? "#fff" : "#7E9389",
-              }}
-            >
-              すべて
-            </button>
-            {genreStats.map((gs) => (
-              <button
-                key={gs.id}
-                onClick={() => {
-                  setFilter("all");
-                  setGenreFilter(gs.id as IngredientGenre);
-                }}
-                className="py-1.5 px-3 rounded-full border-none text-[10px] font-semibold font-sans cursor-pointer whitespace-nowrap shrink-0 flex items-center gap-1"
-                style={{
-                  background: genreFilter === gs.id ? gs.color : "white",
-                  color: genreFilter === gs.id ? "#fff" : "#7E9389",
-                }}
-              >
-                {gs.emoji} {gs.label} <span className="text-[9px] opacity-80">{gs.discovered}/{gs.total}</span>
-              </button>
-            ))}
-          </div>
-
-          {/* Discovery filter */}
-          <div className="flex gap-1.5 mb-4">
-            {([
-              ["all", "すべて"],
-              ["discovered", "発見済み ✨"],
-              ["undiscovered", "未発見 ❓"],
-            ] as [ZukanFilter, string][]).map(([key, label]) => (
-              <button
-                key={key}
-                onClick={() => setFilter(key)}
-                className="px-3 py-1.5 rounded-full text-xs font-medium transition-all border"
-                style={
-                  filter === key
-                    ? { background: "#3A8F7A", color: "#fff", borderColor: "#3A8F7A" }
-                    : { background: "#fff", color: "#7E9389", borderColor: "#E8F0EC" }
-                }
-              >
-                {label}
-              </button>
-            ))}
-          </div>
-
-          {/* Genre description card */}
-          {genreFilter !== "all" && (() => {
-            const g = INGREDIENT_GENRES.find((gi) => gi.key === genreFilter);
-            const desc = GENRE_DESCRIPTIONS[genreFilter];
-            if (!g || !desc) return null;
-            const totalInGenre = getGenreTotal(genreFilter);
-            const discoveredInGenre = genreStats.find((gs) => gs.id === genreFilter)?.discovered || 0;
-            return (
-              <div
-                className="rounded-r2 p-4 mb-4 border"
-                style={{ background: `${g.color}10`, borderColor: `${g.color}25` }}
-              >
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="text-xl">{g.icon}</span>
-                  <span className="text-sm font-bold" style={{ color: g.color }}>{g.label}</span>
-                  <span className="text-xs text-bo-ink-muted">
-                    {discoveredInGenre}/{totalInGenre}種 発見済み
-                  </span>
-                </div>
-                <p className="text-xs font-medium text-bo-ink mb-1.5">{desc.summary}</p>
-                <p className="text-xs leading-relaxed text-bo-ink-muted">{desc.detail}</p>
-              </div>
-            );
-          })()}
-
-          {/* Mini Card Grid — 5 columns */}
-          <div className="grid grid-cols-5 gap-1.5 mb-6">
-            {filteredIngredients.map((ing, i) => {
-              const globalIndex = getIngredientIndex(ing.id);
-              const isSelected = selectedCard?.id === ing.id;
-              const cardTex = CARD_TEXTURES[ing.genre] || DEFAULT_TEX;
-
-              // Show detail after the last card in the selected card's row
-              const shouldShowDetail = selectedCard && (
-                i === detailInsertAfter ||
-                (i === filteredIngredients.length - 1 && selectedIdx >= 0 && detailInsertAfter >= filteredIngredients.length)
-              );
-
-              return (
-                <Fragment key={ing.id}>
-                  <div
-                    onClick={() => handleCardTap(ing)}
-                    className="animate-fade-up"
-                    style={{
-                      animationDelay: `${Math.min(i, 30) * 15}ms`,
-                      outline: isSelected ? `2px solid ${cardTex.color}` : "none",
-                      borderRadius: 12,
-                      outlineOffset: -1,
-                    }}
-                  >
-                    <IngredientCard
-                      ingredient={ing}
-                      discovered={discoveredIdSet.has(ing.id)}
-                      index={globalIndex}
-                      isRecent={recentlyFoundIds.includes(ing.id)}
-                      foundCount={ingredientCounts[ing.id] || 0}
-                    />
-                  </div>
-
-                  {shouldShowDetail && (() => {
-                    const sc = selectedCard!;
-                    const isDiscovered = discoveredIdSet.has(sc.id);
-                    const tex = CARD_TEXTURES[sc.genre] || DEFAULT_TEX;
-                    const rarityInfo = RARITY[sc.rarity];
-                    const scIndex = getIngredientIndex(sc.id);
-                    const containingProducts = products.filter((p) =>
-                      p.ingredients.some((pi) => pi.ingredientId === sc.id)
-                    );
-
-                    return (
-                      <div
-                        ref={detailRef}
-                        className="col-span-5 rounded-xl p-4 border animate-fade-up relative"
-                        style={{
-                          background: tex.bg,
-                          borderColor: `${tex.color}30`,
-                        }}
-                      >
-                        {/* Close button */}
-                        <button
-                          onClick={(e) => { e.stopPropagation(); setSelectedCard(null); }}
-                          className="absolute top-2 right-2 w-6 h-6 rounded-full border-none cursor-pointer flex items-center justify-center text-xs"
-                          style={{ background: `${tex.color}15`, color: tex.color }}
-                          aria-label="閉じる"
-                        >
-                          ✕
-                        </button>
-
-                        {isDiscovered ? (
-                          <>
-                            {/* Header: emoji + name + INCI */}
-                            <div className="flex items-start gap-3 mb-3 pr-6">
-                              <span
-                                className="text-3xl shrink-0"
-                                style={{
-                                  filter: rarityInfo.star >= 4
-                                    ? `drop-shadow(0 0 6px ${RARITY_COLORS[rarityInfo.star]}60)`
-                                    : "none",
-                                }}
-                              >
-                                {tex.emoji}
-                              </span>
-                              <div className="min-w-0">
-                                <div className="flex items-center gap-2 flex-wrap">
-                                  <span className="text-[10px] font-black font-serif opacity-50" style={{ color: tex.color }}>
-                                    #{String(scIndex).padStart(3, "0")}
-                                  </span>
-                                  <span
-                                    className="text-[9px] font-bold px-1.5 py-0.5 rounded-full"
-                                    style={{ background: `${RARITY_COLORS[rarityInfo.star]}20`, color: RARITY_COLORS[rarityInfo.star] }}
-                                  >
-                                    {RARITY_LABELS[rarityInfo.star]}
-                                  </span>
-                                </div>
-                                <h3 className="text-sm font-bold font-sans m-0 mt-0.5" style={{ color: tex.color }}>
-                                  {sc.nameJa}
-                                </h3>
-                                <p className="text-[10px] text-bo-ink-muted font-sans m-0 mt-0.5 italic">
-                                  {sc.nameInci}
-                                </p>
-                              </div>
-                            </div>
-
-                            {/* Stars */}
-                            <div className="text-sm text-[#D4A853] tracking-wider mb-3">
-                              {"★".repeat(rarityInfo.star)}{"☆".repeat(4 - rarityInfo.star)}
-                            </div>
-
-                            {/* Note */}
-                            <p className="text-xs leading-relaxed text-bo-ink font-sans m-0 mb-2">
-                              {sc.note}
-                            </p>
-
-                            {/* Fun fact */}
-                            {sc.funFact && (
-                              <div
-                                className="rounded-lg p-2.5 mb-2 text-[11px] leading-relaxed font-sans"
-                                style={{ background: `${tex.color}08`, color: tex.color }}
-                              >
-                                💡 {sc.funFact}
-                              </div>
-                            )}
-
-                            {/* Caution */}
-                            {sc.caution && (
-                              <div className="rounded-lg p-2.5 mb-2 text-[11px] leading-relaxed font-sans bg-amber-50 text-amber-700">
-                                ⚠️ {sc.caution}
-                              </div>
-                            )}
-
-                            {/* Genre badge */}
-                            <div className="flex items-center gap-1.5 mb-3">
-                              <span
-                                className="text-[10px] font-bold px-2 py-1 rounded-full"
-                                style={{ background: `${tex.color}15`, color: tex.color }}
-                              >
-                                {tex.emoji} {tex.label}
-                              </span>
-                            </div>
-
-                            {/* Containing products */}
-                            {containingProducts.length > 0 && (
-                              <div className="border-t pt-2.5" style={{ borderColor: `${tex.color}15` }}>
-                                <p className="text-[10px] font-bold text-bo-ink-muted mb-1.5 m-0">
-                                  📦 この成分を含む製品（{containingProducts.length}件）
-                                </p>
-                                <div className="flex flex-col gap-1">
-                                  {containingProducts.slice(0, 5).map((prod) => (
-                                    <button
-                                      key={prod.id}
-                                      onClick={(e) => { e.stopPropagation(); router.push(`/product/${prod.id}`); }}
-                                      className="text-left text-[11px] font-sans px-2.5 py-1.5 rounded-lg border-none cursor-pointer truncate"
-                                      style={{ background: `${tex.color}08`, color: tex.color }}
-                                    >
-                                      {prod.name}
-                                    </button>
-                                  ))}
-                                  {containingProducts.length > 5 && (
-                                    <span className="text-[10px] text-bo-ink-faint pl-2">
-                                      …ほか{containingProducts.length - 5}件
-                                    </span>
-                                  )}
-                                </div>
-                              </div>
-                            )}
-                          </>
-                        ) : (
-                          /* Undiscovered state */
-                          <div className="flex flex-col items-center py-4 text-center">
-                            <span className="text-3xl mb-2 opacity-30">🔒</span>
-                            <p className="text-xs font-bold text-bo-ink-muted mb-1 m-0">
-                              #{String(scIndex).padStart(3, "0")} — 未発見の成分
-                            </p>
-                            <div className="text-sm text-[#D4A853] tracking-wider mb-2">
-                              {"★".repeat(rarityInfo.star)}{"☆".repeat(4 - rarityInfo.star)}
-                              <span className="text-[10px] ml-1.5" style={{ color: RARITY_COLORS[rarityInfo.star] }}>
-                                {RARITY_LABELS[rarityInfo.star]}
-                              </span>
-                            </div>
-                            <p className="text-[11px] text-bo-ink-faint mb-3 m-0">
-                              この成分はまだ発見されていません
-                            </p>
-                            <button
-                              onClick={(e) => { e.stopPropagation(); router.push("/scan"); }}
-                              className="px-4 py-2 rounded-full text-xs font-bold border-none bg-bo-accent text-white cursor-pointer"
-                            >
-                              📷 スキャンして見つけよう
-                            </button>
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })()}
-                </Fragment>
-              );
-            })}
-          </div>
-
-          {filteredIngredients.length === 0 && (
-            <div className="text-center py-10">
-              <div className="text-4xl mb-2">🌿</div>
-              <p className="text-sm text-bo-ink-muted">該当する成分はありません</p>
-            </div>
-          )}
-
-          <Disclaimer />
         </div>
 
-        {showShare && (
-          <ShareModal text={shareText} onClose={() => setShowShare(false)} captureRef={captureRef} />
+        {/* ── Tabs ── */}
+        <div className="flex px-4 border-b border-bo-parchment">
+          {(
+            [
+              { key: "genre", label: "ジャンル別" },
+              { key: "concern", label: "肌悩みから探す" },
+            ] as const
+          ).map((t) => (
+            <button
+              key={t.key}
+              onClick={() => setTab(t.key)}
+              className={`flex-1 py-[11px] border-none cursor-pointer bg-transparent text-[13px] font-sans transition-all duration-200 ${
+                tab === t.key
+                  ? "text-bo-accent font-bold border-b-[2.5px] border-bo-accent"
+                  : "text-bo-ink-muted font-medium border-b-[2.5px] border-transparent"
+              }`}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
+
+        {/* ── Tab content ── */}
+        {tab === "genre" && <GenreExplorer discoveredIds={discoveredIds} />}
+        {tab === "concern" && (
+          <ConcernView discoveredIds={discoveredIds} products={products} />
         )}
 
-        {/* Scroll to top button */}
-        {showScrollTop && (
-          <button
-            onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-            className="fixed bottom-[calc(16px+env(safe-area-inset-bottom)+56px)] right-4 z-30 w-10 h-10 rounded-full bg-bo-accent text-white shadow-bo-accent flex items-center justify-center border-none cursor-pointer animate-fade-in"
-            aria-label="上へ戻る"
-          >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" aria-hidden="true">
-              <path d="M18 15l-6-6-6 6" />
-            </svg>
-          </button>
-        )}
+        {/* Footer */}
+        <div className="px-5 pt-4">
+          <Disclaimer />
+        </div>
       </div>
     </AuthGuard>
   );

@@ -40,6 +40,7 @@ const config: Config = {
           accent: "#3A8F7A",
           "accent-dark": "#2B7464",
           "accent-soft": "#D6EDE6",
+          "accent-pale": "#EAF5F1",
           "accent-glow": "rgba(58,143,122,0.14)",
           safe: "#4A9B7F",
           "safe-bg": "#E8F5EE",
@@ -101,6 +102,7 @@ const config: Config = {
         "avatar-absorb": "avatarAbsorb 0.8s ease",
         "gauge-glow": "gaugeGlow 2s ease infinite",
         "fade-up": "fadeUp 0.35s ease forwards",
+        "shimmer-legend": "shimmerLegend 3.5s infinite",
         "pop-in": "popIn 0.3s ease forwards",
         "landing-float": "landingFloat 4s ease-in-out infinite",
       },
@@ -130,6 +132,10 @@ const config: Config = {
           "0%": { transform: "scale(0.8)", opacity: "0" },
           "50%": { transform: "scale(1.05)" },
           "100%": { transform: "scale(1)", opacity: "1" },
+        },
+        shimmerLegend: {
+          "0%": { transform: "translateX(-100%)" },
+          "100%": { transform: "translateX(200%)" },
         },
         landingFloat: {
           "0%, 100%": { transform: "translateY(0)" },
