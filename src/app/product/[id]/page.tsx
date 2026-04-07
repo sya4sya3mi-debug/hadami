@@ -9,7 +9,8 @@ import { getIngredientById, getGenreInfo } from "@/lib/ingredients";
 import { findCombinations } from "@/lib/combinations";
 import { shareProductCheck } from "@/lib/share";
 import { getGenreByKey } from "@/lib/productGenres";
-import Badge from "@/components/ui/Badge";
+import Badge, { StarIcon } from "@/components/ui/Badge";
+import { RARITY } from "@/lib/ingredients";
 import ShareModal from "@/components/ui/ShareModal";
 import Disclaimer from "@/components/ui/Disclaimer";
 import { useUser } from "@/lib/auth";
@@ -58,8 +59,8 @@ export default function ProductDetailPage() {
 
         {/* Product photo */}
         {product.packageImage && (
-          <div className="mb-4 rounded-2xl overflow-hidden bg-white shadow-sm border border-bo-parchment">
-            <div className="relative w-full" style={{ aspectRatio: "4/3" }}>
+          <div className="mb-3 rounded-r2 overflow-hidden bg-white shadow-bo1 border border-bo-parchment">
+            <div className="relative w-full aspect-[4/3]">
               <Image
                 src={product.packageImage}
                 alt={product.name}
@@ -73,22 +74,18 @@ export default function ProductDetailPage() {
         )}
 
         {/* Product header */}
-        <div
-          className="flex items-center gap-4 mb-6 bg-white rounded-2xl p-4 shadow-sm border border-bo-parchment"
-        >
+        <div className="flex items-center gap-3 mb-5 bg-white rounded-r2 p-3.5 shadow-bo1 border border-bo-parchment">
           {!product.packageImage && (
-            <div
-              className="w-16 h-16 rounded-2xl flex items-center justify-center text-3xl shrink-0 bg-gradient-to-br from-bo-accent-soft to-bo-parchment"
-            >
+            <div className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl shrink-0 bg-gradient-to-br from-bo-accent-soft to-bo-parchment">
               📦
             </div>
           )}
-          <div>
-            <h1 className="font-bold text-lg text-bo-ink">{product.name}</h1>
-            <p className="text-sm text-bo-ink-muted">{product.brand}</p>
+          <div className="flex-1 min-w-0">
+            <h1 className="font-bold text-base text-bo-ink font-sans truncate">{product.name}</h1>
+            <p className="text-xs text-bo-ink-muted font-sans">{product.brand}</p>
             {genre && (
               <span
-                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs mt-1"
+                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] mt-1 font-sans"
                 style={{ background: `${genre.color}18`, color: genre.color }}
               >
                 {genre.icon} {genre.label}
@@ -98,30 +95,35 @@ export default function ProductDetailPage() {
         </div>
 
         {/* Ingredients list */}
-        <h2 className="font-bold text-sm mb-3 flex items-center gap-2 text-bo-ink">
-          <span className="w-1 h-4 rounded-full inline-block bg-bo-accent" />
+        <h2 className="font-bold text-xs mb-2 flex items-center gap-2 text-bo-ink font-sans">
+          <span className="w-1 h-3.5 rounded-full inline-block bg-bo-accent" />
           全成分（{ingredients.length}種）
         </h2>
-        <div className="space-y-2 mb-6">
+        <div className="space-y-1.5 mb-5">
           {ingredients.map((ing, idx) => (
             <Link
               key={ing.id}
               href={`/ingredient/${ing.id}`}
-              className="flex items-center gap-3 bg-white rounded-2xl p-3.5 shadow-sm border border-bo-parchment"
+              className="flex items-center gap-2.5 bg-white rounded-r1 p-2.5 shadow-bo1 border border-bo-parchment"
             >
+              <span className="inline-flex items-center gap-px shrink-0">
+                {Array.from({ length: RARITY[ing.rarity].star }).map((_, i) => (
+                  <StarIcon key={i} color={RARITY[ing.rarity].color} size={12} />
+                ))}
+              </span>
               <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className="font-bold text-sm text-bo-ink">{ing.nameJa}</span>
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <span className="font-bold text-xs text-bo-ink font-sans">{ing.nameJa}</span>
                   <Badge rarity={ing.rarity} size="sm" />
                 </div>
-                <div className="text-xs mt-0.5 text-bo-ink-muted">{ing.nameInci}</div>
+                <div className="text-[10px] mt-0.5 text-bo-ink-muted font-sans">{ing.nameInci}</div>
                 {(() => {
                   const g = getGenreInfo(ing.genre);
                   return g ? (
-                    <div className="flex gap-1 mt-1">
+                    <div className="flex gap-1 mt-0.5">
                       <span
-                        className="text-[10px] px-1.5 py-0.5 rounded-full"
-                        style={{ background: g.color + "20", color: g.color }}
+                        className="text-[9px] px-1.5 py-0.5 rounded-full font-medium font-sans"
+                        style={{ background: g.color + "18", color: g.color }}
                       >
                         {g.icon} {g.label}
                       </span>
@@ -129,38 +131,39 @@ export default function ProductDetailPage() {
                   ) : null;
                 })()}
               </div>
-              <span className="text-xs font-medium shrink-0 text-bo-ink-faint">
-                #{idx + 1}
-              </span>
+              <span className="text-[10px] font-medium shrink-0 text-bo-ink-faint font-sans">#{idx + 1}</span>
             </Link>
           ))}
         </div>
 
         {/* Combinations */}
         {combinations.length > 0 && (
-          <div className="mb-6">
-            <h2 className="font-bold text-sm mb-3 flex items-center gap-2 text-bo-ink">
-              <span className="w-1 h-4 rounded-full inline-block bg-bo-accent" />
+          <div className="mb-5">
+            <h2 className="font-bold text-xs mb-2 flex items-center gap-2 text-bo-ink font-sans">
+              <span className="w-1 h-3.5 rounded-full inline-block bg-bo-accent" />
               組み合わせ情報
             </h2>
-            <div className="space-y-2">
-              {combinations.map((combo, i) => (
-                <div
-                  key={i}
-                  className={`rounded-2xl p-3.5 ${
-                    combo.type === "recommended"
-                      ? "bg-bo-accent-soft border border-bo-accent/20"
-                      : "bg-bo-danger-bg border border-bo-danger/20"
-                  }`}
-                >
-                  <div className="flex items-center gap-2 mb-1">
-                    <span>{combo.type === "recommended" ? "📚" : "📋"}</span>
-                    <span className="font-bold text-sm text-bo-ink">{combo.label}</span>
+            <div className="space-y-1.5">
+              {combinations.map((combo, i) => {
+                const isGood = combo.type === "recommended";
+                return (
+                  <div
+                    key={i}
+                    className={`rounded-r2 p-3 flex gap-2.5 bg-white border ${
+                      isGood
+                        ? "border-bo-safe/20 border-l-[3px] border-l-bo-safe"
+                        : "border-bo-danger/20 border-l-[3px] border-l-bo-danger"
+                    }`}
+                  >
+                    <span className="text-base shrink-0">{isGood ? "📚" : "📋"}</span>
+                    <div className="flex-1 min-w-0">
+                      <div className="font-bold text-xs text-bo-ink font-sans">{combo.label}</div>
+                      <p className="text-[11px] mt-0.5 text-bo-ink-muted font-sans">{combo.desc}</p>
+                      <p className="text-[10px] mt-0.5 text-bo-ink-faint font-sans">出典: {combo.source}</p>
+                    </div>
                   </div>
-                  <p className="text-xs text-bo-ink-muted">{combo.desc}</p>
-                  <p className="text-xs mt-1 text-bo-ink-faint">出典: {combo.source}</p>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         )}
@@ -168,7 +171,7 @@ export default function ProductDetailPage() {
         <div className="flex gap-2 mb-4">
           <button
             onClick={() => setShowShare(true)}
-            className="flex-1 py-3 rounded-2xl text-sm font-medium border border-bo-parchment text-bo-ink-muted"
+            className="flex-1 py-2.5 rounded-r1 text-xs font-medium border border-bo-parchment text-bo-ink-muted font-sans"
           >
             Xに共有する 🐦
           </button>
@@ -178,7 +181,7 @@ export default function ProductDetailPage() {
               download={`${product.name}.jpg`}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex-1 py-3 rounded-2xl text-sm font-medium text-center border border-bo-accent/20 text-bo-accent bg-bo-accent-soft"
+              className="flex-1 py-2.5 rounded-r1 text-xs font-medium text-center border border-bo-accent/20 text-bo-accent bg-bo-accent-soft font-sans"
             >
               写真を保存 📥
             </a>

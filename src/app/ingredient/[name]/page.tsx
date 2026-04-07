@@ -4,7 +4,6 @@ import { useParams } from "next/navigation";
 import Link from "next/link";
 import { useState } from "react";
 import { getIngredientById, getGenreInfo } from "@/lib/ingredients";
-import { getCategoryByKey } from "@/lib/categories";
 import { useProductStore } from "@/stores/useProductStore";
 import { useZukanStore } from "@/stores/useZukanStore";
 import { shareIngredientDiscovery } from "@/lib/share";
@@ -29,9 +28,9 @@ export default function IngredientDetailPage() {
 
   if (!ingredient) {
     return (
-      <div className="min-h-screen px-5 pt-10 text-center" style={{ background: "linear-gradient(160deg, #F0FDFA, #FFF0F5)" }}>
-        <p style={{ color: "#9B9B9B" }}>成分が見つかりません</p>
-        <Link href="/zukan" className="text-sm mt-2 inline-block font-medium" style={{ color: "#5BBFAD" }}>
+      <div className="min-h-screen px-5 pt-10 text-center bg-bo-cream">
+        <p className="text-bo-ink-muted">成分が見つかりません</p>
+        <Link href="/zukan" className="text-sm mt-2 inline-block font-medium text-bo-accent">
           図鑑に戻る
         </Link>
       </div>
@@ -40,22 +39,21 @@ export default function IngredientDetailPage() {
 
   if (!isDiscovered) {
     return (
-      <div className="min-h-screen" style={{ background: "linear-gradient(160deg, #F0FDFA, #FFF0F5)" }}>
+      <div className="min-h-screen bg-bo-cream">
         <div className="px-5 pt-8">
-          <Link href="/zukan" className="text-sm font-medium mb-4 inline-block" style={{ color: "#5BBFAD" }}>
+          <Link href="/zukan" className="text-sm font-medium mb-4 inline-block text-bo-accent">
             ← 図鑑
           </Link>
           <div className="text-center py-14">
             <span className="text-7xl">❓</span>
-            <h1 className="font-bold text-xl mt-4" style={{ color: "#2D2D2D" }}>未発見の成分</h1>
-            <p className="text-sm mt-2" style={{ color: "#9B9B9B" }}>
+            <h1 className="font-bold text-xl mt-4 text-bo-ink">未発見の成分</h1>
+            <p className="text-sm mt-2 text-bo-ink-muted">
               この成分はまだ発見されていません。<br />
               化粧品をスキャンして見つけましょう！
             </p>
             <Link
               href="/scan"
-              className="inline-block mt-5 px-8 py-3 rounded-2xl text-sm font-bold text-white"
-              style={{ background: "linear-gradient(135deg, #5BBFAD, #7DD3C8)" }}
+              className="inline-block mt-5 px-8 py-3 rounded-2xl text-sm font-bold text-white bg-gradient-to-br from-bo-accent to-bo-accent-light"
             >
               スキャンする 📷
             </Link>
@@ -72,95 +70,77 @@ export default function IngredientDetailPage() {
   const shareText = shareIngredientDiscovery(ingredient);
 
   return (
-    <div className="min-h-screen" style={{ background: "linear-gradient(160deg, #F0FDFA 0%, #FFF0F5 100%)" }}>
+    <div className="min-h-screen bg-bo-cream">
       <div className="px-5 pt-8 pb-6">
-        <Link href="/zukan" className="text-sm font-medium mb-4 inline-block" style={{ color: "#5BBFAD" }}>
+        <Link href="/zukan" className="text-sm font-medium mb-4 inline-block text-bo-accent">
           ← 図鑑
         </Link>
 
         {/* Header */}
-        <div className="text-center mb-6">
+        <div className="text-center mb-5">
           <div
-            className="w-24 h-24 rounded-full flex items-center justify-center text-5xl mx-auto mb-3"
+            className="w-14 h-14 rounded-full flex items-center justify-center text-2xl mx-auto mb-2"
             style={{ background: `linear-gradient(135deg, ${genreInfo?.color || ingredient.color}20, ${genreInfo?.color || ingredient.color}08)` }}
           >
             {genreInfo?.icon || "📦"}
           </div>
-          <h1 className="font-bold text-2xl" style={{ color: "#2D2D2D" }}>{ingredient.nameJa}</h1>
-          <p className="text-sm mt-1" style={{ color: "#9B9B9B" }}>{ingredient.nameInci}</p>
-          <div className="flex items-center justify-center gap-2 mt-2">
-            <Badge rarity={ingredient.rarity} />
+          <h1 className="font-bold text-lg text-bo-ink font-sans">{ingredient.nameJa}</h1>
+          <p className="text-xs mt-0.5 text-bo-ink-muted font-sans">{ingredient.nameInci}</p>
+          <div className="flex items-center justify-center gap-2 mt-1.5">
+            <Badge rarity={ingredient.rarity} size="sm" />
             {genreInfo && (
               <span
-                className="text-xs px-2.5 py-1 rounded-full font-medium"
-                style={{ background: genreInfo.color + "20", color: genreInfo.color }}
+                className="text-[10px] px-2 py-0.5 rounded-full font-medium font-sans"
+                style={{ background: genreInfo.color + "18", color: genreInfo.color }}
               >
                 {genreInfo.icon} {genreInfo.label}
               </span>
             )}
           </div>
-          <div className="flex gap-1.5 justify-center mt-2 flex-wrap">
-            {ingredient.categories.map((cat) => {
-              const c = getCategoryByKey(cat);
-              return c ? (
-                <span
-                  key={cat}
-                  className="text-xs px-2.5 py-1 rounded-full font-medium"
-                  style={{ background: c.color + "20", color: c.color }}
-                >
-                  {c.icon} {c.label}
-                </span>
-              ) : null;
-            })}
-          </div>
         </div>
 
         {/* Description */}
-        <div
-          className="bg-white rounded-2xl p-4 mb-3 shadow-sm"
-          style={{ border: "1px solid #F5E6EF" }}
-        >
-          <h2 className="font-bold text-sm mb-2" style={{ color: "#2D2D2D" }}>📌 一般的な分類の説明</h2>
-          <p className="text-sm leading-relaxed" style={{ color: "#6B6B6B" }}>{ingredient.note}</p>
+        <div className="bg-white rounded-r2 p-3.5 mb-2.5 shadow-bo1 border border-bo-parchment">
+          <h2 className="font-bold text-xs mb-1.5 text-bo-ink font-sans">📌 一般的な分類の説明</h2>
+          <p className="text-xs leading-relaxed text-bo-ink-soft font-sans">{ingredient.note}</p>
         </div>
 
         {/* Fun fact */}
         {ingredient.funFact && (
-          <div className="rounded-2xl p-4 mb-3" style={{ background: "#E8FAF8", border: "1px solid #5BBFAD20" }}>
-            <h2 className="font-bold text-sm mb-2" style={{ color: "#5BBFAD" }}>💡 トリビア</h2>
-            <p className="text-sm leading-relaxed" style={{ color: "#6B6B6B" }}>{ingredient.funFact}</p>
+          <div className="rounded-r2 p-3.5 mb-2.5 bg-bo-accent-soft border border-bo-accent/20">
+            <h2 className="font-bold text-xs mb-1.5 text-bo-accent font-sans">💡 トリビア</h2>
+            <p className="text-xs leading-relaxed text-bo-ink-soft font-sans">{ingredient.funFact}</p>
           </div>
         )}
 
         {/* Caution */}
         {ingredient.caution && (
-          <div className="rounded-2xl p-4 mb-3" style={{ background: "#FFF3F3", border: "1px solid #F48C8C20" }}>
-            <h2 className="font-bold text-sm mb-2" style={{ color: "#F48C8C" }}>📋 一般的な注意事項</h2>
-            <p className="text-sm leading-relaxed" style={{ color: "#6B6B6B" }}>{ingredient.caution}</p>
+          <div className="rounded-r2 p-3.5 mb-2.5 bg-bo-danger-bg border border-bo-danger/20">
+            <h2 className="font-bold text-xs mb-1.5 text-bo-danger font-sans">📋 一般的な注意事項</h2>
+            <p className="text-xs leading-relaxed text-bo-ink-soft font-sans">{ingredient.caution}</p>
           </div>
         )}
 
         {/* Products */}
         {containingProducts.length > 0 && (
           <div className="mb-4">
-            <h2 className="font-bold text-sm mb-3 flex items-center gap-2" style={{ color: "#2D2D2D" }}>
-              <span className="w-1 h-4 rounded-full inline-block" style={{ background: "#F9A8C0" }} />
+            <h2 className="font-bold text-xs mb-2 flex items-center gap-2 text-bo-ink font-sans">
+              <span className="w-1 h-3.5 rounded-full inline-block bg-bo-accent" />
               この成分を含む保存済みコスメ
             </h2>
-            <div className="space-y-2">
+            <div className="space-y-1.5">
               {containingProducts.map((p) => (
                 <Link
                   key={p.id}
                   href={`/product/${p.id}`}
-                  className="flex items-center gap-3 bg-white rounded-2xl p-3.5 shadow-sm"
-                  style={{ border: "1px solid #F5E6EF" }}
+                  className="flex items-center gap-2.5 bg-white rounded-r1 p-2.5 shadow-bo1 border border-bo-parchment"
                 >
-                  <span className="text-xl">📦</span>
+                  <span className="text-base">📦</span>
                   <div className="flex-1 min-w-0">
-                    <div className="font-medium text-sm truncate" style={{ color: "#2D2D2D" }}>{p.name}</div>
-                    <div className="text-xs" style={{ color: "#9B9B9B" }}>{p.brand}</div>
+                    <div className="font-medium text-xs truncate text-bo-ink font-sans">{p.name}</div>
+                    <div className="text-[10px] text-bo-ink-muted font-sans">{p.brand}</div>
                   </div>
-                  <span style={{ color: "#5BBFAD" }}>›</span>
+                  <span className="text-bo-accent text-xs">›</span>
                 </Link>
               ))}
             </div>
@@ -169,8 +149,7 @@ export default function IngredientDetailPage() {
 
         <button
           onClick={() => setShowShare(true)}
-          className="w-full py-3 rounded-2xl text-sm font-medium mb-4"
-          style={{ border: "1.5px solid #F2F2F2", color: "#9B9B9B" }}
+          className="w-full py-2.5 rounded-r1 text-xs font-medium mb-4 border border-bo-parchment text-bo-ink-muted font-sans"
         >
           Xに共有する 🐦
         </button>
