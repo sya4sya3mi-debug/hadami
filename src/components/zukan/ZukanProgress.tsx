@@ -1,6 +1,6 @@
 "use client";
 
-import { RARITY, MASTER_INGREDIENTS } from "@/lib/ingredients";
+import { RARITY, MASTER_INGREDIENTS, INGREDIENT_COUNT } from "@/lib/ingredients";
 import { RarityKey } from "@/types";
 import { StarIcon } from "@/components/ui/Badge";
 
@@ -28,8 +28,9 @@ export default function ZukanProgress({
   achievementsDone = 0,
   achievementsTotal = 0,
 }: ZukanProgressProps) {
-  const total = MASTER_INGREDIENTS.length;
+  const total = INGREDIENT_COUNT;
   const discovered = discoveredIds.length;
+  const discoveredSet = new Set(discoveredIds);
 
   const currentLevel = LEVELS.filter((l) => discovered >= l.need).pop() || LEVELS[0];
   const nextLevel = LEVELS.find((l) => discovered < l.need);
@@ -39,7 +40,7 @@ export default function ZukanProgress({
 
   const rarityCounts = (Object.keys(RARITY) as RarityKey[]).map((key) => {
     const all = MASTER_INGREDIENTS.filter((i) => i.rarity === key);
-    const found = all.filter((i) => discoveredIds.includes(i.id));
+    const found = all.filter((i) => discoveredSet.has(i.id));
     return { ...RARITY[key], key, total: all.length, found: found.length };
   });
 
@@ -113,7 +114,7 @@ export default function ZukanProgress({
               <div className="text-xs font-bold mt-0.5" style={{ color: r.color }}>
                 {r.found}/{r.total}
               </div>
-              <div className="text-[10px] text-bo-ink-muted">{r.label}</div>
+              {/* rarity label hidden */}
             </div>
           ))}
         </div>

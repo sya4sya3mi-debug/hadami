@@ -15,6 +15,7 @@ export function StarIcon({ color, size }: { color: string; size: number }) {
 }
 
 export default function Badge({ rarity, size = "md" }: BadgeProps) {
+  if (rarity === "common" || rarity === "uncommon") return null;
   const info = RARITY[rarity];
   const sizeClass = size === "sm" ? "text-[10px] px-1.5 py-0.5" : "text-xs px-2.5 py-1";
   const starSize = size === "sm" ? 9 : 11;
@@ -29,7 +30,6 @@ export default function Badge({ rarity, size = "md" }: BadgeProps) {
           <StarIcon key={i} color={info.color} size={starSize} />
         ))}
       </span>
-      <span>{info.label}</span>
     </span>
   );
 }

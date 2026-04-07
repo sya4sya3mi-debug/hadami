@@ -97,10 +97,10 @@ export default function CaptureStep({ onCapture, onManualInput, preview, disable
           </div>
           <div className="text-center">
             <div className="font-bold text-[15px] text-bo-ink font-sans">
-              タップしてコスメを撮影
+              まずは表のパッケージを撮影
             </div>
             <div className="text-xs mt-1.5 text-bo-ink-muted font-sans">
-              パッケージ正面がベストです
+              STEP1: 商品の正面パッケージを撮ってください
             </div>
           </div>
         </button>
@@ -161,10 +161,12 @@ export default function CaptureStep({ onCapture, onManualInput, preview, disable
       {/* Tips */}
       <div className="rounded-r1 p-4 bg-bo-accent-soft border border-bo-accent/10">
         <div className="text-xs font-bold mb-2 text-bo-accent font-sans">
-          💡 撮影のコツ
+          📸 スキャンの流れ
         </div>
         <div className="space-y-1.5 text-xs text-bo-ink-soft font-sans leading-[1.8]">
-          <div>パッケージ正面を明るい場所で撮影。商品名・ブランド名が読める距離で、ブレないようしっかり固定。</div>
+          <div><span className="font-bold text-bo-accent">STEP1</span> 表のパッケージを撮影 → 商品名から成分を自動検索</div>
+          <div><span className="font-bold text-bo-accent">STEP2</span> 見つからない場合 → 裏面の成分表を撮影して読み取り</div>
+          <div className="text-[10px] text-bo-ink-faint">※ マイコスメの写真はSTEP1の表パッケージが使われます</div>
         </div>
       </div>
     </div>

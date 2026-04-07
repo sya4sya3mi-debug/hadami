@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useCallback } from "react";
+import { useRef, useCallback, useState } from "react";
 import BottomSheet from "./BottomSheet";
 
 interface ScannedProduct {
@@ -70,6 +70,7 @@ export default function IdentifyStep({
   onCloseMultiSheet,
 }: IdentifyStepProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [capturedPreview, setCapturedPreview] = useState<string | null>(null);
 
   const handleFallbackFile = useCallback(
     async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -78,7 +79,9 @@ export default function IdentifyStep({
       e.target.value = "";
       const reader = new FileReader();
       reader.onload = async () => {
-        const processed = await preprocessImage(reader.result as string);
+        const dataUrl = reader.result as string;
+        setCapturedPreview(dataUrl);
+        const processed = await preprocessImage(dataUrl);
         onFallbackCapture(processed);
       };
       reader.readAsDataURL(file);
@@ -89,10 +92,10 @@ export default function IdentifyStep({
   return (
     <div className="flex flex-col items-center gap-6 py-8 animate-fade-up">
       {/* Image preview */}
-      {imagePreview && (
+      {(capturedPreview || imagePreview) && (
         <div className="w-[120px] h-[120px] rounded-2xl overflow-hidden shadow-bo2">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={imagePreview} alt="撮影したコスメ" className="w-full h-full object-cover" />
+          <img src={capturedPreview || imagePreview} alt="撮影した画像" className="w-full h-full object-cover" />
         </div>
       )}
 
@@ -126,7 +129,7 @@ export default function IdentifyStep({
         <div className="w-full space-y-4">
           <div className="flex items-center gap-2 w-full px-4 py-3 rounded-xl text-sm bg-bo-caution-bg text-bo-caution border border-[#F0D78C]">
             <span>⚠️</span>
-            <span className="font-sans">成分情報が見つかりませんでした</span>
+            <span className="font-sans">パッケージから成分情報が見つかりませんでした</span>
           </div>
 
           <button
@@ -137,8 +140,9 @@ export default function IdentifyStep({
               <span className="text-2xl">📋</span>
             </div>
             <div className="text-center">
-              <div className="font-bold text-sm text-bo-ink font-sans">成分表を撮影してください</div>
-              <div className="text-xs mt-1 text-bo-ink-muted font-sans">裏面の成分一覧を直接読み取ります</div>
+              <div className="text-[10px] font-bold text-bo-accent font-sans mb-1">STEP 2</div>
+              <div className="font-bold text-sm text-bo-ink font-sans">裏面の成分表を撮影してください</div>
+              <div className="text-xs mt-1 text-bo-ink-muted font-sans">成分一覧が書いてある面を撮影して読み取ります</div>
             </div>
           </button>
 
