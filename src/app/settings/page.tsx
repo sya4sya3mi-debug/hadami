@@ -24,6 +24,9 @@ export default function SettingsPage() {
   const [xScreenName, setXScreenName] = useState<string | null>(null);
   const [xUnlinking, setXUnlinking] = useState(false);
   const [xLinkError, setXLinkError] = useState("");
+  const [personalize, setPersonalize] = useState(true);
+  const [showHistoryConfirm, setShowHistoryConfirm] = useState(false);
+  const [deletingHistory, setDeletingHistory] = useState(false);
   const [scanCount, setScanCount] = useState<number | null>(null);
   const [productCount, setProductCount] = useState<number | null>(null);
 
@@ -36,6 +39,27 @@ export default function SettingsPage() {
       })
       .catch(() => setXLinked(false));
   }, []);
+
+  // パーソナライズ設定をlocalStorageから復元
+  useEffect(() => {
+    const stored = localStorage.getItem("hadami-personalize-enabled");
+    if (stored !== null) setPersonalize(stored === "true");
+  }, []);
+
+  const handlePersonalizeToggle = () => {
+    const next = !personalize;
+    setPersonalize(next);
+    localStorage.setItem("hadami-personalize-enabled", String(next));
+  };
+
+  const handleDeleteScanHistory = async () => {
+    if (!user) return;
+    setDeletingHistory(true);
+    await supabase.from("scan_history").delete().eq("user_id", user.id);
+    fetch("/api/refresh-profile", { method: "POST" }).catch(() => {});
+    setDeletingHistory(false);
+    setShowHistoryConfirm(false);
+  };
 
   useEffect(() => {
     if (!user) return;
@@ -294,6 +318,67 @@ export default function SettingsPage() {
                 </div>
               ))}
             </div>
+          </div>
+
+          {/* Personalization */}
+          <div className="bg-white rounded-r2 border border-bo-parchment shadow-bo1 p-5 mb-3">
+            <h2 className="text-[13px] font-bold text-bo-ink font-sans mb-3.5">パーソナライズ設定</h2>
+
+            <div className="flex items-center justify-between mb-3">
+              <div>
+                <div className="text-[13px] font-semibold text-bo-ink font-sans">商品レコメンド</div>
+                <div className="text-[10px] text-bo-ink-muted font-sans mt-0.5">
+                  スキャン履歴に基づく商品提案を表示
+                </div>
+              </div>
+              <button
+                onClick={handlePersonalizeToggle}
+                className={`w-[44px] h-[24px] rounded-full border-none cursor-pointer transition-colors duration-200 relative ${
+                  personalize ? "bg-bo-accent" : "bg-bo-parchment"
+                }`}
+              >
+                <span
+                  className={`block w-5 h-5 rounded-full bg-white shadow-sm absolute top-[2px] transition-transform duration-200 ${
+                    personalize ? "translate-x-[22px]" : "translate-x-[2px]"
+                  }`}
+                />
+              </button>
+            </div>
+
+            {/* スキャン履歴の削除 */}
+            {showHistoryConfirm ? (
+              <div className="p-3 rounded-r1 bg-[#FFF5F5] animate-fade-up">
+                <div className="text-[12px] font-bold text-[#E57373] font-sans mb-2">
+                  スキャン履歴をすべて削除しますか？
+                </div>
+                <div className="text-[10px] text-bo-ink-muted font-sans mb-2.5">
+                  レコメンドがリセットされます。この操作は取り消せません。
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={handleDeleteScanHistory}
+                    disabled={deletingHistory}
+                    className="flex-1 py-2 rounded-lg border-none bg-[#E57373] text-white text-[11px] font-bold font-sans cursor-pointer disabled:opacity-70"
+                  >
+                    {deletingHistory ? "削除中..." : "削除する"}
+                  </button>
+                  <button
+                    onClick={() => setShowHistoryConfirm(false)}
+                    disabled={deletingHistory}
+                    className="flex-1 py-2 rounded-lg border border-bo-parchment bg-white text-bo-ink-muted text-[11px] font-semibold font-sans cursor-pointer"
+                  >
+                    キャンセル
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <button
+                onClick={() => setShowHistoryConfirm(true)}
+                className="text-[11px] font-medium text-bo-ink-muted font-sans underline cursor-pointer bg-transparent border-none p-0"
+              >
+                スキャン履歴を削除する
+              </button>
+            )}
           </div>
 
           {/* Logout */}
