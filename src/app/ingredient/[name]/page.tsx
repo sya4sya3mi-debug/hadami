@@ -147,17 +147,8 @@ export default function IngredientDetailPage() {
           </div>
         )}
 
-        <button
-          onClick={() => setShowShare(true)}
-          className="w-full py-2.5 rounded-r1 text-xs font-medium mb-4 border border-bo-parchment text-bo-ink-muted font-sans"
-        >
-          Xに共有する 🐦
-        </button>
-
         <Disclaimer />
       </div>
-
-      {showShare && <ShareModal text={shareText} onClose={() => setShowShare(false)} />}
     </div>
   );
 }

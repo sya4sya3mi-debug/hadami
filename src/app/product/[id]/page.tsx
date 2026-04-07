@@ -32,7 +32,7 @@ export default function ProductDetailPage() {
       <div className="min-h-screen px-5 pt-10 text-center bg-bo-cream">
         <p className="text-bo-ink-muted">コスメが見つかりません</p>
         <Link href="/history" className="text-sm mt-2 inline-block font-medium text-bo-accent">
-          Myコスメに戻る
+          マイコスメに戻る
         </Link>
       </div>
     );
@@ -40,7 +40,7 @@ export default function ProductDetailPage() {
 
   const genre = getGenreByKey(product.productType || "other");
 
-  const ingredients = product.ingredients
+  const ingredients = [...product.ingredients]
     .sort((a, b) => a.orderIndex - b.orderIndex)
     .map((pi) => getIngredientById(pi.ingredientId))
     .filter((i) => i !== undefined);
@@ -54,7 +54,7 @@ export default function ProductDetailPage() {
     <div className="min-h-screen bg-bo-cream">
       <div className="px-5 pt-8 pb-6">
         <Link href="/history" className="text-sm font-medium mb-5 inline-block text-bo-accent">
-          ← Myコスメ
+          ← マイコスメ
         </Link>
 
         {/* Product photo */}
@@ -168,14 +168,8 @@ export default function ProductDetailPage() {
           </div>
         )}
 
-        <div className="flex gap-2 mb-4">
-          <button
-            onClick={() => setShowShare(true)}
-            className="flex-1 py-2.5 rounded-r1 text-xs font-medium border border-bo-parchment text-bo-ink-muted font-sans"
-          >
-            Xに共有する 🐦
-          </button>
-          {product.packageImage && (
+        {product.packageImage && (
+          <div className="flex gap-2 mb-4">
             <a
               href={product.packageImage}
               download={`${product.name}.jpg`}
@@ -185,13 +179,11 @@ export default function ProductDetailPage() {
             >
               写真を保存 📥
             </a>
-          )}
-        </div>
+          </div>
+        )}
 
         <Disclaimer />
       </div>
-
-      {showShare && <ShareModal text={shareText} onClose={() => setShowShare(false)} />}
     </div>
     </AuthGuard>
   );

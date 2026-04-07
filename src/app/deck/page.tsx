@@ -9,8 +9,9 @@ import { getIngredientById, INGREDIENT_GENRES, GENRE_DESCRIPTIONS } from "@/lib/
 import { findCombinations } from "@/lib/combinations";
 import { recommendDeck } from "@/lib/deckRecommender";
 import { getGenreByKey, GENRE_SLOT_CONFIG } from "@/lib/productGenres";
+import { SKIN_CONCERNS } from "@/lib/concerns";
 import { shareDeck } from "@/lib/share";
-import DeckTray from "@/components/deck/DeckTray";
+import DeckEditor from "@/components/deck/DeckEditor";
 import dynamic from "next/dynamic";
 const CoverageChart = dynamic(() => import("@/components/deck/CoverageChart"), {
   loading: () => <div className="bg-white rounded-xl p-4 border border-border h-[300px] flex items-center justify-center text-sm text-bo-ink-muted">チャート読み込み中...</div>,
@@ -215,11 +216,14 @@ export default function DeckPage() {
               <div className="flex bg-bo-parchment rounded-[10px] p-0.5 gap-0.5">
                 <button
                   onClick={() => setViewMode("hand")}
-                  className={`w-8 h-7 rounded-lg border-none flex items-center justify-center cursor-pointer text-sm ${
+                  className={`w-8 h-7 rounded-lg border-none flex items-center justify-center cursor-pointer ${
                     viewMode === "hand" ? "bg-white text-bo-ink shadow-bo1" : "bg-transparent text-bo-ink-faint"
                   }`}
                 >
-                  🃏
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                    <rect x="3" y="3" width="7" height="7" rx="1" /><rect x="14" y="3" width="7" height="7" rx="1" />
+                    <rect x="3" y="14" width="7" height="7" rx="1" /><rect x="14" y="14" width="7" height="7" rx="1" />
+                  </svg>
                 </button>
                 <button
                   onClick={() => setViewMode("list")}
@@ -230,12 +234,7 @@ export default function DeckPage() {
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><circle cx="3.5" cy="6" r="1.5"/><circle cx="3.5" cy="12" r="1.5"/><circle cx="3.5" cy="18" r="1.5"/></svg>
                 </button>
               </div>
-              <button
-                onClick={() => setShowShare(true)}
-                className="px-3 py-1.5 rounded-full text-[11px] font-bold border-none bg-bo-accent text-white cursor-pointer"
-              >
-                Xに投稿
-              </button>
+              {/* X share button removed */}
             </div>
           </div>
 
@@ -418,95 +417,86 @@ export default function DeckPage() {
           {/* Analysis panel */}
           {showAnalysis && deckProducts.length > 0 && (
             <div className="mt-3 animate-fade-up">
-              {/* Category breakdown */}
+              {/* Concern-based breakdown */}
               <div className="bg-white rounded-r2 border border-bo-parchment shadow-bo1 p-5 mb-3">
-                <div className="text-[13px] font-bold text-bo-ink font-sans mb-3.5">ジャンル別の成分カバー</div>
-                {INGREDIENT_GENRES.map((genre) => {
-                  const cat = genre.label;
-                  const covered = genreCounts[genre.key] > 0;
-                  const prodCount = deckProducts.filter((d) => {
-                    return d.ingredients.some((pi) => {
-                      const ing = getIngredientById(pi.ingredientId);
-                      return ing && ing.genre === genre.key;
-                    });
-                  }).length;
+                <div className="text-[13px] font-bold text-bo-ink font-sans mb-3.5">効能別のカバー</div>
+                {SKIN_CONCERNS.map((concern) => {
+                  const allIngredientIds = deckProducts.flatMap((d) => d.ingredients.map((pi) => pi.ingredientId));
+                  const coveredKeys = concern.keyIngredients.filter((ki) => allIngredientIds.includes(ki.id));
+                  const covered = coveredKeys.length > 0;
                   return (
-                    <div key={cat} className="mb-2.5">
+                    <div key={concern.label} className="mb-2.5">
                       <div className="flex justify-between items-center mb-1">
                         <span className={`text-[11px] font-semibold font-sans ${covered ? "text-bo-ink-soft" : "text-bo-ink-faint"}`}>
-                          {covered ? "✓" : "✗"} {cat}
+                          {covered ? "✓" : "✗"} {concern.icon} {concern.label}
                         </span>
-                        <span className="text-[10px] text-bo-ink-muted font-sans">{covered ? `${prodCount}製品` : "未カバー"}</span>
+                        <span className="text-[10px] text-bo-ink-muted font-sans">{covered ? `${coveredKeys.length}/${concern.keyIngredients.length}成分` : "未カバー"}</span>
                       </div>
                       <div className="h-[3px] rounded-sm bg-bo-parchment overflow-hidden">
                         <div
-                          className="h-full rounded-sm bg-bo-accent transition-all"
-                          style={{ width: covered ? `${Math.min(prodCount * 35, 100)}%` : "0%" }}
+                          className="h-full rounded-sm transition-all"
+                          style={{ width: `${(coveredKeys.length / concern.keyIngredients.length) * 100}%`, backgroundColor: concern.color }}
                         />
                       </div>
                     </div>
                   );
                 })}
               </div>
-            </div>
-          )}
 
-          {/* Stats */}
-          {deckProducts.length > 0 && (
-            <div className="grid grid-cols-4 gap-2 mt-5 mb-5">
-              {[
-                { value: `${coveredGenres}/${INGREDIENT_GENRES.length}`, label: "カバー", color: "#3A8F7A" },
-                { value: `${totalIngredients}`, label: "成分数", color: "#D4A853" },
-                { value: `${deckProducts.length}`, label: "アイテム", color: "#6B4A8A" },
-                { value: recommendedCombos.length > 0 ? `${recommendedCombos.length}` : "−", label: "好相性", color: recommendedCombos.length > 0 ? "#3A8F7A" : "#B5C7BE" },
-              ].map((s) => (
-                <div key={s.label} className="text-center py-3 rounded-r2 bg-white border border-bo-parchment shadow-bo1">
-                  <div className="text-lg font-bold" style={{ color: s.color }}>{s.value}</div>
-                  <div className="text-[10px] text-bo-ink-muted font-sans">{s.label}</div>
+              {/* Stats */}
+              <div className="grid grid-cols-4 gap-2 mb-5">
+                {[
+                  { value: `${coveredGenres}/${INGREDIENT_GENRES.length}`, label: "カバー", color: "#3A8F7A" },
+                  { value: `${totalIngredients}`, label: "成分数", color: "#D4A853" },
+                  { value: `${deckProducts.length}`, label: "アイテム", color: "#6B4A8A" },
+                  { value: recommendedCombos.length > 0 ? `${recommendedCombos.length}` : "−", label: "好相性", color: recommendedCombos.length > 0 ? "#3A8F7A" : "#B5C7BE" },
+                ].map((s) => (
+                  <div key={s.label} className="text-center py-3 rounded-r2 bg-white border border-bo-parchment shadow-bo1">
+                    <div className="text-lg font-bold" style={{ color: s.color }}>{s.value}</div>
+                    <div className="text-[10px] text-bo-ink-muted font-sans">{s.label}</div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Combinations */}
+              {combinations.length > 0 && (
+                <div className="mb-5">
+                  {recommendedCombos.length > 0 && (
+                    <>
+                      <h3 className="font-bold text-sm text-bo-ink mb-1 flex items-center gap-2">
+                        <span className="w-5 h-5 rounded-full bg-bo-accent-soft text-bo-accent flex items-center justify-center text-[10px]">✓</span>
+                        あなたのコスメが相乗効果を発揮中！
+                        <span className="text-xs font-normal text-bo-ink-muted">({recommendedCombos.length}件)</span>
+                      </h3>
+                      <p className="text-xs text-bo-ink-muted mb-3">今使っている製品の成分同士で、より良いはたらきが期待できる組み合わせが見つかりました</p>
+                      <div className="space-y-2.5 mb-4">
+                        {comboWithSources.filter((c) => c.combo.type === "recommended").map((item, i) => (
+                          <CombinationCard key={`r-${i}`} combo={item.combo} ingredientProducts={item.sources} />
+                        ))}
+                      </div>
+                    </>
+                  )}
+                  {cautionCombos.length > 0 && (
+                    <>
+                      <h3 className="font-bold text-sm text-bo-ink mb-3 flex items-center gap-2">
+                        <span className="text-sm">⚠️</span>
+                        注意が必要な組み合わせ
+                        <span className="text-xs font-normal text-bo-ink-muted">({cautionCombos.length}件)</span>
+                      </h3>
+                      <div className="space-y-2.5">
+                        {comboWithSources.filter((c) => c.combo.type === "note").map((item, i) => (
+                          <CombinationCard key={`n-${i}`} combo={item.combo} ingredientProducts={item.sources} />
+                        ))}
+                      </div>
+                    </>
+                  )}
                 </div>
-              ))}
-            </div>
-          )}
-
-          {/* Combinations */}
-          {combinations.length > 0 && (
-            <div className="mb-5">
-              {recommendedCombos.length > 0 && (
-                <>
-                  <h3 className="font-bold text-sm text-bo-ink mb-1 flex items-center gap-2">
-                    <span className="w-5 h-5 rounded-full bg-bo-accent-soft text-bo-accent flex items-center justify-center text-[10px]">✓</span>
-                    あなたのコスメが相乗効果を発揮中！
-                    <span className="text-xs font-normal text-bo-ink-muted">({recommendedCombos.length}件)</span>
-                  </h3>
-                  <p className="text-xs text-bo-ink-muted mb-3">今使っている製品の成分同士で、より良いはたらきが期待できる組み合わせが見つかりました</p>
-                  <div className="space-y-2.5 mb-4">
-                    {comboWithSources.filter((c) => c.combo.type === "recommended").map((item, i) => (
-                      <CombinationCard key={`r-${i}`} combo={item.combo} ingredientProducts={item.sources} />
-                    ))}
-                  </div>
-                </>
               )}
-              {cautionCombos.length > 0 && (
-                <>
-                  <h3 className="font-bold text-sm text-bo-ink mb-3 flex items-center gap-2">
-                    <span className="text-sm">⚠️</span>
-                    注意が必要な組み合わせ
-                    <span className="text-xs font-normal text-bo-ink-muted">({cautionCombos.length}件)</span>
-                  </h3>
-                  <div className="space-y-2.5">
-                    {comboWithSources.filter((c) => c.combo.type === "note").map((item, i) => (
-                      <CombinationCard key={`n-${i}`} combo={item.combo} ingredientProducts={item.sources} />
-                    ))}
-                  </div>
-                </>
-              )}
-            </div>
-          )}
 
-          {/* Coverage chart */}
-          {deckProducts.length > 0 && (
-            <div className="mb-5">
-              <CoverageChart genreCounts={genreCounts} />
+              {/* Coverage chart */}
+              <div className="mb-5">
+                <CoverageChart genreCounts={genreCounts} />
+              </div>
             </div>
           )}
 
@@ -564,7 +554,7 @@ export default function DeckPage() {
                 {routine === "morning" ? "朝" : "夜"}ルーティンはまだ未設定
               </div>
               <p className="text-[11px] text-bo-ink-muted font-sans mb-4 leading-relaxed">
-                Myコスメから製品を選んで、<br />スキンケアルーティンを組みましょう。
+                マイコスメから製品を選んで、<br />スキンケアルーティンを組みましょう。
               </p>
               <button
                 onClick={() => openPicker(null)}
@@ -636,41 +626,19 @@ export default function DeckPage() {
 
         {/* Editor Modal */}
         {showEditor && (
-          <div className="fixed inset-0 z-50 overflow-y-auto bg-bo-cream animate-fade-up">
-            <div className="max-w-[430px] mx-auto px-5 pb-10">
-              <div className="sticky top-0 z-10 pt-3 pb-2 bg-bo-cream">
-                <div className="flex justify-between items-center mb-2">
-                  <button onClick={() => setShowEditor(false)} className="bg-transparent border-none text-[13px] font-semibold text-bo-accent cursor-pointer py-1 font-sans">
-                    ← 戻る
-                  </button>
-                  <span className="text-sm font-bold text-bo-ink font-sans">🃏 デッキ編集</span>
-                  <button onClick={() => setShowEditor(false)} className="border-none text-[11px] font-bold py-1.5 px-3 rounded-r1 cursor-pointer bg-bo-accent text-white font-sans">
-                    完了
-                  </button>
-                </div>
-                <div className="flex items-center justify-center gap-2 rounded-[10px] px-2.5 py-1.5 bg-white border border-bo-parchment">
-                  <button onClick={prevDeck} className="bg-transparent border-none text-sm cursor-pointer text-bo-ink-faint">◀</button>
-                  <span className="text-xs font-bold text-bo-accent font-sans">{currentDeck.icon} {currentDeck.label}</span>
-                  <button onClick={nextDeck} className="bg-transparent border-none text-sm cursor-pointer text-bo-ink-faint">▶</button>
-                </div>
-              </div>
-
-              {allProducts.length >= 2 && (
-                <button
-                  onClick={handleAutoRecommend}
-                  className="w-full py-3.5 rounded-r2 border-none text-sm font-bold text-white cursor-pointer mb-4 bg-bo-accent shadow-bo-accent"
-                >
-                  おすすめ自動選択
-                </button>
-              )}
-
-              <DeckTray
-                productsByGenre={productsByGenre}
-                onAddSlot={(genre) => openPicker(genre)}
-                onRemoveProduct={(id) => { void handleRemoveItem(id); }}
-              />
-            </div>
-          </div>
+          <DeckEditor
+            routine={routine}
+            routineLabel={currentDeck.label}
+            routineIcon={currentDeck.icon}
+            productsByGenre={productsByGenre}
+            allProducts={allProducts}
+            onClose={() => setShowEditor(false)}
+            onPrevDeck={prevDeck}
+            onNextDeck={nextDeck}
+            onAddSlot={(genre) => openPicker(genre)}
+            onRemoveProduct={(id) => { void handleRemoveItem(id); }}
+            onAutoRecommend={handleAutoRecommend}
+          />
         )}
 
         {/* Product Picker */}
@@ -741,7 +709,7 @@ export default function DeckPage() {
           </div>
         </BottomSheet>
 
-        {showShare && <ShareModal text={shareText} onClose={() => setShowShare(false)} captureRef={captureRef} />}
+        {/* Share modal removed */}
         {showAutoRecommend && autoResult && (
           <AutoRecommendModal
             result={autoResult}
