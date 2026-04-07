@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, ReactNode } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { getAccountScanLimit } from "@/lib/db";
 
 /* ─── Animated Number Counter ─── */
@@ -179,31 +180,37 @@ const MOCKUP_ITEMS = [
 /* ═══════════════════════════════════════════ */
 export default function LandingPage() {
   const scanLimit = getAccountScanLimit();
-  const [scrollY, setScrollY] = useState(0);
+  const navRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
-    const h = () => setScrollY(window.scrollY);
+    let ticking = false;
+    const h = () => {
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(() => {
+        const scrolled = window.scrollY > 40;
+        if (navRef.current) {
+          navRef.current.dataset.scrolled = scrolled ? "true" : "false";
+        }
+        ticking = false;
+      });
+    };
     window.addEventListener("scroll", h, { passive: true });
+    h(); // initial check
     return () => window.removeEventListener("scroll", h);
   }, []);
-
-  const navScrolled = scrollY > 40;
 
   return (
     <div className="min-h-screen bg-bo-cream font-sans text-bo-ink overflow-x-hidden">
       {/* ─── NAV ─── */}
       <nav
-        className={`fixed top-0 left-0 right-0 z-[100] transition-all duration-[350ms] ease-out ${
-          navScrolled
-            ? "bg-bo-cream/90 backdrop-blur-[20px] backdrop-saturate-[1.6] border-b border-bo-ink-faint/20"
-            : "bg-transparent border-b border-transparent"
-        }`}
+        ref={navRef}
+        data-scrolled="false"
+        className="fixed top-0 left-0 right-0 z-[100] transition-all duration-[350ms] ease-out bg-transparent border-b border-transparent data-[scrolled=true]:bg-bo-cream/90 data-[scrolled=true]:backdrop-blur-[20px] data-[scrolled=true]:backdrop-saturate-[1.6] data-[scrolled=true]:border-bo-ink-faint/20"
       >
         <div className="max-w-[960px] mx-auto px-6 py-3.5 flex justify-between items-center">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-[10px] bg-gradient-to-br from-bo-accent to-bo-accent-dark flex items-center justify-center text-white text-[13px] font-black font-sans">
-              H
-            </div>
+            <Image src="/hadami-logo.png" alt="HADAMI" width={32} height={32} className="rounded-[10px]" />
             <span className="text-base font-black font-serif text-bo-ink tracking-[-0.02em]">
               HADAMI
             </span>
