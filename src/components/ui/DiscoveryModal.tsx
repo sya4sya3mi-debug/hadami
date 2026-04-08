@@ -1,8 +1,7 @@
 "use client";
 
 import { Ingredient } from "@/types";
-import { RARITY } from "@/lib/ingredients";
-import { getCategoryByKey } from "@/lib/categories";
+import { RARITY, getGenreInfo } from "@/lib/ingredients";
 import Badge from "./Badge";
 
 interface DiscoveryModalProps {
@@ -85,20 +84,19 @@ export default function DiscoveryModal({ ingredients, onClose }: DiscoveryModalP
                 <div className="flex-1 min-w-0">
                   <div className="font-bold text-sm" style={{ color: "#2D2D2D" }}>{ing.nameJa}</div>
                   <div className="text-xs" style={{ color: "#9B9B9B" }}>{ing.nameInci}</div>
-                  <div className="flex gap-1 mt-1 flex-wrap">
-                    {ing.categories.map((cat) => {
-                      const category = getCategoryByKey(cat);
-                      return category ? (
+                  {(() => {
+                    const g = getGenreInfo(ing.genre);
+                    return g ? (
+                      <div className="flex gap-1 mt-1">
                         <span
-                          key={cat}
                           className="text-[10px] px-1.5 py-0.5 rounded-full"
-                          style={{ background: category.color + "20", color: category.color }}
+                          style={{ background: g.color + "20", color: g.color }}
                         >
-                          {category.icon} {category.label}
+                          {g.icon} {g.label}
                         </span>
-                      ) : null;
-                    })}
-                  </div>
+                      </div>
+                    ) : null;
+                  })()}
                 </div>
                 <Badge rarity={ing.rarity} size="sm" />
               </div>

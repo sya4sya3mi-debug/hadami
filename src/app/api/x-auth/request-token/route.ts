@@ -14,10 +14,9 @@ export async function GET() {
 
   try {
     const requestTokenUrl = "https://api.twitter.com/oauth/request_token";
+    const oauthData = { oauth_callback: callbackUrl };
 
-    const headers = getOAuthHeaders(requestTokenUrl, "POST", undefined, {
-      oauth_callback: callbackUrl,
-    });
+    const headers = getOAuthHeaders(requestTokenUrl, "POST", undefined, oauthData);
 
     const res = await fetch(requestTokenUrl, {
       method: "POST",

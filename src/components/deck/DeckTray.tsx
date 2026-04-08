@@ -66,11 +66,7 @@ export default function DeckTray({ productsByGenre, onAddSlot, onRemoveProduct }
                   {slotConfig.maxSlots > 1 && products.length > 0 && products.length < slotConfig.maxSlots && (
                     <button
                       onClick={() => onAddSlot(slotConfig.genre)}
-                      className="flex items-center justify-center gap-1.5 w-full py-2 rounded-xl cursor-pointer text-xs font-medium mb-2 bg-transparent font-sans"
-                      style={{
-                        border: `1.5px dashed ${genreInfo?.color || "#B5C7BE"}40`,
-                        color: genreInfo?.color || "#B5C7BE",
-                      }}
+                      className="flex items-center justify-center gap-1.5 w-full py-2 rounded-xl cursor-pointer text-xs font-medium mb-2 bg-transparent font-sans border-[1.5px] border-dashed border-bo-accent/30 text-bo-accent"
                     >
                       + {genreInfo?.label}を追加（最大{slotConfig.maxSlots}）
                     </button>

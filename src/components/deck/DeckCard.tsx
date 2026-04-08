@@ -1,7 +1,7 @@
+import { memo } from "react";
 import Image from "next/image";
 import { Product } from "@/types";
-import { getIngredientById } from "@/lib/ingredients";
-import { getCategoryByKey } from "@/lib/categories";
+import { getIngredientById, getGenreInfo } from "@/lib/ingredients";
 import { getGenreByKey } from "@/lib/productGenres";
 import { StarIcon } from "@/components/ui/Badge";
 
@@ -10,11 +10,11 @@ interface DeckCardProps {
   onRemove?: () => void;
 }
 
-export default function DeckCard({ product, onRemove }: DeckCardProps) {
-  const categories = new Set<string>();
+function DeckCard({ product, onRemove }: DeckCardProps) {
+  const genres = new Set<string>();
   product.ingredients.forEach((pi) => {
     const ing = getIngredientById(pi.ingredientId);
-    ing?.categories.forEach((c) => categories.add(c));
+    if (ing) genres.add(ing.genre);
   });
 
   return (
@@ -57,15 +57,15 @@ export default function DeckCard({ product, onRemove }: DeckCardProps) {
           {product.brand}
         </div>
         <div className="flex gap-1 mt-1.5">
-          {Array.from(categories).slice(0, 6).map((cat) => {
-            const c = getCategoryByKey(cat);
-            return c ? (
+          {Array.from(genres).slice(0, 6).map((g) => {
+            const info = getGenreInfo(g as import("@/types").IngredientGenre);
+            return info ? (
               <span
-                key={cat}
+                key={g}
                 className="text-[10px] px-1.5 py-0.5 rounded-full font-sans"
-                style={{ background: c.color + "20", color: c.color }}
+                style={{ background: info.color + "20", color: info.color }}
               >
-                {c.icon}
+                {info.icon}
               </span>
             ) : null;
           })}
@@ -83,3 +83,5 @@ export default function DeckCard({ product, onRemove }: DeckCardProps) {
     </div>
   );
 }
+
+export default memo(DeckCard);

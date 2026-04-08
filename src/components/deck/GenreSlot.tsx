@@ -3,8 +3,6 @@
 import Image from "next/image";
 import { Product, ProductGenre } from "@/types";
 import { getGenreByKey } from "@/lib/productGenres";
-import { getIngredientById } from "@/lib/ingredients";
-import { getCategoryByKey } from "@/lib/categories";
 
 interface GenreSlotProps {
   genre: ProductGenre;
@@ -17,54 +15,30 @@ interface GenreSlotProps {
 export default function GenreSlot({ genre, stepLabel, product, onAdd, onRemove }: GenreSlotProps) {
   const genreInfo = getGenreByKey(genre);
   if (!genreInfo) return null;
-  const { icon, color, label } = genreInfo;
+  const { icon, label } = genreInfo;
 
   if (!product) {
     return (
       <div
         onClick={onAdd}
-        className="flex items-center gap-3 px-4 h-16 rounded-2xl mb-2 cursor-pointer"
-        style={{
-          border: `2px dashed ${color}30`,
-          background: `linear-gradient(90deg, rgba(255,255,255,0.5), ${color}06)`,
-        }}
+        className="flex items-center gap-3 px-4 h-16 rounded-2xl mb-2 cursor-pointer border-2 border-dashed border-bo-accent/20 bg-gradient-to-r from-white/50 to-bo-accent-soft/30"
       >
         <span className="text-[28px] opacity-40 w-9 text-center">{icon}</span>
         <span className="text-[13px] font-medium flex-1 text-bo-ink-faint font-sans">{label}</span>
-        <div
-          className="w-7 h-7 rounded-full flex items-center justify-center text-base font-sans"
-          style={{ background: `${color}18`, color }}
-        >
+        <div className="w-7 h-7 rounded-full flex items-center justify-center text-base font-sans bg-bo-accent/10 text-bo-accent">
           +
         </div>
       </div>
     );
   }
 
-  // Collect categories
-  const categories = new Set<string>();
-  product.ingredients.forEach((pi) => {
-    const ing = getIngredientById(pi.ingredientId);
-    ing?.categories.forEach((c) => categories.add(c));
-  });
-
   return (
-    <div
-      className="flex items-center relative overflow-hidden deck-card-enter h-[72px] rounded-2xl mb-2"
-      style={{
-        background: `linear-gradient(90deg, #fff, ${color}08)`,
-        border: `1px solid ${color}20`,
-        boxShadow: `inset 0 0 0 1px ${color}15`,
-      }}
-    >
+    <div className="flex items-center relative overflow-hidden deck-card-enter h-[72px] rounded-2xl mb-2 bg-white border border-bo-accent/15">
       {/* Color bar */}
-      <div className="absolute left-0 top-0 w-1 h-full" style={{ background: color }} />
+      <div className="absolute left-0 top-0 w-1 h-full bg-bo-accent" />
 
       {/* Step badge */}
-      <div
-        className="absolute top-1.5 left-2.5 z-10 w-[18px] h-[18px] rounded-full flex items-center justify-center text-[9px] font-extrabold text-white font-serif"
-        style={{ background: color }}
-      >
+      <div className="absolute top-1.5 left-2.5 z-10 w-[18px] h-[18px] rounded-full flex items-center justify-center text-[9px] font-extrabold text-white font-serif bg-bo-accent">
         {stepLabel}
       </div>
 
@@ -75,10 +49,7 @@ export default function GenreSlot({ genre, stepLabel, product, onAdd, onRemove }
             <Image src={product.packageImage} alt={product.name} fill className="object-cover" sizes="56px" loading="lazy" />
           </div>
         ) : (
-          <div
-            className="w-14 h-14 rounded-[10px] flex items-center justify-center text-2xl"
-            style={{ background: `linear-gradient(135deg, ${color}20, ${color}08)` }}
-          >
+          <div className="w-14 h-14 rounded-[10px] flex items-center justify-center text-2xl bg-bo-accent-soft">
             {icon}
           </div>
         )}
@@ -88,31 +59,10 @@ export default function GenreSlot({ genre, stepLabel, product, onAdd, onRemove }
       <div className="flex-1 min-w-0 px-2.5">
         <div className="text-[13px] font-bold truncate text-bo-ink font-sans">{product.name}</div>
         <div className="text-[11px] mt-0.5 text-bo-ink-muted font-sans">{product.brand}</div>
-        <span
-          className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-[10px] text-[10px] font-semibold mt-0.5 font-sans"
-          style={{ background: `${color}18`, color }}
-        >
+        <span className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-[10px] text-[10px] font-semibold mt-0.5 font-sans bg-bo-accent-soft text-bo-accent">
           {icon} {label}
         </span>
       </div>
-
-      {/* Category icons */}
-      {categories.size > 0 && (
-        <div className="flex gap-0.5 mr-2 shrink-0">
-          {Array.from(categories).slice(0, 3).map((cat) => {
-            const c = getCategoryByKey(cat);
-            return c ? (
-              <span
-                key={cat}
-                className="text-[9px] px-1 py-0.5 rounded-md font-sans"
-                style={{ background: `${c.color}20`, color: c.color }}
-              >
-                {c.icon}
-              </span>
-            ) : null;
-          })}
-        </div>
-      )}
 
       {/* Remove button */}
       {onRemove && (

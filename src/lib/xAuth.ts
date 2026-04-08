@@ -24,5 +24,17 @@ export function getOAuthHeaders(
 ) {
   const oauth = createOAuthClient();
   const requestData = { url, method, data };
-  return oauth.toHeader(oauth.authorize(requestData, token));
+  const authorized = oauth.authorize(requestData, token);
+  // oauth-1.0a doesn't include oauth_callback/oauth_verifier in the
+  // returned object, so we merge them manually into the Authorization header.
+  if (data) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const ext = authorized as any;
+    for (const [k, v] of Object.entries(data)) {
+      if (k.startsWith("oauth_")) {
+        ext[k] = v;
+      }
+    }
+  }
+  return oauth.toHeader(authorized);
 }

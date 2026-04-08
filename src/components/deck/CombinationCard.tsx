@@ -1,24 +1,23 @@
 "use client";
 
 import { Combination } from "@/types";
-import { getIngredientByName } from "@/lib/ingredients";
-import { CATEGORIES } from "@/lib/categories";
+import { getIngredientByName, getGenreInfo } from "@/lib/ingredients";
 
 interface Props {
   combo: Combination;
   ingredientProducts: [string[], string[]];
 }
 
-function getPrimaryCategory(nameJa: string) {
+function getIngredientGenreInfo(nameJa: string) {
   const ing = getIngredientByName(nameJa);
-  if (!ing || ing.categories.length === 0) return null;
-  return CATEGORIES.find((c) => c.key === ing.categories[0]) ?? null;
+  if (!ing) return null;
+  return getGenreInfo(ing.genre) ?? null;
 }
 
 function IngredientTag({ name, products }: { name: string; products: string[] }) {
-  const cat = getPrimaryCategory(name);
-  const bg = cat ? `${cat.color}1A` : "rgba(200,200,200,0.15)";
-  const color = cat ? cat.color : "#7E9389";
+  const genre = getIngredientGenreInfo(name);
+  const bg = genre ? `${genre.color}1A` : "rgba(200,200,200,0.15)";
+  const color = genre ? genre.color : "#7E9389";
 
   return (
     <div className="flex-1 min-w-0">
@@ -26,9 +25,9 @@ function IngredientTag({ name, products }: { name: string; products: string[] })
         className="px-2.5 py-1.5 rounded-xl text-center"
         style={{ background: bg, border: `1px solid ${color}30` }}
       >
-        {cat && (
+        {genre && (
           <div className="text-[10px] mb-0.5 font-sans" style={{ color }}>
-            {cat.icon} {cat.label}
+            {genre.icon} {genre.label}
           </div>
         )}
         <div className="text-xs font-bold truncate text-bo-ink font-sans">

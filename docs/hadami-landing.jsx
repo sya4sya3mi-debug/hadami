@@ -459,9 +459,8 @@ export default function HADAMILanding() {
 
           <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
             {[
-              { icon: "🧪", title: "現在β版として限定公開中", desc: "基本機能（成分スキャン・図鑑・デッキ・Myコスメ）は実装済み。現在15名まで登録可能です。" },
+              { icon: "🧪", title: "現在β版として限定公開中", desc: "基本機能（成分スキャン・図鑑・デッキ・Myコスメ）は実装済み。現在30名まで登録可能です。" },
               { icon: "💬", title: "フィードバックが力になります", desc: "「この機能がほしい」「ここが使いにくい」など、実際に使った感想を聞かせてください。" },
-              { icon: "🎁", title: "テスターだけの特典も検討中", desc: "正式リリース時にβテスターへの特典を予定しています。一緒にアプリを育てましょう。" },
             ].map((v, i) => (
               <Reveal key={i} delay={i * 100}>
                 <div style={{
@@ -516,7 +515,7 @@ export default function HADAMILanding() {
               📸 β版を試してみる
             </button>
             <p style={{ fontSize: 11, color: T.inkFaint, marginTop: 14, fontFamily: T.sans }}>
-              現在15名まで登録可能・無料
+              現在30回までスキャン無料
             </p>
           </div>
         </Reveal>

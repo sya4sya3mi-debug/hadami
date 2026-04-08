@@ -11,8 +11,8 @@ export async function GET() {
     .eq("user_id", auth.user.id)
     .single();
 
-  return NextResponse.json({
-    linked: !!data,
-    screenName: data?.x_screen_name || null,
-  });
+  return NextResponse.json(
+    { linked: !!data, screenName: data?.x_screen_name || null },
+    { headers: { "Cache-Control": "private, max-age=60, stale-while-revalidate=120" } },
+  );
 }

@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import html2canvas from "html2canvas";
 
 export interface ShareModalProps {
   text: string;
@@ -42,22 +41,24 @@ export default function ShareModal({ text, onClose, captureRef }: ShareModalProp
     // Temporarily ensure the element is visible for capture
     const origDisplay = el.style.display;
 
-    html2canvas(el, {
-      scale: 2,
-      backgroundColor: null,
-      useCORS: true,
-      logging: false,
-    })
-      .then((canvas) => {
-        setCardImage(canvas.toDataURL("image/jpeg", 0.92));
+    import("html2canvas").then(({ default: html2canvas }) => {
+      html2canvas(el, {
+        scale: 2,
+        backgroundColor: null,
+        useCORS: true,
+        logging: false,
       })
-      .catch(() => {
-        setCardImage(null);
-      })
-      .finally(() => {
-        el.style.display = origDisplay;
-        setCapturing(false);
-      });
+        .then((canvas) => {
+          setCardImage(canvas.toDataURL("image/jpeg", 0.92));
+        })
+        .catch(() => {
+          setCardImage(null);
+        })
+        .finally(() => {
+          el.style.display = origDisplay;
+          setCapturing(false);
+        });
+    });
   }, [captureRef]);
 
   // Scroll lock

@@ -9,9 +9,9 @@ const USER_LIMIT = 30;
  */
 const MAX_PRODUCT_IMAGE_BYTES = 5 * 1024 * 1024;
 
-/** アップロード前に画像をリサイズ＆圧縮する最大辺 */
-const UPLOAD_MAX_DIMENSION = 800;
-const UPLOAD_JPEG_QUALITY = 0.75;
+/** アップロード前に画像をリサイズ＆WebP圧縮する最大辺 */
+const UPLOAD_MAX_DIMENSION = 400;
+const UPLOAD_WEBP_QUALITY = 0.80;
 
 function validateImageSize(base64Data: string): boolean {
   const estimatedBytes = Math.ceil(base64Data.length * 0.75);
@@ -35,7 +35,7 @@ function compressImage(base64Full: string): Promise<string> {
       const ctx = canvas.getContext("2d");
       if (!ctx) return reject(new Error("Canvas context unavailable"));
       ctx.drawImage(img, 0, 0, width, height);
-      resolve(canvas.toDataURL("image/jpeg", UPLOAD_JPEG_QUALITY));
+      resolve(canvas.toDataURL("image/webp", UPLOAD_WEBP_QUALITY));
     };
     img.onerror = () => reject(new Error("Image load failed"));
     img.src = base64Full;
@@ -101,11 +101,11 @@ export async function saveProductToDb(
         return { error: "画像サイズが上限(5MB)を超えています", productId: null, imageUrl: null };
       }
       const bytes = Uint8Array.from(atob(base64Data), (c) => c.charCodeAt(0));
-      const filePath = `${userId}/${data.id}.jpg`;
+      const filePath = `${userId}/${data.id}.webp`;
 
       const { error: uploadError } = await supabase.storage
         .from("product-images")
-        .upload(filePath, bytes, { contentType: "image/jpeg", upsert: true });
+        .upload(filePath, bytes, { contentType: "image/webp", upsert: true });
 
       if (!uploadError) {
         // パスをDBに保存（signed URLは読み取り時に生成）
@@ -147,7 +147,7 @@ export async function updateProductImageInDb(
   productId: string,
   imageBase64: string
 ): Promise<{ error: string | null; imageUrl: string | null }> {
-  let imageDataUrl = imageBase64.includes(",") ? imageBase64 : `data:image/jpeg;base64,${imageBase64}`;
+  let imageDataUrl = imageBase64.includes(",") ? imageBase64 : `data:image/webp;base64,${imageBase64}`;
   try {
     imageDataUrl = await compressImage(imageDataUrl);
   } catch { /* 圧縮失敗時は元画像をそのまま使う */ }
@@ -159,11 +159,11 @@ export async function updateProductImageInDb(
   }
 
   const bytes = Uint8Array.from(atob(base64Data), (c) => c.charCodeAt(0));
-  const filePath = `${userId}/${productId}.jpg`;
+  const filePath = `${userId}/${productId}.webp`;
 
   const { error: uploadError } = await supabase.storage
     .from("product-images")
-    .upload(filePath, bytes, { contentType: "image/jpeg", upsert: true });
+    .upload(filePath, bytes, { contentType: "image/webp", upsert: true });
 
   if (uploadError) return { error: uploadError.message, imageUrl: null };
 
@@ -185,7 +185,7 @@ export async function deleteProductImageFromDb(
   userId: string,
   productId: string
 ): Promise<{ error: string | null }> {
-  const filePath = `${userId}/${productId}.jpg`;
+  const filePath = `${userId}/${productId}.webp`;
   await supabase.storage.from("product-images").remove([filePath]);
 
   const { error } = await supabase
@@ -204,7 +204,7 @@ export async function deleteProductFromDb(
   productId: string
 ) {
   // Storage の画像も削除
-  const filePath = `${userId}/${productId}.jpg`;
+  const filePath = `${userId}/${productId}.webp`;
   await supabase.storage.from("product-images").remove([filePath]);
 
   const { error } = await supabase

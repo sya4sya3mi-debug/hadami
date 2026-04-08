@@ -1,4 +1,4 @@
-import { MASTER_INGREDIENTS } from "./ingredients";
+import { getIngredientByName, getIngredientByInci } from "./ingredients";
 
 export async function extractIngredients(ocrText: string): Promise<{
   found: { ingredientId: string; orderIndex: number }[];
@@ -29,11 +29,7 @@ export async function extractIngredients(ocrText: string): Promise<{
   const unknown: string[] = [];
 
   tokens.forEach((token) => {
-    const match = MASTER_INGREDIENTS.find(
-      (ing) =>
-        ing.nameJa === token ||
-        ing.nameInci.toLowerCase() === token.toLowerCase()
-    );
+    const match = getIngredientByName(token) || getIngredientByInci(token);
 
     if (match) {
       if (!found.some((f) => f.ingredientId === match!.id)) {

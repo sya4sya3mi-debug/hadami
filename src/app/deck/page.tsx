@@ -69,7 +69,7 @@ export default function DeckPage() {
     .map((item) => getProduct(item.productId))
     .filter((p): p is Product => p !== undefined);
 
-  const { genreCounts, categoryCounts, coveredGenres, totalIngredients, combinations, recommendedCombos, cautionCombos, comboWithSources } = useMemo(() => {
+  const { genreCounts, coveredGenres, totalIngredients, combinations, recommendedCombos, cautionCombos, comboWithSources } = useMemo(() => {
     const genreCounts: Record<IngredientGenre, number> = {
       water: 0, amino_acid: 0, vitamin: 0, peptide: 0, botanical: 0,
       oil_lipid: 0, ferment: 0, acid: 0, base: 0,
@@ -491,7 +491,7 @@ export default function DeckPage() {
 
               {/* Coverage chart */}
               <div className="mb-5">
-                <CoverageChart categoryCounts={categoryCounts as Record<import("@/types").CategoryKey, number>} />
+                <CoverageChart genreCounts={genreCounts} />
               </div>
             </div>
           )}
@@ -627,7 +627,6 @@ export default function DeckPage() {
             routineLabel={currentDeck.label}
             routineIcon={currentDeck.icon}
             productsByGenre={productsByGenre}
-            allProducts={allProducts}
             onClose={() => setShowEditor(false)}
             onPrevDeck={prevDeck}
             onNextDeck={nextDeck}

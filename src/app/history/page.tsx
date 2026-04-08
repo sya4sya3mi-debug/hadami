@@ -19,20 +19,24 @@ type ViewMode = "photo" | "list";
 function Counter({ to, dur = 900 }: { to: number; dur?: number }) {
   const [v, setV] = useState(0);
   const ref = useRef<number>(0);
-  const mounted = useRef(false);
-  if (!mounted.current) {
-    mounted.current = true;
-    if (typeof window !== "undefined") {
-      let s: number | undefined;
-      const step = (t: number) => {
-        if (s === undefined) s = t;
-        const p = Math.min((t - s) / dur, 1);
-        setV(Math.round(p * p * to));
-        if (p < 1) ref.current = requestAnimationFrame(step);
-      };
-      ref.current = requestAnimationFrame(step);
-    }
-  }
+  const prev = useRef(0);
+
+  useEffect(() => {
+    if (to === prev.current) return;
+    const from = prev.current;
+    prev.current = to;
+    cancelAnimationFrame(ref.current);
+    let s: number | undefined;
+    const step = (t: number) => {
+      if (s === undefined) s = t;
+      const p = Math.min((t - s) / dur, 1);
+      setV(Math.round(from + (to - from) * p * p));
+      if (p < 1) ref.current = requestAnimationFrame(step);
+    };
+    ref.current = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(ref.current);
+  }, [to, dur]);
+
   return <>{v}</>;
 }
 

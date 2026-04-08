@@ -4,17 +4,17 @@ import { Product, ProductGenre, RoutineType } from "@/types";
 import { GENRE_SLOT_CONFIG, SECTION_INFO, getGenreByKey } from "@/lib/productGenres";
 import GenreSlot from "./GenreSlot";
 
+
 interface DeckEditorProps {
   routine: RoutineType;
   routineLabel: string;
   routineIcon: string;
   productsByGenre: Record<ProductGenre, Product[]>;
-  allProducts: Product[];
   onClose: () => void;
   onPrevDeck: () => void;
   onNextDeck: () => void;
   onAddSlot: (genre: ProductGenre) => void;
-  onRemoveProduct: (id: string) => void;
+  onRemoveProduct: (productId: string) => void;
   onAutoRecommend: () => void;
 }
 

@@ -16,18 +16,15 @@ export async function GET(request: NextRequest) {
 
   // Exchange for access token
   const accessTokenUrl = "https://api.twitter.com/oauth/access_token";
+  const verifierData = { oauth_verifier: oauthVerifier };
   const headers = getOAuthHeaders(accessTokenUrl, "POST", {
     key: oauthToken,
     secret: tokenSecret,
-  });
+  }, verifierData);
 
   const res = await fetch(accessTokenUrl, {
     method: "POST",
-    headers: {
-      Authorization: headers.Authorization,
-      "Content-Type": "application/x-www-form-urlencoded",
-    },
-    body: `oauth_verifier=${oauthVerifier}`,
+    headers: { Authorization: headers.Authorization },
   });
 
   if (!res.ok) {

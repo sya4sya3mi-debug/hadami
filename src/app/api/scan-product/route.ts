@@ -57,13 +57,15 @@ function parseIdentifiedProducts(text: string): IdentifiedProduct[] {
 async function searchIngredients(product: string, brand: string, lang: string) {
   const searchQueries: string[] = [];
   if (lang === "ko") {
+    searchQueries.push(`${brand} ${product} 全成分 site:cosme.net OR site:lips.fyi`);
     searchQueries.push(`${brand} ${product} 전성분`);
     searchQueries.push(`${brand} ${product} 全成分`);
-    searchQueries.push(`${brand} ${product} ingredients`);
   } else if (lang === "en") {
+    searchQueries.push(`${brand} ${product} ingredients site:cosme.net OR site:lips.fyi`);
     searchQueries.push(`${brand} ${product} ingredients list`);
     searchQueries.push(`${brand} ${product} 全成分`);
   } else {
+    searchQueries.push(`${brand} ${product} 全成分 site:cosme.net OR site:lips.fyi`);
     searchQueries.push(`${brand} ${product} 全成分`);
     searchQueries.push(`${brand} ${product} ingredients`);
   }
@@ -225,7 +227,7 @@ TYPE2: [製品タイプ]
         },
       ],
       config: { maxOutputTokens: 512 },
-    }), 15000, "製品の特定がタイムアウトしました");
+    }), 30000, "製品の特定がタイムアウトしました");
 
     const identifyText = identifyMsg.text ?? "";
 

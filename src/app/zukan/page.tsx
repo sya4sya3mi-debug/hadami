@@ -287,7 +287,7 @@ function ConcernView({
                   {c.label}
                 </div>
                 <div className="text-[10px] text-bo-ink-muted font-sans mt-0.5">
-                  Myコスメカバー {covered}/{c.keyIngredients.length}
+                  マイコスメカバー {covered}/{c.keyIngredients.length}
                 </div>
               </div>
               <div
@@ -500,13 +500,13 @@ export default function ZukanPage() {
       <div className="min-h-screen bg-bo-cream pb-24">
         {/* ── Header ── */}
         <div
-          className="pt-[50px] px-5 pb-4"
+          className="pt-4 px-5 pb-4"
           style={{
             background: "linear-gradient(180deg, #EAF5F1 0%, #F4F9F6 100%)",
           }}
         >
           <div className="flex items-baseline justify-between mb-3">
-            <span className="text-[15px] font-bold text-bo-ink font-sans">
+            <span className="text-2xl font-extrabold font-serif text-bo-ink">
               成分図鑑
             </span>
             <div>

@@ -3624,6 +3624,8 @@ export const MASTER_INGREDIENTS: Ingredient[] = [
 // O(1) lookup maps（線形検索を排除）
 const _byId = new Map(MASTER_INGREDIENTS.map((i) => [i.id, i]));
 const _byName = new Map(MASTER_INGREDIENTS.map((i) => [i.nameJa, i]));
+const _byInci = new Map(MASTER_INGREDIENTS.map((i) => [i.nameInci.toLowerCase(), i]));
+const _indexById = new Map(MASTER_INGREDIENTS.map((i, idx) => [i.id, idx]));
 
 export function getIngredientById(id: string): Ingredient | undefined {
   return _byId.get(id);
@@ -3633,8 +3635,28 @@ export function getIngredientByName(nameJa: string): Ingredient | undefined {
   return _byName.get(nameJa);
 }
 
+export function getIngredientByInci(nameInci: string): Ingredient | undefined {
+  return _byInci.get(nameInci.toLowerCase());
+}
+
+export function getIngredientIndex(id: string): number {
+  return (_indexById.get(id) ?? -1) + 1;
+}
+
+// Pre-computed stats（ページでの繰り返し .filter() を排除）
 export const INGREDIENT_COUNT = MASTER_INGREDIENTS.length;
 
-export function getGenreTotal(genre: IngredientGenre): number {
-  return MASTER_INGREDIENTS.filter((i) => i.genre === genre).length;
+const _byGenre = new Map<string, Ingredient[]>();
+MASTER_INGREDIENTS.forEach((i) => {
+  const arr = _byGenre.get(i.genre) || [];
+  arr.push(i);
+  _byGenre.set(i.genre, arr);
+});
+
+export function getIngredientsByGenre(genre: string): Ingredient[] {
+  return _byGenre.get(genre) || [];
+}
+
+export function getGenreTotal(genre: string): number {
+  return (_byGenre.get(genre) || []).length;
 }

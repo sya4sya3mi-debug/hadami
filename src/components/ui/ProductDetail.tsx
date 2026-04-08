@@ -1,8 +1,9 @@
 "use client";
 
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import type { Product } from "@/types";
-import { MASTER_INGREDIENTS } from "@/lib/ingredients";
+import { getIngredientById } from "@/lib/ingredients";
 
 const TYPE_LABELS: Record<string, string> = {
   cream: "クリーム", serum: "美容液", mask_pack: "マスク", toner: "化粧水",
@@ -20,8 +21,15 @@ export default function ProductDetail({
 }) {
   const router = useRouter();
 
+  // Lock body scroll while overlay is open
+  useEffect(() => {
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => { document.body.style.overflow = prev; };
+  }, []);
+
   const ingredientDetails = product.ingredients.map((ing) => {
-    const master = MASTER_INGREDIENTS.find((m) => m.id === ing.ingredientId);
+    const master = getIngredientById(ing.ingredientId);
     const name = master?.nameJa || ing.ingredientId;
     return {
       name,
@@ -33,8 +41,30 @@ export default function ProductDetail({
 
   return (
     <div className="fixed inset-0 z-[300] bg-bo-cream overflow-y-auto animate-fade-up">
+      {/* Sticky header with back button */}
+      <div className="sticky top-0 z-[310] flex items-center justify-between px-4 py-2.5 bg-bo-cream/[0.92] backdrop-blur-xl border-b border-bo-parchment/60">
+        <button
+          onClick={onClose}
+          className="flex items-center gap-1 bg-transparent border-none text-[13px] font-semibold text-bo-accent cursor-pointer py-1 font-sans"
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+            <path d="M19 12H5M12 19l-7-7 7-7" />
+          </svg>
+          マイコスメ
+        </button>
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onToggleFavorite?.();
+          }}
+          className="w-9 h-9 rounded-[10px] bg-bo-parchment border-none flex items-center justify-center cursor-pointer text-base"
+        >
+          {product.isFavorite ? "❤️" : "🤍"}
+        </button>
+      </div>
+
       {/* Image header */}
-      <div className="relative h-[260px] overflow-hidden">
+      <div className="relative h-[240px] overflow-hidden">
         {product.packageImage ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
@@ -48,23 +78,6 @@ export default function ProductDetail({
           </div>
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-[rgba(27,38,32,0.7)] to-transparent pointer-events-none" />
-
-        {/* Top buttons */}
-        <button
-          onClick={onClose}
-          className="absolute top-4 left-4 w-10 h-10 rounded-[10px] bg-white/20 backdrop-blur-lg border-none flex items-center justify-center cursor-pointer z-[2]"
-          aria-label="戻る"
-        >
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
-            <path d="M19 12H5M12 19l-7-7 7-7" />
-          </svg>
-        </button>
-        <button
-          onClick={onToggleFavorite}
-          className="absolute top-4 right-4 w-10 h-10 rounded-[10px] bg-white/20 backdrop-blur-lg border-none flex items-center justify-center cursor-pointer text-base z-[2]"
-        >
-          {product.isFavorite ? "❤️" : "🤍"}
-        </button>
 
         {/* Product info overlay */}
         <div className="absolute bottom-5 left-5 right-5">
@@ -83,7 +96,7 @@ export default function ProductDetail({
       </div>
 
       {/* Content */}
-      <div className="px-5 pt-6 pb-10 -mt-4 rounded-t-2xl bg-bo-cream relative">
+      <div className="px-5 pt-6 -mt-4 rounded-t-2xl bg-bo-cream relative pb-8">
         <div className="text-[15px] font-bold text-bo-ink font-sans mb-3.5">
           この製品の成分{" "}
           <span className="text-xs font-normal text-bo-ink-muted">
@@ -96,7 +109,6 @@ export default function ProductDetail({
             <button
               key={i}
               onClick={() => {
-                onClose();
                 router.push(`/ingredient/${encodeURIComponent(ing.id)}`);
               }}
               className="flex items-center gap-3 py-3 px-3.5 bg-white rounded-r1 border border-bo-parchment shadow-bo1 cursor-pointer text-left w-full"
@@ -146,7 +158,6 @@ export default function ProductDetail({
           </button>
         </div>
       </div>
-
     </div>
   );
 }
