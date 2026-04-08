@@ -71,7 +71,7 @@ export async function GET() {
 
   const searchResults: Record<string, RakutenProduct[]> = {};
   for (const keyword of allKeywords) {
-    searchResults[keyword] = await searchRakutenCached(keyword);
+    searchResults[keyword] = await searchRakutenCached(keyword, supabase);
     await new Promise((resolve) => setTimeout(resolve, 1100));
   }
 
@@ -90,8 +90,6 @@ export async function GET() {
     (sum, e) => sum + Number(e.encounter_count),
     0
   );
-
-  const topGenre = topIngredients[0]?.ingredient?.genre;
 
   return NextResponse.json({
     similar: {
@@ -112,7 +110,6 @@ export async function GET() {
     profile: {
       totalScans,
       knownIngredientCount: knownIds.size,
-      topGenre: topGenre || null,
     },
   });
 }

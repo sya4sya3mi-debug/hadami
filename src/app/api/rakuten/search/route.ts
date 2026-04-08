@@ -30,8 +30,7 @@ export async function POST(request: NextRequest) {
     // 楽天APIのレートリミット対策: 順次実行（1秒1リクエスト制限）
     const results: Record<string, RakutenProduct[]> = {};
     for (const keyword of keywords.slice(0, 5)) {
-      results[keyword] = await searchRakutenCached(keyword);
-      // 楽天APIは1秒1リクエスト制限
+      results[keyword] = await searchRakutenCached(keyword, auth.supabase);
       await new Promise((resolve) => setTimeout(resolve, 1100));
     }
 

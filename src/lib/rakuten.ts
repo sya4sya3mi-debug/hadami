@@ -1,4 +1,4 @@
-import { supabaseAdmin } from "./supabaseAdmin";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import type { RakutenProduct } from "@/types";
 
 const RAKUTEN_API_URL =
@@ -14,10 +14,11 @@ interface RakutenItem {
 }
 
 export async function searchRakutenCached(
-  keyword: string
+  keyword: string,
+  supabase: SupabaseClient
 ): Promise<RakutenProduct[]> {
   // 1. キャッシュ確認
-  const { data: cached } = await supabaseAdmin
+  const { data: cached } = await supabase
     .from("rakuten_product_cache")
     .select("results")
     .eq("search_keyword", keyword)
@@ -50,7 +51,7 @@ export async function searchRakutenCached(
   const res = await fetch(`${RAKUTEN_API_URL}?${params}`);
 
   if (!res.ok) {
-    console.error("Rakuten API error:", res.status);
+    console.error("Rakuten API error:", res.status, await res.text());
     return [];
   }
 
@@ -67,8 +68,8 @@ export async function searchRakutenCached(
     })
   );
 
-  // 3. キャッシュ保存
-  await supabaseAdmin
+  // 3. キャッシュ保存（認証ユーザーのクライアントで書込み）
+  await supabase
     .from("rakuten_product_cache")
     .upsert(
       {

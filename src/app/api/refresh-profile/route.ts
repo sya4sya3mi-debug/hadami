@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server";
 import { authenticateRequest } from "@/lib/apiAuth";
-import { supabaseAdmin } from "@/lib/supabaseAdmin";
 
 export async function POST() {
   const auth = await authenticateRequest();
   if (!auth.authenticated) return auth.response;
 
-  const { error } = await supabaseAdmin.rpc("refresh_user_ingredient_profile");
+  // SECURITY DEFINER 関数なので認証ユーザーでも実行可能
+  const { error } = await auth.supabase.rpc("refresh_user_ingredient_profile");
 
   if (error) {
     console.error("Failed to refresh MV:", error);
