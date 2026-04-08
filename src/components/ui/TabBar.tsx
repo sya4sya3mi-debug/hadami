@@ -87,7 +87,7 @@ export default function TabBar() {
       aria-label="メインナビゲーション"
       className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[430px] bg-bo-cream/[0.88] backdrop-blur-[28px] backdrop-saturate-[1.8] border-t border-bo-ink-faint/30 z-[200] pb-[env(safe-area-inset-bottom)]"
     >
-      <div className="flex h-[58px]">
+      <div className="flex h-[64px]">
         {TABS.map((tab) => {
           const isActive =
             tab.href === "/" ? pathname === "/" : pathname.startsWith(tab.href);
@@ -101,15 +101,15 @@ export default function TabBar() {
               className="flex-1 flex flex-col items-center justify-center gap-0.5 bg-transparent border-none cursor-pointer p-0"
             >
               <div
-                className={`w-8 h-6 flex items-center justify-center rounded-lg transition-all duration-300 ${
+                className={`w-9 h-7 flex items-center justify-center rounded-lg transition-all duration-300 ${
                   isActive
                     ? "bg-bo-accent-glow scale-[1.15] -translate-y-px"
                     : "bg-transparent scale-100"
                 }`}
               >
                 <svg
-                  width="20"
-                  height="20"
+                  width="24"
+                  height="24"
                   viewBox="0 0 24 24"
                   fill="none"
                   stroke={isActive ? "#3A8F7A" : "#7E9389"}
@@ -124,7 +124,7 @@ export default function TabBar() {
                 </svg>
               </div>
               <span
-                className={`text-[9px] tracking-[0.02em] transition-all duration-200 font-sans ${
+                className={`text-[10px] tracking-[0.02em] transition-all duration-200 font-sans ${
                   isActive
                     ? "font-bold text-bo-accent"
                     : "font-normal text-bo-ink-muted"
