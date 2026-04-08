@@ -69,10 +69,13 @@ export default function DeckPage() {
     .map((item) => getProduct(item.productId))
     .filter((p): p is Product => p !== undefined);
 
-  const { genreCounts, coveredGenres, totalIngredients, combinations, recommendedCombos, cautionCombos, comboWithSources } = useMemo(() => {
+  const { genreCounts, categoryCounts, coveredGenres, totalIngredients, combinations, recommendedCombos, cautionCombos, comboWithSources } = useMemo(() => {
     const genreCounts: Record<IngredientGenre, number> = {
       water: 0, amino_acid: 0, vitamin: 0, peptide: 0, botanical: 0,
       oil_lipid: 0, ferment: 0, acid: 0, base: 0,
+    };
+    const categoryCounts: Record<string, number> = {
+      moisturizing: 0, brightening: 0, turnover: 0, barrier: 0, soothing: 0, keratin: 0,
     };
     const allIngredientNames: string[] = [];
     const genreSet = new Set<string>();
@@ -83,6 +86,9 @@ export default function DeckPage() {
           allIngredientNames.push(ing.nameJa);
           genreCounts[ing.genre]++;
           genreSet.add(ing.genre);
+          ing.categories.forEach((cat) => {
+            categoryCounts[cat] = (categoryCounts[cat] || 0) + 1;
+          });
         }
       });
     });
@@ -106,7 +112,7 @@ export default function DeckPage() {
       return { combo, sources };
     });
 
-    return { genreCounts, coveredGenres, totalIngredients, combinations, recommendedCombos, cautionCombos, comboWithSources };
+    return { genreCounts, categoryCounts, coveredGenres, totalIngredients, combinations, recommendedCombos, cautionCombos, comboWithSources };
   }, [deckProducts]);
 
   if (loading) {
@@ -485,7 +491,7 @@ export default function DeckPage() {
 
               {/* Coverage chart */}
               <div className="mb-5">
-                <CoverageChart genreCounts={genreCounts} />
+                <CoverageChart categoryCounts={categoryCounts as Record<import("@/types").CategoryKey, number>} />
               </div>
             </div>
           )}
