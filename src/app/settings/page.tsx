@@ -30,14 +30,22 @@ export default function SettingsPage() {
   const [scanCount, setScanCount] = useState<number | null>(null);
   const [productCount, setProductCount] = useState<number | null>(null);
 
+  const [xAvailable, setXAvailable] = useState(true);
+
   useEffect(() => {
     fetch("/api/x-auth/status")
-      .then((r) => r.json())
+      .then((r) => {
+        if (!r.ok) throw new Error();
+        return r.json();
+      })
       .then((d) => {
         setXLinked(d.linked);
         setXScreenName(d.screenName);
       })
-      .catch(() => setXLinked(false));
+      .catch(() => {
+        setXLinked(false);
+        setXAvailable(false);
+      });
   }, []);
 
   // パーソナライズ設定をlocalStorageから復元
@@ -256,52 +264,54 @@ export default function SettingsPage() {
           </div>
 
           {/* X Integration */}
-          <div className="bg-white rounded-r2 border border-bo-parchment shadow-bo1 p-5 mb-3">
-            <h2 className="text-[13px] font-bold text-bo-ink font-sans mb-3.5">X（Twitter）連携</h2>
+          {xAvailable && (
+            <div className="bg-white rounded-r2 border border-bo-parchment shadow-bo1 p-5 mb-3">
+              <h2 className="text-[13px] font-bold text-bo-ink font-sans mb-3.5">X連携</h2>
 
-            {xLinked === null ? (
-              <p className="text-xs text-bo-ink-muted font-sans">読み込み中...</p>
-            ) : xLinked ? (
-              <div>
-                <div className="flex items-center justify-between mb-2.5">
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-2 h-2 rounded-full bg-bo-safe" />
-                    <div>
-                      <div className="text-[13px] font-bold text-bo-ink font-sans">連携済み</div>
-                      {xScreenName && (
-                        <div className="text-[11px] text-bo-ink-muted font-sans">@{xScreenName}</div>
-                      )}
+              {xLinked === null ? (
+                <p className="text-xs text-bo-ink-muted font-sans">読み込み中...</p>
+              ) : xLinked ? (
+                <div>
+                  <div className="flex items-center justify-between mb-2.5">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-2 h-2 rounded-full bg-bo-safe" />
+                      <div>
+                        <div className="text-[13px] font-bold text-bo-ink font-sans">連携済み</div>
+                        {xScreenName && (
+                          <div className="text-[11px] text-bo-ink-muted font-sans">@{xScreenName}</div>
+                        )}
+                      </div>
                     </div>
+                    <button
+                      onClick={handleXUnlink}
+                      disabled={xUnlinking}
+                      className="px-3.5 py-1 rounded-full border-none bg-[#FFEBEE] text-[#E57373] text-[10px] font-bold font-sans cursor-pointer"
+                    >
+                      {xUnlinking ? "解除中..." : "連携解除"}
+                    </button>
                   </div>
+                  <div className="text-[10px] text-bo-ink-muted font-sans py-2 px-3 bg-bo-cream rounded-lg leading-relaxed">
+                    シェア画面から画像付きでXに投稿できます（1日3件まで）
+                  </div>
+                </div>
+              ) : (
+                <div>
+                  <p className="text-[11px] text-bo-ink-muted font-sans leading-relaxed mb-3">
+                    Xアカウントを連携すると、成分図鑑やデッキの情報を画像付きでXに投稿できます。
+                  </p>
+                  {xLinkError && (
+                    <p className="text-xs text-bo-danger font-sans mb-2">{xLinkError}</p>
+                  )}
                   <button
-                    onClick={handleXUnlink}
-                    disabled={xUnlinking}
-                    className="px-3.5 py-1 rounded-full border-none bg-[#FFEBEE] text-[#E57373] text-[10px] font-bold font-sans cursor-pointer"
+                    onClick={handleXLink}
+                    className="w-full py-3 rounded-r1 border-none bg-[#1DA1F2] text-white text-[13px] font-bold font-sans cursor-pointer"
                   >
-                    {xUnlinking ? "解除中..." : "連携解除"}
+                    Xに連携する
                   </button>
                 </div>
-                <div className="text-[10px] text-bo-ink-muted font-sans py-2 px-3 bg-bo-cream rounded-lg leading-relaxed">
-                  シェア画面から画像付きでXに投稿できます（1日3件まで）
-                </div>
-              </div>
-            ) : (
-              <div>
-                <p className="text-[11px] text-bo-ink-muted font-sans leading-relaxed mb-3">
-                  Xアカウントを連携すると、成分図鑑やデッキの情報を画像付きでXに投稿できます。
-                </p>
-                {xLinkError && (
-                  <p className="text-xs text-bo-danger font-sans mb-2">{xLinkError}</p>
-                )}
-                <button
-                  onClick={handleXLink}
-                  className="w-full py-3 rounded-r1 border-none bg-[#1DA1F2] text-white text-[13px] font-bold font-sans cursor-pointer"
-                >
-                  Xアカウントを連携する
-                </button>
-              </div>
-            )}
-          </div>
+              )}
+            </div>
+          )}
 
           {/* Usage Stats */}
           <div className="bg-white rounded-r2 border border-bo-parchment shadow-bo1 p-5 mb-3">
