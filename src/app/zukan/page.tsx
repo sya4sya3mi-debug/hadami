@@ -499,23 +499,11 @@ export default function ZukanPage() {
     <AuthGuard>
       <div className="min-h-screen bg-bo-cream pb-24">
         {/* ── Header ── */}
-        <div
-          className="pt-[50px] px-5 pb-4"
-          style={{
-            background: "linear-gradient(180deg, #EAF5F1 0%, #F4F9F6 100%)",
-          }}
-        >
-          <div className="flex items-baseline justify-between mb-3">
-            <h1 className="text-2xl font-extrabold text-bo-ink font-serif m-0">
-              セイブンノート
-            </h1>
+        <div className="px-5 pt-4 pb-4">
+          <div className="flex items-center justify-between mb-3">
             <div>
-              <span className="text-[28px] font-extrabold text-bo-accent font-serif leading-none">
-                {pct}
-              </span>
-              <span className="text-xs font-medium text-bo-ink-muted font-sans">
-                % <span className="ml-1">{totalDisc}/{totalAll}</span>
-              </span>
+              <h1 className="text-2xl font-extrabold font-serif text-bo-ink m-0 mb-1">セイブンノート</h1>
+              <p className="text-xs text-bo-ink-muted font-sans m-0">{totalDisc}/{totalAll}成分 ({pct}%) 発見済み</p>
             </div>
           </div>
           <div className="h-[5px] rounded-[3px] bg-bo-parchment overflow-hidden">
