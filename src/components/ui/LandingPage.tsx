@@ -176,6 +176,7 @@ const MOCKUP_ITEMS = [
 export default function LandingPage() {
   const scanLimit = getAccountScanLimit();
   const navRef = useRef<HTMLElement>(null);
+  const [showTop, setShowTop] = useState(false);
 
   useEffect(() => {
     let ticking = false;
@@ -187,6 +188,7 @@ export default function LandingPage() {
         if (navRef.current) {
           navRef.current.dataset.scrolled = scrolled ? "true" : "false";
         }
+        setShowTop(window.scrollY > 300);
         ticking = false;
       });
     };
@@ -628,6 +630,17 @@ export default function LandingPage() {
           &copy; 2026 HADAMI. All rights reserved.
         </p>
       </footer>
+
+      {/* ─── BACK TO TOP ─── */}
+      <button
+        onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+        aria-label="ページトップへ戻る"
+        className={`fixed bottom-6 right-5 z-[200] w-11 h-11 rounded-full bg-bo-ink text-bo-cream flex items-center justify-center shadow-lg transition-all duration-300 ${showTop ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4 pointer-events-none"}`}
+      >
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="M18 15l-6-6-6 6" />
+        </svg>
+      </button>
     </div>
   );
 }
