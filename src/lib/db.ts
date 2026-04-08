@@ -10,8 +10,8 @@ const USER_LIMIT = 30;
 const MAX_PRODUCT_IMAGE_BYTES = 5 * 1024 * 1024;
 
 /** アップロード前に画像をリサイズ＆WebP圧縮する最大辺 */
-const UPLOAD_MAX_DIMENSION = 400;
-const UPLOAD_WEBP_QUALITY = 0.80;
+const UPLOAD_MAX_DIMENSION = 600;
+const UPLOAD_WEBP_QUALITY = 0.82;
 
 function validateImageSize(base64Data: string): boolean {
   const estimatedBytes = Math.ceil(base64Data.length * 0.75);
@@ -226,6 +226,49 @@ export async function updateProductTypeInDb(
   const { error } = await supabase
     .from("products")
     .update({ product_type: productType })
+    .eq("id", productId)
+    .eq("user_id", userId);
+  return { error: error?.message ?? null };
+}
+
+/** 製品の名称を更新 */
+export async function updateProductNameInDb(
+  supabase: SupabaseClient,
+  userId: string,
+  productId: string,
+  name: string
+): Promise<{ error: string | null }> {
+  const { error } = await supabase
+    .from("products")
+    .update({ name })
+    .eq("id", productId)
+    .eq("user_id", userId);
+  return { error: error?.message ?? null };
+}
+
+/** 製品の最終使用日を現在時刻で更新 */
+export async function updateLastUsedAtInDb(
+  supabase: SupabaseClient,
+  userId: string,
+  productId: string
+): Promise<void> {
+  await supabase
+    .from("products")
+    .update({ last_used_at: new Date().toISOString() })
+    .eq("id", productId)
+    .eq("user_id", userId);
+}
+
+/** 製品の購入日を更新（null で削除） */
+export async function updatePurchasedAtInDb(
+  supabase: SupabaseClient,
+  userId: string,
+  productId: string,
+  purchasedAt: string | null
+): Promise<{ error: string | null }> {
+  const { error } = await supabase
+    .from("products")
+    .update({ purchased_at: purchasedAt })
     .eq("id", productId)
     .eq("user_id", userId);
   return { error: error?.message ?? null };
