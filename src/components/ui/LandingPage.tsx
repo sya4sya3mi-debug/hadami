@@ -148,17 +148,12 @@ const BETA_ITEMS = [
   {
     icon: "\u{1F9EA}",
     title: "\u73FE\u5728\u03B2\u7248\u3068\u3057\u3066\u9650\u5B9A\u516C\u958B\u4E2D",
-    desc: "\u57FA\u672C\u6A5F\u80FD\uFF08\u6210\u5206\u30B9\u30AD\u30E3\u30F3\u30FB\u56F3\u9451\u30FB\u30C7\u30C3\u30AD\u30FBMy\u30B3\u30B9\u30E1\uFF09\u306F\u5B9F\u88C5\u6E08\u307F\u300215\u540D\u307E\u3067\u767B\u9332\u53EF\u80FD\u3067\u3059\u3002",
+    desc: "\u57FA\u672C\u6A5F\u80FD\uFF08\u6210\u5206\u30B9\u30AD\u30E3\u30F3\u30FB\u56F3\u9451\u30FB\u30C7\u30C3\u30AD\u30FBMy\u30B3\u30B9\u30E1\uFF09\u306F\u5B9F\u88C5\u6E08\u307F\u300230\u540D\u307E\u3067\u767B\u9332\u53EF\u80FD\u3067\u3059\u3002",
   },
   {
     icon: "\u{1F4AC}",
     title: "\u30D5\u30A3\u30FC\u30C9\u30D0\u30C3\u30AF\u304C\u529B\u306B\u306A\u308A\u307E\u3059",
     desc: "\u300C\u3053\u306E\u6A5F\u80FD\u304C\u307B\u3057\u3044\u300D\u300C\u3053\u3053\u304C\u4F7F\u3044\u306B\u304F\u3044\u300D\u306A\u3069\u3001\u5B9F\u969B\u306B\u4F7F\u3063\u305F\u611F\u60F3\u3092\u805E\u304B\u305B\u3066\u304F\u3060\u3055\u3044\u3002",
-  },
-  {
-    icon: "\u{1F381}",
-    title: "\u30C6\u30B9\u30BF\u30FC\u3060\u3051\u306E\u7279\u5178\u3082\u691C\u8A0E\u4E2D",
-    desc: "\u6B63\u5F0F\u30EA\u30EA\u30FC\u30B9\u6642\u306B\u03B2\u30C6\u30B9\u30BF\u30FC\u3078\u306E\u7279\u5178\u3092\u4E88\u5B9A\u3057\u3066\u3044\u307E\u3059\u3002\u4E00\u7DD2\u306B\u30A2\u30D7\u30EA\u3092\u80B2\u3066\u307E\u3057\u3087\u3046\u3002",
   },
 ];
 
@@ -567,23 +562,23 @@ export default function LandingPage() {
       {/* ─── PRODUCED BY ─── */}
       <section className="px-6 py-10 bg-bo-cream text-center">
         <Reveal>
-          <div className="flex flex-col items-center gap-1.5">
+          <div className="flex flex-col items-center gap-2">
             <div className="text-[9px] text-bo-ink-muted font-sans tracking-[0.15em] uppercase">
               Produced by
-            </div>
-            <div className="text-base font-extrabold font-serif text-bo-ink">
-              {"\u307F\u304A\u306E\u30DF\u30CF\u30C0\u30CE\u30FC\u30C8"}
             </div>
             <a
               href="https://blog-engine.com"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1 text-[11px] font-bold text-bo-accent font-sans mt-1"
             >
-              {"\u30D6\u30ED\u30B0\u3092\u8AAD\u3080"}
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
-                <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3" />
-              </svg>
+              <Image
+                src="/%E7%BE%8E%E8%82%8C%E3%83%8E%E3%83%BC%E3%83%88%E3%83%AD%E3%82%B4.png"
+                alt="みおのミハダノート"
+                width={180}
+                height={90}
+                style={{ filter: "invert(1)", mixBlendMode: "multiply" }}
+                className="object-contain"
+              />
             </a>
           </div>
         </Reveal>
