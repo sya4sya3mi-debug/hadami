@@ -7,17 +7,17 @@ import {
   Radar,
   ResponsiveContainer,
 } from "recharts";
-import { CATEGORIES } from "@/lib/categories";
-import { CategoryKey } from "@/types";
+import { INGREDIENT_GENRES } from "@/lib/ingredients";
+import { IngredientGenre } from "@/types";
 
-interface CoverageChartProps {
-  categoryCounts: Record<CategoryKey, number>;
+export interface CoverageChartProps {
+  genreCounts: Record<IngredientGenre, number>;
 }
 
-export default function CoverageChart({ categoryCounts }: CoverageChartProps) {
-  const data = CATEGORIES.map((cat) => ({
-    category: cat.label,
-    count: categoryCounts[cat.key] || 0,
+export default function CoverageChart({ genreCounts }: CoverageChartProps) {
+  const data = INGREDIENT_GENRES.map((g) => ({
+    category: g.label,
+    count: genreCounts[g.key] || 0,
     fullMark: 5,
   }));
 
