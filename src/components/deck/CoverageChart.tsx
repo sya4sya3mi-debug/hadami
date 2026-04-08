@@ -7,23 +7,23 @@ import {
   Radar,
   ResponsiveContainer,
 } from "recharts";
-import { INGREDIENT_GENRES } from "@/lib/ingredients";
-import { IngredientGenre } from "@/types";
+import { ACTIVE_CATEGORIES } from "@/lib/ingredients";
+import { CategoryKey } from "@/types";
 
 interface CoverageChartProps {
-  genreCounts: Record<IngredientGenre, number>;
+  categoryCounts: Record<CategoryKey, number>;
 }
 
-export default function CoverageChart({ genreCounts }: CoverageChartProps) {
-  const data = INGREDIENT_GENRES.map((g) => ({
-    category: g.label,
-    count: genreCounts[g.key] || 0,
+export default function CoverageChart({ categoryCounts }: CoverageChartProps) {
+  const data = ACTIVE_CATEGORIES.map((c) => ({
+    category: `${c.icon} ${c.label}`,
+    count: categoryCounts[c.key] || 0,
     fullMark: 5,
   }));
 
   return (
     <div className="bg-white rounded-xl p-4 border border-border">
-      <h3 className="font-bold text-sm mb-2">ジャンルカバー率</h3>
+      <h3 className="font-bold text-sm mb-2">有効成分カバー率</h3>
       <ResponsiveContainer width="100%" height={250}>
         <RadarChart data={data}>
           <PolarGrid />

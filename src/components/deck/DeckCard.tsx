@@ -1,7 +1,7 @@
 import { memo } from "react";
 import Image from "next/image";
 import { Product } from "@/types";
-import { getIngredientById, getGenreInfo } from "@/lib/ingredients";
+import { getIngredientById, ACTIVE_CATEGORIES } from "@/lib/ingredients";
 import { getGenreByKey } from "@/lib/productGenres";
 import { StarIcon } from "@/components/ui/Badge";
 
@@ -11,10 +11,12 @@ interface DeckCardProps {
 }
 
 function DeckCard({ product, onRemove }: DeckCardProps) {
-  const genres = new Set<string>();
+  const categories = new Set<string>();
   product.ingredients.forEach((pi) => {
     const ing = getIngredientById(pi.ingredientId);
-    if (ing) genres.add(ing.genre);
+    if (ing?.activeIngredient) {
+      ing.categories.forEach((cat) => categories.add(cat));
+    }
   });
 
   return (
@@ -57,11 +59,11 @@ function DeckCard({ product, onRemove }: DeckCardProps) {
           {product.brand}
         </div>
         <div className="flex gap-1 mt-1.5">
-          {Array.from(genres).slice(0, 6).map((g) => {
-            const info = getGenreInfo(g as import("@/types").IngredientGenre);
+          {Array.from(categories).slice(0, 6).map((catKey) => {
+            const info = ACTIVE_CATEGORIES.find((c) => c.key === catKey);
             return info ? (
               <span
-                key={g}
+                key={catKey}
                 className="text-[10px] px-1.5 py-0.5 rounded-full font-sans"
                 style={{ background: info.color + "20", color: info.color }}
               >

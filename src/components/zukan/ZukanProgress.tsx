@@ -1,6 +1,6 @@
 "use client";
 
-import { RARITY, MASTER_INGREDIENTS, INGREDIENT_COUNT } from "@/lib/ingredients";
+import { RARITY, ACTIVE_INGREDIENTS, ACTIVE_INGREDIENT_COUNT } from "@/lib/ingredients";
 import { RarityKey } from "@/types";
 import { StarIcon } from "@/components/ui/Badge";
 
@@ -12,7 +12,7 @@ const LEVELS = [
   { lv: 4, need: 100, title: "上級探索者", icon: "🗺️" },
   { lv: 5, need: 150, title: "マスター調合師", icon: "⚗️" },
   { lv: 6, need: 200, title: "伝説の研究者", icon: "🔬" },
-  { lv: 7, need: 323, title: "成分博士", icon: "👑" },
+  { lv: 7, need: 120, title: "成分博士", icon: "👑" },
 ];
 
 interface ZukanProgressProps {
@@ -28,9 +28,11 @@ export default function ZukanProgress({
   achievementsDone = 0,
   achievementsTotal = 0,
 }: ZukanProgressProps) {
-  const total = INGREDIENT_COUNT;
-  const discovered = discoveredIds.length;
-  const discoveredSet = new Set(discoveredIds);
+  const total = ACTIVE_INGREDIENT_COUNT;
+  const activeIdSet = new Set(ACTIVE_INGREDIENTS.map((i) => i.id));
+  const activeDiscoveredIds = discoveredIds.filter((id) => activeIdSet.has(id));
+  const discovered = activeDiscoveredIds.length;
+  const discoveredSet = new Set(activeDiscoveredIds);
 
   const currentLevel = LEVELS.filter((l) => discovered >= l.need).pop() || LEVELS[0];
   const nextLevel = LEVELS.find((l) => discovered < l.need);
@@ -39,7 +41,7 @@ export default function ZukanProgress({
     : 100;
 
   const rarityCounts = (Object.keys(RARITY) as RarityKey[]).map((key) => {
-    const all = MASTER_INGREDIENTS.filter((i) => i.rarity === key);
+    const all = ACTIVE_INGREDIENTS.filter((i) => i.rarity === key);
     const found = all.filter((i) => discoveredSet.has(i.id));
     return { ...RARITY[key], key, total: all.length, found: found.length };
   });

@@ -5,7 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useDeckStore } from "@/stores/useDeckStore";
 import { useProductStore } from "@/stores/useProductStore";
-import { getIngredientById, INGREDIENT_GENRES, GENRE_DESCRIPTIONS } from "@/lib/ingredients";
+import { getIngredientById, ACTIVE_CATEGORIES, ACTIVE_INGREDIENTS } from "@/lib/ingredients";
 import { findCombinations } from "@/lib/combinations";
 import { recommendDeck } from "@/lib/deckRecommender";
 import { getGenreByKey, GENRE_SLOT_CONFIG } from "@/lib/productGenres";
@@ -24,7 +24,7 @@ import { useUser } from "@/lib/auth";
 import AuthGuard from "@/components/ui/AuthGuard";
 import BottomSheet from "@/components/scan/BottomSheet";
 import Glass from "@/components/ui/Glass";
-import { RoutineType, IngredientGenre, Product, ProductGenre, RecommendationResult } from "@/types";
+import { RoutineType, Product, ProductGenre, RecommendationResult, CategoryKey } from "@/types";
 
 const TYPE_LABELS: Record<string, string> = {
   cream: "クリーム", serum: "美容液", mask_pack: "マスク",
@@ -63,36 +63,41 @@ export default function DeckPage() {
 
   const deckItems = allDeckItems
     .filter((i) => i.routine === routine)
-    .sort((a, b) => a.orderIndex - b.orderIndex);
+    .sort((a, b) => {
+      const pa = getProduct(a.productId);
+      const pb = getProduct(b.productId);
+      const orderA = getGenreByKey(pa?.productType ?? "other")?.order ?? 99;
+      const orderB = getGenreByKey(pb?.productType ?? "other")?.order ?? 99;
+      return orderA - orderB;
+    });
 
   const deckProducts = deckItems
     .map((item) => getProduct(item.productId))
     .filter((p): p is Product => p !== undefined);
 
-  const { genreCounts, coveredGenres, totalIngredients, combinations, recommendedCombos, cautionCombos, comboWithSources } = useMemo(() => {
-    const genreCounts: Record<IngredientGenre, number> = {
-      water: 0, amino_acid: 0, vitamin: 0, peptide: 0, botanical: 0,
-      oil_lipid: 0, ferment: 0, acid: 0, base: 0,
-    };
-    const categoryCounts: Record<string, number> = {
+  const activeSet = useMemo(() => new Set(ACTIVE_INGREDIENTS.map((i) => i.id)), []);
+
+  const { categoryCounts, coveredCategories, totalIngredients, combinations, recommendedCombos, cautionCombos, comboWithSources } = useMemo(() => {
+    const categoryCounts: Record<CategoryKey, number> = {
       moisturizing: 0, brightening: 0, turnover: 0, barrier: 0, soothing: 0, keratin: 0,
     };
     const allIngredientNames: string[] = [];
-    const genreSet = new Set<string>();
+    const seenIds = new Set<string>();
     deckProducts.forEach((product) => {
       product.ingredients.forEach((pi) => {
         const ing = getIngredientById(pi.ingredientId);
         if (ing) {
           allIngredientNames.push(ing.nameJa);
-          genreCounts[ing.genre]++;
-          genreSet.add(ing.genre);
-          ing.categories.forEach((cat) => {
-            categoryCounts[cat] = (categoryCounts[cat] || 0) + 1;
-          });
+          if (ing.activeIngredient && !seenIds.has(ing.id)) {
+            seenIds.add(ing.id);
+            ing.categories.forEach((cat) => {
+              categoryCounts[cat] = (categoryCounts[cat] || 0) + 1;
+            });
+          }
         }
       });
     });
-    const coveredGenres = Object.values(genreCounts).filter((c) => c > 0).length;
+    const coveredCategories = Object.values(categoryCounts).filter((c) => c > 0).length;
     const totalIngredients = new Set(allIngredientNames).size;
     const combinations = findCombinations(Array.from(new Set(allIngredientNames)));
     const recommendedCombos = combinations.filter((c) => c.type === "recommended");
@@ -112,7 +117,7 @@ export default function DeckPage() {
       return { combo, sources };
     });
 
-    return { genreCounts, categoryCounts, coveredGenres, totalIngredients, combinations, recommendedCombos, cautionCombos, comboWithSources };
+    return { categoryCounts, coveredCategories, totalIngredients, combinations, recommendedCombos, cautionCombos, comboWithSources };
   }, [deckProducts]);
 
   if (loading) {
@@ -127,9 +132,9 @@ export default function DeckPage() {
     productsByGenre[genre].push(p);
   });
 
-  const allGenreLabels = INGREDIENT_GENRES.map((g) => g.label);
-  const coveredGenreLabels = INGREDIENT_GENRES.filter((g) => genreCounts[g.key] > 0).map((g) => g.label);
-  const coveragePercent = deckProducts.length > 0 ? Math.round((coveredGenreLabels.length / allGenreLabels.length) * 100) : 0;
+  const allCategoryLabels = ACTIVE_CATEGORIES.map((c) => c.label);
+  const coveredCategoryLabels = ACTIVE_CATEGORIES.filter((c) => categoryCounts[c.key] > 0).map((c) => c.label);
+  const coveragePercent = deckProducts.length > 0 ? Math.round((coveredCategoryLabels.length / allCategoryLabels.length) * 100) : 0;
 
   // Handlers
   const handleAddItem = async (productId: string) => {
@@ -259,7 +264,7 @@ export default function DeckPage() {
                   <span className="text-[13px] font-black text-bo-accent font-serif">{deckProducts.length}ステップ</span>
                 </div>
                 <div className="flex justify-between items-center mb-1.5">
-                  <span className="text-[10px] text-bo-ink-muted font-sans">ジャンルカバー率</span>
+                  <span className="text-[10px] text-bo-ink-muted font-sans">有効成分カバー率</span>
                   <span className={`text-[11px] font-black font-serif ${coveragePercent >= 80 ? "text-bo-accent" : "text-bo-caution"}`}>
                     {coveragePercent}%
                   </span>
@@ -271,16 +276,16 @@ export default function DeckPage() {
                   />
                 </div>
                 <div className="flex gap-1.5 flex-wrap">
-                  {allGenreLabels.map((cat) => {
-                    const covered = coveredGenreLabels.includes(cat);
+                  {ACTIVE_CATEGORIES.map((cat) => {
+                    const covered = categoryCounts[cat.key] > 0;
                     return (
                       <span
-                        key={cat}
+                        key={cat.key}
                         className={`text-[9px] font-semibold font-sans py-0.5 px-2 rounded ${
                           covered ? "bg-bo-safe-bg text-bo-accent" : "bg-bo-parchment text-bo-ink-faint"
                         }`}
                       >
-                        {covered ? "✓ " : ""}{cat}
+                        {covered ? "✓ " : ""}{cat.icon} {cat.label}
                       </span>
                     );
                   })}
@@ -442,7 +447,7 @@ export default function DeckPage() {
               {/* Stats */}
               <div className="grid grid-cols-4 gap-2 mb-5">
                 {[
-                  { value: `${coveredGenres}/${INGREDIENT_GENRES.length}`, label: "カバー", color: "#3A8F7A" },
+                  { value: `${coveredCategories}/${ACTIVE_CATEGORIES.length}`, label: "効果カバー", color: "#3A8F7A" },
                   { value: `${totalIngredients}`, label: "成分数", color: "#D4A853" },
                   { value: `${deckProducts.length}`, label: "アイテム", color: "#6B4A8A" },
                   { value: recommendedCombos.length > 0 ? `${recommendedCombos.length}` : "−", label: "好相性", color: recommendedCombos.length > 0 ? "#3A8F7A" : "#B5C7BE" },
@@ -491,27 +496,27 @@ export default function DeckPage() {
 
               {/* Coverage chart */}
               <div className="mb-5">
-                <CoverageChart genreCounts={genreCounts} />
+                <CoverageChart categoryCounts={categoryCounts} />
               </div>
             </div>
           )}
 
-          {/* Genre list */}
+          {/* Active ingredient categories */}
           {deckProducts.length > 0 && (
             <div className="mb-5">
               <h3 className="font-bold text-sm text-bo-ink mb-1 flex items-center gap-2">
                 <span className="w-1 h-4 rounded-full bg-bo-accent inline-block" />
-                ジャンル別成分
+                有効成分（効果別）
               </h3>
-              <p className="text-xs text-bo-ink-muted mb-3">成分をタップすると詳細が確認できます</p>
+              <p className="text-xs text-bo-ink-muted mb-3">デッキに含まれる有効成分を効果カテゴリ別に表示</p>
               <div className="space-y-2">
-                {INGREDIENT_GENRES.map((genre) => {
+                {ACTIVE_CATEGORIES.map((cat) => {
                   const ings: { id: string; nameJa: string }[] = [];
                   const seen = new Set<string>();
                   deckProducts.forEach((p) => {
                     p.ingredients.forEach((pi) => {
                       const ing = getIngredientById(pi.ingredientId);
-                      if (ing?.genre === genre.key && !seen.has(ing.id)) {
+                      if (ing?.activeIngredient && ing.categories.includes(cat.key) && !seen.has(ing.id)) {
                         seen.add(ing.id);
                         ings.push({ id: ing.id, nameJa: ing.nameJa });
                       }
@@ -519,16 +524,15 @@ export default function DeckPage() {
                   });
                   if (ings.length === 0) return null;
                   return (
-                    <div key={genre.key} className="rounded-r2 p-3 border" style={{ background: genre.color + "12", borderColor: genre.color + "20" }}>
+                    <div key={cat.key} className="rounded-r2 p-3 border" style={{ background: cat.color + "12", borderColor: cat.color + "20" }}>
                       <div className="flex items-center gap-1.5 mb-1">
-                        <span>{genre.icon}</span>
-                        <span className="text-sm font-bold" style={{ color: genre.color }}>{genre.label}</span>
+                        <span>{cat.icon}</span>
+                        <span className="text-sm font-bold" style={{ color: cat.color }}>{cat.label}</span>
                         <span className="text-xs text-bo-ink-muted">({ings.length}種)</span>
                       </div>
-                      <p className="text-[11px] leading-relaxed text-bo-ink-muted mb-2">{GENRE_DESCRIPTIONS[genre.key]?.summary}</p>
                       <div className="flex flex-wrap gap-1 mt-1">
                         {ings.map((ing) => (
-                          <Link key={ing.id} href={`/ingredient/${ing.id}`} className="text-xs px-2 py-0.5 rounded-full no-underline" style={{ background: genre.color + "25", color: genre.color }}>
+                          <Link key={ing.id} href={`/ingredient/${ing.id}`} className="text-xs px-2 py-0.5 rounded-full no-underline" style={{ background: cat.color + "25", color: cat.color }}>
                             {ing.nameJa}
                           </Link>
                         ))}
