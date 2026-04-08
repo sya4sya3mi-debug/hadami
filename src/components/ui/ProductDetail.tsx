@@ -47,7 +47,16 @@ export default function ProductDetail({
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-[rgba(27,38,32,0.7)] to-transparent pointer-events-none" />
 
-        {/* Fav button */}
+        {/* Top buttons */}
+        <button
+          onClick={onClose}
+          className="absolute top-4 left-4 w-10 h-10 rounded-[10px] bg-white/20 backdrop-blur-lg border-none flex items-center justify-center cursor-pointer z-[2]"
+          aria-label="戻る"
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+            <path d="M19 12H5M12 19l-7-7 7-7" />
+          </svg>
+        </button>
         <button className="absolute top-4 right-4 w-10 h-10 rounded-[10px] bg-white/20 backdrop-blur-lg border-none flex items-center justify-center cursor-pointer text-base z-[2]">
           {product.isFavorite ? "❤️" : "🤍"}
         </button>

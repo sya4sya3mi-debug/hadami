@@ -25,11 +25,30 @@ export default function ProductDetailPage() {
 
   if (!product) {
     return (
-      <div className="min-h-screen px-5 pt-10 text-center bg-bo-cream">
-        <p className="text-bo-ink-muted">コスメが見つかりません</p>
-        <Link href="/history" className="text-sm mt-2 inline-block font-medium text-bo-accent">
-          マイコスメに戻る
-        </Link>
+      <div className="min-h-screen bg-bo-cream">
+        <div className="px-5 pt-4">
+          <div className="flex items-center gap-3 mb-8">
+            <Link
+              href="/history"
+              className="w-9 h-9 rounded-[10px] bg-bo-parchment flex items-center justify-center shrink-0"
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3D4F45" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+                <path d="M19 12H5M12 19l-7-7 7-7" />
+              </svg>
+            </Link>
+            <h1 className="text-lg font-extrabold font-serif text-bo-ink m-0">コスメ詳細</h1>
+          </div>
+          <div className="text-center py-10">
+            <div className="w-14 h-14 rounded-2xl bg-bo-parchment mx-auto mb-3 flex items-center justify-center text-2xl">📦</div>
+            <p className="text-[13px] font-semibold text-bo-ink-muted font-sans mb-1">コスメが見つかりません</p>
+            <Link
+              href="/history"
+              className="inline-block mt-3 px-5 py-2.5 rounded-full text-xs font-bold text-white bg-bo-accent no-underline"
+            >
+              マイコスメに戻る
+            </Link>
+          </div>
+        </div>
       </div>
     );
   }
@@ -46,10 +65,19 @@ export default function ProductDetailPage() {
   return (
     <AuthGuard>
     <div className="min-h-screen bg-bo-cream">
-      <div className="px-5 pt-8 pb-6">
-        <Link href="/history" className="text-sm font-medium mb-5 inline-block text-bo-accent">
-          ← マイコスメ
-        </Link>
+      <div className="px-5 pt-4 pb-6">
+        {/* Header */}
+        <div className="flex items-center gap-3 mb-5">
+          <Link
+            href="/history"
+            className="w-9 h-9 rounded-[10px] bg-bo-parchment flex items-center justify-center shrink-0"
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3D4F45" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+              <path d="M19 12H5M12 19l-7-7 7-7" />
+            </svg>
+          </Link>
+          <h1 className="text-lg font-extrabold font-serif text-bo-ink m-0">コスメ詳細</h1>
+        </div>
 
         {/* Product photo */}
         {product.packageImage && (
