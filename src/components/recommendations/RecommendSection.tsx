@@ -28,12 +28,12 @@ export default function RecommendSection({ enabled, hideIfEmpty = false }: Props
   if (!loading && !hasProducts) {
     return (
       <div className="rounded-r2 bg-white border border-bo-parchment p-5 text-center">
-        <div className="text-2xl mb-2">🔍</div>
+        <div className="text-2xl mb-2">🛍️</div>
         <p className="text-sm font-semibold text-bo-ink font-sans mb-1">
-          レコメンド準備中
+          あなた向けのコスメを提案
         </p>
         <p className="text-xs text-bo-ink-muted font-sans">
-          スキャン履歴が増えると、あなたにぴったりのコスメを提案します
+          コスメをスキャンするほど、成分の傾向に合った商品が表示されます
         </p>
       </div>
     );

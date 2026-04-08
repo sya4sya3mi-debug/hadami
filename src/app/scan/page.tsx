@@ -521,7 +521,7 @@ function ScanPageInner() {
                 disabled={scanLimitReached}
               />
               <div className="mt-6">
-                <RecommendSection enabled={true} hideIfEmpty />
+                <RecommendSection enabled={true} />
               </div>
             </>
           )}
