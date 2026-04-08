@@ -1,7 +1,7 @@
 "use client";
 
 import { Ingredient } from "@/types";
-import { RARITY, getGenreInfo } from "@/lib/ingredients";
+import { RARITY, getIngredientCategoryInfo } from "@/lib/ingredients";
 import Badge from "./Badge";
 
 interface DiscoveryModalProps {
@@ -85,14 +85,14 @@ export default function DiscoveryModal({ ingredients, onClose }: DiscoveryModalP
                   <div className="font-bold text-sm" style={{ color: "#2D2D2D" }}>{ing.nameJa}</div>
                   <div className="text-xs" style={{ color: "#9B9B9B" }}>{ing.nameInci}</div>
                   {(() => {
-                    const g = getGenreInfo(ing.genre);
-                    return g ? (
+                    const c = getIngredientCategoryInfo(ing);
+                    return c ? (
                       <div className="flex gap-1 mt-1">
                         <span
                           className="text-[10px] px-1.5 py-0.5 rounded-full"
-                          style={{ background: g.color + "20", color: g.color }}
+                          style={{ background: c.color + "20", color: c.color }}
                         >
-                          {g.icon} {g.label}
+                          {c.icon} {c.label}
                         </span>
                       </div>
                     ) : null;

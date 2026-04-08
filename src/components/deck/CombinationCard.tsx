@@ -1,23 +1,23 @@
 "use client";
 
 import { Combination } from "@/types";
-import { getIngredientByName, getGenreInfo } from "@/lib/ingredients";
+import { getIngredientByName, getIngredientCategoryInfo } from "@/lib/ingredients";
 
 interface Props {
   combo: Combination;
   ingredientProducts: [string[], string[]];
 }
 
-function getIngredientGenreInfo(nameJa: string) {
+function getIngredientCatInfo(nameJa: string) {
   const ing = getIngredientByName(nameJa);
   if (!ing) return null;
-  return getGenreInfo(ing.genre) ?? null;
+  return getIngredientCategoryInfo(ing);
 }
 
 function IngredientTag({ name, products }: { name: string; products: string[] }) {
-  const genre = getIngredientGenreInfo(name);
-  const bg = genre ? `${genre.color}1A` : "rgba(200,200,200,0.15)";
-  const color = genre ? genre.color : "#7E9389";
+  const cat = getIngredientCatInfo(name);
+  const bg = cat ? `${cat.color}1A` : "rgba(200,200,200,0.15)";
+  const color = cat ? cat.color : "#7E9389";
 
   return (
     <div className="flex-1 min-w-0">
@@ -25,9 +25,9 @@ function IngredientTag({ name, products }: { name: string; products: string[] })
         className="px-2.5 py-1.5 rounded-xl text-center"
         style={{ background: bg, border: `1px solid ${color}30` }}
       >
-        {genre && (
+        {cat && (
           <div className="text-[10px] mb-0.5 font-sans" style={{ color }}>
-            {genre.icon} {genre.label}
+            {cat.icon} {cat.label}
           </div>
         )}
         <div className="text-xs font-bold truncate text-bo-ink font-sans">

@@ -4,7 +4,7 @@ import { useParams } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import { useProductStore } from "@/stores/useProductStore";
-import { getIngredientById, getGenreInfo } from "@/lib/ingredients";
+import { getIngredientById, getIngredientCategoryInfo } from "@/lib/ingredients";
 import { findCombinations } from "@/lib/combinations";
 import { getGenreByKey } from "@/lib/productGenres";
 import Badge, { StarIcon } from "@/components/ui/Badge";
@@ -13,11 +13,22 @@ import Disclaimer from "@/components/ui/Disclaimer";
 import { useUser } from "@/lib/auth";
 import PageLoading from "@/components/ui/PageLoading";
 import AuthGuard from "@/components/ui/AuthGuard";
+import { updatePurchasedAtInDb } from "@/lib/db";
+import { useState } from "react";
+
+function formatDate(iso: string) {
+  const d = new Date(iso);
+  return `${d.getFullYear()}/${String(d.getMonth() + 1).padStart(2, "0")}/${String(d.getDate()).padStart(2, "0")}`;
+}
 
 export default function ProductDetailPage() {
-  const { loading } = useUser();
+  const { user, supabase, loading } = useUser();
   const { id } = useParams<{ id: string }>();
   const product = useProductStore((s) => s.getProduct(id));
+  const updatePurchasedAt = useProductStore((s) => s.updatePurchasedAt);
+  const [editingPurchasedAt, setEditingPurchasedAt] = useState(false);
+  const [purchasedAtInput, setPurchasedAtInput] = useState("");
+  const [savingPurchasedAt, setSavingPurchasedAt] = useState(false);
 
   if (loading) {
     return <PageLoading message="コスメ情報を読み込んでいます..." />;
@@ -30,11 +41,12 @@ export default function ProductDetailPage() {
           <div className="flex items-center gap-3 mb-8">
             <Link
               href="/history"
-              className="w-9 h-9 rounded-[10px] bg-bo-parchment flex items-center justify-center shrink-0"
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-bo-parchment text-[13px] font-semibold text-bo-accent font-sans active:opacity-70 transition-opacity shrink-0"
             >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3D4F45" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
                 <path d="M19 12H5M12 19l-7-7 7-7" />
               </svg>
+              マイコスメ
             </Link>
             <h1 className="text-lg font-extrabold font-serif text-bo-ink m-0">コスメ詳細</h1>
           </div>
@@ -70,11 +82,12 @@ export default function ProductDetailPage() {
         <div className="flex items-center gap-3 mb-5">
           <Link
             href="/history"
-            className="w-9 h-9 rounded-[10px] bg-bo-parchment flex items-center justify-center shrink-0"
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-bo-parchment text-[13px] font-semibold text-bo-accent font-sans active:opacity-70 transition-opacity shrink-0"
           >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3D4F45" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
               <path d="M19 12H5M12 19l-7-7 7-7" />
             </svg>
+            マイコスメ
           </Link>
           <h1 className="text-lg font-extrabold font-serif text-bo-ink m-0">コスメ詳細</h1>
         </div>
@@ -116,6 +129,69 @@ export default function ProductDetailPage() {
           </div>
         </div>
 
+        {/* Date info */}
+        {(product.lastUsedAt || product.purchasedAt || true) && (
+          <div className="mb-5 bg-white rounded-r2 p-3.5 shadow-bo1 border border-bo-parchment space-y-2.5">
+            {/* 最終使用日 */}
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] text-bo-ink-muted font-sans">最終使用日</span>
+              <span className="text-[12px] font-semibold text-bo-ink font-sans">
+                {product.lastUsedAt ? formatDate(product.lastUsedAt) : "—"}
+              </span>
+            </div>
+            {/* 購入日 */}
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-[11px] text-bo-ink-muted font-sans">購入日</span>
+              {editingPurchasedAt ? (
+                <div className="flex items-center gap-1.5">
+                  <input
+                    type="date"
+                    value={purchasedAtInput}
+                    onChange={(e) => setPurchasedAtInput(e.target.value)}
+                    className="text-[11px] border border-bo-parchment rounded-lg px-2 py-1 font-sans text-bo-ink bg-bo-cream focus:outline-none"
+                  />
+                  <button
+                    onClick={async () => {
+                      if (!user) return;
+                      setSavingPurchasedAt(true);
+                      const val = purchasedAtInput || null;
+                      await updatePurchasedAtInDb(supabase, user.id, product.id, val);
+                      updatePurchasedAt(product.id, val ?? undefined);
+                      setSavingPurchasedAt(false);
+                      setEditingPurchasedAt(false);
+                    }}
+                    disabled={savingPurchasedAt}
+                    className="text-[11px] px-2.5 py-1 rounded-full bg-bo-accent text-white font-bold font-sans disabled:opacity-50"
+                  >
+                    保存
+                  </button>
+                  <button
+                    onClick={() => setEditingPurchasedAt(false)}
+                    className="text-[11px] px-2 py-1 rounded-full border border-bo-parchment text-bo-ink-muted font-sans"
+                  >
+                    ✕
+                  </button>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <span className="text-[12px] font-semibold text-bo-ink font-sans">
+                    {product.purchasedAt ? formatDate(product.purchasedAt) : "—"}
+                  </span>
+                  <button
+                    onClick={() => {
+                      setPurchasedAtInput(product.purchasedAt ?? "");
+                      setEditingPurchasedAt(true);
+                    }}
+                    className="text-[10px] px-2 py-0.5 rounded-full border border-bo-parchment text-bo-ink-muted font-sans hover:bg-bo-parchment"
+                  >
+                    編集
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Ingredients list */}
         <h2 className="font-bold text-xs mb-2 flex items-center gap-2 text-bo-ink font-sans">
           <span className="w-1 h-3.5 rounded-full inline-block bg-bo-accent" />
@@ -140,14 +216,14 @@ export default function ProductDetailPage() {
                 </div>
                 <div className="text-[10px] mt-0.5 text-bo-ink-muted font-sans">{ing.nameInci}</div>
                 {(() => {
-                  const g = getGenreInfo(ing.genre);
-                  return g ? (
+                  const c = getIngredientCategoryInfo(ing);
+                  return c ? (
                     <div className="flex gap-1 mt-0.5">
                       <span
                         className="text-[9px] px-1.5 py-0.5 rounded-full font-medium font-sans"
-                        style={{ background: g.color + "18", color: g.color }}
+                        style={{ background: c.color + "18", color: c.color }}
                       >
-                        {g.icon} {g.label}
+                        {c.icon} {c.label}
                       </span>
                     </div>
                   ) : null;

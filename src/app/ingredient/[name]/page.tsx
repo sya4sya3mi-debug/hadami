@@ -2,7 +2,7 @@
 
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import { getIngredientById, getGenreInfo } from "@/lib/ingredients";
+import { getIngredientById, getIngredientCategoryInfo, getIngredientCategories } from "@/lib/ingredients";
 import { useProductStore } from "@/stores/useProductStore";
 import { useZukanStore } from "@/stores/useZukanStore";
 import Badge from "@/components/ui/Badge";
@@ -59,7 +59,8 @@ export default function IngredientDetailPage() {
     );
   }
 
-  const genreInfo = getGenreInfo(ingredient.genre);
+  const catInfo = getIngredientCategoryInfo(ingredient);
+  const allCats = getIngredientCategories(ingredient);
   const containingProducts = products.filter((p) =>
     p.ingredients.some((pi) => pi.ingredientId === ingredient.id)
   );
@@ -74,22 +75,23 @@ export default function IngredientDetailPage() {
         <div className="text-center mb-5">
           <div
             className="w-14 h-14 rounded-full flex items-center justify-center text-2xl mx-auto mb-2"
-            style={{ background: `linear-gradient(135deg, ${genreInfo?.color || ingredient.color}20, ${genreInfo?.color || ingredient.color}08)` }}
+            style={{ background: `linear-gradient(135deg, ${catInfo?.color || ingredient.color}20, ${catInfo?.color || ingredient.color}08)` }}
           >
-            {genreInfo?.icon || "📦"}
+            {catInfo?.icon || "🧪"}
           </div>
           <h1 className="font-bold text-lg text-bo-ink font-sans">{ingredient.nameJa}</h1>
           <p className="text-xs mt-0.5 text-bo-ink-muted font-sans">{ingredient.nameInci}</p>
-          <div className="flex items-center justify-center gap-2 mt-1.5">
+          <div className="flex items-center justify-center gap-2 mt-1.5 flex-wrap">
             <Badge rarity={ingredient.rarity} size="sm" />
-            {genreInfo && (
+            {allCats.map((c) => (
               <span
+                key={c.key}
                 className="text-[10px] px-2 py-0.5 rounded-full font-medium font-sans"
-                style={{ background: genreInfo.color + "18", color: genreInfo.color }}
+                style={{ background: c.color + "18", color: c.color }}
               >
-                {genreInfo.icon} {genreInfo.label}
+                {c.icon} {c.label}
               </span>
-            )}
+            ))}
           </div>
         </div>
 

@@ -4719,6 +4719,19 @@ ACTIVE_INGREDIENTS.forEach((i) => {
   });
 });
 
+/** 成分の主カテゴリ情報を返す（有効成分ならactiveカテゴリ、それ以外はnull） */
+export function getIngredientCategoryInfo(ingredient: Ingredient): ActiveCategoryInfo | null {
+  if (!ingredient.activeIngredient || ingredient.categories.length === 0) return null;
+  return ACTIVE_CATEGORIES.find((c) => c.key === ingredient.categories[0]) ?? null;
+}
+
+/** 成分の全カテゴリ情報を返す */
+export function getIngredientCategories(ingredient: Ingredient): ActiveCategoryInfo[] {
+  return ingredient.categories
+    .map((cat) => ACTIVE_CATEGORIES.find((c) => c.key === cat))
+    .filter((c): c is ActiveCategoryInfo => c !== undefined);
+}
+
 export function getActiveByCategory(cat: string): Ingredient[] {
   return _activeByCategory.get(cat) || [];
 }

@@ -6,8 +6,9 @@ import { useRouter } from "next/navigation";
 import { useProductStore } from "@/stores/useProductStore";
 import { useZukanStore } from "@/stores/useZukanStore";
 import { useDeckStore } from "@/stores/useDeckStore";
-import { getIngredientById, getGenreInfo } from "@/lib/ingredients";
-import { getScanCountByEmail } from "@/lib/db";
+import { getIngredientById, getIngredientCategoryInfo } from "@/lib/ingredients";
+import { getGenreByKey } from "@/lib/productGenres";
+import { getScanCountByEmail, updateLastUsedAtInDb } from "@/lib/db";
 import Disclaimer from "@/components/ui/Disclaimer";
 import InstallBanner from "@/components/ui/InstallBanner";
 import { useUser } from "@/lib/auth";
@@ -97,6 +98,7 @@ function Counter({ to, dur = 900 }: { to: number; dur?: number }) {
 export default function HomePage() {
   const { user, profile, supabase, loading } = useUser();
   const products = useProductStore((s) => s.products);
+  const updateLastUsedAt = useProductStore((s) => s.updateLastUsedAt);
   const discoveredCount = useZukanStore((s) => s.discoveredIds.length);
   const deckItems = useDeckStore((s) => s.items);
   const router = useRouter();
@@ -138,7 +140,15 @@ export default function HomePage() {
   if (loading) return <PageLoading />;
   if (!user) return <LandingPage />;
 
-  const routineDeckItems = deckItems.filter((i) => i.routine === autoRoutine);
+  const routineDeckItems = deckItems
+    .filter((i) => i.routine === autoRoutine)
+    .sort((a, b) => {
+      const pa = products.find((p) => p.id === a.productId);
+      const pb = products.find((p) => p.id === b.productId);
+      const orderA = getGenreByKey(pa?.productType ?? "other")?.order ?? 99;
+      const orderB = getGenreByKey(pb?.productType ?? "other")?.order ?? 99;
+      return orderA - orderB;
+    });
   const recentProducts = products.slice(0, 3);
 
   // Build steps from deck items + products
@@ -150,11 +160,11 @@ export default function HomePage() {
       type: prod?.productType || "",
       ingredients: (prod?.ingredients || []).slice(0, 3).map((pi) => {
         const ing = getIngredientById(pi.ingredientId);
-        const genreInfo = ing ? getGenreInfo(ing.genre) : null;
+        const genreInfo = ing ? getIngredientCategoryInfo(ing) : null;
         return {
           name: ing?.nameJa || pi.ingredientId || "",
-          icon: genreInfo?.icon || "💧",
-          cat: genreInfo?.label || "うるおい",
+          icon: genreInfo?.icon || "🧪",
+          cat: genreInfo?.label || "",
         };
       }),
     };
@@ -166,6 +176,15 @@ export default function HomePage() {
     if (next.has(i)) { next.delete(i); } else { next.add(i); }
     setCheckedSteps(next);
     saveRoutineChecks(autoRoutine, next);
+
+    if (!wasChecked && routineDeckItems[i]) {
+      const productId = routineDeckItems[i].productId;
+      const now = new Date().toISOString();
+      updateLastUsedAt(productId, now);
+      if (user) {
+        updateLastUsedAtInDb(supabase, user.id, productId).catch(() => {});
+      }
+    }
 
     if (!wasChecked && routineSteps[i]) {
       const step = routineSteps[i];
@@ -261,9 +280,9 @@ export default function HomePage() {
 
         {/* Streak badge */}
         {streak > 0 && (
-          <div className={`mb-4 flex items-center justify-center gap-2 py-2 px-4 rounded-full bg-gradient-to-r from-amber-50 to-amber-100 border border-amber-200 ${streakJustUpdated ? "animate-fade-up" : ""}`}>
+          <div className={`mb-4 flex items-center justify-center gap-2 py-2 px-4 rounded-full bg-bo-accent-soft border border-bo-accent/20 ${streakJustUpdated ? "animate-fade-up" : ""}`}>
             <span className="text-base">🔥</span>
-            <span className="text-xs font-bold text-amber-700 font-sans">
+            <span className="text-xs font-bold text-bo-accent font-sans">
               連続 {streak} 日達成中！
             </span>
           </div>
@@ -361,9 +380,9 @@ export default function HomePage() {
                   お疲れさまでした！今日も肌を大切にできました
                 </div>
                 {streak > 0 && (
-                  <div className="inline-flex items-center gap-1.5 py-1.5 px-4 rounded-full bg-white/80 border border-amber-200">
+                  <div className="inline-flex items-center gap-1.5 py-1.5 px-4 rounded-full bg-white/80 border border-bo-accent/20">
                     <span className="text-base">🔥</span>
-                    <span className="text-xs font-bold text-amber-700 font-sans">
+                    <span className="text-xs font-bold text-bo-accent font-sans">
                       連続 {streak} 日目！
                     </span>
                   </div>
