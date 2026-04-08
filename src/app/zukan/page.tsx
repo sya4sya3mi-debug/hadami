@@ -506,9 +506,9 @@ export default function ZukanPage() {
           }}
         >
           <div className="flex items-baseline justify-between mb-3">
-            <span className="text-[15px] font-bold text-bo-ink font-sans">
-              成分図鑑
-            </span>
+            <h1 className="text-2xl font-extrabold text-bo-ink font-serif m-0">
+              コスメずかん
+            </h1>
             <div>
               <span className="text-[28px] font-extrabold text-bo-accent font-serif leading-none">
                 {pct}
