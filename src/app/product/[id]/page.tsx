@@ -88,6 +88,26 @@ export default function ProductDetailPage() {
           </div>
         </div>
 
+        {/* Date info */}
+        <div className="flex gap-2.5 mb-5">
+          <div className="flex-1 bg-white rounded-r1 p-3 border border-bo-parchment shadow-bo1">
+            <div className="text-[9px] text-bo-ink-muted font-sans mb-1">最終使用日</div>
+            <div className="text-[12px] font-bold text-bo-ink font-sans">
+              {product.lastUsedAt
+                ? new Date(product.lastUsedAt).toLocaleDateString("ja-JP", { year: "numeric", month: "long", day: "numeric" })
+                : "未記録"}
+            </div>
+          </div>
+          <div className="flex-1 bg-white rounded-r1 p-3 border border-bo-parchment shadow-bo1">
+            <div className="text-[9px] text-bo-ink-muted font-sans mb-1">購入日</div>
+            <div className="text-[12px] font-bold text-bo-ink font-sans">
+              {product.purchasedAt
+                ? new Date(product.purchasedAt).toLocaleDateString("ja-JP", { year: "numeric", month: "long", day: "numeric" })
+                : "未設定"}
+            </div>
+          </div>
+        </div>
+
         {/* Ingredients list */}
         <h2 className="font-bold text-xs mb-2 flex items-center gap-2 text-bo-ink font-sans">
           <span className="w-1 h-3.5 rounded-full inline-block bg-bo-accent" />

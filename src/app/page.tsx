@@ -7,7 +7,7 @@ import { useProductStore } from "@/stores/useProductStore";
 import { useZukanStore } from "@/stores/useZukanStore";
 import { useDeckStore } from "@/stores/useDeckStore";
 import { getIngredientById, getGenreInfo } from "@/lib/ingredients";
-import { getScanCountByEmail } from "@/lib/db";
+import { getScanCountByEmail, updateLastUsedAtInDb } from "@/lib/db";
 import Disclaimer from "@/components/ui/Disclaimer";
 import InstallBanner from "@/components/ui/InstallBanner";
 import { useUser } from "@/lib/auth";
@@ -97,6 +97,7 @@ function Counter({ to, dur = 900 }: { to: number; dur?: number }) {
 export default function HomePage() {
   const { user, profile, supabase, loading } = useUser();
   const products = useProductStore((s) => s.products);
+  const updateLastUsedAt = useProductStore((s) => s.updateLastUsedAt);
   const discoveredCount = useZukanStore((s) => s.discoveredIds.length);
   const deckItems = useDeckStore((s) => s.items);
   const router = useRouter();
@@ -166,6 +167,16 @@ export default function HomePage() {
     if (next.has(i)) { next.delete(i); } else { next.add(i); }
     setCheckedSteps(next);
     saveRoutineChecks(autoRoutine, next);
+
+    // チェックを入れた時に最終使用日を更新
+    if (!wasChecked && routineDeckItems[i]) {
+      const productId = routineDeckItems[i].productId;
+      const now = new Date().toISOString();
+      updateLastUsedAt(productId, now);
+      if (user) {
+        updateLastUsedAtInDb(supabase, user.id, productId, now).catch(() => {});
+      }
+    }
 
     if (!wasChecked && routineSteps[i]) {
       const step = routineSteps[i];

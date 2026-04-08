@@ -15,6 +15,8 @@ interface ProductState {
   updateProductImage: (id: string, packageImage: string) => void;
   updateProductType: (id: string, productType: ProductGenre) => void;
   toggleFavorite: (id: string) => void;
+  updateLastUsedAt: (id: string, date: string) => void;
+  updatePurchasedAt: (id: string, date: string | undefined) => void;
 }
 
 export const useProductStore = create<ProductState>()(
@@ -51,6 +53,18 @@ export const useProductStore = create<ProductState>()(
         set((state) => ({
           products: state.products.map((p) =>
             p.id === id ? { ...p, isFavorite: !p.isFavorite } : p
+          ),
+        })),
+      updateLastUsedAt: (id, date) =>
+        set((state) => ({
+          products: state.products.map((p) =>
+            p.id === id ? { ...p, lastUsedAt: date } : p
+          ),
+        })),
+      updatePurchasedAt: (id, date) =>
+        set((state) => ({
+          products: state.products.map((p) =>
+            p.id === id ? { ...p, purchasedAt: date } : p
           ),
         })),
     }),

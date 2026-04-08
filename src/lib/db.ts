@@ -231,6 +231,36 @@ export async function updateProductTypeInDb(
   return { error: error?.message ?? null };
 }
 
+/** 製品の最終使用日を更新 */
+export async function updateLastUsedAtInDb(
+  supabase: SupabaseClient,
+  userId: string,
+  productId: string,
+  lastUsedAt: string
+): Promise<{ error: string | null }> {
+  const { error } = await supabase
+    .from("products")
+    .update({ last_used_at: lastUsedAt })
+    .eq("id", productId)
+    .eq("user_id", userId);
+  return { error: error?.message ?? null };
+}
+
+/** 製品の購入日を更新 */
+export async function updatePurchasedAtInDb(
+  supabase: SupabaseClient,
+  userId: string,
+  productId: string,
+  purchasedAt: string | null
+): Promise<{ error: string | null }> {
+  const { error } = await supabase
+    .from("products")
+    .update({ purchased_at: purchasedAt })
+    .eq("id", productId)
+    .eq("user_id", userId);
+  return { error: error?.message ?? null };
+}
+
 /** 製品のお気に入り状態を切り替え */
 export async function toggleFavoriteInDb(
   supabase: SupabaseClient,

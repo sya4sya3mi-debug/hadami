@@ -10,7 +10,7 @@ import PageLoading from "@/components/ui/PageLoading";
 import AuthGuard from "@/components/ui/AuthGuard";
 import Glass from "@/components/ui/Glass";
 import ProductDetail from "@/components/ui/ProductDetail";
-import { deleteProductFromDb, updateProductImageInDb, deleteProductImageFromDb, updateProductTypeInDb, toggleFavoriteInDb } from "@/lib/db";
+import { deleteProductFromDb, updateProductImageInDb, deleteProductImageFromDb, updateProductTypeInDb, toggleFavoriteInDb, updatePurchasedAtInDb } from "@/lib/db";
 import { PRODUCT_GENRES, getGenreByKey } from "@/lib/productGenres";
 import { ProductGenre, Product } from "@/types";
 
@@ -43,6 +43,7 @@ export default function HistoryPage() {
   const updateProductImage = useProductStore((s) => s.updateProductImage);
   const updateProductType = useProductStore((s) => s.updateProductType);
   const toggleFavorite = useProductStore((s) => s.toggleFavorite);
+  const updatePurchasedAt = useProductStore((s) => s.updatePurchasedAt);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [updatingImageId, setUpdatingImageId] = useState<string | null>(null);
@@ -124,6 +125,21 @@ export default function HistoryPage() {
       await toggleFavoriteInDb(supabase, user.id, productId, !currentFav);
     } catch {
       toggleFavorite(productId); // rollback
+    }
+  };
+
+  const handleUpdatePurchasedAt = async (productId: string, date: string | undefined) => {
+    if (!user) return;
+    updatePurchasedAt(productId, date);
+    if (selectedProduct?.id === productId) {
+      setSelectedProduct({ ...selectedProduct, purchasedAt: date });
+    }
+    try {
+      await updatePurchasedAtInDb(supabase, user.id, productId, date ?? null);
+    } catch {
+      // rollback on error
+      const prev = products.find((p) => p.id === productId)?.purchasedAt;
+      updatePurchasedAt(productId, prev);
     }
   };
 
@@ -489,6 +505,7 @@ export default function HistoryPage() {
             handleToggleFavorite(selectedProduct.id, selectedProduct.isFavorite);
             setSelectedProduct({ ...selectedProduct, isFavorite: !selectedProduct.isFavorite });
           }}
+          onUpdatePurchasedAt={(date) => handleUpdatePurchasedAt(selectedProduct.id, date)}
         />
       )}
 

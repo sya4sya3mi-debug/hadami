@@ -19,6 +19,8 @@ type ProductRow = {
   package_image_url: string | null;
   is_favorite: boolean | null;
   created_at: string | null;
+  last_used_at: string | null;
+  purchased_at: string | null;
 };
 
 type DiscoveryRow = {
@@ -66,6 +68,8 @@ function mapProducts(rows: ProductRow[]): Product[] {
     packageImage: undefined,
     isFavorite: row.is_favorite ?? false,
     createdAt: row.created_at ?? new Date(0).toISOString(),
+    lastUsedAt: row.last_used_at ?? undefined,
+    purchasedAt: row.purchased_at ?? undefined,
     ingredients: (row.ingredient_ids ?? []).map((ingredientId, index) => ({
       ingredientId,
       orderIndex: index,
@@ -85,7 +89,7 @@ export async function syncUserData(supabase: SupabaseClient, userId: string) {
   const [productsRes, discoveriesRes, deckRes] = await Promise.all([
     supabase
       .from("products")
-      .select("id, name, brand, product_type, ingredient_ids, package_image_url, is_favorite, created_at")
+      .select("id, name, brand, product_type, ingredient_ids, package_image_url, is_favorite, created_at, last_used_at, purchased_at")
       .eq("user_id", userId)
       .order("created_at", { ascending: false }),
     supabase

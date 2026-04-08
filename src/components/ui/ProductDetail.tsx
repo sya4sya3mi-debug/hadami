@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { Product } from "@/types";
 import { MASTER_INGREDIENTS } from "@/lib/ingredients";
@@ -9,16 +10,28 @@ const TYPE_LABELS: Record<string, string> = {
   emulsion: "乳液", sunscreen: "日焼け止め", other: "その他",
 };
 
+function formatDate(iso: string | undefined): string {
+  if (!iso) return "未設定";
+  const d = new Date(iso);
+  return d.toLocaleDateString("ja-JP", { year: "numeric", month: "long", day: "numeric" });
+}
+
 export default function ProductDetail({
   product,
   onClose,
   onToggleFavorite,
+  onUpdatePurchasedAt,
 }: {
   product: Product;
   onClose: () => void;
   onToggleFavorite?: () => void;
+  onUpdatePurchasedAt?: (date: string | undefined) => void;
 }) {
   const router = useRouter();
+  const [editingPurchaseDate, setEditingPurchaseDate] = useState(false);
+  const [purchaseDateInput, setPurchaseDateInput] = useState(
+    product.purchasedAt ? new Date(product.purchasedAt).toISOString().slice(0, 10) : ""
+  );
 
   const ingredientDetails = product.ingredients.map((ing) => {
     const master = MASTER_INGREDIENTS.find((m) => m.id === ing.ingredientId);
@@ -75,6 +88,60 @@ export default function ProductDetail({
 
       {/* Content */}
       <div className="px-5 pt-6 pb-24 -mt-4 rounded-t-2xl bg-bo-cream relative">
+        {/* Date info */}
+        <div className="flex gap-2.5 mb-5">
+          <div className="flex-1 bg-white rounded-r1 p-3 border border-bo-parchment shadow-bo1">
+            <div className="text-[9px] text-bo-ink-muted font-sans mb-1">最終使用日</div>
+            <div className="text-[12px] font-bold text-bo-ink font-sans">
+              {formatDate(product.lastUsedAt)}
+            </div>
+          </div>
+          <div className="flex-1 bg-white rounded-r1 p-3 border border-bo-parchment shadow-bo1">
+            <div className="text-[9px] text-bo-ink-muted font-sans mb-1">購入日</div>
+            {editingPurchaseDate ? (
+              <div className="flex flex-col gap-1.5">
+                <input
+                  type="date"
+                  value={purchaseDateInput}
+                  onChange={(e) => setPurchaseDateInput(e.target.value)}
+                  className="text-[11px] font-sans border border-bo-parchment rounded-md px-2 py-1 bg-white text-bo-ink w-full"
+                />
+                <div className="flex gap-1">
+                  <button
+                    onClick={() => {
+                      const dateValue = purchaseDateInput
+                        ? new Date(purchaseDateInput + "T00:00:00").toISOString()
+                        : undefined;
+                      onUpdatePurchasedAt?.(dateValue);
+                      setEditingPurchaseDate(false);
+                    }}
+                    className="flex-1 text-[10px] font-bold py-1 rounded-md border-none bg-bo-accent text-white cursor-pointer font-sans"
+                  >
+                    保存
+                  </button>
+                  <button
+                    onClick={() => {
+                      setPurchaseDateInput(product.purchasedAt ? new Date(product.purchasedAt).toISOString().slice(0, 10) : "");
+                      setEditingPurchaseDate(false);
+                    }}
+                    className="flex-1 text-[10px] font-bold py-1 rounded-md border border-bo-parchment bg-white text-bo-ink-muted cursor-pointer font-sans"
+                  >
+                    取消
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <button
+                onClick={() => setEditingPurchaseDate(true)}
+                className="text-[12px] font-bold font-sans bg-transparent border-none cursor-pointer p-0 text-left w-full"
+                style={{ color: product.purchasedAt ? "#1B2620" : "#3A8F7A" }}
+              >
+                {product.purchasedAt ? formatDate(product.purchasedAt) : "＋ 追加"}
+              </button>
+            )}
+          </div>
+        </div>
+
         <div className="text-[15px] font-bold text-bo-ink font-sans mb-3.5">
           この製品の成分{" "}
           <span className="text-xs font-normal text-bo-ink-muted">
