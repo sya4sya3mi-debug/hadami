@@ -71,7 +71,12 @@ export async function GET() {
 
   const searchResults: Record<string, RakutenProduct[]> = {};
   for (const keyword of allKeywords) {
-    searchResults[keyword] = await searchRakutenCached(keyword, supabase);
+    try {
+      searchResults[keyword] = await searchRakutenCached(keyword, supabase);
+    } catch (e) {
+      console.error("Rakuten search failed for keyword:", keyword, e);
+      searchResults[keyword] = [];
+    }
     await new Promise((resolve) => setTimeout(resolve, 1100));
   }
 

@@ -15,7 +15,6 @@ export default function RecommendSection({ enabled, hideIfEmpty = false }: Props
   const { data, loading, error } = useRecommendations(enabled);
 
   if (!enabled) return null;
-  if (error) return null;
 
   const hasProducts =
     data &&
@@ -25,7 +24,8 @@ export default function RecommendSection({ enabled, hideIfEmpty = false }: Props
   // スキャンページでは商品なし・ローディング中は非表示
   if (hideIfEmpty && (loading || !hasProducts)) return null;
 
-  if (!loading && !hasProducts) {
+  // エラー時・商品なし時はプレースホルダーを表示（非表示にしない）
+  if (error || (!loading && !hasProducts)) {
     return (
       <div className="rounded-r2 bg-white border border-bo-parchment p-5 text-center">
         <div className="text-2xl mb-2">🛍️</div>
