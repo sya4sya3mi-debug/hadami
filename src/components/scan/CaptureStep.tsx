@@ -53,7 +53,7 @@ interface CaptureStepProps {
   disabled?: boolean;
 }
 
-export default function CaptureStep({ onCapture, onManualInput, preview, disabled }: CaptureStepProps) {
+export default function CaptureStep({ onCapture, preview, disabled }: CaptureStepProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [localPreview, setLocalPreview] = useState<string | null>(null);
 
@@ -134,29 +134,7 @@ export default function CaptureStep({ onCapture, onManualInput, preview, disable
         className="hidden"
       />
 
-      {/* Manual input card */}
-      <button
-        onClick={onManualInput}
-        className="w-full rounded-r2 p-4 text-left bg-white/85 border-[1.5px] border-bo-accent/15 shadow-[0_2px_12px_rgba(58,143,122,0.06)]"
-      >
-        <div className="flex items-center gap-3">
-          <div className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0 bg-bo-accent-soft">
-            <span className="text-2xl">📋</span>
-          </div>
-          <div className="flex-1 min-w-0">
-            <div className="text-[14px] font-bold text-bo-ink font-sans">
-              成分リストを直接入力
-            </div>
-            <div className="text-xs mt-0.5 text-bo-ink-muted font-sans">
-              スキャン回数を消費しません
-            </div>
-          </div>
-          <span className="text-bo-ink-faint text-lg">›</span>
-        </div>
-        <div className="mt-3 rounded-xl px-3 py-2 text-xs bg-bo-accent-soft/40 text-bo-accent font-sans">
-          💡 iPhoneの写真でテキストを長押しコピー → 貼り付けるだけ
-        </div>
-      </button>
+      {/* Manual input card — temporarily hidden */}
 
       {/* Tips */}
       <div className="rounded-r1 p-4 bg-bo-accent-soft border border-bo-accent/10">
