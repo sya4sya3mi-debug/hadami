@@ -3632,3 +3632,9 @@ export function getIngredientById(id: string): Ingredient | undefined {
 export function getIngredientByName(nameJa: string): Ingredient | undefined {
   return _byName.get(nameJa);
 }
+
+export const INGREDIENT_COUNT = MASTER_INGREDIENTS.length;
+
+export function getGenreTotal(genre: IngredientGenre): number {
+  return MASTER_INGREDIENTS.filter((i) => i.genre === genre).length;
+}
