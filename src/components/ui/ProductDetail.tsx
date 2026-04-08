@@ -78,7 +78,7 @@ export default function ProductDetail({
       </div>
 
       {/* Content */}
-      <div className="px-5 pt-6 pb-24 -mt-4 rounded-t-2xl bg-bo-cream relative">
+      <div className="px-5 pt-6 pb-10 -mt-4 rounded-t-2xl bg-bo-cream relative">
         <div className="text-[15px] font-bold text-bo-ink font-sans mb-3.5">
           この製品の成分{" "}
           <span className="text-xs font-normal text-bo-ink-muted">
@@ -142,18 +142,6 @@ export default function ProductDetail({
         </div>
       </div>
 
-      {/* Bottom fixed back bar */}
-      <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[430px] z-[310] px-5 py-3 pb-[calc(12px+env(safe-area-inset-bottom))] bg-bo-cream/[0.92] backdrop-blur-xl border-t border-bo-parchment">
-        <button
-          onClick={onClose}
-          className="w-full py-3.5 rounded-r1 bg-bo-parchment border-none text-[13px] font-bold text-bo-ink-soft font-sans cursor-pointer flex items-center justify-center gap-1.5"
-        >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#3D4F45" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
-            <path d="M19 12H5M12 19l-7-7 7-7" />
-          </svg>
-          Myコスメに戻る
-        </button>
-      </div>
     </div>
   );
 }
