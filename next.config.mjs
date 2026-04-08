@@ -3,6 +3,13 @@ const nextConfig = {
   experimental: {
     serverComponentsExternalPackages: ["@resvg/resvg-js"],
   },
+  webpack: (config, { isServer }) => {
+    if (!isServer) {
+      config.externals = [...(config.externals || []), "@resvg/resvg-js"];
+    }
+    config.module.rules.push({ test: /\.node$/, use: "ignore-loader" });
+    return config;
+  },
   images: {
     remotePatterns: [
       {
