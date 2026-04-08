@@ -333,6 +333,11 @@ export default function HistoryPage() {
                               {p.name}
                             </div>
                             <div className="text-[10px] text-bo-ink-muted font-sans">{p.brand}</div>
+                            {p.lastUsedAt && (
+                              <div className="text-[9px] text-bo-accent font-sans mt-0.5">
+                                {new Date(p.lastUsedAt).toLocaleDateString("ja-JP", { month: "numeric", day: "numeric" })} 使用
+                              </div>
+                            )}
                           </div>
                         </div>
                         {editMode && (
@@ -432,9 +437,15 @@ export default function HistoryPage() {
                                 >
                                   {p.isFavorite ? "❤️" : "🤍"}
                                 </button>
-                                <span className="text-[9px] text-bo-ink-faint font-sans">
-                                  {new Date(p.createdAt).toLocaleDateString("ja-JP", { month: "numeric", day: "numeric" })}
-                                </span>
+                                {p.lastUsedAt ? (
+                                  <span className="text-[9px] text-bo-accent font-sans">
+                                    {new Date(p.lastUsedAt).toLocaleDateString("ja-JP", { month: "numeric", day: "numeric" })} 使用
+                                  </span>
+                                ) : (
+                                  <span className="text-[9px] text-bo-ink-faint font-sans">
+                                    {new Date(p.createdAt).toLocaleDateString("ja-JP", { month: "numeric", day: "numeric" })}
+                                  </span>
+                                )}
                               </>
                             )}
                           </div>
