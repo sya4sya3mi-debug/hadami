@@ -11,6 +11,7 @@ const nextConfig = {
     return config;
   },
   images: {
+    unoptimized: true,
     remotePatterns: [
       {
         protocol: "https",
@@ -18,7 +19,7 @@ const nextConfig = {
         pathname: "/storage/v1/object/**",
       },
     ],
-    formats: ["image/webp"],
+    formats: ["image/avif", "image/webp"],
   },
   async headers() {
     return [
