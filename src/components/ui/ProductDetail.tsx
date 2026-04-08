@@ -12,9 +12,11 @@ const TYPE_LABELS: Record<string, string> = {
 export default function ProductDetail({
   product,
   onClose,
+  onToggleFavorite,
 }: {
   product: Product;
   onClose: () => void;
+  onToggleFavorite?: () => void;
 }) {
   const router = useRouter();
 
@@ -48,7 +50,10 @@ export default function ProductDetail({
         <div className="absolute inset-0 bg-gradient-to-t from-[rgba(27,38,32,0.7)] to-transparent pointer-events-none" />
 
         {/* Fav button */}
-        <button className="absolute top-4 right-4 w-10 h-10 rounded-[10px] bg-white/20 backdrop-blur-lg border-none flex items-center justify-center cursor-pointer text-base z-[2]">
+        <button
+          onClick={onToggleFavorite}
+          className="absolute top-4 right-4 w-10 h-10 rounded-[10px] bg-white/20 backdrop-blur-lg border-none flex items-center justify-center cursor-pointer text-base z-[2]"
+        >
           {product.isFavorite ? "❤️" : "🤍"}
         </button>
 
