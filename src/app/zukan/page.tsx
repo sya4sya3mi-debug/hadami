@@ -5,14 +5,15 @@ import { useRouter } from "next/navigation";
 import { useZukanStore } from "@/stores/useZukanStore";
 import { useProductStore } from "@/stores/useProductStore";
 import {
-  MASTER_INGREDIENTS,
-  INGREDIENT_GENRES,
-  INGREDIENT_COUNT,
-  getGenreTotal,
+  ACTIVE_INGREDIENTS,
+  ACTIVE_INGREDIENT_COUNT,
+  ACTIVE_CATEGORIES,
+  getActiveByCategory,
+  getActiveCategoryTotal,
   getIngredientById,
 } from "@/lib/ingredients";
 import { SKIN_CONCERNS } from "@/lib/concerns";
-import { IngredientGenre, RarityKey, Product } from "@/types";
+import { RarityKey, Product, CategoryKey } from "@/types";
 import { useUser } from "@/lib/auth";
 import PageLoading from "@/components/ui/PageLoading";
 import AuthGuard from "@/components/ui/AuthGuard";
@@ -53,34 +54,34 @@ const RARITY_VIS: Record<
 };
 
 /* ═══════════════════════════════════════
-   Tab 1: Genre Explorer
+   Tab 1: 効果カテゴリ別
    ═══════════════════════════════════════ */
-function GenreExplorer({
+function CategoryExplorer({
   discoveredIds,
 }: {
   discoveredIds: string[];
 }) {
   const router = useRouter();
-  const [selectedGenre, setSelectedGenre] = useState<IngredientGenre>("water");
+  const [selectedCat, setSelectedCat] = useState<CategoryKey>("brightening");
   const discoveredSet = useMemo(() => new Set(discoveredIds), [discoveredIds]);
 
-  /* Genre stats */
-  const genreStats = useMemo(() => {
-    return INGREDIENT_GENRES.map((g) => {
-      const total = getGenreTotal(g.key);
+  /* Category stats */
+  const catStats = useMemo(() => {
+    return ACTIVE_CATEGORIES.map((c) => {
+      const total = getActiveCategoryTotal(c.key);
+      const items = getActiveByCategory(c.key);
       let disc = 0;
-      discoveredSet.forEach((id) => {
-        const ing = getIngredientById(id);
-        if (ing && ing.genre === g.key) disc++;
+      items.forEach((ing) => {
+        if (discoveredSet.has(ing.id)) disc++;
       });
-      return { ...g, total, disc, pct: total > 0 ? Math.round((disc / total) * 100) : 0 };
+      return { ...c, total, disc, pct: total > 0 ? Math.round((disc / total) * 100) : 0 };
     });
   }, [discoveredSet]);
 
-  /* Sorted ingredients for selected genre */
-  const genreIngredients = useMemo(() => {
-    const items = MASTER_INGREDIENTS.filter((i) => i.genre === selectedGenre);
-    return items.sort((a, b) => {
+  /* Sorted ingredients for selected category */
+  const catIngredients = useMemo(() => {
+    const items = getActiveByCategory(selectedCat);
+    return [...items].sort((a, b) => {
       const ra = RARITY_ORDER.indexOf(a.rarity);
       const rb = RARITY_ORDER.indexOf(b.rarity);
       if (ra !== rb) return ra - rb;
@@ -88,9 +89,9 @@ function GenreExplorer({
       const bDisc = discoveredSet.has(b.id) ? 0 : 1;
       return aDisc - bDisc;
     });
-  }, [selectedGenre, discoveredSet]);
+  }, [selectedCat, discoveredSet]);
 
-  const currentGenre = genreStats.find((g) => g.key === selectedGenre);
+  const currentCat = catStats.find((c) => c.key === selectedCat);
 
   return (
     <div>
@@ -99,12 +100,12 @@ function GenreExplorer({
         className="flex gap-1 overflow-x-auto py-3.5 px-4"
         style={{ WebkitOverflowScrolling: "touch", scrollbarWidth: "none" }}
       >
-        {genreStats.map((genre) => {
-          const active = selectedGenre === genre.key;
+        {catStats.map((cat) => {
+          const active = selectedCat === cat.key;
           return (
             <button
-              key={genre.key}
-              onClick={() => setSelectedGenre(genre.key)}
+              key={cat.key}
+              onClick={() => setSelectedCat(cat.key)}
               className={`shrink-0 flex flex-col items-center gap-[3px] px-2.5 pt-2 pb-1.5 border-none cursor-pointer transition-all duration-200 min-w-[52px] ${
                 active ? "bg-white shadow-bo2 rounded-2xl" : "bg-transparent rounded-2xl"
               }`}
@@ -112,49 +113,49 @@ function GenreExplorer({
               <div
                 className="w-[34px] h-[34px] rounded-[10px] flex items-center justify-center text-[15px] transition-all duration-200"
                 style={{
-                  background: `${genre.color}${active ? "20" : "0C"}`,
-                  border: `1.5px solid ${genre.color}${active ? "50" : "15"}`,
+                  background: `${cat.color}${active ? "20" : "0C"}`,
+                  border: `1.5px solid ${cat.color}${active ? "50" : "15"}`,
                 }}
               >
-                {genre.icon}
+                {cat.icon}
               </div>
               <span
                 className={`text-[9px] font-sans whitespace-nowrap ${
                   active ? "font-bold text-bo-ink" : "font-medium text-bo-ink-muted"
                 }`}
               >
-                {genre.label}
+                {cat.label}
               </span>
               <span
                 className="text-[9px] font-bold font-sans"
-                style={{ color: active ? genre.color : "#B5C7BE" }}
+                style={{ color: active ? cat.color : "#B5C7BE" }}
               >
-                {genre.pct}%
+                {cat.pct}%
               </span>
             </button>
           );
         })}
       </div>
 
-      {/* Selected genre detail */}
-      {currentGenre && (
-        <div key={currentGenre.key} className="px-4 pb-2 animate-fade-up">
-          {/* Genre header */}
+      {/* Selected category detail */}
+      {currentCat && (
+        <div key={currentCat.key} className="px-4 pb-2 animate-fade-up">
+          {/* Category header */}
           <div className="flex items-center justify-between mb-2.5">
             <div className="flex items-baseline gap-2">
               <span className="text-base font-extrabold text-bo-ink font-serif">
-                {currentGenre.label}
+                {currentCat.label}
               </span>
               <span className="text-[11px] text-bo-ink-muted font-sans">
-                {currentGenre.disc}/{currentGenre.total}
+                {currentCat.disc}/{currentCat.total}
               </span>
             </div>
             <div className="h-1 w-[72px] rounded-sm bg-bo-parchment overflow-hidden">
               <div
                 className="h-full rounded-sm transition-[width] duration-[600ms] ease-out"
                 style={{
-                  width: `${currentGenre.pct}%`,
-                  background: `linear-gradient(90deg, ${currentGenre.color}, ${currentGenre.color}AA)`,
+                  width: `${currentCat.pct}%`,
+                  background: `linear-gradient(90deg, ${currentCat.color}, ${currentCat.color}AA)`,
                 }}
               />
             </div>
@@ -162,7 +163,7 @@ function GenreExplorer({
 
           {/* Ingredient list */}
           <div className="flex flex-col gap-[5px]">
-            {genreIngredients.map((ing) => {
+            {catIngredients.map((ing) => {
               const r = RARITY_VIS[ing.rarity];
               const found = discoveredSet.has(ing.id);
               const isLeg = ing.rarity === "legendary";
@@ -483,7 +484,7 @@ function ConcernView({
    ═══════════════════════════════════════ */
 export default function ZukanPage() {
   const { loading } = useUser();
-  const [tab, setTab] = useState<"genre" | "concern">("genre");
+  const [tab, setTab] = useState<"category" | "concern">("category");
   const discoveredIds = useZukanStore((s) => s.discoveredIds);
   const products = useProductStore((s) => s.products);
 
@@ -491,8 +492,10 @@ export default function ZukanPage() {
     return <PageLoading message="図鑑を読み込んでいます..." />;
   }
 
-  const totalDisc = discoveredIds.length;
-  const totalAll = INGREDIENT_COUNT;
+  /* 有効成分のみでカウント */
+  const activeSet = useMemo(() => new Set(ACTIVE_INGREDIENTS.map((i) => i.id)), []);
+  const totalDisc = discoveredIds.filter((id) => activeSet.has(id)).length;
+  const totalAll = ACTIVE_INGREDIENT_COUNT;
   const pct = totalAll > 0 ? Math.round((totalDisc / totalAll) * 100) : 0;
 
   return (
@@ -507,7 +510,7 @@ export default function ZukanPage() {
         >
           <div className="flex items-baseline justify-between mb-3">
             <span className="text-2xl font-extrabold font-serif text-bo-ink">
-              成分図鑑
+              有効成分図鑑
             </span>
             <div>
               <span className="text-[28px] font-extrabold text-bo-accent font-serif leading-none">
@@ -534,7 +537,7 @@ export default function ZukanPage() {
         <div className="flex px-4 border-b border-bo-parchment">
           {(
             [
-              { key: "genre", label: "ジャンル別" },
+              { key: "category", label: "効果別" },
               { key: "concern", label: "肌悩みから探す" },
             ] as const
           ).map((t) => (
@@ -553,7 +556,7 @@ export default function ZukanPage() {
         </div>
 
         {/* ── Tab content ── */}
-        {tab === "genre" && <GenreExplorer discoveredIds={discoveredIds} />}
+        {tab === "category" && <CategoryExplorer discoveredIds={discoveredIds} />}
         {tab === "concern" && (
           <ConcernView discoveredIds={discoveredIds} products={products} />
         )}

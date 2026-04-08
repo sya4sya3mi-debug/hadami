@@ -50,6 +50,7 @@ export interface Ingredient {
   note: string;
   funFact?: string;
   caution?: string;
+  activeIngredient?: boolean; // 医薬部外品の有効成分として承認されている場合 true
 }
 
 // ── 製品ジャンル ──
@@ -77,6 +78,8 @@ export interface Product {
   packageImagePath?: string;
   isFavorite: boolean;
   createdAt: string;
+  lastUsedAt?: string;
+  purchasedAt?: string;
   ingredients: ProductIngredient[];
 }
 
