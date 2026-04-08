@@ -5,7 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useDeckStore } from "@/stores/useDeckStore";
 import { useProductStore } from "@/stores/useProductStore";
-import { getIngredientById, ACTIVE_CATEGORIES, ACTIVE_INGREDIENTS } from "@/lib/ingredients";
+import { getIngredientById, ACTIVE_CATEGORIES } from "@/lib/ingredients";
 import { findCombinations } from "@/lib/combinations";
 import { recommendDeck } from "@/lib/deckRecommender";
 import { getGenreByKey, GENRE_SLOT_CONFIG } from "@/lib/productGenres";
@@ -74,8 +74,6 @@ export default function DeckPage() {
   const deckProducts = deckItems
     .map((item) => getProduct(item.productId))
     .filter((p): p is Product => p !== undefined);
-
-  const activeSet = useMemo(() => new Set(ACTIVE_INGREDIENTS.map((i) => i.id)), []);
 
   const { categoryCounts, coveredCategories, totalIngredients, combinations, recommendedCombos, cautionCombos, comboWithSources } = useMemo(() => {
     const categoryCounts: Record<CategoryKey, number> = {
