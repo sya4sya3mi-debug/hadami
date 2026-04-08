@@ -507,7 +507,7 @@ export default function ZukanPage() {
         >
           <div className="flex items-baseline justify-between mb-3">
             <h1 className="text-2xl font-extrabold text-bo-ink font-serif m-0">
-              コスメずかん
+              セイブンノート
             </h1>
             <div>
               <span className="text-[28px] font-extrabold text-bo-accent font-serif leading-none">
