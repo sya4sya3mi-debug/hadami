@@ -562,23 +562,23 @@ export default function LandingPage() {
       {/* ─── PRODUCED BY ─── */}
       <section className="px-6 py-10 bg-bo-cream text-center">
         <Reveal>
-          <div className="flex flex-col items-center gap-2">
+          <div className="flex flex-col items-center gap-1.5">
             <div className="text-[9px] text-bo-ink-muted font-sans tracking-[0.15em] uppercase">
               Produced by
+            </div>
+            <div className="text-base font-extrabold font-serif text-bo-ink">
+              {"みおのミハダノート"}
             </div>
             <a
               href="https://blog-engine.com"
               target="_blank"
               rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 text-[11px] font-bold text-bo-accent font-sans mt-1"
             >
-              <Image
-                src="/%E7%BE%8E%E8%82%8C%E3%83%8E%E3%83%BC%E3%83%88%E3%83%AD%E3%82%B4.png"
-                alt="みおのミハダノート"
-                width={180}
-                height={90}
-                style={{ filter: "invert(1)", mixBlendMode: "multiply" }}
-                className="object-contain"
-              />
+              {"ブログを読む"}
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+                <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3" />
+              </svg>
             </a>
           </div>
         </Reveal>
