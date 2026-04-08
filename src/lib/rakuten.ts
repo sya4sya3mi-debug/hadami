@@ -17,16 +17,20 @@ export async function searchRakutenCached(
   keyword: string,
   supabase: SupabaseClient
 ): Promise<RakutenProduct[]> {
-  // 1. キャッシュ確認
-  const { data: cached } = await supabase
-    .from("rakuten_product_cache")
-    .select("results")
-    .eq("search_keyword", keyword)
-    .gt("expires_at", new Date().toISOString())
-    .single();
+  // 1. キャッシュ確認（テーブルが無くてもスキップ）
+  try {
+    const { data: cached } = await supabase
+      .from("rakuten_product_cache")
+      .select("results")
+      .eq("search_keyword", keyword)
+      .gt("expires_at", new Date().toISOString())
+      .single();
 
-  if (cached) {
-    return cached.results as RakutenProduct[];
+    if (cached) {
+      return cached.results as RakutenProduct[];
+    }
+  } catch {
+    // キャッシュテーブルが存在しない場合もAPIフォールバック
   }
 
   // 2. 楽天API呼び出し
