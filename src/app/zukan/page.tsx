@@ -10,7 +10,6 @@ import {
   ACTIVE_CATEGORIES,
   getActiveByCategory,
   getActiveCategoryTotal,
-  getIngredientById,
 } from "@/lib/ingredients";
 import { SKIN_CONCERNS } from "@/lib/concerns";
 import { RarityKey, Product, CategoryKey } from "@/types";
@@ -488,15 +487,15 @@ export default function ZukanPage() {
   const discoveredIds = useZukanStore((s) => s.discoveredIds);
   const products = useProductStore((s) => s.products);
 
-  if (loading) {
-    return <PageLoading message="図鑑を読み込んでいます..." />;
-  }
-
   /* 有効成分のみでカウント */
   const activeSet = useMemo(() => new Set(ACTIVE_INGREDIENTS.map((i) => i.id)), []);
   const totalDisc = discoveredIds.filter((id) => activeSet.has(id)).length;
   const totalAll = ACTIVE_INGREDIENT_COUNT;
   const pct = totalAll > 0 ? Math.round((totalDisc / totalAll) * 100) : 0;
+
+  if (loading) {
+    return <PageLoading message="図鑑を読み込んでいます..." />;
+  }
 
   return (
     <AuthGuard>
