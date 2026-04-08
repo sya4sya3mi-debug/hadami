@@ -20,37 +20,28 @@ export async function GET() {
     .eq("user_id", user.id)
     .order("encounter_count", { ascending: false });
 
-  if (!profile || profile.length === 0) {
-    return NextResponse.json({
-      similar: {
-        label: "あなたの好みに近いアイテム",
-        reason: "スキャン履歴が増えると提案が始まります",
-        products: [],
-      },
-      discovery: {
-        label: "まだ出会っていない注目成分",
-        reason: "スキャン履歴が増えると提案が始まります",
-        products: [],
-      },
-      profile: { totalScans: 0, knownIngredientCount: 0 },
-    });
-  }
+  const hasProfile = profile && profile.length > 0;
 
   // 2. コード側の成分データで補強
-  const enriched = profile
-    .map((row) => ({
-      ...row,
-      ingredient: getIngredientById(row.ingredient_id),
-    }))
-    .filter((row) => row.ingredient !== undefined);
+  const enriched = hasProfile
+    ? profile
+        .map((row) => ({
+          ...row,
+          ingredient: getIngredientById(row.ingredient_id),
+        }))
+        .filter((row) => row.ingredient !== undefined)
+    : [];
 
   const knownIds = new Set(enriched.map((e) => e.ingredient_id));
 
   // 3. 軸1: よく出会う成分のキーワード生成
+  //    履歴なしの場合は人気スキンケアのおすすめを表示
   const topIngredients = enriched.slice(0, 3);
-  const similarKeywords = topIngredients
-    .map((e) => `${e.ingredient!.nameJa} スキンケア 人気`)
-    .filter((k) => k.trim() !== "スキンケア 人気");
+  const similarKeywords = hasProfile
+    ? topIngredients
+        .map((e) => `${e.ingredient!.nameJa} スキンケア 人気`)
+        .filter((k) => k.trim() !== "スキンケア 人気")
+    : ["スキンケア 人気 ランキング"];
 
   // 4. 軸2: 未発見の高レアリティ成分
   const unknownRare = MASTER_INGREDIENTS.filter(
@@ -101,13 +92,15 @@ export async function GET() {
       label: "あなたの好みに近いアイテム",
       reason: topIngredients.length > 0
         ? `スキャン${totalScans}回の傾向から`
-        : "",
+        : "人気のスキンケアアイテム",
       products: similarProducts,
     },
     discovery: {
       label: "まだ出会っていない注目成分",
       reason: unknownRare.length > 0
-        ? `${knownIds.size}成分と未重複`
+        ? hasProfile
+          ? `${knownIds.size}成分と未重複`
+          : "注目の高レア成分"
         : "",
       ingredientHints: unknownRare.map((i) => i.nameJa),
       products: discoveryProducts,
