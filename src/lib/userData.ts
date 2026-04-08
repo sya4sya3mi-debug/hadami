@@ -19,8 +19,8 @@ type ProductRow = {
   package_image_url: string | null;
   is_favorite: boolean | null;
   created_at: string | null;
-  last_used_at: string | null;
-  purchased_at: string | null;
+  last_used_at?: string | null;
+  purchased_at?: string | null;
 };
 
 type DiscoveryRow = {
@@ -85,13 +85,27 @@ function mapDeckItems(rows: DeckRow[]): DeckItem[] {
   }));
 }
 
+/** 新カラム付きで取得し、失敗時はカラム無しにフォールバック */
+async function fetchProducts(supabase: SupabaseClient, userId: string) {
+  const withDates = await supabase
+    .from("products")
+    .select("id, name, brand, product_type, ingredient_ids, package_image_url, is_favorite, created_at, last_used_at, purchased_at")
+    .eq("user_id", userId)
+    .order("created_at", { ascending: false });
+
+  if (!withDates.error) return withDates;
+
+  // last_used_at / purchased_at カラムが未追加の場合はフォールバック
+  return supabase
+    .from("products")
+    .select("id, name, brand, product_type, ingredient_ids, package_image_url, is_favorite, created_at")
+    .eq("user_id", userId)
+    .order("created_at", { ascending: false });
+}
+
 export async function syncUserData(supabase: SupabaseClient, userId: string) {
   const [productsRes, discoveriesRes, deckRes] = await Promise.all([
-    supabase
-      .from("products")
-      .select("id, name, brand, product_type, ingredient_ids, package_image_url, is_favorite, created_at, last_used_at, purchased_at")
-      .eq("user_id", userId)
-      .order("created_at", { ascending: false }),
+    fetchProducts(supabase, userId),
     supabase
       .from("zukan_discoveries")
       .select("ingredient_id")

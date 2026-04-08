@@ -174,7 +174,9 @@ export default function HomePage() {
       const now = new Date().toISOString();
       updateLastUsedAt(productId, now);
       if (user) {
-        updateLastUsedAtInDb(supabase, user.id, productId, now).catch(() => {});
+        updateLastUsedAtInDb(supabase, user.id, productId, now).catch((err) => {
+          console.warn("Failed to update lastUsedAt:", err);
+        });
       }
     }
 

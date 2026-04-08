@@ -130,6 +130,7 @@ export default function HistoryPage() {
 
   const handleUpdatePurchasedAt = async (productId: string, date: string | undefined) => {
     if (!user) return;
+    const prev = products.find((p) => p.id === productId)?.purchasedAt;
     updatePurchasedAt(productId, date);
     if (selectedProduct?.id === productId) {
       setSelectedProduct({ ...selectedProduct, purchasedAt: date });
@@ -137,8 +138,6 @@ export default function HistoryPage() {
     try {
       await updatePurchasedAtInDb(supabase, user.id, productId, date ?? null);
     } catch {
-      // rollback on error
-      const prev = products.find((p) => p.id === productId)?.purchasedAt;
       updatePurchasedAt(productId, prev);
     }
   };
