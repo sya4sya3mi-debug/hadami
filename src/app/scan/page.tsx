@@ -484,7 +484,7 @@ function ScanPageInner() {
           {/* Header */}
           <div className="flex items-center justify-between mb-5">
             <h1 className="text-2xl font-extrabold font-serif text-bo-ink m-0">
-              成分スキャン
+              スキャン
             </h1>
             {step > 1 && (
               <button

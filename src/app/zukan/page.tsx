@@ -502,7 +502,7 @@ export default function ZukanPage() {
         <div className="px-5 pt-4 pb-4">
           <div className="flex items-center justify-between mb-3">
             <div>
-              <h1 className="text-2xl font-extrabold font-serif text-bo-ink m-0 mb-1">セイブンノート</h1>
+              <h1 className="text-2xl font-extrabold font-serif text-bo-ink m-0 mb-1">ノート</h1>
               <p className="text-xs text-bo-ink-muted font-sans m-0">{totalDisc}/{totalAll}成分 ({pct}%) 発見済み</p>
             </div>
           </div>
