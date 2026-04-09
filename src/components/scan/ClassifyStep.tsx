@@ -4,6 +4,10 @@ import { PRODUCT_GENRES } from "@/lib/productGenres";
 import { ProductGenre } from "@/types";
 import { ProductGenreIcon } from "@/components/ui/CosmeticIcons";
 
+const SCAN_GENRES = PRODUCT_GENRES.filter((g) =>
+  ["toner", "serum", "emulsion", "cream", "sunscreen", "mask_pack"].includes(g.key)
+);
+
 interface ClassifyStepProps {
   productName: string;
   brand: string;
@@ -70,11 +74,14 @@ export default function ClassifyStep({
 
       {/* Genre selector */}
       <div>
-        <div className="text-xs font-bold mb-2.5 text-bo-ink font-sans">
-          コスメタイプを選択
+        <div className={`flex items-center gap-2 mb-2.5 ${!SCAN_GENRES.some((g) => g.key === productType) ? "text-bo-accent" : "text-bo-ink"}`}>
+          <span className="text-xs font-bold font-sans">コスメタイプを選択</span>
+          {!SCAN_GENRES.some((g) => g.key === productType) && (
+            <span className="text-[10px] font-medium text-bo-accent font-sans animate-pulse">← 必ず選んでください</span>
+          )}
         </div>
-        <div className="flex gap-2 overflow-x-auto hide-scrollbar pb-2">
-          {PRODUCT_GENRES.map((genre) => {
+        <div className={`flex gap-2 overflow-x-auto hide-scrollbar pb-2 rounded-r1 transition-all ${!SCAN_GENRES.some((g) => g.key === productType) ? "ring-2 ring-bo-accent/40 ring-offset-1" : ""}`}>
+          {SCAN_GENRES.map((genre) => {
             const isSelected = productType === genre.key;
             return (
               <button

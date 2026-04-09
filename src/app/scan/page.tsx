@@ -88,6 +88,7 @@ function ScanPageInner() {
   const [showDiscovery, setShowDiscovery] = useState(false);
   const [saved, setSaved] = useState(false);
   const [saveError, setSaveError] = useState("");
+  const isSavingRef = useRef(false);
   const [isQuasiDrug, setIsQuasiDrug] = useState(false);
   const [resolvedActiveIngredients, setResolvedActiveIngredients] = useState<ResolvedActiveIngredient[]>([]);
   const [, setScanEvidenceMap] = useState<
@@ -510,7 +511,8 @@ function ScanPageInner() {
 
   // Save
   const handleSave = useCallback(async () => {
-    if (!user || saved) return;
+    if (!user || saved || isSavingRef.current) return;
+    isSavingRef.current = true;
     setSaveError("");
 
     const result = await saveProductToDb(supabase, user.id, {
@@ -525,11 +527,13 @@ function ScanPageInner() {
     });
 
     if (result.error === "limit_reached") {
+      isSavingRef.current = false;
       setSaveError(`保存上限（${userLimit}件）に達しています。古いコスメを削除してください。`);
       fetch("/api/rollback-scan", { method: "POST" }).catch(() => {});
       return;
     }
     if (result.error) {
+      isSavingRef.current = false;
       setSaveError("保存に失敗しました。もう一度お試しください。");
       fetch("/api/rollback-scan", { method: "POST" }).catch(() => {});
       return;
