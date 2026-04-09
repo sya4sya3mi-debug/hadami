@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useProductStore } from "@/stores/useProductStore";
 import { useZukanStore } from "@/stores/useZukanStore";
@@ -94,6 +94,67 @@ function Counter({ to, dur = 900 }: { to: number; dur?: number }) {
   }, [to, dur]);
   return <>{v}</>;
 }
+
+const RoutineStepButton = memo(function RoutineStepButton({
+  step,
+  index,
+  done,
+  onToggle,
+}: {
+  step: { name: string; brand: string; type: string; ingredients: { icon: string; name: string }[] };
+  index: number;
+  done: boolean;
+  onToggle: (i: number) => void;
+}) {
+  return (
+    <button
+      onClick={() => onToggle(index)}
+      aria-label={step.name + (done ? "（完了）" : "")}
+      className={`flex items-center gap-2.5 py-2.5 px-3 rounded-r1 shadow-bo1 cursor-pointer text-left relative overflow-hidden transition-all duration-200 border ${
+        done
+          ? "bg-bo-accent-soft border-bo-accent scale-[0.98]"
+          : "bg-white border-bo-parchment scale-100"
+      }`}
+    >
+      <div
+        className={`w-[22px] h-[22px] rounded-md shrink-0 flex items-center justify-center transition-all duration-300 ${
+          done
+            ? "bg-bo-accent border-none scale-110"
+            : "bg-white border-[1.5px] border-bo-ink-faint scale-100"
+        }`}
+      >
+        {done && (
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" aria-hidden="true">
+            <path d="M20 6L9 17l-5-5" />
+          </svg>
+        )}
+      </div>
+      <div className="w-[18px] h-[18px] rounded-[5px] flex items-center justify-center text-[9px] font-black font-serif shrink-0"
+        style={{
+          background: done ? "rgba(255,255,255,0.6)" : "#e0e0e0",
+          color: done ? "#fff" : "#9E9E9E",
+        }}
+      >
+        {index + 1}
+      </div>
+      <div className="flex-1 min-w-0">
+        <div className={`text-[11px] font-sans overflow-hidden text-ellipsis whitespace-nowrap ${done ? "font-semibold text-bo-ink-muted line-through" : "font-bold text-bo-ink"}`}>
+          {step.name}
+        </div>
+        <div className="text-[9px] text-bo-ink-muted font-sans mt-px">
+          {step.brand} · {step.type}
+        </div>
+      </div>
+      <div className="flex gap-0.5 shrink-0">
+        {step.ingredients.map((ing, j) => (
+          <span key={j} className={`text-[10px] transition-opacity duration-300 ${done ? "opacity-40" : "opacity-70"}`}>
+            {ing.icon}
+          </span>
+        ))}
+      </div>
+    </button>
+  );
+});
 
 export default function HomePage() {
   const { user, profile, supabase, loading } = useUser();
@@ -314,58 +375,15 @@ export default function HomePage() {
               />
             </div>
             <div className="flex flex-col gap-1.5">
-              {routineSteps.map((step, i) => {
-                const done = normalizedCheckedSteps.has(i);
-                return (
-                  <button
-                    key={i}
-                    onClick={() => toggleStep(i)}
-                    aria-label={step.name + (done ? "（完了）" : "")}
-                    className={`flex items-center gap-2.5 py-2.5 px-3 rounded-r1 shadow-bo1 cursor-pointer text-left relative overflow-hidden transition-all duration-200 border ${
-                      done
-                        ? "bg-bo-accent-soft border-bo-accent scale-[0.98]"
-                        : "bg-white border-bo-parchment scale-100"
-                    }`}
-                  >
-                    <div
-                      className={`w-[22px] h-[22px] rounded-md shrink-0 flex items-center justify-center transition-all duration-300 ${
-                        done
-                          ? "bg-bo-accent border-none scale-110"
-                          : "bg-white border-[1.5px] border-bo-ink-faint scale-100"
-                      }`}
-                    >
-                      {done && (
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" aria-hidden="true">
-                          <path d="M20 6L9 17l-5-5" />
-                        </svg>
-                      )}
-                    </div>
-                    <div className="w-[18px] h-[18px] rounded-[5px] flex items-center justify-center text-[9px] font-black font-serif shrink-0"
-                      style={{
-                        background: done ? "rgba(255,255,255,0.6)" : "#e0e0e0",
-                        color: done ? "#fff" : "#9E9E9E",
-                      }}
-                    >
-                      {i + 1}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className={`text-[11px] font-sans overflow-hidden text-ellipsis whitespace-nowrap ${done ? "font-semibold text-bo-ink-muted line-through" : "font-bold text-bo-ink"}`}>
-                        {step.name}
-                      </div>
-                      <div className="text-[9px] text-bo-ink-muted font-sans mt-px">
-                        {step.brand} · {step.type}
-                      </div>
-                    </div>
-                    <div className="flex gap-0.5 shrink-0">
-                      {step.ingredients.map((ing, j) => (
-                        <span key={j} className={`text-[10px] transition-opacity duration-300 ${done ? "opacity-40" : "opacity-70"}`}>
-                          {ing.icon}
-                        </span>
-                      ))}
-                    </div>
-                  </button>
-                );
-              })}
+              {routineSteps.map((step, i) => (
+                <RoutineStepButton
+                  key={i}
+                  step={step}
+                  index={i}
+                  done={normalizedCheckedSteps.has(i)}
+                  onToggle={toggleStep}
+                />
+              ))}
             </div>
 
             {/* Celebration */}

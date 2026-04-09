@@ -1,6 +1,7 @@
 import { memo } from "react";
 import { Ingredient } from "@/types";
 import { RARITY, getIngredientCategoryInfo } from "@/lib/ingredients";
+import { ActiveCategoryIcon } from "@/components/ui/CosmeticIcons";
 
 const RARITY_COLORS = ["", "#9E9E9E", "#6B8E7B", "#D4A853", "#C77DBA", "#E8A04C"];
 
@@ -12,7 +13,13 @@ interface IngredientCardProps {
   foundCount?: number;
 }
 
-function IngredientCard({ ingredient, discovered, index, isRecent, foundCount = 0 }: IngredientCardProps) {
+function IngredientCard({
+  ingredient,
+  discovered,
+  index,
+  isRecent,
+  foundCount = 0,
+}: IngredientCardProps) {
   const rarityInfo = RARITY[ingredient.rarity];
   const catInfo = getIngredientCategoryInfo(ingredient);
   const rarityIdx = rarityInfo.star;
@@ -29,7 +36,8 @@ function IngredientCard({ ingredient, discovered, index, isRecent, foundCount = 
       >
         <div className="text-lg opacity-25">🔒</div>
         <div className="text-[7px] text-[#D4A853] tracking-wider leading-none">
-          {"★".repeat(rarityIdx)}{"☆".repeat(4 - rarityIdx)}
+          {"★".repeat(rarityIdx)}
+          {"☆".repeat(4 - rarityIdx)}
         </div>
         <div className="text-[7px] text-bo-ink-faint font-sans leading-none">
           #{String(index).padStart(3, "0")}
@@ -48,10 +56,12 @@ function IngredientCard({ ingredient, discovered, index, isRecent, foundCount = 
         aspectRatio: "1/1",
         background: bg,
         border: `1px solid ${bgColor}20`,
-        boxShadow: rarityIdx >= 4 ? `0 2px 8px ${RARITY_COLORS[rarityIdx]}25` : "0 1px 2px rgba(27,38,32,0.04)",
+        boxShadow:
+          rarityIdx >= 4
+            ? `0 2px 8px ${RARITY_COLORS[rarityIdx]}25`
+            : "0 1px 2px rgba(27,38,32,0.04)",
       }}
     >
-      {/* Number */}
       <div
         className="absolute top-0.5 left-1 text-[6px] font-black font-serif opacity-40"
         style={{ color: bgColor }}
@@ -59,12 +69,10 @@ function IngredientCard({ ingredient, discovered, index, isRecent, foundCount = 
         #{String(index).padStart(3, "0")}
       </div>
 
-      {/* NEW dot */}
       {isRecent && (
         <div className="absolute top-0.5 right-1 w-1.5 h-1.5 rounded-full bg-bo-accent" />
       )}
 
-      {/* Found count */}
       {foundCount > 1 && (
         <span
           className="absolute top-0.5 right-1 text-[6px] font-bold px-1 rounded-full leading-tight"
@@ -74,26 +82,26 @@ function IngredientCard({ ingredient, discovered, index, isRecent, foundCount = 
         </span>
       )}
 
-      {/* Icon */}
       <div
         className="text-xl"
         style={{
-          filter: rarityIdx >= 4 ? `drop-shadow(0 0 4px ${RARITY_COLORS[rarityIdx]}60)` : "none",
+          filter:
+            rarityIdx >= 4
+              ? `drop-shadow(0 0 4px ${RARITY_COLORS[rarityIdx]}60)`
+              : "none",
+          color: bgColor,
         }}
       >
-        {catInfo?.icon || "🧪"}
+        <ActiveCategoryIcon category={catInfo?.key} size={20} />
       </div>
 
-      {/* Name */}
-      <div
-        className="text-[8px] font-bold text-bo-ink font-sans text-center leading-tight max-w-[95%] overflow-hidden line-clamp-2"
-      >
+      <div className="text-[8px] font-bold text-bo-ink font-sans text-center leading-tight max-w-[95%] overflow-hidden line-clamp-2">
         {ingredient.nameJa}
       </div>
 
-      {/* Stars */}
       <div className="text-[7px] text-[#D4A853] tracking-wider leading-none">
-        {"★".repeat(rarityIdx)}{"☆".repeat(4 - rarityIdx)}
+        {"★".repeat(rarityIdx)}
+        {"☆".repeat(4 - rarityIdx)}
       </div>
     </div>
   );

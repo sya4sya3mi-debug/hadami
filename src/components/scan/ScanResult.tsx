@@ -9,6 +9,7 @@ import Badge, { StarIcon } from "@/components/ui/Badge";
 import Disclaimer from "@/components/ui/Disclaimer";
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import RecommendSection from "@/components/recommendations/RecommendSection";
+import { ActiveCategoryIcon, ProductGenreIcon } from "@/components/ui/CosmeticIcons";
 
 interface ScanResultProps {
   productName: string;
@@ -88,10 +89,11 @@ export default function ScanResult({
             </div>
             {genre && (
               <span
-                className="text-[10px] px-2.5 py-1 rounded-md font-semibold shrink-0 font-sans"
+                className="inline-flex items-center gap-1 text-[10px] px-2.5 py-1 rounded-md font-semibold shrink-0 font-sans"
                 style={{ background: genre.color + "18", color: genre.color }}
               >
-                {genre.icon} {genre.label}
+                <ProductGenreIcon genre={genre.key} size={12} />
+                {genre.label}
               </span>
             )}
           </div>
@@ -299,10 +301,11 @@ function IngredientRow({ ingredient, orderIndex, delay, isNew }: { ingredient: I
           return c ? (
             <div className="flex gap-1 mt-1">
               <span
-                className="text-[9px] px-1.5 py-0.5 rounded-full font-medium font-sans"
+                className="inline-flex items-center gap-1 text-[9px] px-1.5 py-0.5 rounded-full font-medium font-sans"
                 style={{ background: c.color + "18", color: c.color }}
               >
-                {c.icon} {c.label}
+                <ActiveCategoryIcon category={c.key} size={11} />
+                {c.label}
               </span>
             </div>
           ) : null;

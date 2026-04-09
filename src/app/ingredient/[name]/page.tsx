@@ -10,6 +10,7 @@ import Disclaimer from "@/components/ui/Disclaimer";
 import TargetedRakutenSection from "@/components/recommendations/TargetedRakutenSection";
 import { useUser } from "@/lib/auth";
 import PageLoading from "@/components/ui/PageLoading";
+import { ActiveCategoryIcon } from "@/components/ui/CosmeticIcons";
 
 export default function IngredientDetailPage() {
   const { loading } = useUser();
@@ -88,10 +89,17 @@ export default function IngredientDetailPage() {
         {/* Header */}
         <div className="text-center mb-5">
           <div
-            className="w-14 h-14 rounded-full flex items-center justify-center text-2xl mx-auto mb-2"
-            style={{ background: `linear-gradient(135deg, ${catInfo?.color || ingredient.color}20, ${catInfo?.color || ingredient.color}08)` }}
+            className="relative w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-2 text-[0px]"
+            style={{
+              background: `linear-gradient(135deg, ${catInfo?.color || ingredient.color}20, ${catInfo?.color || ingredient.color}08)`,
+              color: catInfo?.color || ingredient.color,
+            }}
           >
             {catInfo?.icon || "🧪"}
+            <span className="pointer-events-none absolute opacity-0" aria-hidden="true" />
+            <span className="absolute inset-0 flex items-center justify-center text-inherit">
+              <ActiveCategoryIcon category={catInfo?.key} size={24} />
+            </span>
           </div>
           <h1 className="font-bold text-lg text-bo-ink font-sans">{ingredient.nameJa}</h1>
           <p className="text-xs mt-0.5 text-bo-ink-muted font-sans">{ingredient.nameInci}</p>
@@ -100,10 +108,11 @@ export default function IngredientDetailPage() {
             {allCats.map((c) => (
               <span
                 key={c.key}
-                className="text-[10px] px-2 py-0.5 rounded-full font-medium font-sans"
+                className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full font-medium font-sans"
                 style={{ background: c.color + "18", color: c.color }}
               >
-                {c.icon} {c.label}
+                <ActiveCategoryIcon category={c.key} size={12} />
+                {c.label}
               </span>
             ))}
           </div>

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import sharp from "sharp";
 import { resolveRakutenImageProxyTarget } from "@/lib/rakutenImage";
 
 export const runtime = "nodejs";
@@ -27,18 +28,44 @@ export async function GET(request: NextRequest) {
       next: { revalidate: 60 * 60 * 24 },
     });
 
-    if (!upstream.ok || !upstream.body) {
+    if (!upstream.ok) {
       return new NextResponse(null, { status: upstream.status || 404 });
     }
 
-    return new NextResponse(upstream.body, {
-      status: upstream.status,
+    const accept = request.headers.get("accept") || "";
+    const supportsWebP = accept.includes("image/webp");
+
+    const srcBuffer = Buffer.from(await upstream.arrayBuffer());
+    let optimized: Buffer;
+    let contentType: string;
+
+    try {
+      const pipeline = sharp(srcBuffer).resize(300, 300, {
+        fit: "inside",
+        withoutEnlargement: true,
+      });
+
+      if (supportsWebP) {
+        optimized = await pipeline.webp({ quality: 80 }).toBuffer();
+        contentType = "image/webp";
+      } else {
+        optimized = await pipeline.jpeg({ quality: 85, mozjpeg: true }).toBuffer();
+        contentType = "image/jpeg";
+      }
+    } catch {
+      // sharp failed (e.g. unsupported format like GIF) — pass through original
+      optimized = srcBuffer;
+      contentType = upstream.headers.get("content-type") || "image/jpeg";
+    }
+
+    return new NextResponse(new Uint8Array(optimized), {
+      status: 200,
       headers: {
         "Cache-Control": `public, max-age=${BROWSER_CACHE_SECONDS}`,
         "CDN-Cache-Control": `public, s-maxage=${CDN_CACHE_SECONDS}, stale-while-revalidate=${STALE_SECONDS}`,
         "Vercel-CDN-Cache-Control": `public, s-maxage=${CDN_CACHE_SECONDS}, stale-while-revalidate=${STALE_SECONDS}`,
         "Content-Disposition": "inline",
-        "Content-Type": upstream.headers.get("content-type") || "image/jpeg",
+        "Content-Type": contentType,
         "X-Content-Type-Options": "nosniff",
       },
     });

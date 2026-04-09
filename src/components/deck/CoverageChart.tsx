@@ -15,9 +15,9 @@ interface CoverageChartProps {
 }
 
 export default function CoverageChart({ categoryCounts }: CoverageChartProps) {
-  const data = ACTIVE_CATEGORIES.map((c) => ({
-    category: `${c.icon} ${c.label}`,
-    count: categoryCounts[c.key] || 0,
+  const data = ACTIVE_CATEGORIES.map((category) => ({
+    label: category.label,
+    count: categoryCounts[category.key] || 0,
     fullMark: 5,
   }));
 
@@ -27,13 +27,8 @@ export default function CoverageChart({ categoryCounts }: CoverageChartProps) {
       <ResponsiveContainer width="100%" height={250}>
         <RadarChart data={data}>
           <PolarGrid />
-          <PolarAngleAxis dataKey="category" tick={{ fontSize: 10 }} />
-          <Radar
-            dataKey="count"
-            stroke="#3A8F7A"
-            fill="#3A8F7A"
-            fillOpacity={0.2}
-          />
+          <PolarAngleAxis dataKey="label" tick={{ fontSize: 10, fill: "#6E7C74" }} />
+          <Radar dataKey="count" stroke="#3A8F7A" fill="#3A8F7A" fillOpacity={0.2} />
         </RadarChart>
       </ResponsiveContainer>
     </div>

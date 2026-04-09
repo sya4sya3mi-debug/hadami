@@ -41,9 +41,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ja">
-      <head>
-        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/yakuhanjps@4.0.0/dist/css/yakuhanjps.min.css" />
-      </head>
+      <head />
       <body>
         <AuthProvider>
           <PwaRegister />

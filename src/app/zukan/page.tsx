@@ -18,6 +18,7 @@ import PageLoading from "@/components/ui/PageLoading";
 import AuthGuard from "@/components/ui/AuthGuard";
 import Disclaimer from "@/components/ui/Disclaimer";
 import TargetedRakutenSection from "@/components/recommendations/TargetedRakutenSection";
+import { ActiveCategoryIcon, SkinConcernIcon } from "@/components/ui/CosmeticIcons";
 
 /* ── Rarity sort order ── */
 const RARITY_ORDER: RarityKey[] = ["legendary", "rare", "uncommon", "common"];
@@ -115,13 +116,14 @@ function CategoryExplorer({
               }`}
             >
               <div
-                className="w-[34px] h-[34px] rounded-[10px] flex items-center justify-center text-[15px] transition-all duration-200"
+                className="w-[34px] h-[34px] rounded-[10px] flex items-center justify-center transition-all duration-200"
                 style={{
                   background: `${cat.color}${active ? "20" : "0C"}`,
                   border: `1.5px solid ${cat.color}${active ? "50" : "15"}`,
+                  color: cat.color,
                 }}
               >
-                {cat.icon}
+                <ActiveCategoryIcon category={cat.key} size={16} />
               </div>
               <span
                 className={`text-[9px] font-sans whitespace-nowrap ${
@@ -146,7 +148,13 @@ function CategoryExplorer({
         <div key={currentCat.key} className="px-4 pb-2 animate-fade-up">
           {/* Category header */}
           <div className="flex items-center justify-between mb-2.5">
-            <div className="flex items-baseline gap-2">
+            <div className="flex items-center gap-2">
+              <span
+                className="inline-flex h-8 w-8 items-center justify-center rounded-xl"
+                style={{ background: `${currentCat.color}12`, color: currentCat.color }}
+              >
+                <ActiveCategoryIcon category={currentCat.key} size={15} />
+              </span>
               <span className="text-base font-extrabold text-bo-ink font-serif">
                 {currentCat.label}
               </span>
@@ -302,13 +310,14 @@ function ConcernView({
               className="flex items-center gap-3 py-3.5 px-4 rounded-2xl border border-bo-parchment bg-white shadow-bo1 cursor-pointer text-left w-full"
             >
               <div
-                className="w-10 h-10 rounded-xl shrink-0 flex items-center justify-center text-lg"
+                className="w-10 h-10 rounded-xl shrink-0 flex items-center justify-center"
                 style={{
                   background: `${c.color}12`,
                   border: `1px solid ${c.color}22`,
+                  color: c.color,
                 }}
               >
-                {c.icon}
+                <SkinConcernIcon concern={c.label} size={18} />
               </div>
               <div className="flex-1">
                 <div className="text-sm font-bold text-bo-ink font-sans">
@@ -363,7 +372,12 @@ function ConcernView({
             <path d="M15 18l-6-6 6-6" />
           </svg>
         </button>
-        <span className="text-lg">{concern.icon}</span>
+        <span
+          className="inline-flex h-9 w-9 items-center justify-center rounded-xl"
+          style={{ background: `${concern.color}12`, color: concern.color }}
+        >
+          <SkinConcernIcon concern={concern.label} size={18} />
+        </span>
         <span className="text-base font-extrabold text-bo-ink font-serif flex-1">
           {concern.label}
         </span>

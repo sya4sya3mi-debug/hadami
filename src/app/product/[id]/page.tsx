@@ -15,6 +15,7 @@ import PageLoading from "@/components/ui/PageLoading";
 import AuthGuard from "@/components/ui/AuthGuard";
 import { updatePurchasedAtInDb } from "@/lib/db";
 import { useState } from "react";
+import { ActiveCategoryIcon, ProductGenreIcon } from "@/components/ui/CosmeticIcons";
 
 function formatDate(iso: string) {
   const d = new Date(iso);
@@ -111,8 +112,11 @@ export default function ProductDetailPage() {
         {/* Product header */}
         <div className="flex items-center gap-3 mb-5 bg-white rounded-r2 p-3.5 shadow-bo1 border border-bo-parchment">
           {!product.packageImage && (
-            <div className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl shrink-0 bg-gradient-to-br from-bo-accent-soft to-bo-parchment">
+            <div className="relative w-12 h-12 rounded-xl flex items-center justify-center text-[0px] text-bo-accent shrink-0 bg-gradient-to-br from-bo-accent-soft to-bo-parchment">
               📦
+              <span className="absolute inset-0 flex items-center justify-center text-inherit">
+                <ProductGenreIcon genre={product.productType || "other"} size={22} />
+              </span>
             </div>
           )}
           <div className="flex-1 min-w-0">
@@ -123,7 +127,8 @@ export default function ProductDetailPage() {
                 className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] mt-1 font-sans"
                 style={{ background: `${genre.color}18`, color: genre.color }}
               >
-                {genre.icon} {genre.label}
+                <ProductGenreIcon genre={genre.key} size={12} />
+                {genre.label}
               </span>
             )}
           </div>
@@ -220,10 +225,11 @@ export default function ProductDetailPage() {
                   return c ? (
                     <div className="flex gap-1 mt-0.5">
                       <span
-                        className="text-[9px] px-1.5 py-0.5 rounded-full font-medium font-sans"
+                        className="inline-flex items-center gap-1 text-[9px] px-1.5 py-0.5 rounded-full font-medium font-sans"
                         style={{ background: c.color + "18", color: c.color }}
                       >
-                        {c.icon} {c.label}
+                        <ActiveCategoryIcon category={c.key} size={11} />
+                        {c.label}
                       </span>
                     </div>
                   ) : null;

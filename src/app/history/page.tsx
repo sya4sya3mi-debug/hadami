@@ -11,6 +11,7 @@ import PageLoading from "@/components/ui/PageLoading";
 import AuthGuard from "@/components/ui/AuthGuard";
 import Glass from "@/components/ui/Glass";
 import ProductDetail from "@/components/ui/ProductDetail";
+import { ProductGenreIcon } from "@/components/ui/CosmeticIcons";
 import { deleteProductFromDb, updateProductImageInDb, deleteProductImageFromDb, updateProductTypeInDb, toggleFavoriteInDb, updateProductNameInDb } from "@/lib/db";
 import { PRODUCT_GENRES, getGenreByKey } from "@/lib/productGenres";
 import { ProductGenre, Product } from "@/types";
@@ -311,7 +312,10 @@ export default function HistoryPage() {
                   onClick={() => setActiveFilter(g.key)}
                   className={`py-[7px] px-[11px] rounded-full border-none text-[10px] font-semibold font-sans cursor-pointer whitespace-nowrap shrink-0 ${activeFilter === g.key ? "bg-bo-ink text-white shadow-bo2" : "bg-white text-bo-ink-muted shadow-bo1"}`}
                 >
-                  {g.icon} {g.label}
+                  <span className="inline-flex items-center gap-1">
+                    <ProductGenreIcon genre={g.key} size={12} />
+                    {g.label}
+                  </span>
                 </button>
               ))}
             </div>
@@ -423,7 +427,10 @@ export default function HistoryPage() {
                                     onClick={() => { handleGenreChange(p.id, g.key); setEditingGenreId(null); }}
                                     className={`text-[9px] py-0.5 px-2 rounded-full border-none cursor-pointer font-sans ${p.productType === g.key ? "bg-bo-accent text-white" : "bg-white text-bo-ink-muted border border-bo-parchment"}`}
                                   >
-                                    {g.icon} {g.label}
+                                    <span className="inline-flex items-center gap-1">
+                                      <ProductGenreIcon genre={g.key} size={11} />
+                                      {g.label}
+                                    </span>
                                   </button>
                                 ))}
                               </div>
@@ -540,7 +547,10 @@ export default function HistoryPage() {
                                 onClick={() => { handleGenreChange(p.id, g.key); setEditingGenreId(null); }}
                                 className={`text-[9px] py-0.5 px-2 rounded-full border-none cursor-pointer font-sans ${p.productType === g.key ? "bg-bo-accent text-white" : "bg-white text-bo-ink-muted"}`}
                               >
-                                {g.icon} {g.label}
+                                <span className="inline-flex items-center gap-1">
+                                  <ProductGenreIcon genre={g.key} size={11} />
+                                  {g.label}
+                                </span>
                               </button>
                             ))}
                           </div>

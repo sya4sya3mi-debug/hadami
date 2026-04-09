@@ -5,6 +5,7 @@ import type { RakutenProduct } from "@/types";
 import { useRakutenKeywordSearch } from "@/hooks/useRakutenKeywordSearch";
 import RakutenProductCard from "./RakutenProductCard";
 import SkeletonLoader from "./SkeletonLoader";
+import { RAKUTEN_CARD_SCROLL_STEP_PX } from "./cardLayout";
 
 interface Props {
   enabled: boolean;
@@ -72,13 +73,15 @@ export default function TargetedRakutenSection({
   // 自動スライド: 3秒ごとに次のカードへ
   useEffect(() => {
     if (products.length <= 1) return;
-    const CARD_WIDTH = 148;
     const interval = setInterval(() => {
       const el = scrollRef.current;
       if (!el) return;
       const maxIndex = products.length - 1;
       indexRef.current = indexRef.current >= maxIndex ? 0 : indexRef.current + 1;
-      el.scrollTo({ left: indexRef.current * CARD_WIDTH, behavior: "smooth" });
+      el.scrollTo({
+        left: indexRef.current * RAKUTEN_CARD_SCROLL_STEP_PX,
+        behavior: "smooth",
+      });
     }, 3000);
     return () => clearInterval(interval);
   }, [products]);
@@ -123,7 +126,10 @@ export default function TargetedRakutenSection({
           className="flex gap-2 overflow-x-auto pb-2 -mx-1 px-1 scroll-smooth"
           style={{ scrollbarWidth: "none" }}
           onMouseEnter={() => {
-            indexRef.current = Math.round((scrollRef.current?.scrollLeft ?? 0) / 148);
+            indexRef.current = Math.round(
+              (scrollRef.current?.scrollLeft ?? 0) /
+                RAKUTEN_CARD_SCROLL_STEP_PX
+            );
           }}
         >
           {products.map((product, index) => (

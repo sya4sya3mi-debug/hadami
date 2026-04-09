@@ -2,6 +2,17 @@
 @tailwind components;
 @tailwind utilities;
 
+/* YakuHanJPs — self-hosted (約物半角化フォント) */
+@font-face { font-family: YakuHanJPs; font-style: normal; font-weight: 100; font-display: swap; src: url("/fonts/YakuHanJPs/YakuHanJPs-Thin.woff2") format("woff2"); unicode-range: U+3008-3011,U+3014,U+3015,U+300C-300F,U+300A,U+300B,U+FF08,U+FF09,U+FF3B,U+FF3D,U+FF5B,U+FF5D; }
+@font-face { font-family: YakuHanJPs; font-style: normal; font-weight: 200; font-display: swap; src: url("/fonts/YakuHanJPs/YakuHanJPs-ExtraLight.woff2") format("woff2"); unicode-range: U+3008-3011,U+3014,U+3015,U+300C-300F,U+300A,U+300B,U+FF08,U+FF09,U+FF3B,U+FF3D,U+FF5B,U+FF5D; }
+@font-face { font-family: YakuHanJPs; font-style: normal; font-weight: 300; font-display: swap; src: url("/fonts/YakuHanJPs/YakuHanJPs-Light.woff2") format("woff2"); unicode-range: U+3008-3011,U+3014,U+3015,U+300C-300F,U+300A,U+300B,U+FF08,U+FF09,U+FF3B,U+FF3D,U+FF5B,U+FF5D; }
+@font-face { font-family: YakuHanJPs; font-style: normal; font-weight: 400; font-display: swap; src: url("/fonts/YakuHanJPs/YakuHanJPs-Regular.woff2") format("woff2"); unicode-range: U+3008-3011,U+3014,U+3015,U+300C-300F,U+300A,U+300B,U+FF08,U+FF09,U+FF3B,U+FF3D,U+FF5B,U+FF5D; }
+@font-face { font-family: YakuHanJPs; font-style: normal; font-weight: 500; font-display: swap; src: url("/fonts/YakuHanJPs/YakuHanJPs-Medium.woff2") format("woff2"); unicode-range: U+3008-3011,U+3014,U+3015,U+300C-300F,U+300A,U+300B,U+FF08,U+FF09,U+FF3B,U+FF3D,U+FF5B,U+FF5D; }
+@font-face { font-family: YakuHanJPs; font-style: normal; font-weight: 600; font-display: swap; src: url("/fonts/YakuHanJPs/YakuHanJPs-SemiBold.woff2") format("woff2"); unicode-range: U+3008-3011,U+3014,U+3015,U+300C-300F,U+300A,U+300B,U+FF08,U+FF09,U+FF3B,U+FF3D,U+FF5B,U+FF5D; }
+@font-face { font-family: YakuHanJPs; font-style: normal; font-weight: 700; font-display: swap; src: url("/fonts/YakuHanJPs/YakuHanJPs-Bold.woff2") format("woff2"); unicode-range: U+3008-3011,U+3014,U+3015,U+300C-300F,U+300A,U+300B,U+FF08,U+FF09,U+FF3B,U+FF3D,U+FF5B,U+FF5D; }
+@font-face { font-family: YakuHanJPs; font-style: normal; font-weight: 800; font-display: swap; src: url("/fonts/YakuHanJPs/YakuHanJPs-ExtraBold.woff2") format("woff2"); unicode-range: U+3008-3011,U+3014,U+3015,U+300C-300F,U+300A,U+300B,U+FF08,U+FF09,U+FF3B,U+FF3D,U+FF5B,U+FF5D; }
+@font-face { font-family: YakuHanJPs; font-style: normal; font-weight: 900; font-display: swap; src: url("/fonts/YakuHanJPs/YakuHanJPs-Black.woff2") format("woff2"); unicode-range: U+3008-3011,U+3014,U+3015,U+300C-300F,U+300A,U+300B,U+FF08,U+FF09,U+FF3B,U+FF3D,U+FF5B,U+FF5D; }
+
 :root {
   --background: #f5f6f6;
   --foreground: #212121;

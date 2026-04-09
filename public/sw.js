@@ -1,4 +1,4 @@
-const CACHE_NAME = "hadami-v4";
+const CACHE_NAME = "hadami-v5";
 
 // Pre-cache the start URL on install
 self.addEventListener("install", (e) => {
@@ -24,16 +24,36 @@ self.addEventListener("activate", (e) => {
 self.addEventListener("fetch", (e) => {
   const url = new URL(e.request.url);
 
-  // Skip cross-origin requests entirely. Third-party assets like Rakuten images
-  // should be fetched directly by the browser, not cached by this app SW.
+  // Skip cross-origin requests and most API routes
   if (
     e.request.method !== "GET" ||
     url.origin !== self.location.origin ||
     e.request.url.includes("supabase.co") ||
-    e.request.url.includes("/api/") ||
     e.request.url.includes("unpkg.com") ||
     e.request.url.includes("cdn.jsdelivr.net")
   ) {
+    return;
+  }
+
+  // Cache-first for image proxy (optimized Rakuten images)
+  if (url.pathname.startsWith("/api/image-proxy")) {
+    e.respondWith(
+      caches.match(e.request).then((cached) => {
+        if (cached) return cached;
+        return fetch(e.request).then((response) => {
+          if (response.ok) {
+            const clone = response.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(e.request, clone));
+          }
+          return response;
+        });
+      })
+    );
+    return;
+  }
+
+  // Skip other API routes
+  if (e.request.url.includes("/api/")) {
     return;
   }
 

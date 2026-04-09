@@ -2,6 +2,7 @@
 
 import { PRODUCT_GENRES } from "@/lib/productGenres";
 import { ProductGenre } from "@/types";
+import { ProductGenreIcon } from "@/components/ui/CosmeticIcons";
 
 interface ClassifyStepProps {
   productName: string;
@@ -85,7 +86,9 @@ export default function ClassifyStep({
                     : "bg-white text-bo-ink-muted shadow-bo1 border border-bo-parchment"
                 }`}
               >
-                <span>{genre.icon}</span>
+                <span className="inline-flex">
+                  <ProductGenreIcon genre={genre.key} size={14} />
+                </span>
                 <span>{genre.label}</span>
               </button>
             );

@@ -2,6 +2,7 @@
 
 import { Combination } from "@/types";
 import { getIngredientByName, getIngredientCategoryInfo } from "@/lib/ingredients";
+import { ActiveCategoryIcon } from "@/components/ui/CosmeticIcons";
 
 interface Props {
   combo: Combination;
@@ -26,17 +27,24 @@ function IngredientTag({ name, products }: { name: string; products: string[] })
         style={{ background: bg, border: `1px solid ${color}30` }}
       >
         {cat && (
-          <div className="text-[10px] mb-0.5 font-sans" style={{ color }}>
-            {cat.icon} {cat.label}
+          <div
+            className="inline-flex items-center gap-1 text-[10px] mb-0.5 font-sans"
+            style={{ color }}
+          >
+            <ActiveCategoryIcon category={cat.key} size={11} />
+            {cat.label}
           </div>
         )}
-        <div className="text-xs font-bold truncate text-bo-ink font-sans">
-          {name}
-        </div>
+        <div className="text-xs font-bold truncate text-bo-ink font-sans">{name}</div>
       </div>
       {products.length > 0 && (
         <div className="text-[10px] text-center mt-1 px-1 leading-tight text-bo-ink-muted font-sans">
-          {products.map((p, i) => <span key={i}>{i > 0 && "\u3001"}{p}</span>)}
+          {products.map((product, index) => (
+            <span key={index}>
+              {index > 0 && "、"}
+              {product}
+            </span>
+          ))}
         </div>
       )}
     </div>
@@ -54,11 +62,9 @@ export default function CombinationCard({ combo, ingredientProducts }: Props) {
           : "bg-gradient-to-br from-[#FFF8F0] to-bo-danger-bg border border-bo-danger/25"
       }`}
     >
-      {/* 成分ペア */}
       <div className="flex items-start gap-2 mb-3">
         <IngredientTag name={combo.pair[0]} products={ingredientProducts[0]} />
 
-        {/* コネクター */}
         <div className="flex items-center justify-center pt-3 shrink-0">
           <span
             className={`text-[10px] font-bold w-6 h-6 rounded-full flex items-center justify-center ${
@@ -74,13 +80,14 @@ export default function CombinationCard({ combo, ingredientProducts }: Props) {
         <IngredientTag name={combo.pair[1]} products={ingredientProducts[1]} />
       </div>
 
-      {/* ラベルと説明 */}
-      <div className={`text-xs font-bold mb-0.5 font-sans ${isRecommended ? "text-bo-ink" : "text-bo-danger"}`}>
+      <div
+        className={`text-xs font-bold mb-0.5 font-sans ${
+          isRecommended ? "text-bo-ink" : "text-bo-danger"
+        }`}
+      >
         {combo.label}
       </div>
-      <p className="text-xs leading-relaxed text-bo-ink-muted font-sans">
-        {combo.desc}
-      </p>
+      <p className="text-xs leading-relaxed text-bo-ink-muted font-sans">{combo.desc}</p>
     </div>
   );
 }

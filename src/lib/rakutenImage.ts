@@ -38,7 +38,7 @@ export function normalizeRakutenImageUrl(rawUrl: string | null | undefined): str
     // 画像サイズを200x200にアップグレード（Rakuten CDNはパラメータで指定）
     const exParam = url.searchParams.get("_ex");
     if (exParam) {
-      url.searchParams.set("_ex", "200x200");
+      url.searchParams.set("_ex", "300x300");
     }
 
     return url.toString();

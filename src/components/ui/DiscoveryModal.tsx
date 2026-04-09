@@ -3,6 +3,7 @@
 import { Ingredient } from "@/types";
 import { RARITY, getIngredientCategoryInfo } from "@/lib/ingredients";
 import Badge, { StarIcon } from "./Badge";
+import { ActiveCategoryIcon } from "./CosmeticIcons";
 
 interface DiscoveryModalProps {
   ingredients: Ingredient[];
@@ -107,10 +108,11 @@ export default function DiscoveryModal({ ingredients, onClose }: DiscoveryModalP
                     return c ? (
                       <div className="flex gap-1 mt-1">
                         <span
-                          className="text-[10px] px-1.5 py-0.5 rounded-full"
+                          className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-full"
                           style={{ background: c.color + "20", color: c.color }}
                         >
-                          {c.icon} {c.label}
+                          <ActiveCategoryIcon category={c.key} size={11} />
+                          {c.label}
                         </span>
                       </div>
                     ) : null;
