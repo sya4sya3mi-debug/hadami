@@ -10,7 +10,7 @@ import {
 import { ACTIVE_CATEGORIES } from "@/lib/ingredients";
 import { CategoryKey } from "@/types";
 
-interface CoverageChartProps {
+export interface CoverageChartProps {
   categoryCounts: Record<CategoryKey, number>;
 }
 
