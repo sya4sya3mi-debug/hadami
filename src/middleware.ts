@@ -29,32 +29,39 @@ export async function middleware(request: NextRequest) {
 
   const isPublicPath = ["/privacy", "/terms"].some((p) => request.nextUrl.pathname.startsWith(p));
 
-  if ((!isRscRequest && !isPublicPath) || isAuthCallback) {
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          getAll() {
-            return request.cookies.getAll();
-          },
-          setAll(cookiesToSet) {
-            cookiesToSet.forEach(({ name, value }) =>
-              request.cookies.set(name, value)
-            );
-            supabaseResponse = NextResponse.next({
-              request: { headers: requestHeaders },
-            });
-            cookiesToSet.forEach(({ name, value, options }) =>
-              supabaseResponse.cookies.set(name, value, options)
-            );
-          },
-        },
-      }
-    );
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-    // セッションのリフレッシュ（初回ページロード・auth callback時のみ）
-    await supabase.auth.getUser();
+  if (supabaseUrl && supabaseAnonKey && ((!isRscRequest && !isPublicPath) || isAuthCallback)) {
+    try {
+      const supabase = createServerClient(
+        supabaseUrl,
+        supabaseAnonKey,
+        {
+          cookies: {
+            getAll() {
+              return request.cookies.getAll();
+            },
+            setAll(cookiesToSet) {
+              cookiesToSet.forEach(({ name, value }) =>
+                request.cookies.set(name, value)
+              );
+              supabaseResponse = NextResponse.next({
+                request: { headers: requestHeaders },
+              });
+              cookiesToSet.forEach(({ name, value, options }) =>
+                supabaseResponse.cookies.set(name, value, options)
+              );
+            },
+          },
+        }
+      );
+
+      // セッションのリフレッシュ（初回ページロード・auth callback時のみ）
+      await supabase.auth.getUser();
+    } catch (e) {
+      console.error("Middleware: Supabase session refresh failed", e);
+    }
   }
 
   supabaseResponse.headers.set("Content-Security-Policy", cspHeader);
