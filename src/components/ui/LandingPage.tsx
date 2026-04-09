@@ -3,7 +3,6 @@
 import { useState, useEffect, useRef, ReactNode } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { INGREDIENT_COUNT } from "@/lib/ingredients";
 import { getAccountScanLimit } from "@/lib/db";
 
 /* ─── Animated Number Counter ─── */
@@ -100,7 +99,7 @@ const STEPS = [
     step: "02",
     icon: "🔍",
     title: "知る",
-    desc: "AIが成分を解析し、特徴や★レアリティを表示。成分の組み合わせ相性もわかります。",
+    desc: "AIが成分を検索し、特徴や★レアリティを表示。成分の組み合わせ相性もわかります。",
     bgClass: "bg-[#FFF3DC]",
   },
   {
@@ -115,8 +114,8 @@ const STEPS = [
 const FEATURES = [
   {
     icon: "🧪",
-    title: "AI成分解析",
-    desc: `${INGREDIENT_COUNT}種の成分に対応。パッケージを撮影するだけでAIが商品を特定し、成分の特徴をお伝えします`,
+    title: "AI成分検索",
+    desc: "120種の成分に対応。パッケージを撮影するだけでAIが商品を特定し、成分の特徴をお伝えします",
   },
   {
     icon: "📖",
@@ -236,7 +235,7 @@ export default function LandingPage() {
 
           <Reveal delay={200}>
             <p className="text-[clamp(14px,2.5vw,17px)] text-bo-ink-muted leading-[1.8] max-w-[440px] mx-auto mb-9 font-sans">
-              パッケージを撮影するだけでAIが成分を解析。
+              パッケージを撮影するだけでAIが成分を検索。
               <br />
               図鑑に集めて、デッキに組んで、
               <br />
@@ -276,7 +275,7 @@ export default function LandingPage() {
                         成分をスキャン
                       </div>
                       <div className="text-[7px] text-bo-ink-muted">
-                        撮影 → AI解析
+                        撮影 → AI検索
                       </div>
                     </div>
                   </div>
@@ -309,7 +308,7 @@ export default function LandingPage() {
       <section className="py-[60px] px-6 bg-white border-t border-b border-bo-parchment">
         <div className="max-w-[700px] mx-auto grid grid-cols-3 gap-6 text-center">
           {[
-            { n: INGREDIENT_COUNT, suffix: "種", label: "対応成分" },
+            { n: 120, suffix: "種", label: "対応成分" },
             { n: 12, suffix: "種", label: "コスメカテゴリ" },
             { n: 6, suffix: "軸", label: "効果カテゴリ" },
           ].map((s, i) => (
@@ -466,7 +465,7 @@ export default function LandingPage() {
                   ))}
                 </div>
                 <p className="text-[9px] text-bo-ink-muted mt-3 leading-[1.5]">
-                  ※ 解析結果は参考情報です。成分の特徴や気づきとしてご活用ください。
+                  ※ 検索結果は参考情報です。成分の特徴や気づきとしてご活用ください。
                 </p>
               </div>
             </div>
@@ -517,7 +516,7 @@ export default function LandingPage() {
       {/* ─── DISCLAIMER ─── */}
       <div className="px-6 py-6 pb-7 bg-bo-ink border-b border-bo-ink-faint/10">
         <p className="max-w-[600px] mx-auto text-[10px] text-bo-ink-muted font-sans leading-[1.8] text-center">
-          ※ HADAMIの解析結果はAIによる参考情報であり、医学的な判断や安全性の保証を行うものではありません。すべての成分を正確に解析できることを保証するものでもありません。肌トラブルが気になる場合は専門の医療機関にご相談ください。
+          ※ HADAMIの検索結果はAIによる参考情報であり、医学的な判断や安全性の保証を行うものではありません。すべての成分を正確に検索できることを保証するものでもありません。肌トラブルが気になる場合は専門の医療機関にご相談ください。
         </p>
       </div>
 
