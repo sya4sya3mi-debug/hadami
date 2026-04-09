@@ -1,19 +1,21 @@
 "use client";
 
-import { Suspense, useCallback, useEffect, useState } from "react";
+import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import StepIndicator from "@/components/scan/StepIndicator";
 import CaptureStep from "@/components/scan/CaptureStep";
-import ManualInputSheet from "@/components/scan/ManualInputSheet";
 import IdentifyStep from "@/components/scan/IdentifyStep";
 import ClassifyStep from "@/components/scan/ClassifyStep";
 import ScanResult from "@/components/scan/ScanResult";
 import ScanDiscoveryAd from "@/components/recommendations/ScanDiscoveryAd";
+import ManualInputSheet from "@/components/scan/ManualInputSheet";
 import DiscoveryModal from "@/components/ui/DiscoveryModal";
 import AuthGuard from "@/components/ui/AuthGuard";
 import { extractIngredients } from "@/lib/ocr";
 import { findCombinations } from "@/lib/combinations";
-import { getIngredientById } from "@/lib/ingredients";
+import { getIngredientById, getIngredientByInci, getIngredientByName } from "@/lib/ingredients";
+import { resolveActiveIngredient } from "@/lib/mhlwActiveIngredients";
+import { resolveActiveIngredients, type ResolvedActiveIngredient } from "@/lib/activeIngredientResolver";
 import { useProductStore } from "@/stores/useProductStore";
 import { useZukanStore } from "@/stores/useZukanStore";
 import { useUser } from "@/lib/auth";
@@ -37,6 +39,13 @@ interface ScannedProduct {
   productType: string;
   found: boolean;
   ingredients: string;
+  isQuasiDrug?: boolean;
+  activeIngredients?: string[];
+  activeEvidenceText?: string;
+  salesName?: string;
+  sourceUrls?: string[];
+  decision?: "accepted" | "needs_more_image" | "rejected";
+  confidenceScore?: number;
 }
 
 export default function ScanPage() {
@@ -52,8 +61,6 @@ function ScanPageInner() {
 
   // Wizard step
   const [step, setStep] = useState<WizardStep>(1);
-  const [showManualSheet, setShowManualSheet] = useState(false);
-
   // Image data
   const [packageImage, setPackageImage] = useState("");
   const [packageImageColor, setPackageImageColor] = useState("");
@@ -81,6 +88,12 @@ function ScanPageInner() {
   const [showDiscovery, setShowDiscovery] = useState(false);
   const [saved, setSaved] = useState(false);
   const [saveError, setSaveError] = useState("");
+  const [isQuasiDrug, setIsQuasiDrug] = useState(false);
+  const [resolvedActiveIngredients, setResolvedActiveIngredients] = useState<ResolvedActiveIngredient[]>([]);
+  const [, setScanEvidenceMap] = useState<
+    Record<string, { isQuasiDrug?: boolean; activeIngredients?: string[] }>
+  >({});
+  const scanEvidenceRef = useRef<Record<string, { isQuasiDrug?: boolean; activeIngredients?: string[] }>>({});
 
   const addProduct = useProductStore((s) => s.addProduct);
   const getProduct = useProductStore((s) => s.getProduct);
@@ -119,6 +132,7 @@ function ScanPageInner() {
   const userLimit = getUserLimit();
   const monthlyScanLimit = getMonthlyScanLimit();
   const [scanLimitReached, setScanLimitReached] = useState(false);
+  const [showManualSheet, setShowManualSheet] = useState(false);
 
   useEffect(() => {
     if (!user?.email) return;
@@ -127,10 +141,55 @@ function ScanPageInner() {
     });
   }, [user, supabase, monthlyScanLimit]);
 
-  // 成分データ処理
+  const resolveActiveIngredientIds = useCallback((names?: string[]) => {
+    if (!names?.length) return [] as string[];
+
+    return Array.from(
+      new Set(
+        names
+          .map((name) => {
+            const mhlw = resolveActiveIngredient(name);
+            if (mhlw) return mhlw.masterDbId;
+
+            const ingredient = getIngredientByName(name) || getIngredientByInci(name);
+            return ingredient?.id;
+          })
+          .filter((id): id is string => Boolean(id))
+      )
+    );
+  }, []);
+
+  const buildScanEvidenceKey = useCallback(
+    (name: string, brandName: string) =>
+      `${brandName.trim().toLowerCase()}::${name.trim().toLowerCase()}`,
+    []
+  );
+
+  // 成分データ処理（有効成分リゾルバー統合）
   const processIngredients = useCallback(
-    async (ingredientText: string, name: string, brandName: string) => {
-      const result = await extractIngredients(ingredientText);
+    async (
+      ingredientText: string,
+      name: string,
+      brandName: string,
+      opts?: {
+        isQuasiDrugOcr?: boolean;
+        ocrActiveNames?: string[];
+        isQuasiDrugWeb?: boolean;
+        webActiveNames?: string[];
+      },
+    ) => {
+      const derivedEvidence =
+        scanEvidenceRef.current[buildScanEvidenceKey(name, brandName)] ||
+        (Object.keys(scanEvidenceRef.current).length === 1
+          ? Object.values(scanEvidenceRef.current)[0]
+          : undefined);
+      const isQuasiDrugWeb = opts?.isQuasiDrugWeb ?? derivedEvidence?.isQuasiDrug;
+      const webActiveNames = opts?.webActiveNames ?? derivedEvidence?.activeIngredients;
+
+      const result = await extractIngredients(ingredientText, {
+        isQuasiDrug: opts?.isQuasiDrugOcr || isQuasiDrugWeb,
+        ocrActiveNames: opts?.ocrActiveNames,
+      });
       const foundIngs = result.found
         .map((f) => {
           const ingredient = getIngredientById(f.ingredientId);
@@ -145,16 +204,49 @@ function ScanPageInner() {
         .map((id) => getIngredientById(id))
         .filter((i): i is Ingredient => i !== null);
 
+      // 有効成分リゾルバー: 3層統合
+      const qd = result.isQuasiDrug || isQuasiDrugWeb || false;
+      const resolved = resolveActiveIngredients({
+        ocrActiveNames: opts?.ocrActiveNames ?? [],
+        webActiveNames: webActiveNames ?? [],
+        allFoundIds: foundIngs.map((f) => f.ingredient.id),
+        isQuasiDrugOcr: result.isQuasiDrug,
+        isQuasiDrugWeb: isQuasiDrugWeb ?? false,
+      });
+
       setProductName(name);
       setBrand(brandName);
       setFoundIngredients(foundIngs);
       setUnknownIngredients(result.unknown);
       setCombinations(combos);
       setNewDiscoveries(discoveries);
+      setIsQuasiDrug(qd);
+      setResolvedActiveIngredients(resolved);
 
       return discoveries;
     },
-    [discover]
+    [buildScanEvidenceKey, discover]
+  );
+
+  // 手動入力: スキャン回数を消費せず成分を解析
+  const handleManualSubmit = useCallback(
+    async (text: string, name: string, brandName: string) => {
+      setShowManualSheet(false);
+      setStep(2);
+      setProgress(50);
+      setProgressMsg("成分を照合しています...");
+
+      const discoveries = await processIngredients(text, name, brandName);
+
+      setProgress(100);
+      setProgressMsg("完了！");
+
+      setTimeout(() => {
+        setStep(3);
+        if (discoveries.length > 0) setShowDiscovery(true);
+      }, 500);
+    },
+    [processIngredients]
   );
 
   const checkScanLimit = useCallback(async (): Promise<boolean> => {
@@ -204,6 +296,17 @@ function ScanPageInner() {
         if (!res.ok) throw new Error("API error");
         const data = await res.json();
         const products: ScannedProduct[] = data.products || [data];
+        const nextEvidenceMap = Object.fromEntries(
+          products.map((product) => [
+            buildScanEvidenceKey(product.productName || "", product.brand || ""),
+            {
+              isQuasiDrug: product.isQuasiDrug,
+              activeIngredients: product.activeIngredients,
+            },
+          ])
+        );
+        scanEvidenceRef.current = nextEvidenceMap;
+        setScanEvidenceMap(nextEvidenceMap);
         const foundProducts = products.filter((p: ScannedProduct) => p.found && p.ingredients);
 
         if (foundProducts.length > 1) {
@@ -245,7 +348,7 @@ function ScanPageInner() {
         setTimeout(() => setShowFallback(true), 1000);
       }
     },
-    [processIngredients, checkScanLimit, user, supabase, userLimit]
+    [buildScanEvidenceKey, processIngredients, checkScanLimit, user, supabase, userLimit]
   );
 
   // Step 2 fallback: 成分表直接撮影 → OCR
@@ -263,7 +366,23 @@ function ScanPageInner() {
           body: JSON.stringify({ imageBase64: imageData }),
         });
         if (!ocrRes.ok) throw new Error("OCR API error");
-        const { text } = await ocrRes.json();
+        const {
+          text,
+          isQuasiDrug: ocrIsQuasiDrug,
+          activeIngredients: ocrActiveIngredients,
+        } = await ocrRes.json();
+        const fallbackName = productName || "スキャンしたコスメ";
+        const fallbackBrand = brand || "ブランド不明";
+        const fallbackEvidenceKey = buildScanEvidenceKey(fallbackName, fallbackBrand);
+        const nextEvidenceMap = {
+          ...scanEvidenceRef.current,
+          [fallbackEvidenceKey]: {
+            isQuasiDrug: ocrIsQuasiDrug,
+            activeIngredients: ocrActiveIngredients,
+          },
+        };
+        scanEvidenceRef.current = nextEvidenceMap;
+        setScanEvidenceMap(nextEvidenceMap);
 
         // OCRでテキストが取れなかった場合、スキャン枠を消費しない
         if (!text || !text.trim()) {
@@ -296,27 +415,7 @@ function ScanPageInner() {
         setTimeout(() => setShowFallback(true), 2000);
       }
     },
-    [processIngredients, productName, brand]
-  );
-
-  // 手動入力 → 成分マッチング
-  const handleManualSubmit = useCallback(
-    async (ingredientText: string, name: string, brandName: string) => {
-      setStep(2);
-      setProgress(50);
-      setProgressMsg("成分を照合しています...");
-
-      const discoveries = await processIngredients(ingredientText, name, brandName);
-
-      setProgress(100);
-      setProgressMsg("完了！");
-
-      setTimeout(() => {
-        setStep(3);
-        if (discoveries.length > 0) setShowDiscovery(true);
-      }, 300);
-    },
-    [processIngredients]
+    [buildScanEvidenceKey, processIngredients, productName, brand]
   );
 
   // 複数コスメから1つ選択
@@ -349,13 +448,17 @@ function ScanPageInner() {
     async (product: ScannedProduct, index: number) => {
       if (!user || multiSavedIndexes.has(index)) return;
 
-      const result0 = await extractIngredients(product.ingredients);
+      const result0 = await extractIngredients(product.ingredients, {
+        isQuasiDrug: product.isQuasiDrug,
+        ocrActiveNames: product.activeIngredients,
+      });
       const foundIngs = result0.found
         .map((f) => {
           const ingredient = getIngredientById(f.ingredientId);
           return ingredient ? { ingredient, orderIndex: f.orderIndex } : null;
         })
         .filter((f): f is { ingredient: Ingredient; orderIndex: number } => f !== null);
+      const activeIngredientIds = resolveActiveIngredientIds(product.activeIngredients);
 
       const result = await saveProductToDb(supabase, user.id, {
         name: product.productName,
@@ -364,6 +467,8 @@ function ScanPageInner() {
         ingredientIds: foundIngs.map((f) => f.ingredient.id),
         unknownIngredients: result0.unknown,
         packageImageBase64: packageImageColor || packageImage || undefined,
+        isQuasiDrug: product.isQuasiDrug,
+        activeIngredientIds,
       });
 
       if (result.error) return;
@@ -389,11 +494,13 @@ function ScanPageInner() {
         isFavorite: false,
         createdAt: new Date().toISOString(),
         ingredients: foundIngs.map((f) => ({ ingredientId: f.ingredient.id, orderIndex: f.orderIndex })),
+        isQuasiDrug: product.isQuasiDrug,
+        activeIngredientIds,
       });
 
       setMultiSavedIndexes((prev) => new Set(prev).add(index));
     },
-    [user, supabase, addProduct, discover, packageImage, packageImageColor, multiSavedIndexes]
+    [user, supabase, addProduct, discover, packageImage, packageImageColor, multiSavedIndexes, resolveActiveIngredientIds]
   );
 
   // Step 3 → Step 4
@@ -413,6 +520,8 @@ function ScanPageInner() {
       ingredientIds: foundIngredients.map((f) => f.ingredient.id),
       unknownIngredients,
       packageImageBase64: packageImageColor || packageImage || undefined,
+      isQuasiDrug,
+      activeIngredientIds: resolvedActiveIngredients.map((ingredient) => ingredient.ingredientId),
     });
 
     if (result.error === "limit_reached") {
@@ -446,11 +555,13 @@ function ScanPageInner() {
       isFavorite: false,
       createdAt: new Date().toISOString(),
       ingredients: foundIngredients.map((f) => ({ ingredientId: f.ingredient.id, orderIndex: f.orderIndex })),
+      isQuasiDrug,
+      activeIngredientIds: resolvedActiveIngredients.map((ingredient) => ingredient.ingredientId),
     });
 
     setSaved(true);
     setRecentlyFound(foundIngredients.map((f) => f.ingredient.id));
-  }, [user, supabase, addProduct, productName, brand, productType, packageImage, packageImageColor, foundIngredients, unknownIngredients, userLimit, saved, setRecentlyFound]);
+  }, [user, supabase, addProduct, productName, brand, productType, packageImage, packageImageColor, foundIngredients, unknownIngredients, userLimit, saved, setRecentlyFound, isQuasiDrug, resolvedActiveIngredients]);
 
   const handleReset = useCallback(() => {
     if (step >= 2 && !saved) {
@@ -470,11 +581,16 @@ function ScanPageInner() {
     setNewDiscoveries([]);
     setSaved(false);
     setSaveError("");
+    setIsQuasiDrug(false);
+    setResolvedActiveIngredients([]);
     setScanLimitReached(false);
+    setScanEvidenceMap({});
+    scanEvidenceRef.current = {};
     setMultiProducts([]);
     setMultiSavedIndexes(new Set());
     setShowFallback(false);
     setShowMultiSheet(false);
+    setShowManualSheet(false);
   }, [step, saved]);
 
   return (
@@ -482,19 +598,16 @@ function ScanPageInner() {
       <div className="min-h-screen bg-bo-cream">
         <div className="px-5 pt-4 pb-6">
           {/* Header */}
-          <div className="flex items-center justify-between mb-5">
-            <h1 className="text-2xl font-extrabold font-serif text-bo-ink m-0">
-              成分スキャン
-            </h1>
-            {step > 1 && (
+          {step > 1 && (
+            <div className="flex items-center justify-between mb-5">
               <button
                 onClick={handleReset}
                 className="px-3 py-1.5 rounded-full text-xs font-medium bg-bo-accent-soft text-bo-accent"
               >
                 最初から
               </button>
-            )}
-          </div>
+            </div>
+          )}
 
           {/* Step indicator */}
           <StepIndicator currentStep={step} />
@@ -506,8 +619,17 @@ function ScanPageInner() {
               <div className="font-bold text-sm mb-1 text-red-400">
                 無料スキャン上限（{monthlyScanLimit}回）に達しました
               </div>
-              <div className="text-xs text-bo-ink-muted">
+              <div className="text-xs text-bo-ink-muted mb-3">
                 ベータ版では1アカウントにつき{monthlyScanLimit}回まで無料です
+              </div>
+              <button
+                onClick={() => setShowManualSheet(true)}
+                className="px-5 py-2.5 rounded-full text-sm font-bold text-white bg-bo-accent shadow-bo-accent"
+              >
+                成分を手動入力する
+              </button>
+              <div className="text-[10px] text-bo-ink-faint mt-2">
+                手動入力はスキャン回数にカウントされません
               </div>
             </div>
           )}
@@ -520,7 +642,6 @@ function ScanPageInner() {
               </div>
               <CaptureStep
                 onCapture={handlePackageCapture}
-                onManualInput={() => setShowManualSheet(true)}
                 disabled={scanLimitReached}
               />
             </>
@@ -581,18 +702,16 @@ function ScanPageInner() {
           )}
         </div>
 
-        {/* Manual input bottom sheet */}
-        <ManualInputSheet
-          open={showManualSheet}
-          onClose={() => setShowManualSheet(false)}
-          onSubmit={handleManualSubmit}
-        />
-
         {/* Discovery modal */}
         {showDiscovery && (
           <DiscoveryModal ingredients={newDiscoveries} onClose={() => setShowDiscovery(false)} />
         )}
       </div>
+      <ManualInputSheet
+        open={showManualSheet}
+        onClose={() => setShowManualSheet(false)}
+        onSubmit={handleManualSubmit}
+      />
     </AuthGuard>
   );
 }

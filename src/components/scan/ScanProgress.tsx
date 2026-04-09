@@ -11,7 +11,7 @@ export default function ScanProgress({ progress, message }: ScanProgressProps) {
         <div
           className="w-20 h-20 rounded-full animate-spin"
           style={{
-            border: "3px solid #D6EDE6",
+            border: "3px solid #e6f7d9",
             borderTop: "3px solid #3A8F7A",
             borderRight: "3px solid #7DD3C8",
           }}

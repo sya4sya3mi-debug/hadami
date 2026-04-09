@@ -125,7 +125,7 @@ export default function TermsPage() {
         <Link
           href="/"
           className="inline-flex items-center gap-1 text-sm mb-6"
-          style={{ color: "#5BBFAD" }}
+          style={{ color: "#3A8F7A" }}
         >
           ← 戻る
         </Link>
@@ -147,7 +147,7 @@ export default function TermsPage() {
               className="bg-white rounded-2xl p-4 shadow-sm"
               style={{ border: "1px solid #F5E6EF" }}
             >
-              <h2 className="text-sm font-bold mb-2" style={{ color: "#5BBFAD" }}>
+              <h2 className="text-sm font-bold mb-2" style={{ color: "#3A8F7A" }}>
                 {section.title}
               </h2>
 
@@ -192,7 +192,7 @@ export default function TermsPage() {
                     メール：
                     <a
                       href={`mailto:${section.contact.email}`}
-                      style={{ color: "#5BBFAD" }}
+                      style={{ color: "#3A8F7A" }}
                     >
                       {section.contact.email}
                     </a>

@@ -9,6 +9,7 @@ interface DeckState {
   items: DeckItem[];
   addItem: (productId: string, routine: RoutineType) => void;
   removeItem: (productId: string, routine: RoutineType) => void;
+  removeProduct: (productId: string) => void;
   getRoutineItems: (routine: RoutineType) => DeckItem[];
   reorder: (routine: RoutineType, productIds: string[]) => void;
   replaceAll: (items: DeckItem[]) => void;
@@ -22,6 +23,16 @@ interface DeckState {
   ) => boolean;
   /** スロット内の製品を入れ替え */
   swapItem: (oldProductId: string, newProductId: string, routine: RoutineType) => void;
+}
+
+function reindexDeckItems(items: DeckItem[]): DeckItem[] {
+  const routineIndexMap: Partial<Record<RoutineType, number>> = {};
+
+  return items.map((item) => {
+    const orderIndex = routineIndexMap[item.routine] ?? 0;
+    routineIndexMap[item.routine] = orderIndex + 1;
+    return { ...item, orderIndex };
+  });
 }
 
 export const useDeckStore = create<DeckState>()(
@@ -71,18 +82,14 @@ export const useDeckStore = create<DeckState>()(
           const remainingItems = state.items.filter(
             (i) => !(i.productId === productId && i.routine === routine)
           );
-          let routineIndex = 0;
-
-          return {
-            items: remainingItems.map((item) => {
-              if (item.routine !== routine) return item;
-
-              const nextItem = { ...item, orderIndex: routineIndex };
-              routineIndex += 1;
-              return nextItem;
-            }),
-          };
+          return { items: reindexDeckItems(remainingItems) };
         }),
+      removeProduct: (productId) =>
+        set((state) => ({
+          items: reindexDeckItems(
+            state.items.filter((item) => item.productId !== productId)
+          ),
+        })),
       getRoutineItems: (routine) =>
         get()
           .items.filter((i) => i.routine === routine)

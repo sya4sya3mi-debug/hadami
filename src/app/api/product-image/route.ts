@@ -1,0 +1,74 @@
+import { NextResponse } from "next/server";
+import { authenticateRequest, validateImagePayload } from "@/lib/apiAuth";
+
+export const runtime = "nodejs";
+
+const BUCKET = "product-images";
+
+function getProductImagePath(userId: string, productId: string) {
+  return `${userId}/${productId}.webp`;
+}
+
+export async function POST(request: Request) {
+  const auth = await authenticateRequest();
+  if (!auth.authenticated) return auth.response;
+
+  let body: { productId?: unknown; imageBase64?: unknown };
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: "リクエスト形式が不正です" }, { status: 400 });
+  }
+
+  if (!body.productId || typeof body.productId !== "string") {
+    return NextResponse.json({ error: "productId が不正です" }, { status: 400 });
+  }
+
+  const validation = validateImagePayload(body);
+  if (!validation.valid) return validation.response;
+
+  const { data: product, error: productError } = await auth.supabase
+    .from("products")
+    .select("id")
+    .eq("id", body.productId)
+    .eq("user_id", auth.user.id)
+    .maybeSingle();
+
+  if (productError) {
+    console.error("Failed to verify product ownership:", productError);
+    return NextResponse.json({ error: "商品の確認に失敗しました" }, { status: 500 });
+  }
+
+  if (!product) {
+    return NextResponse.json({ error: "対象の商品が見つかりません" }, { status: 404 });
+  }
+
+  const filePath = getProductImagePath(auth.user.id, body.productId);
+  const bytes = Buffer.from(validation.base64Data, "base64");
+
+  const { error: uploadError } = await auth.supabase.storage
+    .from(BUCKET)
+    .upload(filePath, bytes, { contentType: "image/webp", upsert: true });
+
+  if (uploadError) {
+    console.error("Product image upload failed:", uploadError);
+    return NextResponse.json({ error: "画像の保存に失敗しました" }, { status: 500 });
+  }
+
+  const { error: updateError } = await auth.supabase
+    .from("products")
+    .update({ package_image_url: filePath })
+    .eq("id", body.productId)
+    .eq("user_id", auth.user.id);
+
+  if (updateError) {
+    console.error("Failed to persist product image path:", updateError);
+    await auth.supabase.storage.from(BUCKET).remove([filePath]);
+    return NextResponse.json({ error: "画像情報の保存に失敗しました" }, { status: 500 });
+  }
+
+  return NextResponse.json({
+    imageUrl: `/api/product-image/${body.productId}`,
+    filePath,
+  });
+}

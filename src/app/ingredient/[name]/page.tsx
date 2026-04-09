@@ -7,6 +7,7 @@ import { useProductStore } from "@/stores/useProductStore";
 import { useZukanStore } from "@/stores/useZukanStore";
 import Badge from "@/components/ui/Badge";
 import Disclaimer from "@/components/ui/Disclaimer";
+import TargetedRakutenSection from "@/components/recommendations/TargetedRakutenSection";
 import { useUser } from "@/lib/auth";
 import PageLoading from "@/components/ui/PageLoading";
 
@@ -53,6 +54,19 @@ export default function IngredientDetailPage() {
             >
               スキャンする 📷
             </Link>
+            <div className="mt-5 text-left">
+              <TargetedRakutenSection
+                enabled={true}
+                icon="PR"
+                title={`${ingredient.nameJa} を含む商品を見てみる`}
+                description="まだ未発見でも、配合商品から先に触れておくと次の収集候補を決めやすくなります。"
+                keywords={[
+                  `${ingredient.nameJa} 配合 スキンケア`,
+                  `${ingredient.nameJa} 美容液`,
+                ]}
+                ingredientHints={[ingredient.nameJa]}
+              />
+            </div>
           </div>
         </div>
       </div>

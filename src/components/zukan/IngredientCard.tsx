@@ -2,7 +2,7 @@ import { memo } from "react";
 import { Ingredient } from "@/types";
 import { RARITY, getIngredientCategoryInfo } from "@/lib/ingredients";
 
-const RARITY_COLORS = ["", "#7E9389", "#6B8E7B", "#D4A853", "#C77DBA", "#E8A04C"];
+const RARITY_COLORS = ["", "#9E9E9E", "#6B8E7B", "#D4A853", "#C77DBA", "#E8A04C"];
 
 interface IngredientCardProps {
   ingredient: Ingredient;
@@ -23,7 +23,7 @@ function IngredientCard({ ingredient, discovered, index, isRecent, foundCount = 
         className="rounded-xl overflow-hidden cursor-pointer relative flex flex-col items-center justify-center gap-0.5 p-1.5"
         style={{
           aspectRatio: "1/1",
-          background: "#E8F0EC",
+          background: "#e0e0e0",
           border: "1px dashed #B5C7BE",
         }}
       >

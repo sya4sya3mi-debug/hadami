@@ -97,7 +97,7 @@ export default function InstallBanner() {
               <button
                 onClick={handleAndroidInstall}
                 style={{
-                  background: "#5BBFAD",
+                  background: "#3A8F7A",
                   color: "#fff",
                   border: "none",
                   borderRadius: "10px",

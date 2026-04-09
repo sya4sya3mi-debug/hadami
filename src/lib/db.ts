@@ -1,15 +1,7 @@
 import { SupabaseClient } from "@supabase/supabase-js";
-import { getSignedImageUrl } from "./storage";
 
 const USER_LIMIT = 30;
-
-/**
- * 画像のデコードサイズ上限 (5MB)。
- * Supabase Storage バケット "product-images" にも同じ上限を設定すること（ダッシュボード > Storage > Policies）。
- */
 const MAX_PRODUCT_IMAGE_BYTES = 5 * 1024 * 1024;
-
-/** アップロード前に画像をリサイズ＆WebP圧縮する最大辺 */
 const UPLOAD_MAX_DIMENSION = 600;
 const UPLOAD_WEBP_QUALITY = 0.82;
 
@@ -18,7 +10,6 @@ function validateImageSize(base64Data: string): boolean {
   return estimatedBytes <= MAX_PRODUCT_IMAGE_BYTES;
 }
 
-/** Canvas を使って画像をリサイズ・圧縮し、base64 を返す */
 function compressImage(base64Full: string): Promise<string> {
   return new Promise((resolve, reject) => {
     const img = new window.Image();
@@ -29,11 +20,16 @@ function compressImage(base64Full: string): Promise<string> {
         width = Math.round(width * ratio);
         height = Math.round(height * ratio);
       }
+
       const canvas = document.createElement("canvas");
       canvas.width = width;
       canvas.height = height;
       const ctx = canvas.getContext("2d");
-      if (!ctx) return reject(new Error("Canvas context unavailable"));
+      if (!ctx) {
+        reject(new Error("Canvas context unavailable"));
+        return;
+      }
+
       ctx.drawImage(img, 0, 0, width, height);
       resolve(canvas.toDataURL("image/webp", UPLOAD_WEBP_QUALITY));
     };
@@ -42,7 +38,61 @@ function compressImage(base64Full: string): Promise<string> {
   });
 }
 
-/** Supabaseに製品を保存 */
+async function prepareProductImage(
+  imageBase64: string
+): Promise<{ error: string | null; imageDataUrl: string | null }> {
+  let imageDataUrl = imageBase64.includes(",")
+    ? imageBase64
+    : `data:image/webp;base64,${imageBase64}`;
+
+  try {
+    imageDataUrl = await compressImage(imageDataUrl);
+  } catch {
+    // Keep the original data URL when client-side compression fails.
+  }
+
+  const base64Data = imageDataUrl.split(",")[1];
+  if (!base64Data) {
+    return { error: "画像データが不正です", imageDataUrl: null };
+  }
+
+  if (!validateImageSize(base64Data)) {
+    return { error: "画像サイズが上限(5MB)を超えています", imageDataUrl: null };
+  }
+
+  return { error: null, imageDataUrl };
+}
+
+async function persistProductImage(
+  productId: string,
+  imageBase64: string
+): Promise<{ error: string | null; imageUrl: string | null }> {
+  const response = await fetch("/api/product-image", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      productId,
+      imageBase64,
+    }),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { error?: string; imageUrl?: string }
+    | null;
+
+  if (!response.ok) {
+    return {
+      error: payload?.error ?? "画像の保存に失敗しました",
+      imageUrl: null,
+    };
+  }
+
+  return {
+    error: null,
+    imageUrl: payload?.imageUrl ?? null,
+  };
+}
+
 export async function saveProductToDb(
   supabase: SupabaseClient,
   userId: string,
@@ -53,9 +103,10 @@ export async function saveProductToDb(
     ingredientIds: string[];
     unknownIngredients: string[];
     packageImageBase64?: string;
+    isQuasiDrug?: boolean;
+    activeIngredientIds?: string[];
   }
 ) {
-  // 件数チェック
   const { count } = await supabase
     .from("products")
     .select("*", { count: "exact", head: true })
@@ -65,121 +116,89 @@ export async function saveProductToDb(
     return { error: "limit_reached", productId: null, imageUrl: null };
   }
 
-  // 製品を保存
+  const insertData: Record<string, unknown> = {
+    user_id: userId,
+    name: product.name,
+    brand: product.brand,
+    product_type: product.productType ?? "other",
+    ingredient_ids: product.ingredientIds,
+    unknown_ingredients: product.unknownIngredients,
+  };
+
+  if (product.isQuasiDrug !== undefined) {
+    insertData.is_quasi_drug = product.isQuasiDrug;
+  }
+
+  if (product.activeIngredientIds?.length) {
+    insertData.active_ingredient_ids = product.activeIngredientIds;
+  }
+
   const { data, error } = await supabase
     .from("products")
-    .insert({
-      user_id: userId,
-      name: product.name,
-      brand: product.brand,
-      product_type: product.productType ?? "other",
-      ingredient_ids: product.ingredientIds,
-      unknown_ingredients: product.unknownIngredients,
-    })
+    .insert(insertData)
     .select("id")
     .single();
 
-  if (error) return { error: error.message, productId: null, imageUrl: null };
+  if (error) {
+    return { error: error.message, productId: null, imageUrl: null };
+  }
 
   let imageUrl: string | null = null;
 
-  // 写真をStorageにアップロード
   if (product.packageImageBase64) {
-    let imageDataUrl = product.packageImageBase64;
-    try {
-      imageDataUrl = await compressImage(imageDataUrl);
-    } catch { /* 圧縮失敗時は元画像をそのまま使う */ }
-    const base64Data = imageDataUrl.split(",")[1];
-    if (base64Data) {
-      if (!validateImageSize(base64Data)) {
-        // 製品行を巻き戻して保存枠を無駄にしない
-        await supabase
-          .from("products")
-          .delete()
-          .eq("id", data.id)
-          .eq("user_id", userId);
-        return { error: "画像サイズが上限(5MB)を超えています", productId: null, imageUrl: null };
-      }
-      const bytes = Uint8Array.from(atob(base64Data), (c) => c.charCodeAt(0));
-      const filePath = `${userId}/${data.id}.webp`;
+    const preparedImage = await prepareProductImage(product.packageImageBase64);
+    if (preparedImage.error || !preparedImage.imageDataUrl) {
+      await supabase
+        .from("products")
+        .delete()
+        .eq("id", data.id)
+        .eq("user_id", userId);
 
-      const { error: uploadError } = await supabase.storage
-        .from("product-images")
-        .upload(filePath, bytes, { contentType: "image/webp", upsert: true });
-
-      if (!uploadError) {
-        // パスをDBに保存（signed URLは読み取り時に生成）
-        const { error: updateError } = await supabase
-          .from("products")
-          .update({ package_image_url: filePath })
-          .eq("id", data.id)
-          .eq("user_id", userId);
-
-        if (!updateError) {
-          // 呼び出し元がすぐ表示できるよう signed URL を生成
-          imageUrl = await getSignedImageUrl(supabase, filePath);
-        } else {
-          // DBにURLを残せない場合は、端末間の表示差を防ぐため保存を巻き戻す
-          await supabase.storage.from("product-images").remove([filePath]);
-          await supabase
-            .from("products")
-            .delete()
-            .eq("id", data.id)
-            .eq("user_id", userId);
-
-          return {
-            error: "画像の保存に失敗しました。もう一度お試しください。",
-            productId: null,
-            imageUrl: null,
-          };
-        }
-      }
+      return {
+        error: preparedImage.error ?? "画像の保存に失敗しました",
+        productId: null,
+        imageUrl: null,
+      };
     }
+
+    const imageResult = await persistProductImage(data.id, preparedImage.imageDataUrl);
+    if (imageResult.error) {
+      await supabase
+        .from("products")
+        .delete()
+        .eq("id", data.id)
+        .eq("user_id", userId);
+
+      return {
+        error: imageResult.error,
+        productId: null,
+        imageUrl: null,
+      };
+    }
+
+    imageUrl = imageResult.imageUrl;
   }
 
   return { error: null, productId: data.id, imageUrl };
 }
 
-/** 製品のパッケージ画像のみ更新 */
 export async function updateProductImageInDb(
-  supabase: SupabaseClient,
-  userId: string,
+  _supabase: SupabaseClient,
+  _userId: string,
   productId: string,
   imageBase64: string
 ): Promise<{ error: string | null; imageUrl: string | null }> {
-  let imageDataUrl = imageBase64.includes(",") ? imageBase64 : `data:image/webp;base64,${imageBase64}`;
-  try {
-    imageDataUrl = await compressImage(imageDataUrl);
-  } catch { /* 圧縮失敗時は元画像をそのまま使う */ }
-  const base64Data = imageDataUrl.split(",")[1];
-  if (!base64Data) return { error: "画像データが不正です", imageUrl: null };
-
-  if (!validateImageSize(base64Data)) {
-    return { error: "画像サイズが上限(5MB)を超えています", imageUrl: null };
+  const preparedImage = await prepareProductImage(imageBase64);
+  if (preparedImage.error || !preparedImage.imageDataUrl) {
+    return {
+      error: preparedImage.error ?? "画像の保存に失敗しました",
+      imageUrl: null,
+    };
   }
 
-  const bytes = Uint8Array.from(atob(base64Data), (c) => c.charCodeAt(0));
-  const filePath = `${userId}/${productId}.webp`;
-
-  const { error: uploadError } = await supabase.storage
-    .from("product-images")
-    .upload(filePath, bytes, { contentType: "image/webp", upsert: true });
-
-  if (uploadError) return { error: uploadError.message, imageUrl: null };
-
-  const { error: updateError } = await supabase
-    .from("products")
-    .update({ package_image_url: filePath })
-    .eq("id", productId)
-    .eq("user_id", userId);
-
-  if (updateError) return { error: updateError.message, imageUrl: null };
-
-  const imageUrl = await getSignedImageUrl(supabase, filePath);
-  return { error: null, imageUrl };
+  return persistProductImage(productId, preparedImage.imageDataUrl);
 }
 
-/** 製品のパッケージ画像のみ削除 */
 export async function deleteProductImageFromDb(
   supabase: SupabaseClient,
   userId: string,
@@ -197,13 +216,11 @@ export async function deleteProductImageFromDb(
   return { error: error?.message ?? null };
 }
 
-/** Supabaseから製品を削除 */
 export async function deleteProductFromDb(
   supabase: SupabaseClient,
   userId: string,
   productId: string
 ) {
-  // Storage の画像も削除
   const filePath = `${userId}/${productId}.webp`;
   await supabase.storage.from("product-images").remove([filePath]);
 
@@ -216,7 +233,6 @@ export async function deleteProductFromDb(
   return { error: error?.message ?? null };
 }
 
-/** 製品のジャンルを更新 */
 export async function updateProductTypeInDb(
   supabase: SupabaseClient,
   userId: string,
@@ -231,7 +247,6 @@ export async function updateProductTypeInDb(
   return { error: error?.message ?? null };
 }
 
-/** 製品の名称を更新 */
 export async function updateProductNameInDb(
   supabase: SupabaseClient,
   userId: string,
@@ -246,7 +261,6 @@ export async function updateProductNameInDb(
   return { error: error?.message ?? null };
 }
 
-/** 製品の最終使用日を現在時刻で更新 */
 export async function updateLastUsedAtInDb(
   supabase: SupabaseClient,
   userId: string,
@@ -259,7 +273,6 @@ export async function updateLastUsedAtInDb(
     .eq("user_id", userId);
 }
 
-/** 製品の購入日を更新（null で削除） */
 export async function updatePurchasedAtInDb(
   supabase: SupabaseClient,
   userId: string,
@@ -274,7 +287,6 @@ export async function updatePurchasedAtInDb(
   return { error: error?.message ?? null };
 }
 
-/** 製品のお気に入り状態を切り替え */
 export async function toggleFavoriteInDb(
   supabase: SupabaseClient,
   userId: string,
@@ -289,7 +301,6 @@ export async function toggleFavoriteInDb(
   return { error: error?.message ?? null };
 }
 
-/** スキャン履歴を保存（scan_history + scan_ingredients） */
 export async function saveScanHistory(
   supabase: SupabaseClient,
   userId: string,
@@ -302,7 +313,7 @@ export async function saveScanHistory(
     .insert({
       user_id: userId,
       product_name: productName,
-      brand: brand,
+      brand,
     })
     .select("id")
     .single();
@@ -327,11 +338,9 @@ export async function saveScanHistory(
     }
   }
 
-  // MV更新（fire-and-forget）
   fetch("/api/refresh-profile", { method: "POST" }).catch(() => {});
 }
 
-/** Supabaseに図鑑発見を保存 */
 export async function saveDiscoveriesToDb(
   supabase: SupabaseClient,
   userId: string,
@@ -348,7 +357,6 @@ export async function saveDiscoveriesToDb(
   });
 }
 
-/** ユーザーの製品数を取得 */
 export async function getProductCount(supabase: SupabaseClient, userId: string) {
   const { count } = await supabase
     .from("products")
@@ -357,28 +365,23 @@ export async function getProductCount(supabase: SupabaseClient, userId: string) 
   return count ?? 0;
 }
 
-/** ユーザーの保存件数上限 */
 export function getUserLimit() {
   return USER_LIMIT;
 }
 
-/** アカウント累計スキャン上限 */
 export function getAccountScanLimit() {
   return 30;
 }
 
-/** @deprecated 後方互換のため残す */
 export function getMonthlyScanLimit() {
   return getAccountScanLimit();
 }
 
-/** 現在の年月を YYYY-MM 形式で取得 */
 function getCurrentMonth() {
   const now = new Date();
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
 }
 
-/** ログインユーザーの累計スキャン回数を取得（user_id ベース） */
 export async function getScanCount(supabase: SupabaseClient, userId: string): Promise<number> {
   const { data } = await supabase
     .from("scan_usage")
@@ -388,7 +391,6 @@ export async function getScanCount(supabase: SupabaseClient, userId: string): Pr
   return data.reduce((sum: number, row: { count: number }) => sum + (row.count ?? 0), 0);
 }
 
-/** メールアドレス単位の累計スキャン回数を取得（退会→再入会でもリセットされない） */
 export async function getScanCountByEmail(supabase: SupabaseClient, email: string): Promise<number> {
   const { data } = await supabase
     .from("scan_limit_by_email")
@@ -398,7 +400,6 @@ export async function getScanCountByEmail(supabase: SupabaseClient, email: strin
   return data?.total_count ?? 0;
 }
 
-/** 原子的にスキャン枠を予約（チェック＋インクリメントを1操作で実行）。上限内なら true。 */
 export async function tryReserveScan(
   supabase: SupabaseClient,
   userId: string,
@@ -417,7 +418,6 @@ export async function tryReserveScan(
   return data === true;
 }
 
-/** API 失敗時に予約済みスキャン枠を解放する */
 export async function rollbackScan(
   supabase: SupabaseClient,
   userId: string,
@@ -432,11 +432,9 @@ export async function rollbackScan(
   }
 }
 
-/** @deprecated tryReserveScan に置き換え。後方互換のため残す */
 export async function incrementScanCount(supabase: SupabaseClient, userId: string, email: string) {
   const month = getCurrentMonth();
 
-  // user_id ベース（月別内訳の記録用）
   const { data } = await supabase
     .from("scan_usage")
     .select("count")
@@ -456,7 +454,6 @@ export async function incrementScanCount(supabase: SupabaseClient, userId: strin
       .insert({ user_id: userId, month, count: 1 });
   }
 
-  // メールアドレスベース（退会耐性のある累計）
   const { data: emailRow } = await supabase
     .from("scan_limit_by_email")
     .select("total_count")

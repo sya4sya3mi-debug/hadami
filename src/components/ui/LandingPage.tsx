@@ -241,7 +241,7 @@ export default function LandingPage() {
             <h1 className="text-[clamp(32px,7vw,52px)] font-extrabold font-serif leading-[1.25] tracking-[-0.03em] text-bo-ink mb-5">
               {"\u305D\u306E\u5316\u7CA7\u54C1\u3001"}
               <br />
-              <span className="bg-gradient-to-br from-bo-accent to-[#5BBFAD] bg-clip-text text-transparent">
+              <span className="bg-gradient-to-br from-bo-accent to-[#3A8F7A] bg-clip-text text-transparent">
                 {"\u6210\u5206\u3092\u77E5\u3063\u3066"}
               </span>
               <br />
@@ -442,7 +442,7 @@ export default function LandingPage() {
 
           <Reveal delay={150}>
             <div className="bg-white rounded-3xl overflow-hidden shadow-[0_12px_48px_rgba(27,38,32,0.08)] border border-bo-parchment">
-              <div className="h-[3px] bg-gradient-to-r from-bo-accent via-[#5BBFAD] to-bo-safe" />
+              <div className="h-[3px] bg-gradient-to-r from-bo-accent via-[#3A8F7A] to-bo-safe" />
               <div className="p-6 px-[22px]">
                 {/* Product */}
                 <div className="mb-5">

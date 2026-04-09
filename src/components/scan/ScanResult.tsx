@@ -63,9 +63,10 @@ export default function ScanResult({
   };
 
   const showGrouped = foundIngredients.length > 8;
+  const contentPaddingClass = saved ? "pb-40" : "pb-24";
 
   return (
-    <div className="space-y-4 pb-24 animate-fade-up">
+    <div className={`space-y-4 animate-fade-up ${contentPaddingClass}`}>
       {/* Product header card */}
       <div className="bg-white rounded-r3 overflow-hidden border border-bo-parchment shadow-bo2">
         <div className="h-[3px] bg-gradient-to-r from-bo-accent via-bo-safe to-[#6BC4A0]" />
@@ -125,11 +126,11 @@ export default function ScanResult({
                   <button
                     onClick={() => toggleCategory(catKey)}
                     className="w-full flex items-center justify-between rounded-xl px-3 py-2.5 text-sm"
-                    style={{ background: catInfo ? catInfo.color + "10" : "#F4F9F6" }}
+                    style={{ background: catInfo ? catInfo.color + "10" : "#f5f6f6" }}
                   >
                     <div className="flex items-center gap-2">
                       <span>{catInfo?.icon || "📋"}</span>
-                      <span className="font-bold text-xs font-sans" style={{ color: catInfo?.color || "#1B2620" }}>
+                      <span className="font-bold text-xs font-sans" style={{ color: catInfo?.color || "#212121" }}>
                         {catInfo?.label || "その他"} ({items.length})
                       </span>
                     </div>

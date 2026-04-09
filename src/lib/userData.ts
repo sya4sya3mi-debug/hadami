@@ -3,7 +3,7 @@ import type { DeckItem, Product, ProductGenre, RoutineType } from "@/types";
 import { useDeckStore } from "@/stores/useDeckStore";
 import { useProductStore } from "@/stores/useProductStore";
 import { useZukanStore } from "@/stores/useZukanStore";
-import { clearImageUrlCache, getSignedImageUrls } from "./storage";
+import { clearImageUrlCache } from "./storage";
 
 const PRODUCT_STORAGE_KEY = "hadami-products";
 const DECK_STORAGE_KEY = "hadami-deck";
@@ -19,6 +19,10 @@ type ProductRow = {
   package_image_url: string | null;
   is_favorite: boolean | null;
   created_at: string | null;
+  last_used_at: string | null;
+  purchased_at: string | null;
+  is_quasi_drug: boolean | null;
+  active_ingredient_ids: string[] | null;
 };
 
 type DiscoveryRow = {
@@ -30,6 +34,32 @@ type DeckRow = {
   routine: RoutineType;
   order_index: number | null;
 };
+
+function resolveProductImage(productId: string, storedValue: string | null) {
+  if (!storedValue) {
+    return {
+      packageImagePath: undefined,
+      packageImage: undefined,
+    };
+  }
+
+  if (
+    storedValue.startsWith("http://") ||
+    storedValue.startsWith("https://") ||
+    storedValue.startsWith("/") ||
+    storedValue.startsWith("data:")
+  ) {
+    return {
+      packageImagePath: storedValue,
+      packageImage: storedValue,
+    };
+  }
+
+  return {
+    packageImagePath: storedValue,
+    packageImage: `/api/product-image/${productId}`,
+  };
+}
 
 export function getCacheOwner() {
   if (typeof window === "undefined") return null;
@@ -56,21 +86,28 @@ export function clearCachedUserData() {
 }
 
 function mapProducts(rows: ProductRow[]): Product[] {
-  // 署名URLはコンポーネント側で遅延取得する（useSignedImageUrl フック経由）
-  return rows.map((row) => ({
-    id: row.id,
-    name: row.name ?? "未設定",
-    brand: row.brand ?? "",
-    productType: (row.product_type as ProductGenre) || "other",
-    packageImagePath: row.package_image_url ?? undefined,
-    packageImage: undefined,
-    isFavorite: row.is_favorite ?? false,
-    createdAt: row.created_at ?? new Date(0).toISOString(),
-    ingredients: (row.ingredient_ids ?? []).map((ingredientId, index) => ({
-      ingredientId,
-      orderIndex: index,
-    })),
-  }));
+  return rows.map((row) => {
+    const image = resolveProductImage(row.id, row.package_image_url);
+
+    return {
+      id: row.id,
+      name: row.name ?? "未設定",
+      brand: row.brand ?? "",
+      productType: (row.product_type as ProductGenre) || "other",
+      packageImagePath: image.packageImagePath,
+      packageImage: image.packageImage,
+      isFavorite: row.is_favorite ?? false,
+      createdAt: row.created_at ?? new Date(0).toISOString(),
+      lastUsedAt: row.last_used_at ?? undefined,
+      purchasedAt: row.purchased_at ?? undefined,
+      isQuasiDrug: row.is_quasi_drug ?? undefined,
+      activeIngredientIds: row.active_ingredient_ids ?? undefined,
+      ingredients: (row.ingredient_ids ?? []).map((ingredientId, index) => ({
+        ingredientId,
+        orderIndex: index,
+      })),
+    };
+  });
 }
 
 function mapDeckItems(rows: DeckRow[]): DeckItem[] {
@@ -85,7 +122,7 @@ export async function syncUserData(supabase: SupabaseClient, userId: string) {
   const [productsRes, discoveriesRes, deckRes] = await Promise.all([
     supabase
       .from("products")
-      .select("id, name, brand, product_type, ingredient_ids, package_image_url, is_favorite, created_at")
+      .select("id, name, brand, product_type, ingredient_ids, package_image_url, is_favorite, created_at, last_used_at, purchased_at, is_quasi_drug, active_ingredient_ids")
       .eq("user_id", userId)
       .order("created_at", { ascending: false }),
     supabase
@@ -100,27 +137,14 @@ export async function syncUserData(supabase: SupabaseClient, userId: string) {
   ]);
 
   const errors: string[] = [];
+  let syncedProductIds: Set<string> | null = null;
 
   if (productsRes.error) {
     errors.push(`products sync failed: ${productsRes.error.message}`);
   } else {
     const products = mapProducts((productsRes.data ?? []) as ProductRow[]);
+    syncedProductIds = new Set(products.map((product) => product.id));
     useProductStore.getState().replaceAll(products);
-
-    // 署名URLをバックグラウンドで解決し、完了後にストアを更新
-    const imagePaths = products
-      .map((p) => p.packageImagePath)
-      .filter((p): p is string => !!p);
-    if (imagePaths.length > 0) {
-      getSignedImageUrls(supabase, imagePaths).then((urlMap) => {
-        const store = useProductStore.getState();
-        for (const product of store.products) {
-          if (product.packageImagePath && urlMap[product.packageImagePath]) {
-            store.updateProductImage(product.id, urlMap[product.packageImagePath]!);
-          }
-        }
-      }).catch((err) => console.warn("Background image URL resolution failed:", err));
-    }
   }
 
   if (discoveriesRes.error) {
@@ -135,7 +159,35 @@ export async function syncUserData(supabase: SupabaseClient, userId: string) {
     console.error("deck sync failed:", deckRes.error.message);
     useDeckStore.getState().replaceAll([]);
   } else {
-    useDeckStore.getState().replaceAll(mapDeckItems((deckRes.data ?? []) as DeckRow[]));
+    const allDeckItems = mapDeckItems((deckRes.data ?? []) as DeckRow[]);
+    const productIds = syncedProductIds;
+    const validDeckItems = productIds
+      ? allDeckItems.filter((item) => productIds.has(item.productId))
+      : allDeckItems;
+    useDeckStore.getState().replaceAll(validDeckItems);
+
+    if (productIds) {
+      const orphanProductIds = Array.from(
+        new Set(
+          allDeckItems
+            .filter((item) => !productIds.has(item.productId))
+            .map((item) => item.productId)
+        )
+      );
+
+      if (orphanProductIds.length > 0) {
+        void (async () => {
+          const { error } = await supabase
+            .from("deck_items")
+            .delete()
+            .eq("user_id", userId)
+            .in("product_id", orphanProductIds);
+          if (error) {
+            console.warn("Failed to clean orphaned deck items:", error);
+          }
+        })();
+      }
+    }
   }
 
   if (errors.length > 0) {

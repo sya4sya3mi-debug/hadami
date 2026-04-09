@@ -14,13 +14,23 @@ export function useSignedImageUrl(path: string | undefined): string | undefined 
   const [url, setUrl] = useState<string | undefined>(() => {
     if (!path) return undefined;
     // Already a full URL (legacy data or already resolved)
-    if (path.startsWith("http://") || path.startsWith("https://")) return path;
+    if (
+      path.startsWith("http://") ||
+      path.startsWith("https://") ||
+      path.startsWith("/") ||
+      path.startsWith("data:")
+    ) return path;
     return undefined;
   });
 
   useEffect(() => {
     if (!path) return;
-    if (path.startsWith("http://") || path.startsWith("https://")) {
+    if (
+      path.startsWith("http://") ||
+      path.startsWith("https://") ||
+      path.startsWith("/") ||
+      path.startsWith("data:")
+    ) {
       setUrl(path);
       return;
     }

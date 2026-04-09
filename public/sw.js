@@ -1,4 +1,4 @@
-const CACHE_NAME = "hadami-v2";
+const CACHE_NAME = "hadami-v4";
 
 // Pre-cache the start URL on install
 self.addEventListener("install", (e) => {
@@ -22,17 +22,20 @@ self.addEventListener("activate", (e) => {
 });
 
 self.addEventListener("fetch", (e) => {
-  // Skip non-GET, Supabase API, and external CDNs
+  const url = new URL(e.request.url);
+
+  // Skip cross-origin requests entirely. Third-party assets like Rakuten images
+  // should be fetched directly by the browser, not cached by this app SW.
   if (
     e.request.method !== "GET" ||
+    url.origin !== self.location.origin ||
     e.request.url.includes("supabase.co") ||
+    e.request.url.includes("/api/") ||
     e.request.url.includes("unpkg.com") ||
     e.request.url.includes("cdn.jsdelivr.net")
   ) {
     return;
   }
-
-  const url = new URL(e.request.url);
 
   // For Next.js static assets (_next/static): cache-first (immutable hashed files)
   if (url.pathname.startsWith("/_next/static/")) {

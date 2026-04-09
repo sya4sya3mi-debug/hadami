@@ -17,7 +17,7 @@ function getIngredientCatInfo(nameJa: string) {
 function IngredientTag({ name, products }: { name: string; products: string[] }) {
   const cat = getIngredientCatInfo(name);
   const bg = cat ? `${cat.color}1A` : "rgba(200,200,200,0.15)";
-  const color = cat ? cat.color : "#7E9389";
+  const color = cat ? cat.color : "#9E9E9E";
 
   return (
     <div className="flex-1 min-w-0">

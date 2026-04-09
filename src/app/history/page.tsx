@@ -4,13 +4,14 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useProductStore } from "@/stores/useProductStore";
+import { useDeckStore } from "@/stores/useDeckStore";
 import Disclaimer from "@/components/ui/Disclaimer";
 import { useUser } from "@/lib/auth";
 import PageLoading from "@/components/ui/PageLoading";
 import AuthGuard from "@/components/ui/AuthGuard";
 import Glass from "@/components/ui/Glass";
 import ProductDetail from "@/components/ui/ProductDetail";
-import { deleteProductFromDb, updateProductImageInDb, deleteProductImageFromDb, updateProductTypeInDb, toggleFavoriteInDb } from "@/lib/db";
+import { deleteProductFromDb, updateProductImageInDb, deleteProductImageFromDb, updateProductTypeInDb, toggleFavoriteInDb, updateProductNameInDb } from "@/lib/db";
 import { PRODUCT_GENRES, getGenreByKey } from "@/lib/productGenres";
 import { ProductGenre, Product } from "@/types";
 
@@ -44,9 +45,11 @@ export default function HistoryPage() {
   const { user, supabase, loading } = useUser();
   const products = useProductStore((s) => s.products);
   const removeProduct = useProductStore((s) => s.removeProduct);
+  const removeProductFromDeck = useDeckStore((s) => s.removeProduct);
   const updateProductImage = useProductStore((s) => s.updateProductImage);
   const updateProductType = useProductStore((s) => s.updateProductType);
   const toggleFavorite = useProductStore((s) => s.toggleFavorite);
+  const updateProductName = useProductStore((s) => s.updateProductName);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [updatingImageId, setUpdatingImageId] = useState<string | null>(null);
@@ -54,6 +57,7 @@ export default function HistoryPage() {
   const [deletingImageId, setDeletingImageId] = useState<string | null>(null);
   const [imageError, setImageError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
   const pendingProductIdRef = useRef<string | null>(null);
   const [activeFilter, setActiveFilter] = useState<"all" | ProductGenre>("all");
   const [favOnly, setFavOnly] = useState(false);
@@ -61,6 +65,9 @@ export default function HistoryPage() {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [editMode, setEditMode] = useState(false);
   const [editingGenreId, setEditingGenreId] = useState<string | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [editingNameId, setEditingNameId] = useState<string | null>(null);
+  const [editNameValue, setEditNameValue] = useState("");
   const [showScrollTop, setShowScrollTop] = useState(false);
   const captureRef = useRef<HTMLDivElement>(null);
 
@@ -73,6 +80,11 @@ export default function HistoryPage() {
   if (loading) {
     return <PageLoading message="コスメ一覧を読み込んでいます..." />;
   }
+
+  const handleCameraCapture = (productId: string) => {
+    pendingProductIdRef.current = productId;
+    cameraInputRef.current?.click();
+  };
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const handlePhotoUpdate = (productId: string) => {
@@ -112,22 +124,14 @@ export default function HistoryPage() {
     setDeletingImageId(null);
   };
 
-  const handleDelete = async (productId: string, productName: string) => {
-    if (!user) return;
-    if (!window.confirm(`「${productName}」を削除しますか？`)) return;
-    setDeletingId(productId);
-    const { error } = await deleteProductFromDb(supabase, user.id, productId);
-    if (!error) { removeProduct(productId); }
-    setDeletingId(null);
-  };
 
   const handleToggleFavorite = async (productId: string, currentFav: boolean) => {
     if (!user) return;
     toggleFavorite(productId);
-    try {
-      await toggleFavoriteInDb(supabase, user.id, productId, !currentFav);
-    } catch {
-      toggleFavorite(productId); // rollback
+    const { error } = await toggleFavoriteInDb(supabase, user.id, productId, !currentFav);
+    if (error) {
+      toggleFavorite(productId);
+      setImageError(`お気に入りの更新に失敗しました: ${error}`);
     }
   };
 
@@ -135,12 +139,66 @@ export default function HistoryPage() {
     if (!user) return;
     const prev = products.find((p) => p.id === productId)?.productType ?? "other";
     updateProductType(productId, newGenre);
-    try {
-      await updateProductTypeInDb(supabase, user.id, productId, newGenre);
-    } catch {
-      updateProductType(productId, prev); // rollback
+    const { error } = await updateProductTypeInDb(supabase, user.id, productId, newGenre);
+    if (error) {
+      updateProductType(productId, prev);
+      setImageError(`カテゴリの更新に失敗しました: ${error}`);
     }
   };
+
+  const handleNameSave = async (productId: string) => {
+    const trimmed = editNameValue.trim();
+    if (!trimmed || !user) { setEditingNameId(null); return; }
+    const prev = products.find((p) => p.id === productId)?.name ?? "";
+    updateProductName(productId, trimmed);
+    setEditingNameId(null);
+    const { error } = await updateProductNameInDb(supabase, user.id, productId, trimmed);
+    if (error) {
+      updateProductName(productId, prev);
+      setImageError(`名前の更新に失敗しました: ${error}`);
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (!user || selectedIds.size === 0) return;
+    if (!window.confirm(`選択した${selectedIds.size}件を削除しますか？`)) return;
+    const failedIds: string[] = [];
+    for (const id of Array.from(selectedIds)) {
+      setDeletingId(id);
+      const { error } = await deleteProductFromDb(supabase, user.id, id);
+      if (error) {
+        failedIds.push(id);
+      } else {
+        const { error: deckError } = await supabase
+          .from("deck_items")
+          .delete()
+          .eq("user_id", user.id)
+          .eq("product_id", id);
+        if (deckError) {
+          console.error("Failed to remove deck items for deleted product:", deckError);
+        }
+        removeProduct(id);
+        removeProductFromDeck(id);
+      }
+    }
+    if (failedIds.length > 0) {
+      setImageError(`${failedIds.length}件の削除に失敗しました。もう一度お試しください。`);
+      setSelectedIds(new Set(failedIds));
+    } else {
+      setSelectedIds(new Set());
+    }
+    setDeletingId(null);
+  };
+
+  const toggleSelect = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+
+  const DISPLAY_GENRES = ["toner", "serum", "emulsion", "cream", "sunscreen", "mask_pack"];
 
   const favCount = products.filter((p) => p.isFavorite).length;
   const filtered = products
@@ -154,7 +212,7 @@ export default function HistoryPage() {
     return acc;
   }, {});
 
-  const activeGenres = PRODUCT_GENRES.filter((g) => genreCounts[g.key]);
+  const activeGenres = PRODUCT_GENRES.filter((g) => DISPLAY_GENRES.includes(g.key) && genreCounts[g.key]);
 
   return (
     <AuthGuard>
@@ -164,13 +222,20 @@ export default function HistoryPage() {
           <div className="px-1 mb-5">
             <div className="flex justify-between items-start">
               <div>
-                <h1 className="text-2xl font-extrabold font-serif text-bo-ink m-0 mb-1">マイコスメ</h1>
                 <p className="text-xs text-bo-ink-muted font-sans m-0">{products.length}品 スキャン済み</p>
               </div>
               <div className="flex items-center gap-2">
+                {editMode && selectedIds.size > 0 && (
+                  <button
+                    onClick={handleBulkDelete}
+                    className="px-3 py-1.5 rounded-full text-[11px] font-bold border-none cursor-pointer font-sans bg-red-500 text-white"
+                  >
+                    {selectedIds.size}件削除
+                  </button>
+                )}
                 {products.length > 0 && (
                   <button
-                    onClick={() => { setEditMode(!editMode); setEditingGenreId(null); }}
+                    onClick={() => { setEditMode(!editMode); setEditingGenreId(null); setSelectedIds(new Set()); setEditingNameId(null); }}
                     className={`px-3 py-1.5 rounded-full text-[11px] font-bold border-none cursor-pointer font-sans ${editMode ? "bg-bo-accent text-white" : "bg-bo-parchment text-bo-ink-muted"}`}
                   >
                     {editMode ? "完了" : "編集"}
@@ -218,6 +283,7 @@ export default function HistoryPage() {
           </div>
 
           <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
+          <input ref={cameraInputRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={handleFileChange} />
           {imageError && (
             <div className="mb-3 px-4 py-2 rounded-r1 text-xs text-center bg-bo-danger-bg text-bo-danger border border-bo-danger/20">
               {imageError}
@@ -277,21 +343,20 @@ export default function HistoryPage() {
                   )}
                   {filtered.map((p, i) => {
                     const genre = getGenreByKey(p.productType || "other");
+                    const isSelected = selectedIds.has(p.id);
                     return (
                       <div
                         key={p.id}
-                        className="rounded-r2 overflow-hidden bg-white border border-bo-parchment shadow-bo1 cursor-pointer animate-fade-up transition-transform duration-200 relative"
+                        className={`rounded-r2 overflow-hidden bg-white border shadow-bo1 cursor-pointer animate-fade-up transition-all duration-200 relative ${isSelected ? "border-bo-accent ring-2 ring-bo-accent/30" : "border-bo-parchment"}`}
                         style={{ animationDelay: i * 50 + "ms", opacity: deletingId === p.id ? 0.5 : undefined }}
+                        onClick={() => editMode ? toggleSelect(p.id) : setSelectedProduct(p)}
                       >
                         {editMode && (
-                          <button
-                            onClick={(e) => { e.stopPropagation(); handleDelete(p.id, p.name); }}
-                            className="absolute top-2 left-2 z-10 w-6 h-6 rounded-full bg-red-500 text-white border-none flex items-center justify-center text-xs font-bold cursor-pointer shadow-lg"
-                          >
-                            ✕
-                          </button>
+                          <div className={`absolute top-2 left-2 z-10 w-6 h-6 rounded-full border-2 flex items-center justify-center text-xs font-bold shadow-lg ${isSelected ? "bg-bo-accent border-bo-accent text-white" : "bg-white border-bo-parchment"}`}>
+                            {isSelected && "✓"}
+                          </div>
                         )}
-                        <div onClick={() => !editMode && setSelectedProduct(p)}>
+                        <div>
                           <div className="relative aspect-square bg-bo-parchment overflow-hidden">
                             {p.packageImage ? (
                               <Image src={p.packageImage} alt={p.name} fill className="object-cover" sizes="(max-width:430px) 50vw, 200px" loading="lazy" />
@@ -302,10 +367,7 @@ export default function HistoryPage() {
                             )}
                             {!editMode && (
                               <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleToggleFavorite(p.id, p.isFavorite);
-                                }}
+                                onClick={(e) => { e.stopPropagation(); handleToggleFavorite(p.id, p.isFavorite); }}
                                 className="absolute top-2 right-2 w-7 h-7 rounded-full bg-white/85 backdrop-blur-lg flex items-center justify-center text-[13px] border-none cursor-pointer p-0"
                               >
                                 {p.isFavorite ? "❤️" : "🤍"}
@@ -318,14 +380,35 @@ export default function HistoryPage() {
                             )}
                           </div>
                           <div className="py-2.5 px-3">
-                            <div className="text-[11px] font-bold text-bo-ink font-sans leading-snug line-clamp-2 mb-1">
-                              {p.name}
-                            </div>
+                            {editMode && editingNameId === p.id ? (
+                              <div className="flex gap-1 mb-1" onClick={(e) => e.stopPropagation()}>
+                                <input
+                                  autoFocus
+                                  value={editNameValue}
+                                  onChange={(e) => setEditNameValue(e.target.value)}
+                                  onKeyDown={(e) => { if (e.key === "Enter") handleNameSave(p.id); if (e.key === "Escape") setEditingNameId(null); }}
+                                  className="flex-1 text-[11px] font-bold border border-bo-accent rounded-md px-2 py-0.5 font-sans text-bo-ink bg-white outline-none min-w-0"
+                                />
+                                <button onClick={() => handleNameSave(p.id)} className="text-[10px] px-2 py-0.5 rounded-md bg-bo-accent text-white border-none cursor-pointer font-sans shrink-0">保存</button>
+                              </div>
+                            ) : (
+                              <div className="flex items-start gap-1 mb-1">
+                                <div className="text-[11px] font-bold text-bo-ink font-sans leading-snug line-clamp-2 flex-1">{p.name}</div>
+                                {editMode && (
+                                  <button
+                                    onClick={(e) => { e.stopPropagation(); setEditNameValue(p.name); setEditingNameId(p.id); }}
+                                    className="shrink-0 text-[9px] px-1.5 py-0.5 rounded border border-bo-parchment bg-bo-parchment text-bo-ink-muted cursor-pointer font-sans mt-0.5"
+                                  >
+                                    ✏️
+                                  </button>
+                                )}
+                              </div>
+                            )}
                             <div className="text-[10px] text-bo-ink-muted font-sans">{p.brand}</div>
                           </div>
                         </div>
                         {editMode && (
-                          <div className="px-3 pb-2.5">
+                          <div className="px-3 pb-2.5" onClick={(e) => e.stopPropagation()}>
                             <button
                               onClick={() => setEditingGenreId(editingGenreId === p.id ? null : p.id)}
                               className="w-full py-1.5 rounded-lg text-[10px] font-semibold border border-bo-parchment bg-bo-parchment text-bo-ink-muted cursor-pointer font-sans"
@@ -364,6 +447,7 @@ export default function HistoryPage() {
                   )}
                   {filtered.map((p, i) => {
                     const genre = getGenreByKey(p.productType || "other");
+                    const isSelected = selectedIds.has(p.id);
                     return (
                       <div
                         key={p.id}
@@ -371,28 +455,48 @@ export default function HistoryPage() {
                         style={{ animationDelay: i * 40 + "ms", opacity: deletingId === p.id ? 0.5 : undefined }}
                       >
                         <div
-                          onClick={() => !editMode && setSelectedProduct(p)}
-                          className="flex items-center gap-3 py-2.5 px-3 bg-white rounded-r1 border border-bo-parchment shadow-bo1 cursor-pointer"
+                          onClick={() => editMode ? toggleSelect(p.id) : setSelectedProduct(p)}
+                          className={`flex items-center gap-3 py-1.5 px-2.5 bg-white rounded-r1 border shadow-bo1 cursor-pointer ${isSelected ? "border-bo-accent ring-2 ring-bo-accent/30" : "border-bo-parchment"}`}
                         >
                           {editMode && (
-                            <button
-                              onClick={(e) => { e.stopPropagation(); handleDelete(p.id, p.name); }}
-                              className="w-6 h-6 rounded-full bg-red-500 text-white border-none flex items-center justify-center text-xs font-bold cursor-pointer shrink-0"
-                            >
-                              ✕
-                            </button>
+                            <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center text-xs font-bold shrink-0 ${isSelected ? "bg-bo-accent border-bo-accent text-white" : "bg-white border-bo-parchment"}`}>
+                              {isSelected && "✓"}
+                            </div>
                           )}
-                          <div className="w-14 h-14 rounded-[10px] overflow-hidden bg-bo-parchment shrink-0 relative">
+                          <div className="w-10 h-10 rounded-lg overflow-hidden bg-bo-parchment shrink-0 relative">
                             {p.packageImage ? (
-                              <Image src={p.packageImage} alt={p.name} fill className="object-cover" sizes="56px" loading="lazy" />
+                              <Image src={p.packageImage} alt={p.name} fill className="object-cover" sizes="40px" loading="lazy" />
                             ) : (
-                              <div className="w-full h-full bg-gradient-to-br from-bo-accent-soft to-bo-parchment flex items-center justify-center text-xl">
+                              <div className="w-full h-full bg-gradient-to-br from-bo-accent-soft to-bo-parchment flex items-center justify-center text-base">
                                 {genre?.icon || "📦"}
                               </div>
                             )}
                           </div>
                           <div className="flex-1 min-w-0">
-                            <div className="text-xs font-bold text-bo-ink font-sans leading-snug line-clamp-2">{p.name}</div>
+                            {editMode && editingNameId === p.id ? (
+                              <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
+                                <input
+                                  autoFocus
+                                  value={editNameValue}
+                                  onChange={(e) => setEditNameValue(e.target.value)}
+                                  onKeyDown={(e) => { if (e.key === "Enter") handleNameSave(p.id); if (e.key === "Escape") setEditingNameId(null); }}
+                                  className="flex-1 text-xs font-bold border border-bo-accent rounded-md px-2 py-0.5 font-sans text-bo-ink bg-white outline-none min-w-0"
+                                />
+                                <button onClick={() => handleNameSave(p.id)} className="text-[10px] px-2 rounded-md bg-bo-accent text-white border-none cursor-pointer font-sans shrink-0">保存</button>
+                              </div>
+                            ) : (
+                              <div className="flex items-center gap-1">
+                                <div className="text-xs font-bold text-bo-ink font-sans leading-snug line-clamp-2 flex-1">{p.name}</div>
+                                {editMode && (
+                                  <button
+                                    onClick={(e) => { e.stopPropagation(); setEditNameValue(p.name); setEditingNameId(p.id); }}
+                                    className="shrink-0 text-[9px] px-1.5 py-0.5 rounded border border-bo-parchment bg-bo-parchment text-bo-ink-muted cursor-pointer font-sans"
+                                  >
+                                    ✏️
+                                  </button>
+                                )}
+                              </div>
+                            )}
                             <div className="flex items-center gap-2 mt-1">
                               <span className="text-[10px] text-bo-ink-muted font-sans">{p.brand}</span>
                               {genre && (
@@ -492,6 +596,10 @@ export default function HistoryPage() {
           onToggleFavorite={() => {
             handleToggleFavorite(selectedProduct.id, selectedProduct.isFavorite);
             setSelectedProduct({ ...selectedProduct, isFavorite: !selectedProduct.isFavorite });
+          }}
+          onRescan={() => {
+            setSelectedProduct(null);
+            handleCameraCapture(selectedProduct.id);
           }}
         />
       )}

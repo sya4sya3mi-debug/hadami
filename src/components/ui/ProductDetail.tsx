@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { Product } from "@/types";
 import { getIngredientById } from "@/lib/ingredients";
@@ -14,18 +14,30 @@ export default function ProductDetail({
   product,
   onClose,
   onToggleFavorite,
+  onRescan,
 }: {
   product: Product;
   onClose: () => void;
   onToggleFavorite?: () => void;
+  onRescan?: () => void;
 }) {
   const router = useRouter();
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [showScrollTop, setShowScrollTop] = useState(false);
 
   // Lock body scroll while overlay is open
   useEffect(() => {
     const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     return () => { document.body.style.overflow = prev; };
+  }, []);
+
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const onScroll = () => setShowScrollTop(el.scrollTop > 200);
+    el.addEventListener("scroll", onScroll, { passive: true });
+    return () => el.removeEventListener("scroll", onScroll);
   }, []);
 
   const ingredientDetails = product.ingredients.map((ing) => {
@@ -40,12 +52,12 @@ export default function ProductDetail({
   });
 
   return (
-    <div className="fixed inset-0 z-[300] bg-bo-cream overflow-y-auto animate-fade-up">
+    <div ref={scrollRef} className="fixed inset-0 z-[300] bg-bo-cream overflow-y-auto animate-fade-up">
       {/* Sticky header with back button */}
       <div className="sticky top-0 z-[310] flex items-center justify-between px-4 py-2.5 bg-bo-cream/[0.92] backdrop-blur-xl border-b border-bo-parchment/60">
         <button
           onClick={onClose}
-          className="flex items-center gap-1 bg-transparent border-none text-[13px] font-semibold text-bo-accent cursor-pointer py-1 font-sans"
+          className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-bo-parchment text-[13px] font-semibold text-bo-accent cursor-pointer font-sans active:opacity-70 transition-opacity border-none"
         >
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
             <path d="M19 12H5M12 19l-7-7 7-7" />
@@ -149,15 +161,32 @@ export default function ProductDetail({
           </button>
           <button
             onClick={() => {
-              onClose();
-              router.push("/scan");
+              if (onRescan) {
+                onRescan();
+              } else {
+                onClose();
+                router.push("/scan");
+              }
             }}
             className="flex-1 py-3.5 rounded-r1 border-none bg-bo-accent text-white text-xs font-bold font-sans cursor-pointer shadow-bo-accent"
           >
-            再スキャン
+            📷 写真を撮る
           </button>
         </div>
       </div>
+
+      {/* Scroll to top button */}
+      {showScrollTop && (
+        <button
+          onClick={() => scrollRef.current?.scrollTo({ top: 0, behavior: "smooth" })}
+          className="fixed bottom-6 right-4 z-[320] w-11 h-11 rounded-full bg-bo-accent text-white border-none flex items-center justify-center shadow-bo-accent cursor-pointer"
+          aria-label="上に戻る"
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" aria-hidden="true">
+            <path d="M12 19V5M5 12l7-7 7 7" />
+          </svg>
+        </button>
+      )}
     </div>
   );
 }

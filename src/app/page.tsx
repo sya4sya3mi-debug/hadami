@@ -149,16 +149,22 @@ export default function HomePage() {
       const orderB = getGenreByKey(pb?.productType ?? "other")?.order ?? 99;
       return orderA - orderB;
     });
+  const routineDeckEntries = routineDeckItems.flatMap((deckItem) => {
+    const product = products.find((p) => p.id === deckItem.productId);
+    return product ? [{ deckItem, product }] : [];
+  });
+  const normalizedCheckedSteps = new Set(
+    Array.from(checkedSteps).filter((index) => index < routineDeckEntries.length)
+  );
+  const checkedCount = normalizedCheckedSteps.size;
   const recentProducts = products.slice(0, 3);
 
   // Build steps from deck items + products
-  const routineSteps: RoutineStep[] = routineDeckItems.map((di) => {
-    const prod = products.find((p) => p.id === di.productId);
-    return {
-      name: prod?.name || "不明な製品",
-      brand: prod?.brand || "",
-      type: prod?.productType || "",
-      ingredients: (prod?.ingredients || []).slice(0, 3).map((pi) => {
+  const routineSteps: RoutineStep[] = routineDeckEntries.map(({ product }) => ({
+      name: product.name,
+      brand: product.brand,
+      type: product.productType,
+      ingredients: product.ingredients.slice(0, 3).map((pi) => {
         const ing = getIngredientById(pi.ingredientId);
         const genreInfo = ing ? getIngredientCategoryInfo(ing) : null;
         return {
@@ -167,18 +173,17 @@ export default function HomePage() {
           cat: genreInfo?.label || "",
         };
       }),
-    };
-  });
+  }));
 
   const toggleStep = (i: number) => {
-    const wasChecked = checkedSteps.has(i);
-    const next = new Set(checkedSteps);
+    const wasChecked = normalizedCheckedSteps.has(i);
+    const next = new Set(normalizedCheckedSteps);
     if (next.has(i)) { next.delete(i); } else { next.add(i); }
     setCheckedSteps(next);
     saveRoutineChecks(autoRoutine, next);
 
-    if (!wasChecked && routineDeckItems[i]) {
-      const productId = routineDeckItems[i].productId;
+    if (!wasChecked && routineDeckEntries[i]) {
+      const productId = routineDeckEntries[i].product.id;
       const now = new Date().toISOString();
       updateLastUsedAt(productId, now);
       if (user) {
@@ -237,7 +242,7 @@ export default function HomePage() {
 
   const routineIcon = autoRoutine === "morning" ? "☀️" : "🌙";
   const routineLabel = autoRoutine === "morning" ? "朝ルーティン" : "夜ルーティン";
-  const allComplete = checkedSteps.size === routineSteps.length && routineSteps.length > 0;
+  const allComplete = checkedCount === routineSteps.length && routineSteps.length > 0;
 
   return (
     <div className="min-h-screen bg-bo-cream">
@@ -281,7 +286,7 @@ export default function HomePage() {
         {/* Streak badge */}
         {streak > 0 && (
           <div className={`mb-4 flex items-center justify-center gap-2 py-2 px-4 rounded-full bg-bo-accent-soft border border-bo-accent/20 ${streakJustUpdated ? "animate-fade-up" : ""}`}>
-            <span className="text-base">🔥</span>
+            <span className="text-base">✨</span>
             <span className="text-xs font-bold text-bo-accent font-sans">
               連続 {streak} 日達成中！
             </span>
@@ -294,23 +299,23 @@ export default function HomePage() {
             <div className="flex justify-between items-center mb-3">
               <h2 className="text-[15px] font-bold font-sans text-bo-ink m-0">{routineIcon} {routineLabel}</h2>
               <span className={`text-xs font-black font-serif ${allComplete ? "text-bo-safe" : "text-bo-accent"}`}>
-                {checkedSteps.size}/{routineSteps.length}
+                {checkedCount}/{routineSteps.length}
               </span>
             </div>
             <div className="h-1 rounded-sm bg-bo-parchment mb-3.5 overflow-hidden">
               <div
                 className="h-full rounded-sm transition-[width] duration-500"
                 style={{
-                  width: (checkedSteps.size / routineSteps.length * 100) + "%",
+                  width: (checkedCount / routineSteps.length * 100) + "%",
                   background: allComplete
-                    ? "linear-gradient(90deg, #4A9B7F, #6BC4A0)"
+                    ? "linear-gradient(90deg, #3A8F7A, #7DD3C8)"
                     : "linear-gradient(90deg, #3A8F7A, #7DD3C8)",
                 }}
               />
             </div>
             <div className="flex flex-col gap-1.5">
               {routineSteps.map((step, i) => {
-                const done = checkedSteps.has(i);
+                const done = normalizedCheckedSteps.has(i);
                 return (
                   <button
                     key={i}
@@ -337,8 +342,8 @@ export default function HomePage() {
                     </div>
                     <div className="w-[18px] h-[18px] rounded-[5px] flex items-center justify-center text-[9px] font-black font-serif shrink-0"
                       style={{
-                        background: done ? "rgba(255,255,255,0.6)" : "#E8F0EC",
-                        color: done ? "#fff" : "#7E9389",
+                        background: done ? "rgba(255,255,255,0.6)" : "#e0e0e0",
+                        color: done ? "#fff" : "#9E9E9E",
                       }}
                     >
                       {i + 1}
@@ -365,7 +370,7 @@ export default function HomePage() {
 
             {/* Celebration */}
             {showCelebration && allComplete && (
-              <div className="mt-4 py-5 px-4 rounded-r2 bg-gradient-to-br from-bo-accent-soft via-[#E0F5EE] to-[#D6EDE6] text-center animate-fade-up border border-bo-accent/20 relative overflow-hidden">
+              <div className="mt-4 py-5 px-4 rounded-r2 bg-gradient-to-br from-bo-accent-soft via-[#d9f5c0] to-[#e6f7d9] text-center animate-fade-up border border-bo-accent/20 relative overflow-hidden">
                 <div className="absolute inset-0 pointer-events-none">
                   <div className="absolute top-1 left-4 text-lg animate-bounce" style={{ animationDelay: "0ms" }}>✨</div>
                   <div className="absolute top-2 right-6 text-lg animate-bounce" style={{ animationDelay: "200ms" }}>🌟</div>
@@ -381,7 +386,7 @@ export default function HomePage() {
                 </div>
                 {streak > 0 && (
                   <div className="inline-flex items-center gap-1.5 py-1.5 px-4 rounded-full bg-white/80 border border-bo-accent/20">
-                    <span className="text-base">🔥</span>
+                    <span className="text-base">✨</span>
                     <span className="text-xs font-bold text-bo-accent font-sans">
                       連続 {streak} 日目！
                     </span>

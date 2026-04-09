@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { authenticateRequest } from "@/lib/apiAuth";
 import { rateLimit, getClientIp } from "@/lib/rateLimit";
-import { searchRakutenCached } from "@/lib/rakuten";
+import { batchGetCached, fetchAndCacheRakuten } from "@/lib/rakuten";
 import type { RakutenProduct } from "@/types";
 
 export async function POST(request: NextRequest) {
@@ -27,11 +27,22 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 楽天APIのレートリミット対策: 順次実行（1秒1リクエスト制限）
-    const results: Record<string, RakutenProduct[]> = {};
-    for (const keyword of keywords.slice(0, 5)) {
-      results[keyword] = await searchRakutenCached(keyword, auth.supabase);
-      await new Promise((resolve) => setTimeout(resolve, 1100));
+    const targetKeywords: string[] = keywords.slice(0, 3);
+
+    // 1. 全キーワードのキャッシュを1回のDBクエリで一括取得
+    const results: Record<string, RakutenProduct[]> = await batchGetCached(
+      targetKeywords,
+      auth.supabase
+    );
+
+    // 2. キャッシュにないキーワードのみAPIを順次呼び出し
+    const uncached = targetKeywords.filter((kw) => !results[kw]);
+    for (let i = 0; i < uncached.length; i++) {
+      results[uncached[i]] = await fetchAndCacheRakuten(uncached[i], auth.supabase);
+      // 次のリクエストがある場合のみ1.1秒待機（楽天APIレートリミット対策）
+      if (i < uncached.length - 1) {
+        await new Promise((resolve) => setTimeout(resolve, 1100));
+      }
     }
 
     return NextResponse.json({ results });

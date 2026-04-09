@@ -3,18 +3,19 @@
 @tailwind utilities;
 
 :root {
-  --background: #F4F9F6;
-  --foreground: #1B2620;
+  --background: #f5f6f6;
+  --foreground: #212121;
   --primary: #3A8F7A;
-  --primary-light: #D6EDE6;
+  --primary-light: #e6f7d9;
   --accent: #3A8F7A;
-  --accent-light: #D6EDE6;
-  --warning: #C49032;
+  --accent-light: #e6f7d9;
+  --warning: #f5a623;
   --warning-light: #FFF5E0;
   --info: #7DB8E8;
-  --sub: #7E9389;
-  --border: #E8F0EC;
+  --sub: #9E9E9E;
+  --border: #e0e0e0;
   --card: #FFFFFF;
+  --app-shell-max-width: 430px;
 }
 
 /* Reset */
@@ -24,6 +25,7 @@
 
 html {
   scroll-behavior: smooth;
+  font-size: 18px;
 }
 
 html, body {
@@ -31,18 +33,20 @@ html, body {
   padding: 0;
   width: 100%;
   height: 100%;
-  background: #F4F9F6;
+  background: #f5f6f6;
 }
 
 body {
   color: var(--foreground);
-  font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Noto Sans JP", sans-serif;
+  font-family: 'YakuHanJPs', -apple-system, system-ui, 'Segoe UI', 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', Meiryo, sans-serif;
+  line-height: 1.8;
   -webkit-font-smoothing: antialiased;
 }
 
 /* アプリのコンテナをbodyではなくラッパーdivで制御 */
 #app-container {
   width: 100%;
+  max-width: var(--app-shell-max-width);
   margin: 0 auto;
   min-height: 100dvh;
   min-height: 100vh;
@@ -50,6 +54,13 @@ body {
   overflow-x: hidden;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
+  background: #f5f6f6;
+}
+
+@media (min-width: 768px) {
+  :root {
+    --app-shell-max-width: 860px;
+  }
 }
 
 /* Discovery animations */
@@ -85,7 +96,7 @@ body {
 .animate-float-up { animation: float-up 0.5s ease-out forwards; }
 @keyframes recent-glow {
   0%, 100% { box-shadow: 0 0 6px rgba(91,191,173,0.3); }
-  50% { box-shadow: 0 0 16px rgba(91,191,173,0.6), 0 0 24px rgba(249,168,192,0.3); }
+  50% { box-shadow: 0 0 16px rgba(91,191,173,0.6), 0 0 24px rgba(91,191,173,0.3); }
 }
 
 .animate-recent-glow { animation: recent-glow 2s ease-in-out infinite; }
@@ -98,11 +109,11 @@ body {
 
 @keyframes resonance-glow {
   0%, 100% {
-    box-shadow: 0 0 6px rgba(91,191,173,0.2), 0 0 12px rgba(249,168,192,0.1);
+    box-shadow: 0 0 6px rgba(91,191,173,0.2), 0 0 12px rgba(91,191,173,0.1);
     border-color: rgba(91,191,173,0.25);
   }
   50% {
-    box-shadow: 0 0 14px rgba(91,191,173,0.45), 0 0 28px rgba(249,168,192,0.25);
+    box-shadow: 0 0 14px rgba(91,191,173,0.45), 0 0 28px rgba(91,191,173,0.25);
     border-color: rgba(91,191,173,0.55);
   }
 }

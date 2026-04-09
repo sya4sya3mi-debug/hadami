@@ -47,8 +47,8 @@ const TABS = [
     label: "マイコスメ",
     ariaLabel: "保存したコスメ一覧",
     paths: [
-      "M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2",
-      "M12 7a4 4 0 100-8 4 4 0 000 8z",
+      "M19 20v-2a4 4 0 00-4-4H9a4 4 0 00-4 4v2",
+      "M12 10a4 4 0 100-8 4 4 0 000 8z",
     ],
   },
 ] as const;
@@ -85,7 +85,8 @@ export default function TabBar() {
     <nav
       role="navigation"
       aria-label="メインナビゲーション"
-      className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[430px] bg-bo-cream/[0.88] backdrop-blur-[28px] backdrop-saturate-[1.8] border-t border-bo-ink-faint/30 z-[200] pb-[env(safe-area-inset-bottom)]"
+      style={{ maxWidth: "var(--app-shell-max-width)" }}
+      className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full bg-bo-cream/[0.88] backdrop-blur-[28px] backdrop-saturate-[1.8] border-t border-bo-ink-faint/30 z-[200] pb-[env(safe-area-inset-bottom)]"
     >
       <div className="flex h-[58px]">
         {TABS.map((tab) => {
@@ -109,10 +110,10 @@ export default function TabBar() {
               >
                 <svg
                   width="20"
-                  height="20"
-                  viewBox="0 0 24 24"
+                  height="22"
+                  viewBox="0 0 24 26"
                   fill="none"
-                  stroke={isActive ? "#3A8F7A" : "#7E9389"}
+                  stroke={isActive ? "#3A8F7A" : "#9E9E9E"}
                   strokeWidth={isActive ? 2.2 : 1.6}
                   strokeLinecap="round"
                   strokeLinejoin="round"

@@ -207,7 +207,6 @@ export default function DeckPage() {
           {/* Header */}
           <div className="flex items-center justify-between mb-5">
             <div>
-              <h1 className="text-2xl font-extrabold font-serif text-bo-ink m-0 mb-1">マイデッキ</h1>
               <p className="text-xs text-bo-ink-muted font-sans m-0">スキンケアルーティンを管理</p>
             </div>
             <div className="flex items-center gap-2">

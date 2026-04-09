@@ -17,6 +17,7 @@ import { useUser } from "@/lib/auth";
 import PageLoading from "@/components/ui/PageLoading";
 import AuthGuard from "@/components/ui/AuthGuard";
 import Disclaimer from "@/components/ui/Disclaimer";
+import TargetedRakutenSection from "@/components/recommendations/TargetedRakutenSection";
 
 /* ── Rarity sort order ── */
 const RARITY_ORDER: RarityKey[] = ["legendary", "rare", "uncommon", "common"];
@@ -91,6 +92,10 @@ function CategoryExplorer({
   }, [selectedCat, discoveredSet]);
 
   const currentCat = catStats.find((c) => c.key === selectedCat);
+  const categoryTargets = useMemo(
+    () => catIngredients.filter((ing) => !discoveredSet.has(ing.id)).slice(0, 2),
+    [catIngredients, discoveredSet]
+  );
 
   return (
     <div>
@@ -160,6 +165,19 @@ function CategoryExplorer({
             </div>
           </div>
 
+          <div className="mb-3">
+            <TargetedRakutenSection
+              enabled={categoryTargets.length > 0}
+              icon="PR"
+              title={`${currentCat.label}で次に集めたい成分から探す`}
+              description="まだ出会っていない成分を含みやすい商品だけを、楽天から先回りで拾えるようにしました。"
+              keywords={categoryTargets.map(
+                (ingredient) => `${ingredient.nameJa} 配合 スキンケア`
+              )}
+              ingredientHints={categoryTargets.map((ingredient) => ingredient.nameJa)}
+            />
+          </div>
+
           {/* Ingredient list */}
           <div className="flex flex-col gap-[5px]">
             {catIngredients.map((ing) => {
@@ -215,7 +233,7 @@ function CategoryExplorer({
                     {(found ? ing.note : ing.funFact) && (
                       <div
                         className="text-[10px] font-sans mt-px truncate"
-                        style={{ color: found ? "#7E9389" : "#B08D3A" }}
+                        style={{ color: found ? "#9E9E9E" : "#B08D3A" }}
                       >
                         {found ? ing.note : `💡 ${ing.funFact}`}
                       </div>
@@ -257,6 +275,16 @@ function ConcernView({
   );
 
   const concern = SKIN_CONCERNS.find((c) => c.label === selectedConcern);
+  const concernTargets = useMemo(() => {
+    if (!concern) return [];
+
+    return [...concern.keyIngredients]
+      .filter((ingredient) => !discoveredSet.has(ingredient.id))
+      .sort(
+        (a, b) => RARITY_ORDER.indexOf(a.rarity) - RARITY_ORDER.indexOf(b.rarity)
+      )
+      .slice(0, 2);
+  }, [concern, discoveredSet]);
 
   /* ── Step 1: Concern list ── */
   if (!concern) {
@@ -328,7 +356,7 @@ function ConcernView({
             height="14"
             viewBox="0 0 24 24"
             fill="none"
-            stroke="#7E9389"
+            stroke="#9E9E9E"
             strokeWidth="2.5"
             strokeLinecap="round"
           >
@@ -356,6 +384,19 @@ function ConcernView({
         }}
       >
         💡 {concern.tip}
+      </div>
+
+      <div className="px-4 pb-1">
+        <TargetedRakutenSection
+          enabled={concernTargets.length > 0}
+          icon="PR"
+          title="この悩みで次に集めたい注目成分"
+          description="未発見のキーメジャー成分から、今の悩みに寄せた商品を楽天で見つけやすくしています。"
+          keywords={concernTargets.map(
+            (ingredient) => `${ingredient.name} 配合 スキンケア`
+          )}
+          ingredientHints={concernTargets.map((ingredient) => ingredient.name)}
+        />
       </div>
 
       {/* Key Ingredients */}
@@ -504,13 +545,10 @@ export default function ZukanPage() {
         <div
           className="pt-4 px-5 pb-4"
           style={{
-            background: "linear-gradient(180deg, #EAF5F1 0%, #F4F9F6 100%)",
+            background: "linear-gradient(180deg, #f0faeb 0%, #f5f6f6 100%)",
           }}
         >
           <div className="flex items-baseline justify-between mb-3">
-            <span className="text-2xl font-extrabold font-serif text-bo-ink">
-              有効成分図鑑
-            </span>
             <div>
               <span className="text-[28px] font-extrabold text-bo-accent font-serif leading-none">
                 {pct}
@@ -525,7 +563,7 @@ export default function ZukanPage() {
               className="h-full rounded-[3px] transition-[width] duration-[1200ms]"
               style={{
                 width: `${pct}%`,
-                background: "linear-gradient(90deg, #3A8F7A, #4A9B7F)",
+                background: "linear-gradient(90deg, #3A8F7A, #3A8F7A)",
                 transitionTimingFunction: "cubic-bezier(0.34, 1.56, 0.64, 1)",
               }}
             />

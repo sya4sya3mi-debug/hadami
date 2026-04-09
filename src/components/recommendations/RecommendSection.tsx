@@ -1,5 +1,6 @@
 "use client";
 
+import { useRef, useEffect } from "react";
 import { useRecommendations } from "@/hooks/useRecommendations";
 import RakutenProductCard from "./RakutenProductCard";
 import SkeletonLoader from "./SkeletonLoader";
@@ -19,8 +20,7 @@ export default function RecommendSection({ enabled, hideIfEmpty = false }: Props
 
   const hasProducts =
     data &&
-    ((data.similar.products?.length ?? 0) > 0 ||
-      (data.discovery.products?.length ?? 0) > 0);
+    (data.discovery.products?.length ?? 0) > 0;
 
   // スキャンページでは商品なし・ローディング中は非表示
   if (hideIfEmpty && (loading || !hasProducts)) return null;
@@ -41,19 +41,18 @@ export default function RecommendSection({ enabled, hideIfEmpty = false }: Props
 
   return (
     <div className="space-y-4">
-      {/* 軸1: 似た成分 */}
-      <AxisSection
+      {/* 軸1: 似た成分 — 一時非表示 */}
+      {/* <AxisSection
         icon="🔄"
         title="あなたの好みに近いアイテム"
         reason={data?.similar.reason}
         products={data?.similar.products}
         loading={loading}
         bgClass="bg-[#F0F9F4]"
-      />
+      /> */}
 
       {/* 軸2: 未知成分 */}
       <AxisSection
-        icon="🧬"
         title="まだ出会っていない注目成分"
         reason={data?.discovery.reason}
         products={data?.discovery.products}
@@ -71,7 +70,6 @@ export default function RecommendSection({ enabled, hideIfEmpty = false }: Props
 }
 
 function AxisSection({
-  icon,
   title,
   reason,
   products,
@@ -79,7 +77,6 @@ function AxisSection({
   bgClass,
   ingredientHints,
 }: {
-  icon: string;
   title: string;
   reason?: string;
   products?: RakutenProduct[];
@@ -87,24 +84,43 @@ function AxisSection({
   bgClass: string;
   ingredientHints?: string[];
 }) {
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const indexRef = useRef(0);
+
+  // 自動スライド: 3秒ごとに次のカードへ
+  useEffect(() => {
+    if (!products || products.length <= 1) return;
+    const CARD_WIDTH = 148; // min-w-[140px] + gap-2
+    const interval = setInterval(() => {
+      const el = scrollRef.current;
+      if (!el) return;
+      const maxIndex = products.length - 1;
+      indexRef.current = indexRef.current >= maxIndex ? 0 : indexRef.current + 1;
+      el.scrollTo({ left: indexRef.current * CARD_WIDTH, behavior: "smooth" });
+    }, 3000);
+    return () => clearInterval(interval);
+  }, [products]);
+
   return (
-    <div className={`rounded-r2 ${bgClass} border border-bo-parchment p-4`}>
+    <div className={`rounded-r2 ${bgClass} border border-bo-parchment p-3`}>
       {/* ヘッダー */}
-      <div className="flex items-center gap-2 mb-1.5">
-        <span className="text-base">{icon}</span>
+      <div className="flex items-center gap-2 mb-1">
+        <span className="inline-flex min-w-7 h-7 items-center justify-center rounded-full bg-white/80 px-2 text-[10px] font-bold text-bo-accent font-sans">
+          PR
+        </span>
         <h3 className="text-[13px] font-bold text-bo-ink font-sans">{title}</h3>
       </div>
 
       {/* 選出ロジックバッジ */}
       {reason && (
-        <span className="inline-block text-[10px] font-medium px-2 py-0.5 rounded-full bg-white/70 text-bo-ink-muted font-sans mb-3">
+        <span className="inline-block text-[10px] font-medium px-2 py-0.5 rounded-full bg-white/70 text-bo-ink-muted font-sans mb-2">
           {reason}
         </span>
       )}
 
       {/* 成分ヒント（軸2のみ） */}
       {ingredientHints && ingredientHints.length > 0 && (
-        <div className="flex flex-wrap gap-1 mb-3">
+        <div className="flex flex-wrap gap-1 mb-2">
           {ingredientHints.map((hint) => (
             <span
               key={hint}
@@ -120,7 +136,12 @@ function AxisSection({
       {loading ? (
         <SkeletonLoader />
       ) : products && products.length > 0 ? (
-        <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1">
+        <div
+          ref={scrollRef}
+          className="flex gap-2 overflow-x-auto pb-2 -mx-1 px-1 scroll-smooth"
+          style={{ scrollbarWidth: "none" }}
+          onMouseEnter={() => { indexRef.current = Math.round((scrollRef.current?.scrollLeft ?? 0) / 148); }}
+        >
           {products.map((product, i) => (
             <RakutenProductCard key={i} product={product} />
           ))}
@@ -131,9 +152,8 @@ function AxisSection({
         </p>
       )}
 
-      {/* powered by 楽天市場 */}
       <div className="text-[9px] text-bo-ink-faint font-sans text-right mt-2">
-        powered by 楽天市場
+        楽天アフィリエイトを含みます
       </div>
     </div>
   );

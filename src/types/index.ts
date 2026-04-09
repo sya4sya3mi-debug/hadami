@@ -48,6 +48,7 @@ export interface Ingredient {
   genre: IngredientGenre;
   color: string;
   note: string;
+  aliases?: string[];
   funFact?: string;
   caution?: string;
   activeIngredient?: boolean; // 医薬部外品の有効成分として承認されている場合 true
@@ -81,11 +82,14 @@ export interface Product {
   lastUsedAt?: string;
   purchasedAt?: string;
   ingredients: ProductIngredient[];
+  isQuasiDrug?: boolean;
+  activeIngredientIds?: string[];
 }
 
 export interface ProductIngredient {
   ingredientId: string;
   orderIndex: number;
+  isActiveInProduct?: boolean;
 }
 
 // ── デッキ ──
@@ -128,6 +132,18 @@ export interface RakutenProduct {
   shopName: string;
 }
 
+// ── 有効成分の信頼度 ──
+export type ActiveConfidence = "confirmed" | "high" | "medium";
+export type ActiveSource = "ocr_label" | "web_search" | "master_db";
+
+export interface ResolvedActiveIngredientInfo {
+  ingredientId: string;
+  nameJa: string;
+  confidence: ActiveConfidence;
+  sources: ActiveSource[];
+  mhlwCategory?: string;
+}
+
 // ── スキャン結果 ──
 export interface ScanResult {
   product: {
@@ -141,4 +157,6 @@ export interface ScanResult {
   };
   combinations: Combination[];
   newDiscoveries: string[];
+  isQuasiDrug: boolean;
+  activeIngredients: ResolvedActiveIngredientInfo[];
 }

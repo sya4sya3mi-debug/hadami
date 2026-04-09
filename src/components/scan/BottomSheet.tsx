@@ -62,7 +62,7 @@ export default function BottomSheet({
         {/* Drag handle + header */}
         <div
           className="shrink-0 px-6 pt-3 pb-4"
-          style={{ borderBottom: title ? "1px solid #E8F0EC" : undefined }}
+          style={{ borderBottom: title ? "1px solid #e0e0e0" : undefined }}
         >
           <div className="flex justify-center mb-3">
             <div className="w-10 h-1 rounded-full bg-bo-parchment" />

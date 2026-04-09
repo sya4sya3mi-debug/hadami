@@ -2,7 +2,7 @@
 
 import { Ingredient } from "@/types";
 import { RARITY, getIngredientCategoryInfo } from "@/lib/ingredients";
-import Badge from "./Badge";
+import Badge, { StarIcon } from "./Badge";
 
 interface DiscoveryModalProps {
   ingredients: Ingredient[];
@@ -20,7 +20,8 @@ export default function DiscoveryModal({ ingredients, onClose }: DiscoveryModalP
 
   const hasLegendary = sorted.some((i) => i.rarity === "legendary");
   const hasRare = sorted.some((i) => i.rarity === "rare");
-  const headerIcon = hasLegendary ? "💎✨" : hasRare ? "🔮" : "🎉";
+  const showRarityHeader = hasLegendary || hasRare;
+  const headerRarity = hasLegendary ? RARITY.legendary : RARITY.rare;
 
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-5" onClick={onClose}>
@@ -47,7 +48,24 @@ export default function DiscoveryModal({ ingredients, onClose }: DiscoveryModalP
         onClick={(e) => e.stopPropagation()}
       >
         <div className="text-center mb-5">
-          <div className="text-5xl mb-2">{headerIcon}</div>
+          <div className="mb-2 flex justify-center">
+            {showRarityHeader ? (
+              <div
+                className="inline-flex items-center gap-1.5 rounded-full px-4 py-2"
+                style={{ background: `${headerRarity.color}15` }}
+              >
+                {Array.from({ length: headerRarity.star }).map((_, index) => (
+                  <StarIcon
+                    key={`header-star-${index}`}
+                    color={headerRarity.color}
+                    size={hasLegendary ? 22 : 20}
+                  />
+                ))}
+              </div>
+            ) : (
+              <div className="text-5xl">🎉</div>
+            )}
+          </div>
           <h3 className="font-bold text-xl" style={{ color: "#2D2D2D" }}>
             {hasLegendary ? (
               <span className="animate-shimmer">伝説の成分を発見！</span>
@@ -110,7 +128,7 @@ export default function DiscoveryModal({ ingredients, onClose }: DiscoveryModalP
           style={{
             background: hasLegendary
               ? "linear-gradient(135deg, #F59E0B, #FBBF24)"
-              : "linear-gradient(135deg, #5BBFAD, #F9A8C0)",
+              : "linear-gradient(135deg, #3A8F7A, #F9A8C0)",
           }}
         >
           {hasLegendary ? "すごい！💎" : "やったー！🌸"}

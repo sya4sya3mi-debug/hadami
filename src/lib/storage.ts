@@ -38,7 +38,12 @@ export async function getSignedImageUrls(
   const needFetch: string[] = [];
 
   for (const fp of filePaths) {
-    if (fp.startsWith("http://") || fp.startsWith("https://")) {
+    if (
+      fp.startsWith("http://") ||
+      fp.startsWith("https://") ||
+      fp.startsWith("/") ||
+      fp.startsWith("data:")
+    ) {
       result[fp] = fp;
     } else {
       const cached = cache[fp];
@@ -85,7 +90,12 @@ export async function getSignedImageUrl(
   expiresIn: number = 3600
 ): Promise<string | null> {
   // Already a full URL (legacy data) — return as-is
-  if (filePath.startsWith("http://") || filePath.startsWith("https://")) {
+  if (
+    filePath.startsWith("http://") ||
+    filePath.startsWith("https://") ||
+    filePath.startsWith("/") ||
+    filePath.startsWith("data:")
+  ) {
     return filePath;
   }
 

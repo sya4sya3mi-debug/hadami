@@ -1,5 +1,7 @@
 "use client";
 
+import Image from "next/image";
+
 export default function PageLoading({
   message = "データを読み込んでいます...",
 }: {
@@ -14,10 +16,16 @@ export default function PageLoading({
         className="w-full max-w-xs rounded-3xl px-6 py-8 shadow-sm"
         style={{ background: "rgba(255,255,255,0.78)", border: "1px solid #F5E6EF" }}
       >
-        <div
-          className="w-10 h-10 mx-auto mb-4 rounded-full animate-pulse"
-          style={{ background: "linear-gradient(135deg, #5BBFAD, #F9A8C0)" }}
-        />
+        <div className="w-20 h-20 mx-auto mb-4 animate-pulse">
+          <Image
+            src="/hadami-logo.png"
+            alt="HADAMI"
+            width={80}
+            height={80}
+            className="w-full h-full object-contain"
+            priority
+          />
+        </div>
         <p className="text-sm font-medium" style={{ color: "#6B6B6B" }}>
           {message}
         </p>

@@ -17,6 +17,7 @@ interface ProductState {
   toggleFavorite: (id: string) => void;
   updateLastUsedAt: (id: string, lastUsedAt: string) => void;
   updatePurchasedAt: (id: string, purchasedAt: string | undefined) => void;
+  updateProductName: (id: string, name: string) => void;
 }
 
 export const useProductStore = create<ProductState>()(
@@ -65,6 +66,12 @@ export const useProductStore = create<ProductState>()(
         set((state) => ({
           products: state.products.map((p) =>
             p.id === id ? { ...p, purchasedAt } : p
+          ),
+        })),
+      updateProductName: (id, name) =>
+        set((state) => ({
+          products: state.products.map((p) =>
+            p.id === id ? { ...p, name } : p
           ),
         })),
     }),

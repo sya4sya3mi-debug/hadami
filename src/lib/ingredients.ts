@@ -1,4 +1,5 @@
 import { Ingredient, RarityKey, RarityInfo, IngredientGenre, IngredientGenreInfo } from "@/types";
+import { isQuasiDrugCosmeticActiveByMasterDbId } from "./mhlwActiveIngredients";
 
 export const RARITY: Record<RarityKey, RarityInfo> = {
   common:    { label: "コモン",       star: 1, color: "#9CA3AF", icon: "★" },
@@ -69,6 +70,7 @@ export const MASTER_INGREDIENTS: Ingredient[] = [
     id: "niacinamide",
     nameJa: "ナイアシンアミド",
     nameInci: "Niacinamide",
+    aliases: ["ニコチン酸アミド", "ビタミンB3"],
     categories: ["brightening", "barrier", "moisturizing"],
     rarity: "common",
     genre: "vitamin",
@@ -93,6 +95,7 @@ export const MASTER_INGREDIENTS: Ingredient[] = [
     id: "alpha-arbutin",
     nameJa: "α-アルブチン",
     nameInci: "Alpha-Arbutin",
+    aliases: ["アルファアルブチン", "αアルブチン", "α-アルブチン"],
     categories: ["brightening"],
     rarity: "rare",
     genre: "botanical",
@@ -116,6 +119,7 @@ export const MASTER_INGREDIENTS: Ingredient[] = [
     id: "ascorbic-acid",
     nameJa: "アスコルビン酸",
     nameInci: "Ascorbic Acid",
+    aliases: ["ビタミンC", "L-アスコルビン酸"],
     categories: ["brightening", "turnover"],
     rarity: "uncommon",
     genre: "vitamin",
@@ -152,6 +156,7 @@ export const MASTER_INGREDIENTS: Ingredient[] = [
     id: "sodium-ascorbyl-phosphate",
     nameJa: "アスコルビルリン酸Na",
     nameInci: "Sodium Ascorbyl Phosphate",
+    aliases: ["アスコルビルリン酸ナトリウム", "リン酸アスコルビルNa", "リン酸アスコルビルナトリウム"],
     categories: ["brightening"],
     rarity: "uncommon",
     genre: "vitamin",
@@ -162,6 +167,7 @@ export const MASTER_INGREDIENTS: Ingredient[] = [
     id: "tocopherol",
     nameJa: "トコフェロール",
     nameInci: "Tocopherol",
+    aliases: ["ビタミンE", "天然ビタミンE", "d-α-トコフェロール"],
     categories: ["brightening"],
     rarity: "uncommon",
     genre: "vitamin",
@@ -231,6 +237,7 @@ export const MASTER_INGREDIENTS: Ingredient[] = [
     id: "retinol",
     nameJa: "レチノール",
     nameInci: "Retinol",
+    aliases: ["ビタミンA", "ビタミンA油"],
     categories: ["turnover"],
     rarity: "rare",
     genre: "vitamin",
@@ -359,6 +366,7 @@ export const MASTER_INGREDIENTS: Ingredient[] = [
     id: "sodium-hyaluronate",
     nameJa: "ヒアルロン酸Na",
     nameInci: "Sodium Hyaluronate",
+    aliases: ["ヒアルロン酸ナトリウム", "ヒアルロン酸ソーダ"],
     categories: ["moisturizing"],
     rarity: "common",
     genre: "water",
@@ -371,6 +379,7 @@ export const MASTER_INGREDIENTS: Ingredient[] = [
     id: "acetylated-hyaluronate",
     nameJa: "アセチル化ヒアルロン酸Na",
     nameInci: "Sodium Acetylated Hyaluronate",
+    aliases: ["アセチル化ヒアルロン酸ナトリウム", "アセチルヒアルロン酸Na", "アセチルヒアルロン酸ナトリウム"],
     categories: ["moisturizing"],
     rarity: "rare",
     genre: "water",
@@ -393,6 +402,7 @@ export const MASTER_INGREDIENTS: Ingredient[] = [
     id: "sodium-polyglutamate",
     nameJa: "ポリグルタミン酸Na",
     nameInci: "Sodium Polyglutamate",
+    aliases: ["ポリグルタミン酸ナトリウム"],
     categories: ["moisturizing"],
     rarity: "uncommon",
     genre: "water",
@@ -416,6 +426,7 @@ export const MASTER_INGREDIENTS: Ingredient[] = [
     id: "bg",
     nameJa: "BG",
     nameInci: "Butylene Glycol",
+    aliases: ["1,3-ブチレングリコール", "ブチレングリコール", "1,3-BG"],
     categories: ["moisturizing"],
     rarity: "common",
     genre: "water",
@@ -588,6 +599,7 @@ export const MASTER_INGREDIENTS: Ingredient[] = [
     id: "panthenol",
     nameJa: "パンテノール",
     nameInci: "Panthenol",
+    aliases: ["D-パンテノール", "プロビタミンB5", "デクスパンテノール"],
     categories: ["moisturizing", "soothing"],
     rarity: "common",
     genre: "vitamin",
@@ -668,6 +680,7 @@ export const MASTER_INGREDIENTS: Ingredient[] = [
     id: "ceramide-np",
     nameJa: "セラミドNP",
     nameInci: "Ceramide NP",
+    aliases: ["セラミド3", "セラミド III"],
     categories: ["barrier", "moisturizing"],
     rarity: "rare",
     genre: "oil_lipid",
@@ -679,6 +692,7 @@ export const MASTER_INGREDIENTS: Ingredient[] = [
     id: "ceramide-eop",
     nameJa: "セラミドEOP",
     nameInci: "Ceramide EOP",
+    aliases: ["セラミド9", "セラミド IX"],
     categories: ["barrier"],
     rarity: "rare",
     genre: "oil_lipid",
@@ -690,6 +704,7 @@ export const MASTER_INGREDIENTS: Ingredient[] = [
     id: "ceramide-ap",
     nameJa: "セラミドAP",
     nameInci: "Ceramide AP",
+    aliases: ["セラミド6II", "セラミド6", "セラミド VI"],
     categories: ["barrier"],
     rarity: "rare",
     genre: "oil_lipid",
@@ -710,6 +725,7 @@ export const MASTER_INGREDIENTS: Ingredient[] = [
     id: "ceramide-ng",
     nameJa: "セラミドNG",
     nameInci: "Ceramide NG",
+    aliases: ["セラミド2"],
     categories: ["barrier"],
     rarity: "rare",
     genre: "oil_lipid",
@@ -753,6 +769,7 @@ export const MASTER_INGREDIENTS: Ingredient[] = [
     id: "centella-asiatica-extract",
     nameJa: "ツボクサエキス",
     nameInci: "Centella Asiatica Extract",
+    aliases: ["CICA", "シカ", "センテラアジアチカエキス"],
     categories: ["soothing", "barrier"],
     rarity: "uncommon",
     genre: "botanical",
@@ -1160,6 +1177,7 @@ export const MASTER_INGREDIENTS: Ingredient[] = [
     id: "disodium-edta",
     nameJa: "EDTA-2Na",
     nameInci: "Disodium EDTA",
+    aliases: ["エデト酸二ナトリウム", "エチレンジアミン四酢酸二ナトリウム", "EDTA-2ナトリウム"],
     categories: [],
     rarity: "common",
     genre: "base",
@@ -1171,6 +1189,7 @@ export const MASTER_INGREDIENTS: Ingredient[] = [
     id: "sodium-hydroxide",
     nameJa: "水酸化Na",
     nameInci: "Sodium Hydroxide",
+    aliases: ["水酸化ナトリウム"],
     categories: [],
     rarity: "common",
     genre: "base",
@@ -1182,6 +1201,7 @@ export const MASTER_INGREDIENTS: Ingredient[] = [
     id: "sodium-citrate",
     nameJa: "クエン酸Na",
     nameInci: "Sodium Citrate",
+    aliases: ["クエン酸ナトリウム"],
     categories: [],
     rarity: "common",
     genre: "base",
@@ -1847,6 +1867,7 @@ export const MASTER_INGREDIENTS: Ingredient[] = [
     id: "hyaluronic-acid-crosspolymer",
     nameJa: "ヒアルロン酸クロスポリマーNa",
     nameInci: "Sodium Hyaluronate Crosspolymer",
+    aliases: ["ヒアルロン酸クロスポリマーナトリウム"],
     categories: ["moisturizing"],
     rarity: "rare",
     genre: "water",
@@ -1870,6 +1891,7 @@ export const MASTER_INGREDIENTS: Ingredient[] = [
     id: "pca-na",
     nameJa: "PCA-Na",
     nameInci: "Sodium PCA",
+    aliases: ["ピロリドンカルボン酸ナトリウム", "ピロリドンカルボン酸Na", "PCAナトリウム"],
     categories: ["moisturizing"],
     rarity: "common",
     genre: "water",
@@ -1892,6 +1914,7 @@ export const MASTER_INGREDIENTS: Ingredient[] = [
     id: "sodium-alginate",
     nameJa: "アルギン酸Na",
     nameInci: "Sodium Alginate",
+    aliases: ["アルギン酸ナトリウム"],
     categories: ["moisturizing"],
     rarity: "common",
     genre: "water",
@@ -2138,6 +2161,7 @@ export const MASTER_INGREDIENTS: Ingredient[] = [
     id: "sodium-lactate",
     nameJa: "乳酸Na",
     nameInci: "Sodium Lactate",
+    aliases: ["乳酸ナトリウム"],
     categories: ["moisturizing"],
     rarity: "common",
     genre: "water",
@@ -2162,6 +2186,7 @@ export const MASTER_INGREDIENTS: Ingredient[] = [
     id: "ceramide-ns",
     nameJa: "セラミドNS",
     nameInci: "Ceramide NS",
+    aliases: ["セラミド II"],
     categories: ["barrier"],
     rarity: "uncommon",
     genre: "oil_lipid",
@@ -2173,6 +2198,7 @@ export const MASTER_INGREDIENTS: Ingredient[] = [
     id: "ceramide-as",
     nameJa: "セラミドAS",
     nameInci: "Ceramide AS",
+    aliases: ["セラミド5"],
     categories: ["barrier"],
     rarity: "rare",
     genre: "oil_lipid",
@@ -2856,6 +2882,7 @@ export const MASTER_INGREDIENTS: Ingredient[] = [
     id: "sodium-benzoate",
     nameJa: "安息香酸Na",
     nameInci: "Sodium Benzoate",
+    aliases: ["安息香酸ナトリウム"],
     categories: [],
     rarity: "common",
     genre: "base",
@@ -2911,6 +2938,7 @@ export const MASTER_INGREDIENTS: Ingredient[] = [
     id: "tocopheryl-acetate",
     nameJa: "酢酸トコフェロール",
     nameInci: "Tocopheryl Acetate",
+    aliases: ["ビタミンEアセテート", "dl-α-トコフェリルアセテート"],
     categories: ["brightening"],
     rarity: "common",
     genre: "vitamin",
@@ -2933,6 +2961,7 @@ export const MASTER_INGREDIENTS: Ingredient[] = [
     id: "edta-2na",
     nameJa: "EDTA-2Na",
     nameInci: "Disodium EDTA",
+    aliases: ["エデト酸二ナトリウム", "EDTA-2ナトリウム"],
     categories: [],
     rarity: "common",
     genre: "base",
@@ -3253,6 +3282,7 @@ export const MASTER_INGREDIENTS: Ingredient[] = [
     id: "sodium-lauroyl-glutamate",
     nameJa: "ラウロイルグルタミン酸Na",
     nameInci: "Sodium Lauroyl Glutamate",
+    aliases: ["ラウロイルグルタミン酸ナトリウム"],
     categories: [],
     rarity: "common",
     genre: "base",
@@ -3264,6 +3294,7 @@ export const MASTER_INGREDIENTS: Ingredient[] = [
     id: "cocoyl-glutamate",
     nameJa: "ココイルグルタミン酸Na",
     nameInci: "Sodium Cocoyl Glutamate",
+    aliases: ["ココイルグルタミン酸ナトリウム"],
     categories: [],
     rarity: "common",
     genre: "base",
@@ -3294,6 +3325,7 @@ export const MASTER_INGREDIENTS: Ingredient[] = [
     id: "sodium-cocoyl-isethionate",
     nameJa: "ココイルイセチオン酸Na",
     nameInci: "Sodium Cocoyl Isethionate",
+    aliases: ["ココイルイセチオン酸ナトリウム"],
     categories: [],
     rarity: "common",
     genre: "base",
@@ -3315,6 +3347,7 @@ export const MASTER_INGREDIENTS: Ingredient[] = [
     id: "sles",
     nameJa: "ラウレス硫酸Na",
     nameInci: "Sodium Laureth Sulfate",
+    aliases: ["ラウレス硫酸ナトリウム", "SLES"],
     categories: [],
     rarity: "common",
     genre: "base",
@@ -3326,6 +3359,7 @@ export const MASTER_INGREDIENTS: Ingredient[] = [
     id: "sls",
     nameJa: "ラウリル硫酸Na",
     nameInci: "Sodium Lauryl Sulfate",
+    aliases: ["ラウリル硫酸ナトリウム", "SLS"],
     categories: [],
     rarity: "common",
     genre: "base",
@@ -3577,6 +3611,7 @@ export const MASTER_INGREDIENTS: Ingredient[] = [
     id: "sodium-ascorbate",
     nameJa: "アスコルビン酸Na",
     nameInci: "Sodium Ascorbate",
+    aliases: ["アスコルビン酸ナトリウム"],
     categories: ["brightening"],
     rarity: "uncommon",
     genre: "vitamin",
@@ -3947,6 +3982,7 @@ export const MASTER_INGREDIENTS: Ingredient[] = [
     id: "guaiazulene-sulfonate",
     nameJa: "グアイアズレンスルホン酸Na",
     nameInci: "Sodium Guaiazulene Sulfonate",
+    aliases: ["グアイアズレンスルホン酸ナトリウム"],
     categories: ["soothing"],
     rarity: "uncommon",
     genre: "base",
@@ -4145,6 +4181,7 @@ export const MASTER_INGREDIENTS: Ingredient[] = [
     id: "chondroitin-sulfate-na",
     nameJa: "コンドロイチン硫酸Na",
     nameInci: "Sodium Chondroitin Sulfate",
+    aliases: ["コンドロイチン硫酸ナトリウム"],
     categories: ["moisturizing"],
     rarity: "uncommon",
     genre: "water",
@@ -4157,6 +4194,7 @@ export const MASTER_INGREDIENTS: Ingredient[] = [
     id: "dl-pca-na",
     nameJa: "dl-ピロリドンカルボン酸Na",
     nameInci: "dl-Sodium PCA",
+    aliases: ["dl-ピロリドンカルボン酸ナトリウム"],
     categories: ["moisturizing"],
     rarity: "common",
     genre: "water",
@@ -4642,21 +4680,51 @@ export const MASTER_INGREDIENTS: Ingredient[] = [
 ];
 
 // O(1) lookup maps（線形検索を排除）
+import { normalizeIngredientName } from "./normalize";
+
 const _byId = new Map(MASTER_INGREDIENTS.map((i) => [i.id, i]));
 const _byName = new Map(MASTER_INGREDIENTS.map((i) => [i.nameJa, i]));
 const _byInci = new Map(MASTER_INGREDIENTS.map((i) => [i.nameInci.toLowerCase(), i]));
 const _indexById = new Map(MASTER_INGREDIENTS.map((i, idx) => [i.id, idx]));
+
+// 正規化Maps（first-wins: 正規化後の衝突は先に登録された成分を優先）
+const _byNameNorm = new Map<string, Ingredient>();
+for (const i of MASTER_INGREDIENTS) {
+  const k = normalizeIngredientName(i.nameJa);
+  if (!_byNameNorm.has(k)) _byNameNorm.set(k, i);
+}
+const _byInciNorm = new Map<string, Ingredient>();
+for (const i of MASTER_INGREDIENTS) {
+  const k = normalizeIngredientName(i.nameInci);
+  if (!_byInciNorm.has(k)) _byInciNorm.set(k, i);
+}
+
+// エイリアスMaps
+const _byAlias = new Map<string, Ingredient>();
+const _byAliasNorm = new Map<string, Ingredient>();
+for (const i of MASTER_INGREDIENTS) {
+  if (!i.aliases) continue;
+  for (const alias of i.aliases) {
+    if (!_byAlias.has(alias)) _byAlias.set(alias, i);
+    const k = normalizeIngredientName(alias);
+    if (!_byAliasNorm.has(k)) _byAliasNorm.set(k, i);
+  }
+}
 
 export function getIngredientById(id: string): Ingredient | undefined {
   return _byId.get(id);
 }
 
 export function getIngredientByName(nameJa: string): Ingredient | undefined {
-  return _byName.get(nameJa);
+  return _byName.get(nameJa)
+    ?? _byNameNorm.get(normalizeIngredientName(nameJa))
+    ?? _byAlias.get(nameJa)
+    ?? _byAliasNorm.get(normalizeIngredientName(nameJa));
 }
 
 export function getIngredientByInci(nameInci: string): Ingredient | undefined {
-  return _byInci.get(nameInci.toLowerCase());
+  return _byInci.get(nameInci.toLowerCase())
+    ?? _byInciNorm.get(normalizeIngredientName(nameInci));
 }
 
 export function getIngredientIndex(id: string): number {
@@ -4682,7 +4750,9 @@ export function getGenreTotal(genre: string): number {
 }
 
 // ── 有効成分 ──
-export const ACTIVE_INGREDIENTS = MASTER_INGREDIENTS.filter((i) => i.activeIngredient);
+export const ACTIVE_INGREDIENTS = MASTER_INGREDIENTS.filter(
+  (i) => i.activeIngredient && isQuasiDrugCosmeticActiveByMasterDbId(i.id),
+);
 export const ACTIVE_INGREDIENT_COUNT = ACTIVE_INGREDIENTS.length;
 
 // 有効成分の効果カテゴリ
@@ -4704,10 +4774,10 @@ export interface ActiveCategoryInfo {
 export const ACTIVE_CATEGORIES: ActiveCategoryInfo[] = [
   { key: "brightening",  label: "美白",       icon: "✨", color: "#CE93D8" },
   { key: "soothing",     label: "肌荒れ防止", icon: "🛡️", color: "#4CAF50" },
-  { key: "turnover",     label: "シワ改善・育毛", icon: "🔄", color: "#FFB74D" },
+  { key: "turnover",     label: "シワ改善", icon: "🔄", color: "#FFB74D" },
   { key: "barrier",      label: "紫外線防止", icon: "☀️", color: "#42A5F5" },
   { key: "moisturizing", label: "保湿",       icon: "💧", color: "#4FC3F7" },
-  { key: "keratin",      label: "角質ケア・殺菌", icon: "🧹", color: "#90A4AE" },
+  { key: "keratin",      label: "角質ケア", icon: "🧹", color: "#90A4AE" },
 ];
 
 const _activeByCategory = new Map<string, Ingredient[]>();
@@ -4721,12 +4791,15 @@ ACTIVE_INGREDIENTS.forEach((i) => {
 
 /** 成分の主カテゴリ情報を返す（有効成分ならactiveカテゴリ、それ以外はnull） */
 export function getIngredientCategoryInfo(ingredient: Ingredient): ActiveCategoryInfo | null {
-  if (!ingredient.activeIngredient || ingredient.categories.length === 0) return null;
+  if (!isQuasiDrugCosmeticActiveByMasterDbId(ingredient.id) || ingredient.categories.length === 0) {
+    return null;
+  }
   return ACTIVE_CATEGORIES.find((c) => c.key === ingredient.categories[0]) ?? null;
 }
 
 /** 成分の全カテゴリ情報を返す */
 export function getIngredientCategories(ingredient: Ingredient): ActiveCategoryInfo[] {
+  if (!isQuasiDrugCosmeticActiveByMasterDbId(ingredient.id)) return [];
   return ingredient.categories
     .map((cat) => ACTIVE_CATEGORIES.find((c) => c.key === cat))
     .filter((c): c is ActiveCategoryInfo => c !== undefined);

@@ -11,31 +11,31 @@ const config: Config = {
       colors: {
         background: "var(--background)",
         foreground: "var(--foreground)",
-        // Legacy colors (kept for backward compat during migration)
+        // Legacy colors
         primary: {
-          DEFAULT: "#5BBFAD",
-          light: "#E8FAF8",
+          DEFAULT: "#3A8F7A",
+          light: "#e6f7d9",
         },
         accent: {
-          DEFAULT: "#F9A8C0",
-          light: "#FFF0F5",
+          DEFAULT: "#3A8F7A",
+          light: "#e6f7d9",
         },
         warning: {
           DEFAULT: "#F48C8C",
           light: "#FFF3F3",
         },
         info: "#7DB8E8",
-        sub: "#9B9B9B",
-        border: "#F2F2F2",
+        sub: "#9E9E9E",
+        border: "#e0e0e0",
         card: "#FFFFFF",
-        // Botanical green palette (v2)
+        // Qiita-style flat palette
         bo: {
-          ink: "#1B2620",
-          "ink-soft": "#3D4F45",
-          "ink-muted": "#7E9389",
-          "ink-faint": "#B5C7BE",
-          cream: "#F4F9F6",
-          parchment: "#E8F0EC",
+          ink: "#212121",
+          "ink-soft": "#666666",
+          "ink-muted": "#9E9E9E",
+          "ink-faint": "#BDBDBD",
+          cream: "#f5f6f6",
+          parchment: "#e0e0e0",
           card: "#FFFFFF",
           accent: "#3A8F7A",
           "accent-dark": "#2B7464",
@@ -44,9 +44,9 @@ const config: Config = {
           "accent-glow": "rgba(58,143,122,0.14)",
           safe: "#4A9B7F",
           "safe-bg": "#E8F5EE",
-          caution: "#C49032",
+          caution: "#f5a623",
           "caution-bg": "#FFF5E0",
-          danger: "#C05050",
+          danger: "#e8453c",
           "danger-bg": "#FCEAEA",
         },
         // Card texture colors
@@ -84,18 +84,18 @@ const config: Config = {
         },
       },
       borderRadius: {
-        r1: "12px",
-        r2: "18px",
-        r3: "28px",
+        r1: "4px",
+        r2: "4px",
+        r3: "8px",
       },
       boxShadow: {
-        bo1: "0 1px 3px rgba(26,23,20,0.04)",
-        bo2: "0 4px 20px rgba(26,23,20,0.06)",
-        "bo-accent": "0 4px 16px rgba(58,143,122,0.25)",
+        bo1: "0 1px 2px rgba(0,0,0,0.04)",
+        bo2: "0 2px 4px rgba(0,0,0,0.1)",
+        "bo-accent": "none",
       },
       fontFamily: {
-        serif: ["'Shippori Mincho'", "serif"],
-        sans: ["'Zen Kaku Gothic New'", "-apple-system", "BlinkMacSystemFont", "'Hiragino Sans'", "'Noto Sans JP'", "sans-serif"],
+        serif: ["'YakuHanJPs'", "-apple-system", "system-ui", "'Segoe UI'", "'Hiragino Kaku Gothic ProN'", "'Hiragino Sans'", "Meiryo", "sans-serif"],
+        sans: ["'YakuHanJPs'", "-apple-system", "system-ui", "'Segoe UI'", "'Hiragino Kaku Gothic ProN'", "'Hiragino Sans'", "Meiryo", "sans-serif"],
       },
       animation: {
         "particle-fly": "particleFly 1.3s cubic-bezier(0.16,1,0.3,1) forwards",

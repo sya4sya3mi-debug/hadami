@@ -48,12 +48,11 @@ async function preprocessImage(dataUrl: string): Promise<PreprocessResult> {
 
 interface CaptureStepProps {
   onCapture: (imageData: string, colorImage?: string) => void;
-  onManualInput: () => void;
   preview?: string;
   disabled?: boolean;
 }
 
-export default function CaptureStep({ onCapture, onManualInput, preview, disabled }: CaptureStepProps) {
+export default function CaptureStep({ onCapture, preview, disabled }: CaptureStepProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [localPreview, setLocalPreview] = useState<string | null>(null);
 
@@ -82,30 +81,31 @@ export default function CaptureStep({ onCapture, onManualInput, preview, disable
   }, []);
 
   return (
-    <div className="space-y-5 animate-fade-up">
+    <div className="space-y-4 animate-fade-up">
       {/* Hero capture card */}
       {!displayPreview ? (
         <button
           onClick={() => { if (!disabled) fileInputRef.current?.click(); }}
           disabled={disabled}
-          className={`w-full h-[200px] rounded-r3 flex flex-col items-center justify-center gap-5 relative overflow-hidden bg-white/70 backdrop-blur-[12px] border border-bo-accent/20 shadow-[0_4px_24px_rgba(58,143,122,0.08)] ${
+          className={`w-full rounded-r3 flex items-center gap-3 relative overflow-hidden py-3 px-4 bg-white/70 backdrop-blur-[12px] border border-bo-accent/20 shadow-[0_4px_24px_rgba(58,143,122,0.08)] ${
             disabled ? "cursor-not-allowed opacity-50" : "cursor-pointer"
           }`}
         >
-          <div className="w-[72px] h-[72px] rounded-full flex items-center justify-center text-[32px] bg-gradient-to-br from-bo-accent-soft to-[#D4F5EF] animate-pulse-ring">
+          <div className="w-[44px] h-[44px] shrink-0 rounded-full flex items-center justify-center text-[22px] bg-gradient-to-br from-bo-accent-soft to-[#D4F5EF] animate-pulse-ring">
             <span>📸</span>
           </div>
-          <div className="text-center">
-            <div className="font-bold text-[15px] text-bo-ink font-sans">
-              まずは表のパッケージを撮影
+          <div className="text-left flex-1">
+            <div className="font-bold text-[14px] text-bo-ink font-sans leading-tight">
+              表のパッケージを撮影
             </div>
-            <div className="text-xs mt-1.5 text-bo-ink-muted font-sans">
-              STEP1: 商品の正面パッケージを撮ってください
+            <div className="text-[11px] mt-0.5 text-bo-ink-muted font-sans">
+              <span className="text-bo-accent font-bold">STEP1</span> 表面 → <span className="text-bo-accent font-bold">STEP2</span> 成分表（裏面）
             </div>
           </div>
+          <svg className="shrink-0 text-bo-accent" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M9 18l6-6-6-6"/></svg>
         </button>
       ) : (
-        <div className="w-full h-[200px] rounded-r3 relative overflow-hidden border border-bo-accent/20 shadow-[0_4px_24px_rgba(58,143,122,0.08)]">
+        <div className="w-full h-[168px] rounded-r3 relative overflow-hidden border border-bo-accent/20 shadow-[0_4px_24px_rgba(58,143,122,0.08)]">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={displayPreview}
@@ -115,11 +115,11 @@ export default function CaptureStep({ onCapture, onManualInput, preview, disable
           <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
           <button
             onClick={handleRetake}
-            className="absolute bottom-4 right-4 px-4 py-2 rounded-full text-xs font-bold text-white bg-black/50 backdrop-blur-lg"
+            className="absolute bottom-3 right-3 px-4 py-2 rounded-full text-xs font-bold text-white bg-black/50 backdrop-blur-lg"
           >
             📷 撮り直す
           </button>
-          <div className="absolute top-4 left-4 px-3 py-1.5 rounded-full text-xs font-bold text-white bg-bo-accent/85 backdrop-blur-lg">
+          <div className="absolute top-3 left-3 px-3 py-1.5 rounded-full text-xs font-bold text-white bg-bo-accent/85 backdrop-blur-lg">
             ✓ 撮影完了
           </div>
         </div>
@@ -134,41 +134,6 @@ export default function CaptureStep({ onCapture, onManualInput, preview, disable
         className="hidden"
       />
 
-      {/* Manual input card */}
-      <button
-        onClick={onManualInput}
-        className="w-full rounded-r2 p-4 text-left bg-white/85 border-[1.5px] border-bo-accent/15 shadow-[0_2px_12px_rgba(58,143,122,0.06)]"
-      >
-        <div className="flex items-center gap-3">
-          <div className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0 bg-bo-accent-soft">
-            <span className="text-2xl">📋</span>
-          </div>
-          <div className="flex-1 min-w-0">
-            <div className="text-[14px] font-bold text-bo-ink font-sans">
-              成分リストを直接入力
-            </div>
-            <div className="text-xs mt-0.5 text-bo-ink-muted font-sans">
-              スキャン回数を消費しません
-            </div>
-          </div>
-          <span className="text-bo-ink-faint text-lg">›</span>
-        </div>
-        <div className="mt-3 rounded-xl px-3 py-2 text-xs bg-bo-accent-soft/40 text-bo-accent font-sans">
-          💡 iPhoneの写真でテキストを長押しコピー → 貼り付けるだけ
-        </div>
-      </button>
-
-      {/* Tips */}
-      <div className="rounded-r1 p-4 bg-bo-accent-soft border border-bo-accent/10">
-        <div className="text-xs font-bold mb-2 text-bo-accent font-sans">
-          📸 スキャンの流れ
-        </div>
-        <div className="space-y-1.5 text-xs text-bo-ink-soft font-sans leading-[1.8]">
-          <div><span className="font-bold text-bo-accent">STEP1</span> 表のパッケージを撮影 → 商品名から成分を自動検索</div>
-          <div><span className="font-bold text-bo-accent">STEP2</span> 見つからない場合 → 裏面の成分表を撮影して読み取り</div>
-          <div className="text-[10px] text-bo-ink-faint">※ マイコスメの写真はSTEP1の表パッケージが使われます</div>
-        </div>
-      </div>
     </div>
   );
 }

@@ -114,7 +114,7 @@ export default function CameraView({ step, onCapture, packagePreview }: CameraVi
         <div
           className="w-20 h-20 rounded-full flex items-center justify-center text-4xl"
           style={{
-            background: "linear-gradient(135deg, #D6EDE6, #B2E8E0)",
+            background: "linear-gradient(135deg, #e6f7d9, #c5f0a0)",
           }}
         >
           {isStep1 ? "\uD83D\uDCE6" : "\uD83D\uDCCB"}

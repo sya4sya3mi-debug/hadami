@@ -53,7 +53,7 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // 5. Call Gemini OCR
+  // 5. Call Gemini OCR（医薬部外品の有効成分セクション検出対応）
   try {
     const response = await client.models.generateContent({
       model: "gemini-2.5-flash-lite",
@@ -68,10 +68,27 @@ export async function POST(req: NextRequest) {
               },
             },
             {
-              text: `この画像から化粧品の成分表（全成分）のテキストだけを抽出してください。
-成分名のみをカンマ区切りで列挙し、ブランド名・説明文・住所・注意書きなどは含めないでください。
-成分表が見当たらない場合は空文字を返してください。
-出力フォーマット: 成分名1,成分名2,成分名3,...`,
+              text: `この画像から化粧品の成分表を抽出してください。
+
+■ 医薬部外品（薬用化粧品）の場合：
+成分表が「有効成分」と「その他の成分」のセクションに分かれています。
+「有効成分」「薬用成分」「Active Ingredient」等のラベルがある場合、または
+「医薬部外品」「薬用」の記載がある場合は医薬部外品と判断してください。
+
+以下のフォーマットで回答してください：
+QUASI_DRUG: true
+ACTIVE: 有効成分名1, 有効成分名2
+OTHER: その他の成分名1, その他の成分名2, ...
+
+■ 一般化粧品の場合（セクション分けがない）：
+QUASI_DRUG: false
+ACTIVE:
+OTHER: 成分名1, 成分名2, ...
+
+重要な注意：
+- 成分名のみを記載（ブランド名・説明文・住所・注意書きは除外）
+- 成分表が見当たらない場合は QUASI_DRUG: false と空の OTHER: のみ返す
+- 余計な説明は不要、上記フォーマットだけ回答してください`,
             },
           ],
         },
@@ -79,7 +96,34 @@ export async function POST(req: NextRequest) {
       config: { maxOutputTokens: 1024 },
     });
 
-    const text = response.text ?? "";
+    const rawText = response.text ?? "";
+
+    // パース: 新フォーマット (QUASI_DRUG / ACTIVE / OTHER) を検出
+    const isQuasiDrug = /QUASI_DRUG:\s*true/i.test(rawText);
+
+    let activeIngredients: string[] = [];
+    let otherIngredients: string[] = [];
+
+    const activeMatch = rawText.match(/ACTIVE:\s*(.*)/i);
+    if (activeMatch?.[1]) {
+      activeIngredients = activeMatch[1]
+        .split(/[,、]/)
+        .map((s) => s.trim())
+        .filter(Boolean);
+    }
+
+    const otherMatch = rawText.match(/OTHER:\s*([\s\S]*?)(?:\n\n|$)/i);
+    if (otherMatch?.[1]) {
+      otherIngredients = otherMatch[1]
+        .replace(/\n/g, ",")
+        .split(/[,、]/)
+        .map((s) => s.trim())
+        .filter(Boolean);
+    }
+
+    // 後方互換: text フィールドは全成分カンマ区切り
+    const allIngredients = [...activeIngredients, ...otherIngredients];
+    const text = allIngredients.join(", ");
 
     // OCRで成分を読み取れなかった場合、スキャン枠を返却
     const trimmed = text.replace(/[\s,、]/g, "");
@@ -87,7 +131,12 @@ export async function POST(req: NextRequest) {
       await rollbackScan(auth.supabase, auth.user.id, auth.user.email!);
     }
 
-    return NextResponse.json({ text });
+    return NextResponse.json({
+      text,
+      isQuasiDrug,
+      activeIngredients,
+      otherIngredients,
+    });
   } catch (error) {
     await rollbackScan(auth.supabase, auth.user.id, auth.user.email!);
     console.error("OCR API error:", error);
