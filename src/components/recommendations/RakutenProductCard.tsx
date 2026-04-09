@@ -1,9 +1,6 @@
 import type { RakutenProduct } from "@/types";
 import { buildRakutenImageProxyUrl } from "@/lib/rakutenImage";
-import {
-  RAKUTEN_CARD_IMAGE_HEIGHT_PX,
-  RAKUTEN_CARD_WIDTH_PX,
-} from "./cardLayout";
+import { RAKUTEN_CARD_WIDTH_PX } from "./cardLayout";
 
 interface Props {
   product: RakutenProduct;
