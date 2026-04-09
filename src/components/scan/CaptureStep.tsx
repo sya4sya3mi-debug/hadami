@@ -98,9 +98,6 @@ export default function CaptureStep({ onCapture, preview, disabled }: CaptureSte
             <div className="font-bold text-[14px] text-bo-ink font-sans leading-tight">
               表のパッケージを撮影
             </div>
-            <div className="text-[11px] mt-0.5 text-bo-ink-muted font-sans">
-              <span className="text-bo-accent font-bold">STEP1</span> 表面 → <span className="text-bo-accent font-bold">STEP2</span> 成分表（裏面）
-            </div>
           </div>
           <svg className="shrink-0 text-bo-accent" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M9 18l6-6-6-6"/></svg>
         </button>
