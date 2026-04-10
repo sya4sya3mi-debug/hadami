@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { memo, useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useProductStore } from "@/stores/useProductStore";
@@ -14,21 +15,14 @@ import InstallBanner from "@/components/ui/InstallBanner";
 import { useUser } from "@/lib/auth";
 import PageLoading from "@/components/ui/PageLoading";
 import LandingPage from "@/components/ui/LandingPage";
-import Glass from "@/components/ui/Glass";
-
-interface Particle {
-  id: number;
-  icon: string;
-  name: string;
-  x: number;
-  y: number;
-  delay: number;
-}
+import { ProductGenreIcon } from "@/components/ui/CosmeticIcons";
+import { BookIcon, PackageIcon, ScanIcon, CameraIcon, LeafIcon, LightbulbIcon, SunIcon, MoonIcon } from "@/components/ui/Icons";
 
 interface RoutineStep {
   name: string;
   brand: string;
   type: string;
+  image?: string;
   ingredients: { name: string; icon: string; cat: string }[];
 }
 
@@ -39,22 +33,7 @@ const TIPS = [
   { icon: "🔬", text: "ヒアルロン酸Naは1gで6Lの水分を保持。乾燥肌の救世主です。" },
 ];
 
-const STREAK_KEY = "hadami-routine-streak";
 const ROUTINE_CHECK_KEY = "hadami-routine-checks";
-
-function getStreakData(): { lastDate: string; count: number } {
-  if (typeof window === "undefined") return { lastDate: "", count: 0 };
-  try {
-    const raw = localStorage.getItem(STREAK_KEY);
-    if (raw) return JSON.parse(raw);
-  } catch { /* ignore */ }
-  return { lastDate: "", count: 0 };
-}
-
-function saveStreakData(data: { lastDate: string; count: number }) {
-  if (typeof window === "undefined") return;
-  localStorage.setItem(STREAK_KEY, JSON.stringify(data));
-}
 
 function getRoutineChecks(routine: string): Set<number> {
   if (typeof window === "undefined") return new Set();
@@ -101,53 +80,68 @@ const RoutineStepButton = memo(function RoutineStepButton({
   done,
   onToggle,
 }: {
-  step: { name: string; brand: string; type: string; ingredients: { icon: string; name: string }[] };
+  step: RoutineStep;
   index: number;
   done: boolean;
   onToggle: (i: number) => void;
 }) {
+  const genre = getGenreByKey(step.type || "other");
   return (
     <button
       onClick={() => onToggle(index)}
       aria-label={step.name + (done ? "（完了）" : "")}
-      className={`flex items-center gap-2.5 py-2.5 px-3 rounded-r1 shadow-bo1 cursor-pointer text-left relative overflow-hidden transition-all duration-200 border ${
+      className={`w-full flex items-center gap-3 py-3 px-3.5 rounded-r2 cursor-pointer text-left relative overflow-hidden
+                  transition-all duration-200 border-none pressable ${
         done
-          ? "bg-bo-accent-soft border-bo-accent scale-[0.98]"
-          : "bg-white border-bo-parchment scale-100"
+          ? "bg-bo-accent-soft/60 shadow-bo1 scale-[0.98]"
+          : "bg-white shadow-bo1 scale-100"
       }`}
     >
+      {/* Checkbox */}
       <div
-        className={`w-[22px] h-[22px] rounded-md shrink-0 flex items-center justify-center transition-all duration-300 ${
+        className={`w-6 h-6 rounded-[8px] shrink-0 flex items-center justify-center transition-all duration-300 ${
           done
-            ? "bg-bo-accent border-none scale-110"
-            : "bg-white border-[1.5px] border-bo-ink-faint scale-100"
+            ? "bg-bo-accent shadow-bo-accent scale-110"
+            : "bg-white border-2 border-bo-ink-faint/40 scale-100"
         }`}
       >
         {done && (
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" aria-hidden="true">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3.5" strokeLinecap="round" aria-hidden="true">
             <path d="M20 6L9 17l-5-5" />
           </svg>
         )}
       </div>
-      <div className="w-[18px] h-[18px] rounded-[5px] flex items-center justify-center text-[9px] font-black font-serif shrink-0"
-        style={{
-          background: done ? "rgba(255,255,255,0.6)" : "#e0e0e0",
-          color: done ? "#fff" : "#9E9E9E",
-        }}
-      >
-        {index + 1}
-      </div>
+
+      {/* Product image or genre icon */}
+      {step.image ? (
+        <div className="w-10 h-10 rounded-[10px] overflow-hidden shrink-0 shadow-bo1 relative">
+          <Image src={step.image} alt={step.name} fill className="object-cover" sizes="40px" loading="lazy" />
+        </div>
+      ) : genre ? (
+        <div
+          className="w-10 h-10 rounded-[10px] flex items-center justify-center shrink-0"
+          style={{ background: `${genre.color}15` }}
+        >
+          <ProductGenreIcon genre={genre.key} size={18} />
+        </div>
+      ) : null}
+
+      {/* Content */}
       <div className="flex-1 min-w-0">
-        <div className={`text-[11px] font-sans overflow-hidden text-ellipsis whitespace-nowrap ${done ? "font-semibold text-bo-ink-muted line-through" : "font-bold text-bo-ink"}`}>
+        <div className={`text-sm font-sans overflow-hidden text-ellipsis whitespace-nowrap ${
+          done ? "font-semibold text-bo-ink-muted line-through" : "font-bold text-bo-ink"
+        }`}>
           {step.name}
         </div>
-        <div className="text-[9px] text-bo-ink-muted font-sans mt-px">
-          {step.brand} · {step.type}
+        <div className="text-[10px] text-bo-ink-muted font-sans mt-0.5">
+          {step.brand} · {genre?.label || step.type}
         </div>
       </div>
+
+      {/* Ingredient dots */}
       <div className="flex gap-0.5 shrink-0">
         {step.ingredients.map((ing, j) => (
-          <span key={j} className={`text-[10px] transition-opacity duration-300 ${done ? "opacity-40" : "opacity-70"}`}>
+          <span key={j} className={`text-[11px] transition-opacity duration-300 ${done ? "opacity-30" : "opacity-70"}`}>
             {ing.icon}
           </span>
         ))}
@@ -171,16 +165,6 @@ export default function HomePage() {
 
   // Routine checklist state
   const [checkedSteps, setCheckedSteps] = useState<Set<number>>(() => getRoutineChecks(autoRoutine));
-  const [particles, setParticles] = useState<Particle[]>([]);
-  const [showCelebration, setShowCelebration] = useState(false);
-  const [streak, setStreak] = useState(0);
-  const [streakJustUpdated, setStreakJustUpdated] = useState(false);
-
-  // Load streak on mount
-  useEffect(() => {
-    const data = getStreakData();
-    setStreak(data.count);
-  }, []);
 
   useEffect(() => {
     if (!loading && user && profile !== undefined && (profile === null || !profile.display_name)) {
@@ -225,6 +209,7 @@ export default function HomePage() {
       name: product.name,
       brand: product.brand,
       type: product.productType,
+      image: product.packageImageThumb ?? product.packageImage,
       ingredients: product.ingredients.slice(0, 3).map((pi) => {
         const ing = getIngredientById(pi.ingredientId);
         const genreInfo = ing ? getIngredientCategoryInfo(ing) : null;
@@ -252,45 +237,6 @@ export default function HomePage() {
       }
     }
 
-    if (!wasChecked && routineSteps[i]) {
-      const step = routineSteps[i];
-      const baseY = 330 + i * 56;
-      const newParticles: Particle[] = step.ingredients.map((ing, j) => ({
-        id: Date.now() + j + Math.random() * 1000,
-        icon: ing.icon,
-        name: ing.name,
-        x: 40 + Math.random() * 120,
-        y: baseY,
-        delay: j * 200,
-      }));
-      setParticles((prev) => [...prev, ...newParticles]);
-      setTimeout(() => {
-        setParticles((prev) => prev.filter((p) => !newParticles.find((np) => np.id === p.id)));
-      }, 1500);
-    }
-
-    // Check if all completed after this toggle
-    if (!wasChecked && next.size === routineSteps.length && routineSteps.length > 0) {
-      setShowCelebration(true);
-      // Update streak
-      const today = new Date().toISOString().slice(0, 10);
-      const data = getStreakData();
-      const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
-      let newCount: number;
-      if (data.lastDate === today) {
-        newCount = data.count; // already counted today
-      } else if (data.lastDate === yesterday) {
-        newCount = data.count + 1;
-      } else {
-        newCount = 1;
-      }
-      saveStreakData({ lastDate: today, count: newCount });
-      if (newCount !== streak) {
-        setStreak(newCount);
-        setStreakJustUpdated(true);
-        setTimeout(() => setStreakJustUpdated(false), 3000);
-      }
-    }
   };
 
   const todayTip = TIPS[new Date().getDate() % TIPS.length];
@@ -301,80 +247,71 @@ export default function HomePage() {
     return "Good evening";
   })();
 
-  const routineIcon = autoRoutine === "morning" ? "☀️" : "🌙";
+  const RoutineIcon = autoRoutine === "morning" ? SunIcon : MoonIcon;
   const routineLabel = autoRoutine === "morning" ? "朝ルーティン" : "夜ルーティン";
   const allComplete = checkedCount === routineSteps.length && routineSteps.length > 0;
+  const routineProgress = routineSteps.length > 0 ? checkedCount / routineSteps.length : 0;
 
   return (
     <div className="min-h-screen bg-bo-cream">
-      <div className="px-5 pt-4 pb-6 relative overflow-hidden">
+      <div className="px-5 pt-5 pb-6 relative overflow-hidden">
 
-        {/* Particle layer */}
-        {particles.map((p) => (
-          <div
-            key={p.id}
-            className="absolute z-50 flex flex-col items-center gap-0.5 pointer-events-none opacity-0 animate-particle-fly"
-            style={{ left: p.x, top: p.y, animationDelay: p.delay + "ms" }}
-          >
-            <span className="text-xl drop-shadow-[0_0_6px_rgba(58,143,122,0.5)]">{p.icon}</span>
-            <span className="text-[8px] font-bold text-bo-accent font-sans bg-white/95 rounded px-1.5 py-px whitespace-nowrap shadow-sm">
-              {p.name}
-            </span>
-          </div>
-        ))}
-
-        {/* Header */}
-        <div className="flex justify-between items-start mb-6">
+          {/* Header */}
+        <div className="flex justify-between items-center mb-6">
           <div>
-            <p className="text-xs text-bo-ink-muted font-sans mb-1 tracking-[0.12em] uppercase">{greeting}</p>
-            <h1 className="text-[28px] font-extrabold font-serif text-bo-ink m-0 leading-tight tracking-tight">
-              成分から、<br />美しさを選ぶ。
+            <p className="text-[10px] text-bo-ink-muted font-sans mb-1 tracking-[0.15em] uppercase font-semibold">
+              {greeting}
+            </p>
+            <h1 className="text-2xl font-extrabold font-serif text-bo-ink m-0 leading-tight tracking-tight">
+              {profile?.display_name || "HADAMI"}
             </h1>
           </div>
           <div
             onClick={() => router.push("/settings")}
-            className={`w-11 h-11 rounded-[14px] bg-gradient-to-br from-bo-accent to-bo-accent-dark flex items-center justify-center text-white text-[15px] font-bold font-sans relative transition-shadow duration-400 cursor-pointer ${particles.length > 0 ? "animate-avatar-absorb shadow-[0_0_24px_rgba(58,143,122,0.5),0_0_48px_rgba(58,143,122,0.2)]" : "shadow-[0_6px_20px_rgba(58,143,122,0.14)]"}`}
+            className="w-12 h-12 rounded-[16px] bg-gradient-to-br from-bo-accent to-bo-accent-dark flex items-center justify-center text-white text-base font-bold font-sans cursor-pointer pressable shadow-bo-accent"
           >
             {profile?.display_name?.charAt(0) || "？"}
-            {particles.length > 0 && (
-              <div className="absolute -inset-1 rounded-[18px] border-2 border-bo-accent/40 animate-avatar-absorb pointer-events-none" />
-            )}
           </div>
         </div>
 
         {user && <InstallBanner />}
 
-        {/* Streak badge */}
-        {streak > 0 && (
-          <div className={`mb-4 flex items-center justify-center gap-2 py-2 px-4 rounded-full bg-bo-accent-soft border border-bo-accent/20 ${streakJustUpdated ? "animate-fade-up" : ""}`}>
-            <span className="text-base">✨</span>
-            <span className="text-xs font-bold text-bo-accent font-sans">
-              連続 {streak} 日達成中！
-            </span>
-          </div>
-        )}
-
         {/* Routine Checklist — auto morning/night */}
         {routineSteps.length > 0 && (
           <div className="mb-6">
-            <div className="flex justify-between items-center mb-3">
-              <h2 className="text-[15px] font-bold font-sans text-bo-ink m-0">{routineIcon} {routineLabel}</h2>
-              <span className={`text-xs font-black font-serif ${allComplete ? "text-bo-safe" : "text-bo-accent"}`}>
-                {checkedCount}/{routineSteps.length}
-              </span>
+            {/* Routine header with ring progress */}
+            <div className="flex justify-between items-center mb-4">
+              <div className="flex items-center gap-2.5">
+                <RoutineIcon size={20} color="#3A8F7A" />
+                <div>
+                  <h2 className="text-base font-bold font-sans text-bo-ink m-0">{routineLabel}</h2>
+                  <p className="text-[10px] text-bo-ink-muted font-sans mt-0.5">
+                    {checkedCount}/{routineSteps.length} ステップ完了
+                  </p>
+                </div>
+              </div>
+              {/* Mini ring progress */}
+              <div className="relative w-11 h-11">
+                <svg viewBox="0 0 44 44" className="w-full h-full -rotate-90">
+                  <circle cx="22" cy="22" r="18" fill="none" stroke="#E8F5EE" strokeWidth="4" />
+                  <circle
+                    cx="22" cy="22" r="18" fill="none"
+                    stroke={allComplete ? "#3A8F7A" : "#3A8F7A"}
+                    strokeWidth="4" strokeLinecap="round"
+                    strokeDasharray={`${routineProgress * 113.1} 999`}
+                    className="transition-all duration-700 ease-out"
+                  />
+                </svg>
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <span className={`text-[11px] font-black font-sans ${allComplete ? "text-bo-accent" : "text-bo-ink"}`}>
+                    {Math.round(routineProgress * 100)}%
+                  </span>
+                </div>
+              </div>
             </div>
-            <div className="h-1 rounded-sm bg-bo-parchment mb-3.5 overflow-hidden">
-              <div
-                className="h-full rounded-sm transition-[width] duration-500"
-                style={{
-                  width: (checkedCount / routineSteps.length * 100) + "%",
-                  background: allComplete
-                    ? "linear-gradient(90deg, #3A8F7A, #7DD3C8)"
-                    : "linear-gradient(90deg, #3A8F7A, #7DD3C8)",
-                }}
-              />
-            </div>
-            <div className="flex flex-col gap-1.5">
+
+            {/* Step list */}
+            <div className="flex flex-col gap-2">
               {routineSteps.map((step, i) => (
                 <RoutineStepButton
                   key={i}
@@ -386,59 +323,46 @@ export default function HomePage() {
               ))}
             </div>
 
-            {/* Celebration */}
-            {showCelebration && allComplete && (
-              <div className="mt-4 py-5 px-4 rounded-r2 bg-gradient-to-br from-bo-accent-soft via-[#d9f5c0] to-[#e6f7d9] text-center animate-fade-up border border-bo-accent/20 relative overflow-hidden">
-                <div className="absolute inset-0 pointer-events-none">
-                  <div className="absolute top-1 left-4 text-lg animate-bounce" style={{ animationDelay: "0ms" }}>✨</div>
-                  <div className="absolute top-2 right-6 text-lg animate-bounce" style={{ animationDelay: "200ms" }}>🌟</div>
-                  <div className="absolute bottom-2 left-8 text-sm animate-bounce" style={{ animationDelay: "400ms" }}>💫</div>
-                  <div className="absolute bottom-1 right-4 text-sm animate-bounce" style={{ animationDelay: "300ms" }}>✨</div>
-                </div>
-                <div className="text-3xl mb-2">🎉🛡️🎉</div>
-                <div className="text-sm font-extrabold text-bo-accent font-sans mb-1">
-                  {routineLabel}コンプリート！
-                </div>
-                <div className="text-xs text-bo-ink-muted font-sans mb-2">
-                  お疲れさまでした！今日も肌を大切にできました
-                </div>
-                {streak > 0 && (
-                  <div className="inline-flex items-center gap-1.5 py-1.5 px-4 rounded-full bg-white/80 border border-bo-accent/20">
-                    <span className="text-base">✨</span>
-                    <span className="text-xs font-bold text-bo-accent font-sans">
-                      連続 {streak} 日目！
-                    </span>
-                  </div>
-                )}
-              </div>
-            )}
           </div>
         )}
 
         {/* Stats row */}
         <div className="grid grid-cols-3 gap-2.5 mb-6">
           {[
-            { n: discoveredCount, label: "成分コレクト", icon: "📖" },
-            { n: products.length, label: "マイコスメ", icon: "📦" },
-            { n: scanCount ?? 0, label: "スキャン回数", icon: "📸" },
-          ].map((s, i) => (
-            <Glass key={i} className="py-3.5 px-2.5 text-center">
-              <div className="text-[13px] mb-0.5">{s.icon}</div>
+            { n: discoveredCount, label: "成分コレクト", Icon: BookIcon, href: "/zukan" },
+            { n: products.length, label: "マイコスメ", Icon: PackageIcon, href: "/history" },
+            { n: scanCount ?? 0, label: "スキャン回数", Icon: ScanIcon, href: "/scan" },
+          ].map((s) => (
+            <Link
+              key={s.label}
+              href={s.href}
+              className="py-4 px-3 text-center rounded-r2 bg-white shadow-bo1 no-underline pressable
+                         active:scale-[0.97] transition-transform"
+            >
+              <div className="flex justify-center mb-1.5">
+                <s.Icon size={20} color="#3A8F7A" />
+              </div>
               <div className="text-xl font-black font-serif text-bo-accent leading-none">
                 <Counter to={s.n} />
               </div>
-              <div className="text-[9px] text-bo-ink-muted font-sans mt-0.5">{s.label}</div>
-            </Glass>
+              <div className="text-[10px] text-bo-ink-muted font-sans mt-1">{s.label}</div>
+            </Link>
           ))}
         </div>
 
         {/* Today's Ingredient Tip */}
-        <div className="p-4 px-4.5 rounded-r2 bg-white border border-bo-parchment shadow-bo1 mb-6">
-          <div className="flex gap-3">
-            <span className="text-xl shrink-0">{todayTip.icon}</span>
-            <div>
-              <div className="text-[11px] font-bold text-bo-accent font-sans mb-1">今日の成分メモ</div>
-              <p className="text-[11px] text-bo-ink-soft font-sans leading-relaxed m-0">{todayTip.text}</p>
+        <div className="rounded-r2 bg-white shadow-bo1 mb-6 overflow-hidden">
+          <div className="h-0.5 bg-gradient-to-r from-bo-accent/40 via-bo-accent to-bo-accent/40" />
+          <div className="p-4 flex gap-3.5">
+            <div className="w-10 h-10 rounded-[12px] flex items-center justify-center shrink-0
+                            bg-gradient-to-br from-bo-accent-soft to-[#D4F5EF]">
+              <LightbulbIcon size={20} color="#3A8F7A" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="text-[10px] font-extrabold text-bo-accent font-sans mb-1.5 tracking-wider uppercase">
+                今日の成分メモ
+              </div>
+              <p className="text-xs text-bo-ink-soft font-sans leading-relaxed m-0">{todayTip.text}</p>
             </div>
           </div>
         </div>
@@ -446,36 +370,82 @@ export default function HomePage() {
         {/* Recent Scans */}
         {recentProducts.length > 0 && (
           <div className="mb-6">
-            <div className="flex justify-between items-baseline mb-3">
-              <h2 className="text-[15px] font-bold font-sans text-bo-ink m-0">最近のスキャン</h2>
-              <Link href="/history" className="text-[11px] text-bo-ink-muted font-sans no-underline">すべて →</Link>
+            <div className="flex justify-between items-center mb-3">
+              <h2 className="text-base font-bold font-sans text-bo-ink m-0">最近のスキャン</h2>
+              <Link href="/history" className="text-xs text-bo-accent font-semibold font-sans no-underline pressable">
+                すべて見る →
+              </Link>
             </div>
-            <div className="flex gap-3 overflow-x-auto hide-scrollbar -mx-5 px-5 pb-1 snap-x snap-mandatory">
-              {recentProducts.map((item) => (
-                <Link
-                  key={item.id}
-                  href={`/product/${item.id}`}
-                  className="min-w-[180px] snap-start bg-white rounded-r2 p-4 px-3.5 shadow-bo1 border border-bo-parchment cursor-pointer shrink-0 no-underline transition-transform duration-200"
-                >
-                  <div className="text-[10px] font-bold font-sans text-bo-accent bg-bo-accent-soft py-0.5 px-2 rounded-md inline-block mb-2">
-                    {item.productType || "コスメ"}
-                  </div>
-                  <div className="text-xs font-bold text-bo-ink font-sans mb-0.5 leading-snug line-clamp-2">
-                    {item.name}
-                  </div>
-                  <div className="text-[10px] text-bo-ink-muted font-sans">{item.brand}</div>
-                </Link>
-              ))}
+            <div className="flex gap-3 overflow-x-auto hide-scrollbar -mx-5 px-5 pb-1 snap-x snap-mandatory"
+                 style={{ WebkitOverflowScrolling: "touch" }}>
+              {recentProducts.map((item) => {
+                const genre = getGenreByKey(item.productType || "other");
+                return (
+                  <Link
+                    key={item.id}
+                    href={`/product/${item.id}`}
+                    className="min-w-[170px] snap-start bg-white rounded-r2 overflow-hidden shadow-bo1
+                               cursor-pointer shrink-0 no-underline pressable"
+                  >
+                    {/* Product image or gradient placeholder */}
+                    {item.packageImage ? (
+                      <div className="w-full h-24 relative">
+                        <Image
+                          src={item.packageImageThumb ?? item.packageImage}
+                          alt={item.name}
+                          fill
+                          className="object-cover"
+                          sizes="170px"
+                          loading="lazy"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
+                      </div>
+                    ) : (
+                      <div
+                        className="w-full h-24 flex items-center justify-center text-3xl"
+                        style={{ background: genre ? `${genre.color}10` : "#f5f5f5" }}
+                      >
+                        {genre ? <ProductGenreIcon genre={genre.key} size={32} /> : "📦"}
+                      </div>
+                    )}
+                    <div className="p-3">
+                      {genre && (
+                        <div className="text-[9px] font-bold font-sans px-2 py-0.5 rounded-md inline-block mb-1.5"
+                             style={{ background: `${genre.color}15`, color: genre.color }}>
+                          {genre.label}
+                        </div>
+                      )}
+                      <div className="text-xs font-bold text-bo-ink font-sans mb-0.5 leading-snug line-clamp-2">
+                        {item.name}
+                      </div>
+                      <div className="text-[10px] text-bo-ink-muted font-sans">{item.brand}</div>
+                    </div>
+                  </Link>
+                );
+              })}
             </div>
           </div>
         )}
 
         {/* Empty state */}
         {recentProducts.length === 0 && routineSteps.length === 0 && (
-          <div className="text-center py-10 rounded-r3 bg-white/70">
-            <div className="text-5xl mb-3">🌿</div>
-            <p className="font-bold text-sm text-bo-ink">まだコスメをスキャンしていません</p>
-            <p className="text-xs text-bo-ink-muted mt-1.5">上のボタンから始めてみましょう！</p>
+          <div className="text-center py-12 rounded-r2 bg-white shadow-bo1">
+            <div className="w-20 h-20 rounded-[24px] mx-auto mb-4 flex items-center justify-center
+                            bg-gradient-to-br from-bo-accent-soft to-[#D4F5EF]
+                            shadow-[0_8px_24px_rgba(58,143,122,0.12)]">
+              <LeafIcon size={36} color="#3A8F7A" />
+            </div>
+            <p className="font-bold text-sm text-bo-ink font-sans">まだコスメをスキャンしていません</p>
+            <p className="text-xs text-bo-ink-muted mt-1.5 mb-5 font-sans">
+              化粧品をスキャンしてスキンケアの旅を始めましょう
+            </p>
+            <Link
+              href="/scan"
+              className="inline-flex items-center gap-2 py-3 px-6 rounded-r2 bg-bo-accent text-white
+                         text-sm font-bold no-underline shadow-bo-accent pressable font-sans"
+            >
+              <CameraIcon size={16} color="white" /> スキャンする
+            </Link>
           </div>
         )}
 
