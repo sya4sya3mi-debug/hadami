@@ -48,7 +48,7 @@ export default function BottomSheet({
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50" style={{ touchAction: "none" }}>
+    <div className="fixed inset-0 z-[300] flex justify-center" style={{ touchAction: "none" }}>
       {/* Backdrop */}
       <div
         className="absolute inset-0 bg-black/50 animate-fade-in"
@@ -56,8 +56,8 @@ export default function BottomSheet({
       />
       {/* Sheet */}
       <div
-        className="absolute bottom-0 left-0 right-0 bg-white rounded-t-3xl animate-slide-up flex flex-col"
-        style={{ maxHeight, height }}
+        className="absolute bottom-0 w-full bg-white rounded-t-3xl animate-slide-up flex flex-col"
+        style={{ maxHeight, height, maxWidth: "var(--app-shell-max-width, 430px)" }}
       >
         {/* Drag handle + header */}
         <div
@@ -73,19 +73,25 @@ export default function BottomSheet({
                 <h3 className="font-bold text-base text-bo-ink">{title}</h3>
                 {subtitle && <p className="text-xs mt-0.5 text-bo-ink-muted">{subtitle}</p>}
               </div>
-              <button onClick={onClose} className="text-xl text-bo-ink-muted">✕</button>
+              <button
+                onClick={onClose}
+                className="w-8 h-8 rounded-full flex items-center justify-center text-base text-bo-ink-muted
+                           bg-bo-cream border-none cursor-pointer pressable shrink-0"
+              >
+                ✕
+              </button>
             </div>
           )}
         </div>
         {/* Content */}
         <div
           ref={contentRef}
-          className="flex-1 min-h-0 overflow-y-auto px-5"
+          className="flex-auto min-h-0 overflow-y-auto px-5"
           style={{
             touchAction: "pan-y",
             WebkitOverflowScrolling: "touch",
             overscrollBehavior: "contain",
-            paddingBottom: footer ? "12px" : "calc(80px + env(safe-area-inset-bottom))",
+            paddingBottom: footer ? "12px" : "calc(24px + env(safe-area-inset-bottom))",
           }}
         >
           {children}
