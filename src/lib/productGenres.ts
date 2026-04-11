@@ -15,7 +15,7 @@ export const PRODUCT_GENRES: readonly ProductGenreInfo[] = [
   { key: "serum", label: "美容液", icon: "\u2728", color: "#CE93D8", order: 4 },
   { key: "emulsion", label: "乳液", icon: "\u{1F95B}", color: "#FFB74D", order: 5 },
   { key: "cream", label: "クリーム", icon: "\u{1FAD9}", color: "#F9A8C0", order: 6 },
-  { key: "sunscreen", label: "日焼け止め", icon: "\u2600\uFE0F", color: "#FFD54F", order: 7 },
+  { key: "sunscreen", label: "日焼け止め", icon: "\u2600\uFE0F", color: "#F0A030", order: 7 },
   { key: "mask_pack", label: "パック・マスク", icon: "\u{1F3AD}", color: "#80CBC4", order: 8 },
   { key: "eye_care", label: "アイケア", icon: "\u{1F441}\uFE0F", color: "#90A4AE", order: 9 },
   { key: "oil", label: "オイル", icon: "\u{1F49B}", color: "#A5D6A7", order: 10 },
@@ -36,7 +36,7 @@ export interface GenreSlotConfig {
 
 export const GENRE_SLOT_CONFIG: readonly GenreSlotConfig[] = [
   { genre: "toner", maxSlots: 1, section: "base", stepLabel: "1" },
-  { genre: "serum", maxSlots: 2, section: "intensive", stepLabel: "2" },
+  { genre: "serum", maxSlots: 1, section: "intensive", stepLabel: "2" },
   { genre: "emulsion", maxSlots: 1, section: "protection", stepLabel: "3" },
   { genre: "cream", maxSlots: 1, section: "protection", stepLabel: "4" },
   { genre: "sunscreen", maxSlots: 1, section: "protection", stepLabel: "5" },
