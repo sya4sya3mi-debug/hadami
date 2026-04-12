@@ -7,6 +7,30 @@ interface PreprocessResult {
   color: string;
 }
 
+function applySharpen(ctx: CanvasRenderingContext2D, w: number, h: number, amount: number) {
+  const src = ctx.getImageData(0, 0, w, h);
+  const dst = ctx.createImageData(w, h);
+  const s = src.data;
+  const d = dst.data;
+  // Copy alpha and apply 3x3 sharpen kernel to RGB
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      const i = (y * w + x) * 4;
+      if (y === 0 || y === h - 1 || x === 0 || x === w - 1) {
+        d[i] = s[i]; d[i+1] = s[i+1]; d[i+2] = s[i+2]; d[i+3] = s[i+3];
+        continue;
+      }
+      const t = ((y-1)*w+x)*4, b = ((y+1)*w+x)*4, l = (y*w+(x-1))*4, r = (y*w+(x+1))*4;
+      for (let c = 0; c < 3; c++) {
+        const v = s[i+c] * (1 + 4*amount) - s[t+c]*amount - s[b+c]*amount - s[l+c]*amount - s[r+c]*amount;
+        d[i+c] = Math.min(255, Math.max(0, Math.round(v)));
+      }
+      d[i+3] = s[i+3];
+    }
+  }
+  ctx.putImageData(dst, 0, 0);
+}
+
 async function preprocessImage(dataUrl: string): Promise<PreprocessResult> {
   return new Promise((resolve) => {
     const img = new Image();
@@ -19,13 +43,16 @@ async function preprocessImage(dataUrl: string): Promise<PreprocessResult> {
         height = Math.round(height * scale);
       }
 
+      // Color image with light sharpening for better text readability
       const colorCanvas = document.createElement("canvas");
       colorCanvas.width = width;
       colorCanvas.height = height;
       const colorCtx = colorCanvas.getContext("2d")!;
       colorCtx.drawImage(img, 0, 0, width, height);
+      applySharpen(colorCtx, width, height, 0.35);
       const color = colorCanvas.toDataURL("image/jpeg", 0.95);
 
+      // Grayscale + contrast enhanced version for OCR fallback
       const canvas = document.createElement("canvas");
       canvas.width = width;
       canvas.height = height;

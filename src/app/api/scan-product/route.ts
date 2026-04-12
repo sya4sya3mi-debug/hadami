@@ -618,69 +618,54 @@ async function searchProductEvidence(
 const IDENTIFY_MODEL = process.env.GEMINI_IDENTIFY_MODEL || "gemini-2.5-flash";
 
 const STANDARD_IDENTIFY_PROMPT = [
-  "You are an expert at reading text on Japanese cosmetic product packages.",
+  "あなたは化粧品パッケージの文字読み取りの専門家です。",
   "",
-  "STEP 1 — Read ALL text visible on this package photo.",
-  "Japanese cosmetics typically display text in this order:",
-  "  - BRAND name: usually a logo or large styled text at the top or center (often in English, katakana, or a mix)",
-  "  - Series / line name: sometimes written below the brand",
-  "  - Product name: describes the product function (e.g. 化粧水, 美容液, クリーム, UV, etc.)",
-  "  - Volume (mL, g): sometimes near the bottom",
-  "Text may be in Japanese (kanji, hiragana, katakana), English, Korean, or mixed.",
-  "Text may be vertical, curved, small, or partially obscured — read it all anyway.",
+  "【最優先タスク】この画像に写っている文字を全て読み取ってください。",
   "",
-  "STEP 2 — From the text you read, determine:",
-  "  - BRAND: the manufacturer or brand name (e.g. 資生堂, SHISEIDO, SK-II, ロート, 無印良品, Dior, etc.)",
-  "  - PRODUCT: the full product name including series and variant (e.g. エリクシール シュペリエル リフトモイスト ローション T II)",
-  "  - Do NOT include volume (mL, g) in the product name.",
+  "読み取りのヒント：",
+  "- ロゴや大きな文字 → ブランド名（英語・カタカナ・漢字のどれでも可）",
+  "- ブランドの下にある文字 → シリーズ名・ライン名",
+  "- 製品の機能を示す文字 → 製品名（化粧水、美容液、クリーム、UV、ローション等）",
+  "- 縦書き・曲線上・小さい文字も全て読んでください",
+  "- 英語・日本語（漢字/ひらがな/カタカナ）・韓国語が混在することがあります",
   "",
-  "STEP 3 — Return EXACTLY in this format (no extra text):",
+  "読み取った文字から以下を判定してください：",
+  "- BRAND: ブランド名・メーカー名（例：SHISEIDO, 資生堂, SK-II, 無印良品, ANUA, Dior）",
+  "- PRODUCT: 商品名（シリーズ名＋製品タイプ名を結合。例：エリクシール シュペリエル リフトモイスト ローション T II）",
+  "- 容量（mL, g）は商品名に含めないこと",
   "",
-  "Use TYPE values from this list:",
-  "cleansing / face_wash / toner / serum / emulsion / cream / sunscreen / mask_pack / eye_care / oil / mist / other",
+  "以下のフォーマットで回答（余計なテキスト不要）：",
   "",
-  "Single product:",
+  "TYPE値: cleansing / face_wash / toner / serum / emulsion / cream / sunscreen / mask_pack / eye_care / oil / mist / other",
+  "",
   "PRODUCT: ...",
   "BRAND: ...",
   "LANG: ja|ko|en",
   "TYPE: ...",
   "",
-  "Multiple products:",
-  "PRODUCT1: ...",
-  "BRAND1: ...",
-  "LANG1: ja|ko|en",
-  "TYPE1: ...",
-  "PRODUCT2: ...",
-  "BRAND2: ...",
-  "LANG2: ja|ko|en",
-  "TYPE2: ...",
+  "複数商品の場合: PRODUCT1/BRAND1/LANG1/TYPE1, PRODUCT2/BRAND2/LANG2/TYPE2 の形式",
   "",
-  "IMPORTANT: You MUST return at least one PRODUCT line. Even if unsure, give your best reading of the text.",
-  "Do not say you cannot identify it. Do not add commentary.",
+  "重要: 必ず1つ以上のPRODUCT行を返すこと。不確かでも読み取ったテキストからベストな推定を返すこと。",
 ].join("\n");
 
 const RETRY_IDENTIFY_PROMPT = [
-  "This is a photo of a cosmetic or skincare product package.",
-  "Your job is to READ EVERY PIECE OF TEXT visible in this image — no matter how small, blurry, tilted, or partially hidden.",
+  "この画像は化粧品・スキンケア製品のパッケージ写真です。",
   "",
-  "Common text locations on cosmetic packages:",
-  "- Front center or top: brand name / logo (often English or katakana)",
-  "- Below brand: series name or product line name",
-  "- Center or bottom: product type description (化粧水, 乳液, クリーム, セラム, 美容液, 日焼け止め, etc.)",
-  "- Small text: volume (mL, g), ingredients, warnings",
+  "画像内の文字を全て読み取ってください。ぼやけていても、斜めでも、小さくても構いません。",
+  "読み取った文字の中から、ブランド名と商品名を特定してください。",
   "",
-  "After reading all text, classify:",
-  "- BRAND: the brand/manufacturer name",
-  "- PRODUCT: the product name (combine series + product type if visible)",
+  "パッケージ上の文字の典型的な位置：",
+  "- 上部・中央の大きな文字やロゴ → ブランド名",
+  "- ブランドの下 → シリーズ名",
+  "- 製品タイプの記述 → 化粧水、乳液、クリーム、セラム、美容液、日焼け止め等",
   "",
-  "Return in EXACTLY this format:",
-  "PRODUCT: (your best reading of the product name)",
-  "BRAND: (your best reading of the brand name)",
+  "以下の形式で返答してください：",
+  "PRODUCT: (商品名のベストな読み取り結果)",
+  "BRAND: (ブランド名のベストな読み取り結果)",
   "LANG: ja|ko|en",
   "TYPE: cleansing / face_wash / toner / serum / emulsion / cream / sunscreen / mask_pack / eye_care / oil / mist / other",
   "",
-  "You MUST return at least one PRODUCT line. Partial or approximate readings are acceptable.",
-  "Do NOT say you cannot identify it. Do NOT add commentary.",
+  "部分的・近似的な読み取りでもOK。必ずPRODUCTとBRAND行を返すこと。空にしないこと。",
 ].join("\n");
 
 const IMAGE_OCR_PROMPT = [
@@ -719,7 +704,12 @@ const OCR_FALLBACK_IDENTIFY_PROMPT = [
 ].join("\n");
 
 async function identifyProductsWithRetry(base64Data: string): Promise<IdentifiedProduct[]> {
-  // Attempt 1: primary model + standard prompt (detailed Japanese-focused)
+  const identifyConfig = {
+    maxOutputTokens: 1024,
+    thinkingConfig: { thinkingBudget: 2048 },
+  };
+
+  // Attempt 1: primary model + standard prompt (Japanese-focused OCR-first approach)
   const firstResponse = await withTimeout(
     client.models.generateContent({
       model: IDENTIFY_MODEL,
@@ -732,16 +722,16 @@ async function identifyProductsWithRetry(base64Data: string): Promise<Identified
           ],
         },
       ],
-      config: { maxOutputTokens: 1024 },
+      config: identifyConfig,
     }),
-    15000,
+    20000,
     "Timed out while identifying product (attempt 1)",
   ).catch(() => null);
 
   const firstProducts = parseIdentifiedProducts(firstResponse?.text ?? "");
   if (firstProducts.length > 0) return firstProducts;
 
-  // Attempt 2: same model + retry prompt (more lenient, text-reading focused)
+  // Attempt 2: retry prompt (more lenient, Japanese instructions)
   const retryResponse = await withTimeout(
     client.models.generateContent({
       model: IDENTIFY_MODEL,
@@ -754,16 +744,16 @@ async function identifyProductsWithRetry(base64Data: string): Promise<Identified
           ],
         },
       ],
-      config: { maxOutputTokens: 1024 },
+      config: identifyConfig,
     }),
-    15000,
+    20000,
     "Timed out while identifying product (attempt 2)",
   ).catch(() => null);
 
   const retryProducts = parseIdentifiedProducts(retryResponse?.text ?? "");
   if (retryProducts.length > 0) return retryProducts;
 
-  // Attempt 3: OCR fallback — pure text extraction approach
+  // Attempt 3: OCR fallback — pure text extraction, no thinking needed
   const ocrResponse = await withTimeout(
     client.models.generateContent({
       model: IDENTIFY_MODEL,
