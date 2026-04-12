@@ -4,12 +4,12 @@ import { useState, useMemo } from "react";
 import ScrollToTop from "@/components/ui/ScrollToTop";
 import { useDeckStore } from "@/stores/useDeckStore";
 import { useProductStore } from "@/stores/useProductStore";
-import { getIngredientById, ACTIVE_CATEGORIES } from "@/lib/ingredients";
+import { getIngredientById } from "@/lib/ingredients";
 import { findCombinations } from "@/lib/combinations";
 import { recommendDeck } from "@/lib/deckRecommender";
 import { getGenreByKey, GENRE_SLOT_CONFIG } from "@/lib/productGenres";
 import DeckTray from "@/components/deck/DeckTray";
-import DeckSummary from "@/components/deck/DeckSummary";
+// import DeckSummary from "@/components/deck/DeckSummary";
 import DeckAnalysis from "@/components/deck/DeckAnalysis";
 import EmptyDeckState from "@/components/deck/EmptyDeckState";
 import ProductPicker from "@/components/deck/ProductPicker";
@@ -117,10 +117,6 @@ export default function DeckPage() {
     productsByGenre[genre].push(p);
   });
 
-  const coveragePercent = deckProducts.length > 0
-    ? Math.round((coveredCategories / ACTIVE_CATEGORIES.length) * 100)
-    : 0;
-
   // Handlers
   const handleAddItem = async (productId: string) => {
     const nextOrderIndex = allDeckItems.filter((item) => item.routine === routine).length;
@@ -223,16 +219,6 @@ export default function DeckPage() {
           {/* Main content */}
           {deckProducts.length > 0 ? (
             <>
-              {/* Summary card */}
-              <div className="mb-6">
-                <DeckSummary
-                  stepCount={deckProducts.length}
-                  coveragePercent={coveragePercent}
-                  categoryCounts={categoryCounts}
-                  onTapUncovered={() => openPicker(null)}
-                />
-              </div>
-
               {/* Deck slots — direct editing */}
               <DeckTray
                 productsByGenre={productsByGenre}
