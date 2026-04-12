@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import TabBar from "@/components/ui/TabBar";
 import PwaRegister from "@/components/PwaRegister";
+import IngredientPreloader from "@/components/IngredientPreloader";
 import { AuthProvider } from "@/lib/auth";
 
 
@@ -48,6 +49,7 @@ export default function RootLayout({
       <body>
         <AuthProvider>
           <PwaRegister />
+          <IngredientPreloader />
 
           <div id="app-container">
             <main className="pb-[calc(80px+env(safe-area-inset-bottom))]">

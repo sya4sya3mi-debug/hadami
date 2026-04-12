@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useUser } from "@/lib/auth";
 import { useZukanStore } from "@/stores/useZukanStore";
 
@@ -98,8 +98,14 @@ const TABS = [
 
 export default function TabBar() {
   const pathname = usePathname();
+  const router = useRouter();
   const { user, loading } = useUser();
   const unsavedScan = useZukanStore((s) => s.unsavedScan);
+
+  // Eagerly prefetch all tab routes on mount
+  useEffect(() => {
+    TABS.forEach((tab) => router.prefetch(tab.href));
+  }, [router]);
 
   // Optimistic active tab — instantly update on tap, sync back when pathname changes
   const [optimisticHref, setOptimisticHref] = useState<string | null>(null);

@@ -6,8 +6,8 @@ import { useRouter } from "next/navigation";
 import { useZukanStore } from "@/stores/useZukanStore";
 import { useProductStore } from "@/stores/useProductStore";
 import {
-  ACTIVE_INGREDIENTS,
-  ACTIVE_INGREDIENT_COUNT,
+  getActiveIngredients,
+  getActiveIngredientCount,
   ACTIVE_CATEGORIES,
   getActiveByCategory,
   getActiveCategoryTotal,
@@ -602,9 +602,9 @@ export default function ZukanPage() {
   const products = useProductStore((s) => s.products);
 
   /* 有効成分のみでカウント */
-  const activeSet = useMemo(() => new Set(ACTIVE_INGREDIENTS.map((i) => i.id)), []);
+  const activeSet = useMemo(() => new Set(getActiveIngredients().map((i) => i.id)), []);
   const totalDisc = discoveredIds.filter((id) => activeSet.has(id)).length;
-  const totalAll = ACTIVE_INGREDIENT_COUNT;
+  const totalAll = getActiveIngredientCount();
   const pct = totalAll > 0 ? Math.round((totalDisc / totalAll) * 100) : 0;
 
   const circumference = 2 * Math.PI * 34;

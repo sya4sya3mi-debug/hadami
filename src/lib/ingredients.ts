@@ -4679,83 +4679,125 @@ export const MASTER_INGREDIENTS: Ingredient[] = [
   },
 ];
 
-// O(1) lookup maps（線形検索を排除）
+// ── globalThis キャッシュ方式: Map構築を1セッションで1回だけ実行 ──
 import { normalizeIngredientName } from "./normalize";
 
-const _byId = new Map(MASTER_INGREDIENTS.map((i) => [i.id, i]));
-const _byName = new Map(MASTER_INGREDIENTS.map((i) => [i.nameJa, i]));
-const _byInci = new Map(MASTER_INGREDIENTS.map((i) => [i.nameInci.toLowerCase(), i]));
-const _indexById = new Map(MASTER_INGREDIENTS.map((i, idx) => [i.id, idx]));
-
-// 正規化Maps（first-wins: 正規化後の衝突は先に登録された成分を優先）
-const _byNameNorm = new Map<string, Ingredient>();
-for (const i of MASTER_INGREDIENTS) {
-  const k = normalizeIngredientName(i.nameJa);
-  if (!_byNameNorm.has(k)) _byNameNorm.set(k, i);
-}
-const _byInciNorm = new Map<string, Ingredient>();
-for (const i of MASTER_INGREDIENTS) {
-  const k = normalizeIngredientName(i.nameInci);
-  if (!_byInciNorm.has(k)) _byInciNorm.set(k, i);
+interface IngredientIndexes {
+  _byId: Map<string, Ingredient>;
+  _byName: Map<string, Ingredient>;
+  _byInci: Map<string, Ingredient>;
+  _indexById: Map<string, number>;
+  _byNameNorm: Map<string, Ingredient>;
+  _byInciNorm: Map<string, Ingredient>;
+  _byAlias: Map<string, Ingredient>;
+  _byAliasNorm: Map<string, Ingredient>;
+  _byGenre: Map<string, Ingredient[]>;
+  _activeIngredients: Ingredient[];
+  _activeByCategory: Map<string, Ingredient[]>;
 }
 
-// エイリアスMaps
-const _byAlias = new Map<string, Ingredient>();
-const _byAliasNorm = new Map<string, Ingredient>();
-for (const i of MASTER_INGREDIENTS) {
-  if (!i.aliases) continue;
-  for (const alias of i.aliases) {
-    if (!_byAlias.has(alias)) _byAlias.set(alias, i);
-    const k = normalizeIngredientName(alias);
-    if (!_byAliasNorm.has(k)) _byAliasNorm.set(k, i);
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function getIndexes(): IngredientIndexes {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const g = globalThis as any;
+  if (g.__hadamiIdx) return g.__hadamiIdx as IngredientIndexes;
+
+  const _byId = new Map(MASTER_INGREDIENTS.map((i) => [i.id, i]));
+  const _byName = new Map(MASTER_INGREDIENTS.map((i) => [i.nameJa, i]));
+  const _byInci = new Map(MASTER_INGREDIENTS.map((i) => [i.nameInci.toLowerCase(), i]));
+  const _indexById = new Map(MASTER_INGREDIENTS.map((i, idx) => [i.id, idx]));
+
+  const _byNameNorm = new Map<string, Ingredient>();
+  for (const i of MASTER_INGREDIENTS) {
+    const k = normalizeIngredientName(i.nameJa);
+    if (!_byNameNorm.has(k)) _byNameNorm.set(k, i);
   }
+  const _byInciNorm = new Map<string, Ingredient>();
+  for (const i of MASTER_INGREDIENTS) {
+    const k = normalizeIngredientName(i.nameInci);
+    if (!_byInciNorm.has(k)) _byInciNorm.set(k, i);
+  }
+
+  const _byAlias = new Map<string, Ingredient>();
+  const _byAliasNorm = new Map<string, Ingredient>();
+  for (const i of MASTER_INGREDIENTS) {
+    if (!i.aliases) continue;
+    for (const alias of i.aliases) {
+      if (!_byAlias.has(alias)) _byAlias.set(alias, i);
+      const k = normalizeIngredientName(alias);
+      if (!_byAliasNorm.has(k)) _byAliasNorm.set(k, i);
+    }
+  }
+
+  const _byGenre = new Map<string, Ingredient[]>();
+  MASTER_INGREDIENTS.forEach((i) => {
+    const arr = _byGenre.get(i.genre) || [];
+    arr.push(i);
+    _byGenre.set(i.genre, arr);
+  });
+
+  const _activeIngredients = MASTER_INGREDIENTS.filter(
+    (i) => i.activeIngredient && isQuasiDrugCosmeticActiveByMasterDbId(i.id),
+  );
+
+  const _activeByCategory = new Map<string, Ingredient[]>();
+  _activeIngredients.forEach((i) => {
+    i.categories.forEach((cat) => {
+      const arr = _activeByCategory.get(cat) || [];
+      arr.push(i);
+      _activeByCategory.set(cat, arr);
+    });
+  });
+
+  const indexes: IngredientIndexes = {
+    _byId, _byName, _byInci, _indexById,
+    _byNameNorm, _byInciNorm, _byAlias, _byAliasNorm,
+    _byGenre, _activeIngredients, _activeByCategory,
+  };
+  g.__hadamiIdx = indexes;
+  return indexes;
 }
 
 export function getIngredientById(id: string): Ingredient | undefined {
-  return _byId.get(id);
+  return getIndexes()._byId.get(id);
 }
 
 export function getIngredientByName(nameJa: string): Ingredient | undefined {
-  return _byName.get(nameJa)
-    ?? _byNameNorm.get(normalizeIngredientName(nameJa))
-    ?? _byAlias.get(nameJa)
-    ?? _byAliasNorm.get(normalizeIngredientName(nameJa));
+  const idx = getIndexes();
+  return idx._byName.get(nameJa)
+    ?? idx._byNameNorm.get(normalizeIngredientName(nameJa))
+    ?? idx._byAlias.get(nameJa)
+    ?? idx._byAliasNorm.get(normalizeIngredientName(nameJa));
 }
 
 export function getIngredientByInci(nameInci: string): Ingredient | undefined {
-  return _byInci.get(nameInci.toLowerCase())
-    ?? _byInciNorm.get(normalizeIngredientName(nameInci));
+  const idx = getIndexes();
+  return idx._byInci.get(nameInci.toLowerCase())
+    ?? idx._byInciNorm.get(normalizeIngredientName(nameInci));
 }
 
 export function getIngredientIndex(id: string): number {
-  return (_indexById.get(id) ?? -1) + 1;
+  return (getIndexes()._indexById.get(id) ?? -1) + 1;
 }
 
-// Pre-computed stats（ページでの繰り返し .filter() を排除）
 export const INGREDIENT_COUNT = MASTER_INGREDIENTS.length;
 
-const _byGenre = new Map<string, Ingredient[]>();
-MASTER_INGREDIENTS.forEach((i) => {
-  const arr = _byGenre.get(i.genre) || [];
-  arr.push(i);
-  _byGenre.set(i.genre, arr);
-});
-
 export function getIngredientsByGenre(genre: string): Ingredient[] {
-  return _byGenre.get(genre) || [];
+  return getIndexes()._byGenre.get(genre) || [];
 }
 
 export function getGenreTotal(genre: string): number {
-  return (_byGenre.get(genre) || []).length;
+  return (getIndexes()._byGenre.get(genre) || []).length;
 }
 
 // ── 有効成分 ──
-export const ACTIVE_INGREDIENTS = MASTER_INGREDIENTS.filter(
-  (i) => i.activeIngredient && isQuasiDrugCosmeticActiveByMasterDbId(i.id),
-);
-export const ACTIVE_INGREDIENT_COUNT = ACTIVE_INGREDIENTS.length;
+export function getActiveIngredients(): Ingredient[] {
+  return getIndexes()._activeIngredients;
+}
+export function getActiveIngredientCount(): number {
+  return getIndexes()._activeIngredients.length;
+}
 
-// 有効成分の効果カテゴリ
 export type ActiveCategory =
   | "brightening"
   | "soothing"
@@ -4780,16 +4822,6 @@ export const ACTIVE_CATEGORIES: ActiveCategoryInfo[] = [
   { key: "keratin",      label: "角質ケア", icon: "🧹", color: "#90A4AE" },
 ];
 
-const _activeByCategory = new Map<string, Ingredient[]>();
-ACTIVE_INGREDIENTS.forEach((i) => {
-  i.categories.forEach((cat) => {
-    const arr = _activeByCategory.get(cat) || [];
-    arr.push(i);
-    _activeByCategory.set(cat, arr);
-  });
-});
-
-/** 成分の主カテゴリ情報を返す（有効成分ならactiveカテゴリ、それ以外はnull） */
 export function getIngredientCategoryInfo(ingredient: Ingredient): ActiveCategoryInfo | null {
   if (!isQuasiDrugCosmeticActiveByMasterDbId(ingredient.id) || ingredient.categories.length === 0) {
     return null;
@@ -4797,7 +4829,6 @@ export function getIngredientCategoryInfo(ingredient: Ingredient): ActiveCategor
   return ACTIVE_CATEGORIES.find((c) => c.key === ingredient.categories[0]) ?? null;
 }
 
-/** 成分の全カテゴリ情報を返す */
 export function getIngredientCategories(ingredient: Ingredient): ActiveCategoryInfo[] {
   if (!isQuasiDrugCosmeticActiveByMasterDbId(ingredient.id)) return [];
   return ingredient.categories
@@ -4806,9 +4837,9 @@ export function getIngredientCategories(ingredient: Ingredient): ActiveCategoryI
 }
 
 export function getActiveByCategory(cat: string): Ingredient[] {
-  return _activeByCategory.get(cat) || [];
+  return getIndexes()._activeByCategory.get(cat) || [];
 }
 
 export function getActiveCategoryTotal(cat: string): number {
-  return (_activeByCategory.get(cat) || []).length;
+  return (getIndexes()._activeByCategory.get(cat) || []).length;
 }

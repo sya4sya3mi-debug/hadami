@@ -1,6 +1,6 @@
 "use client";
 
-import { RARITY, ACTIVE_INGREDIENTS, ACTIVE_INGREDIENT_COUNT } from "@/lib/ingredients";
+import { RARITY, getActiveIngredients, getActiveIngredientCount } from "@/lib/ingredients";
 import { RarityKey } from "@/types";
 import { StarIcon } from "@/components/ui/Badge";
 
@@ -28,8 +28,8 @@ export default function ZukanProgress({
   achievementsDone = 0,
   achievementsTotal = 0,
 }: ZukanProgressProps) {
-  const total = ACTIVE_INGREDIENT_COUNT;
-  const activeIdSet = new Set(ACTIVE_INGREDIENTS.map((i) => i.id));
+  const total = getActiveIngredientCount();
+  const activeIdSet = new Set(getActiveIngredients().map((i) => i.id));
   const activeDiscoveredIds = discoveredIds.filter((id) => activeIdSet.has(id));
   const discovered = activeDiscoveredIds.length;
   const discoveredSet = new Set(activeDiscoveredIds);
@@ -41,7 +41,7 @@ export default function ZukanProgress({
     : 100;
 
   const rarityCounts = (Object.keys(RARITY) as RarityKey[]).map((key) => {
-    const all = ACTIVE_INGREDIENTS.filter((i) => i.rarity === key);
+    const all = getActiveIngredients().filter((i) => i.rarity === key);
     const found = all.filter((i) => discoveredSet.has(i.id));
     return { ...RARITY[key], key, total: all.length, found: found.length };
   });
