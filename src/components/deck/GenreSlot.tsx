@@ -31,7 +31,7 @@ export default function GenreSlot({
       <div
         onClick={onAdd}
         className="flex items-center gap-4 px-4 h-[76px] rounded-r2 mb-3 cursor-pointer
-                   bg-gradient-to-r from-white to-bo-accent-pale/40
+                   bg-white
                    border border-bo-parchment
                    shadow-bo1
                    active:scale-[0.98] transition-all duration-150"

@@ -36,6 +36,7 @@
 .dark [class*="from-\[#E8FAF8\]"] { --tw-gradient-from: #1a2a28 !important; }
 .dark [class*="from-\[#F0FDFA\]"] { --tw-gradient-from: #1a2a28 !important; }
 .dark [class*="from-bo-accent-soft"] { --tw-gradient-from: #1a3a2a !important; }
+.dark .from-white { --tw-gradient-from: #1E1E1E !important; }
 .dark [class*="to-\[#D4F5EF\]"] { --tw-gradient-to: #152a22 !important; }
 .dark [class*="to-\[#C5E8D8\]"] { --tw-gradient-to: #152a22 !important; }
 .dark [class*="to-bo-cream"] { --tw-gradient-to: #121212 !important; }

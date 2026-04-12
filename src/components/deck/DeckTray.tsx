@@ -76,7 +76,7 @@ export default function DeckTray({ productsByGenre, onAddSlot, onRemoveProduct }
                       onClick={() => onAddSlot(slotConfig.genre)}
                       className="flex items-center justify-center gap-1.5 w-full py-2.5 rounded-r1 cursor-pointer text-xs font-semibold mb-3
                                  bg-white font-sans border border-dashed border-bo-accent/30 text-bo-accent
-                                 shadow-bo1 pressable"
+                                 pressable"
                     >
                       + {genreInfo?.label}を追加（最大{slotConfig.maxSlots}）
                     </button>

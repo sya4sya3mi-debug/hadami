@@ -82,7 +82,7 @@ export default function EmptyDeckState({
           <button
             onClick={onAutoRecommend}
             className="w-full mt-3 py-3.5 rounded-r2 bg-white text-bo-accent text-sm font-bold
-                       font-sans cursor-pointer border border-bo-accent/20 shadow-bo1 pressable"
+                       font-sans cursor-pointer border border-bo-accent/20 pressable"
           >
             <SparkleIcon size={14} /> AIにおまかせ
           </button>
