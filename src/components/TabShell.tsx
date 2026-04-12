@@ -1,7 +1,6 @@
 "use client";
 
-import { usePathname } from "next/navigation";
-import { useState, useEffect, ReactNode, useCallback } from "react";
+import { useState, useEffect, useSyncExternalStore, ReactNode } from "react";
 
 // Lazy imports — each tab page is loaded only on first visit
 import dynamic from "next/dynamic";
@@ -29,6 +28,18 @@ function getActiveTab(pathname: string): string | null {
   return TABS.find((t) => t.match(pathname))?.path ?? null;
 }
 
+// Track pathname via popstate (works with history.pushState from TabBar)
+function subscribeToPathname(callback: () => void) {
+  window.addEventListener("popstate", callback);
+  return () => window.removeEventListener("popstate", callback);
+}
+function getPathnameSnapshot() {
+  return typeof window !== "undefined" ? window.location.pathname : "/";
+}
+function getServerSnapshot() {
+  return "/";
+}
+
 /**
  * Keep-Alive Tab Shell
  *
@@ -37,7 +48,7 @@ function getActiveTab(pathname: string): string | null {
  * - Non-tab routes (product detail, settings, etc.): fall through to Next.js routing
  */
 export default function TabShell({ children }: { children: ReactNode }) {
-  const pathname = usePathname();
+  const pathname = useSyncExternalStore(subscribeToPathname, getPathnameSnapshot, getServerSnapshot);
   const activeTab = getActiveTab(pathname);
   const [mounted, setMounted] = useState<Set<string>>(new Set());
 
@@ -47,20 +58,6 @@ export default function TabShell({ children }: { children: ReactNode }) {
       setMounted((prev) => new Set(prev).add(activeTab));
     }
   }, [activeTab, mounted]);
-
-  // Listen for tab navigation events from TabBar
-  const handleTabNav = useCallback((e: Event) => {
-    const href = (e as CustomEvent<string>).detail;
-    const tab = TABS.find((t) => t.match(href));
-    if (tab && !mounted.has(tab.path)) {
-      setMounted((prev) => new Set(prev).add(tab.path));
-    }
-  }, [mounted]);
-
-  useEffect(() => {
-    window.addEventListener("hadami:tab-nav", handleTabNav);
-    return () => window.removeEventListener("hadami:tab-nav", handleTabNav);
-  }, [handleTabNav]);
 
   // Non-tab route: use Next.js routing as-is
   if (!activeTab) {
