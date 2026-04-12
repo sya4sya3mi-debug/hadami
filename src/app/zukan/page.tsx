@@ -252,7 +252,7 @@ function CategoryExplorer({
                   <div className="flex-1 min-w-0 relative">
                     <div
                       className={`text-sm font-semibold font-sans truncate ${
-                        found ? "text-bo-ink" : "text-bo-ink-faint"
+                        found ? "text-bo-ink" : "text-bo-ink-muted"
                       }`}
                     >
                       {found ? ing.nameJa : "？？？"}
