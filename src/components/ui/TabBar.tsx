@@ -130,12 +130,7 @@ export default function TabBar() {
     const onTarget = href === "/" ? pathname === "/" : pathname.startsWith(href);
     if (onTarget) {
       e.preventDefault();
-      if (href === "/scan") {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (window as any).__hadamiCameraInput?.click();
-      } else {
-        window.scrollTo({ top: 0, behavior: "smooth" });
-      }
+      window.scrollTo({ top: 0, behavior: "smooth" });
       return;
     }
     // Optimistic: instantly show tapped tab as active
@@ -159,17 +154,9 @@ export default function TabBar() {
 
           // Center scan button — raised circle (PayPay style)
           if (tab.center) {
-            return (
-              <Link
-                key={tab.href}
-                href={tab.href}
-                prefetch={true}
-                onClick={(e) => handleClick(e, tab.href)}
-                aria-label={tab.ariaLabel}
-                aria-current={isActive ? "page" : undefined}
-                className="flex-1 flex flex-col items-center justify-center bg-transparent border-none cursor-pointer p-0 no-underline"
-                style={{ marginTop: "-18px" }}
-              >
+            // On scan page: use <label> to natively open the file picker
+            const scanContent = (
+              <>
                 <div
                   className="w-[52px] h-[52px] rounded-full flex items-center justify-center shadow-lg"
                   style={{
@@ -191,6 +178,35 @@ export default function TabBar() {
                 >
                   {tab.label}
                 </span>
+              </>
+            );
+
+            if (isActive) {
+              return (
+                <label
+                  key={tab.href}
+                  htmlFor="hadami-camera-input"
+                  aria-label={tab.ariaLabel}
+                  className="flex-1 flex flex-col items-center justify-center bg-transparent border-none cursor-pointer p-0"
+                  style={{ marginTop: "-18px" }}
+                >
+                  {scanContent}
+                </label>
+              );
+            }
+
+            return (
+              <Link
+                key={tab.href}
+                href={tab.href}
+                prefetch={true}
+                onClick={(e) => handleClick(e, tab.href)}
+                aria-label={tab.ariaLabel}
+                aria-current={undefined}
+                className="flex-1 flex flex-col items-center justify-center bg-transparent border-none cursor-pointer p-0 no-underline"
+                style={{ marginTop: "-18px" }}
+              >
+                {scanContent}
               </Link>
             );
           }

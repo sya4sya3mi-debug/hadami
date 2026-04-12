@@ -181,13 +181,8 @@ export default function CaptureStep({ onCapture, preview, disabled }: CaptureSte
       )}
 
       <input
-        ref={(el) => {
-          fileInputRef.current = el;
-          if (typeof window !== "undefined") {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            (window as any).__hadamiCameraInput = el;
-          }
-        }}
+        id="hadami-camera-input"
+        ref={fileInputRef}
         type="file"
         accept="image/*"
         capture="environment"
