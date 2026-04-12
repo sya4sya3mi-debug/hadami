@@ -113,11 +113,24 @@ export async function generateProductShareImage(product: Product): Promise<strin
   if (product.packageImage) {
     try {
       const img = await loadImage(product.packageImage);
-      // object-fit: cover — 隙間なく画像エリアを埋める
-      const scale = Math.max(W / img.naturalWidth, IMG_H / img.naturalHeight);
-      const dw = img.naturalWidth * scale;
-      const dh = img.naturalHeight * scale;
-      ctx.drawImage(img, (W - dw) / 2, (IMG_H - dh) / 2, dw, dh);
+      const imgRatio = img.naturalWidth / img.naturalHeight;
+      const areaRatio = W / IMG_H;
+
+      if (imgRatio >= areaRatio * 0.8) {
+        // 横長〜やや縦長: cover（隙間なく埋める）
+        const scale = Math.max(W / img.naturalWidth, IMG_H / img.naturalHeight);
+        const dw = img.naturalWidth * scale;
+        const dh = img.naturalHeight * scale;
+        ctx.drawImage(img, (W - dw) / 2, (IMG_H - dh) / 2, dw, dh);
+      } else {
+        // 縦長画像: contain + 左右にソフトな背景
+        ctx.fillStyle = "#F5F5F5";
+        ctx.fillRect(0, 0, W, IMG_H);
+        const scale = Math.min(W / img.naturalWidth, IMG_H / img.naturalHeight);
+        const dw = img.naturalWidth * scale;
+        const dh = img.naturalHeight * scale;
+        ctx.drawImage(img, (W - dw) / 2, (IMG_H - dh) / 2, dw, dh);
+      }
       photoLoaded = true;
     } catch { /* fallback */ }
   }
