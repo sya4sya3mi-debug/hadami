@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { memo, useCallback, useEffect, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useProductStore } from "@/stores/useProductStore";
 import { useZukanStore } from "@/stores/useZukanStore";
@@ -217,23 +217,25 @@ export default function HomePage() {
   const checkedCount = normalizedCheckedSteps.size;
   const recentProducts = products.slice(0, 3);
 
-  // Build steps from deck items + products
-  const routineSteps: RoutineStep[] = routineDeckEntries.map(({ product }) => {
-    const cats = new Set<CategoryKey>();
-    product.ingredients.forEach((pi) => {
-      const ing = getIngredientById(pi.ingredientId);
-      if (ing?.activeIngredient) {
-        ing.categories.forEach((cat) => cats.add(cat));
-      }
+  // Memoize routine steps (skip recalc on checkbox toggle)
+  const routineSteps = useMemo(() => {
+    return routineDeckEntries.map(({ product }): RoutineStep => {
+      const cats = new Set<CategoryKey>();
+      product.ingredients.forEach((pi) => {
+        const ing = getIngredientById(pi.ingredientId);
+        if (ing?.activeIngredient) {
+          ing.categories.forEach((cat) => cats.add(cat));
+        }
+      });
+      return {
+        name: product.name,
+        brand: product.brand,
+        type: product.productType,
+        image: product.packageImageThumb ?? product.packageImage,
+        categories: Array.from(cats),
+      };
     });
-    return {
-      name: product.name,
-      brand: product.brand,
-      type: product.productType,
-      image: product.packageImageThumb ?? product.packageImage,
-      categories: Array.from(cats),
-    };
-  });
+  }, [routineDeckEntries]);
 
   const toggleStep = (i: number) => {
     const wasChecked = normalizedCheckedSteps.has(i);

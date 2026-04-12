@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useTransition } from "react";
+import { useEffect, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { useUser } from "@/lib/auth";
 import { useZukanStore } from "@/stores/useZukanStore";
@@ -100,7 +100,14 @@ export default function TabBar() {
   const router = useRouter();
   const { user, loading } = useUser();
   const unsavedScan = useZukanStore((s) => s.unsavedScan);
-  const [, startTransition] = useTransition();
+
+  // Optimistic active tab — instantly update on tap, sync back when pathname changes
+  const [optimisticHref, setOptimisticHref] = useState<string | null>(null);
+  const optimisticTimer = useRef<ReturnType<typeof setTimeout>>();
+  useEffect(() => {
+    setOptimisticHref(null);
+  }, [pathname]);
+  useEffect(() => () => clearTimeout(optimisticTimer.current), []);
 
   // Prefetch all tab routes on mount for instant navigation
   useEffect(() => {
@@ -123,9 +130,12 @@ export default function TabBar() {
         return;
       useZukanStore.getState().setUnsavedScan(false);
     }
-    startTransition(() => {
-      router.push(href);
-    });
+    // Optimistic: instantly show tapped tab as active
+    setOptimisticHref(href);
+    // Fallback: clear optimistic state if navigation takes too long
+    clearTimeout(optimisticTimer.current);
+    optimisticTimer.current = setTimeout(() => setOptimisticHref(null), 3000);
+    router.push(href);
   };
 
   return (
@@ -133,12 +143,13 @@ export default function TabBar() {
       role="navigation"
       aria-label="メインナビゲーション"
       style={{ maxWidth: "var(--app-shell-max-width)" }}
-      className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full bg-white/90 backdrop-blur-xl border-t border-gray-200/60 z-[200] pb-[env(safe-area-inset-bottom)]"
+      className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full bg-white/95 border-t border-gray-200/60 z-[200] pb-[env(safe-area-inset-bottom)]"
     >
       <div className="flex h-[56px] items-end">
         {TABS.map((tab) => {
+          const effectiveHref = optimisticHref ?? pathname;
           const isActive =
-            tab.href === "/" ? pathname === "/" : pathname.startsWith(tab.href);
+            tab.href === "/" ? effectiveHref === "/" : effectiveHref.startsWith(tab.href);
 
           // Center scan button — raised circle (PayPay style)
           if (tab.center) {

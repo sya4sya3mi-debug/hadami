@@ -10,10 +10,10 @@ import { recommendDeck } from "@/lib/deckRecommender";
 import { getGenreByKey, GENRE_SLOT_CONFIG } from "@/lib/productGenres";
 import DeckTray from "@/components/deck/DeckTray";
 import DeckSummary from "@/components/deck/DeckSummary";
-import DeckAnalysis from "@/components/deck/DeckAnalysis";
-import EmptyDeckState from "@/components/deck/EmptyDeckState";
-import ProductPicker from "@/components/deck/ProductPicker";
 import dynamic from "next/dynamic";
+const DeckAnalysis = dynamic(() => import("@/components/deck/DeckAnalysis"), { ssr: false });
+const EmptyDeckState = dynamic(() => import("@/components/deck/EmptyDeckState"), { ssr: false });
+const ProductPicker = dynamic(() => import("@/components/deck/ProductPicker"), { ssr: false });
 const AutoRecommendModal = dynamic(() => import("@/components/deck/AutoRecommendModal"), { ssr: false });
 import Disclaimer from "@/components/ui/Disclaimer";
 

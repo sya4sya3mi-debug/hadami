@@ -18,7 +18,8 @@ import { useUser } from "@/lib/auth";
 
 import AuthGuard from "@/components/ui/AuthGuard";
 import Disclaimer from "@/components/ui/Disclaimer";
-import TargetedRakutenSection from "@/components/recommendations/TargetedRakutenSection";
+import dynamic from "next/dynamic";
+const TargetedRakutenSection = dynamic(() => import("@/components/recommendations/TargetedRakutenSection"), { ssr: false });
 import { ActiveCategoryIcon, SkinConcernIcon } from "@/components/ui/CosmeticIcons";
 
 /* ── Rarity sort order ── */

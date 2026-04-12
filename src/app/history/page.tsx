@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
@@ -192,19 +192,20 @@ export default function HistoryPage() {
 
   const DISPLAY_GENRES = ["toner", "serum", "emulsion", "cream", "sunscreen", "mask_pack"];
 
-  const favCount = products.filter((p) => p.isFavorite).length;
-  const filtered = products
-    .filter((p) => activeFilter === "all" || (p.productType || "other") === activeFilter)
-    .filter((p) => !favOnly || p.isFavorite)
-    .sort((a, b) => (a.isFavorite === b.isFavorite ? 0 : a.isFavorite ? -1 : 1));
-
-  const genreCounts = products.reduce<Record<string, number>>((acc, p) => {
-    const g = p.productType || "other";
-    acc[g] = (acc[g] || 0) + 1;
-    return acc;
-  }, {});
-
-  const activeGenres = PRODUCT_GENRES.filter((g) => DISPLAY_GENRES.includes(g.key) && genreCounts[g.key]);
+  const { favCount, filtered, genreCounts, activeGenres } = useMemo(() => {
+    const favCount = products.filter((p) => p.isFavorite).length;
+    const filtered = products
+      .filter((p) => activeFilter === "all" || (p.productType || "other") === activeFilter)
+      .filter((p) => !favOnly || p.isFavorite)
+      .sort((a, b) => (a.isFavorite === b.isFavorite ? 0 : a.isFavorite ? -1 : 1));
+    const genreCounts = products.reduce<Record<string, number>>((acc, p) => {
+      const g = p.productType || "other";
+      acc[g] = (acc[g] || 0) + 1;
+      return acc;
+    }, {});
+    const activeGenres = PRODUCT_GENRES.filter((g) => DISPLAY_GENRES.includes(g.key) && genreCounts[g.key]);
+    return { favCount, filtered, genreCounts, activeGenres };
+  }, [products, activeFilter, favOnly]);
 
   return (
     <AuthGuard>
