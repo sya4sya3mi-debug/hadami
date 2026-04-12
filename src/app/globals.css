@@ -2,29 +2,125 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ── Dark mode overrides for Tailwind utility classes ── */
-@layer utilities {
-  /* Background overrides */
-  .dark .bg-bo-cream { background-color: #121212 !important; }
-  .dark .bg-white { background-color: #1E1E1E !important; }
-  .dark .bg-bo-parchment { background-color: #2A2A2A !important; }
-  .dark .bg-bo-accent-soft { background-color: #1a3a2a !important; }
-  .dark .bg-bo-cream\/90 { background-color: rgba(18,18,18,0.9) !important; }
+/* ── Dark mode overrides ── */
+/* Background */
+.dark .bg-bo-cream { background-color: #121212 !important; }
+.dark .bg-white { background-color: #1E1E1E !important; }
+.dark .bg-bo-parchment { background-color: #2A2A2A !important; }
+.dark .bg-bo-accent-soft { background-color: #1a3a2a !important; }
+.dark .bg-bo-accent-pale { background-color: #152a22 !important; }
+.dark .bg-bo-cream\/90 { background-color: rgba(18,18,18,0.9) !important; }
+.dark .bg-bo-safe-bg { background-color: #1a2e22 !important; }
+.dark .bg-bo-caution-bg { background-color: #2a2010 !important; }
+.dark .bg-bo-danger-bg { background-color: #2a1515 !important; }
 
-  /* Text overrides */
-  .dark .text-bo-ink { color: #E0E0E0 !important; }
-  .dark .text-bo-ink-soft { color: #AAAAAA !important; }
-  .dark .text-bo-ink-muted { color: #888888 !important; }
-  .dark .text-bo-ink-faint { color: #666666 !important; }
+/* Semi-transparent white → semi-transparent dark */
+.dark .bg-white\/95 { background-color: rgba(26,26,26,0.95) !important; }
+.dark .bg-white\/90 { background-color: rgba(26,26,26,0.9) !important; }
+.dark .bg-white\/80 { background-color: rgba(30,30,30,0.8) !important; }
+.dark .bg-white\/50 { background-color: rgba(30,30,30,0.5) !important; }
+.dark .bg-white\/40 { background-color: rgba(30,30,30,0.4) !important; }
+.dark .bg-white\/30 { background-color: rgba(30,30,30,0.3) !important; }
+.dark .bg-white\/20 { background-color: rgba(30,30,30,0.2) !important; }
 
-  /* Border overrides */
-  .dark .border-bo-parchment { border-color: #333333 !important; }
-  .dark .border-bo-parchment\/40 { border-color: rgba(51,51,51,0.4) !important; }
+/* Custom Tailwind background colors used in components */
+.dark [class*="bg-\[#FFF"] { background-color: #1E1E1E !important; }
+.dark [class*="bg-\[#F0F"] { background-color: #1a2a22 !important; }
+.dark [class*="bg-\[#f0f"] { background-color: #1a2a22 !important; }
+.dark [class*="bg-\[#E3F"] { background-color: #1a2a22 !important; }
+.dark [class*="bg-\[#EDE"] { background-color: #221a2a !important; }
+.dark .bg-red-50 { background-color: #2a1515 !important; }
 
-  /* Shadow overrides (softer in dark) */
-  .dark .shadow-bo1 { box-shadow: 0 1px 4px rgba(0,0,0,0.3) !important; }
-  .dark .shadow-bo2 { box-shadow: 0 2px 8px rgba(0,0,0,0.4) !important; }
+/* Gradients — soften in dark */
+.dark [class*="from-\[#f0faeb\]"] { --tw-gradient-from: #1a2a1a !important; }
+.dark [class*="from-\[#E8FAF8\]"] { --tw-gradient-from: #1a2a28 !important; }
+.dark [class*="from-\[#F0FDFA\]"] { --tw-gradient-from: #1a2a28 !important; }
+.dark [class*="from-bo-accent-soft"] { --tw-gradient-from: #1a3a2a !important; }
+.dark [class*="to-\[#D4F5EF\]"] { --tw-gradient-to: #152a22 !important; }
+.dark [class*="to-\[#C5E8D8\]"] { --tw-gradient-to: #152a22 !important; }
+.dark [class*="to-bo-cream"] { --tw-gradient-to: #121212 !important; }
+
+/* Text */
+.dark .text-bo-ink { color: #E0E0E0 !important; }
+.dark .text-bo-ink-soft { color: #AAAAAA !important; }
+.dark .text-bo-ink-muted { color: #888888 !important; }
+.dark .text-bo-ink-faint { color: #666666 !important; }
+.dark .text-black { color: #E0E0E0 !important; }
+.dark .text-gray-600 { color: #999999 !important; }
+.dark .text-gray-500 { color: #888888 !important; }
+.dark .text-gray-400 { color: #777777 !important; }
+.dark .text-red-500 { color: #EF5350 !important; }
+
+/* Border */
+.dark .border-bo-parchment { border-color: #333333 !important; }
+.dark .border-bo-parchment\/40 { border-color: rgba(51,51,51,0.4) !important; }
+.dark .border-gray-200 { border-color: #333333 !important; }
+.dark .border-gray-200\/60 { border-color: rgba(51,51,51,0.6) !important; }
+.dark .border-white\/20 { border-color: rgba(60,60,60,0.3) !important; }
+.dark .border-red-100 { border-color: #4a2020 !important; }
+
+/* Shadow */
+.dark .shadow-bo1 { box-shadow: 0 1px 4px rgba(0,0,0,0.3) !important; }
+.dark .shadow-bo2 { box-shadow: 0 2px 8px rgba(0,0,0,0.4) !important; }
+
+/* Inline hardcoded colors — global overrides */
+.dark [style*="color: #212121"],
+.dark [style*="color: #2D2D2D"],
+.dark [style*="color:#212121"],
+.dark [style*="color:#2D2D2D"] { color: #E0E0E0 !important; }
+
+.dark [style*="color: #4A4A4A"],
+.dark [style*="color:#4A4A4A"] { color: #BBBBBB !important; }
+
+.dark [style*="color: #6B6B6B"],
+.dark [style*="color:#6B6B6B"],
+.dark [style*="color: #666666"],
+.dark [style*="color:#666666"] { color: #999999 !important; }
+
+.dark [style*="color: #9B9B9B"],
+.dark [style*="color:#9B9B9B"],
+.dark [style*="color: #9E9E9E"],
+.dark [style*="color:#9E9E9E"],
+.dark [style*="color: #888888"],
+.dark [style*="color:#888888"] { color: #777777 !important; }
+
+.dark [style*="color: #8E8E93"],
+.dark [style*="color:#8E8E93"] { color: #777777 !important; }
+
+/* Inline background overrides */
+.dark [style*="background: white"],
+.dark [style*="background:white"],
+.dark [style*="background: #fff"],
+.dark [style*="background:#fff"],
+.dark [style*="background: #FFF"],
+.dark [style*="background:#FFF"],
+.dark [style*="background-color: white"] { background: #1E1E1E !important; }
+
+.dark [style*="background: #f5f5f5"],
+.dark [style*="background:#f5f5f5"],
+.dark [style*="background: #F5F5F5"],
+.dark [style*="background:#F8F8F8"],
+.dark [style*="background: #F8F8F8"],
+.dark [style*="background: #F9F9F9"] { background: #1a1a1a !important; }
+
+.dark [style*="background: #FDF6E3"],
+.dark [style*="background:#FDF6E3"] { background: #2a2510 !important; }
+
+.dark [style*="background: #E0E0E0"],
+.dark [style*="background:#E0E0E0"],
+.dark [style*="background: #D0D0D0"],
+.dark [style*="background:#D0D0D0"] { background: #333333 !important; }
+
+/* Inline gradients — broader override for light gradient backgrounds */
+.dark [style*="linear-gradient(160deg, #F0FDFA"],
+.dark [style*="linear-gradient(135deg, #E8FAF8"] {
+  background: linear-gradient(160deg, #1a2a28 0%, #221a22 100%) !important;
 }
+
+/* SVG stroke overrides */
+.dark [stroke="#BDBDBD"] { stroke: #555555 !important; }
+.dark [stroke="#9E9E9E"] { stroke: #666666 !important; }
+.dark [stroke="#E8F5EE"] { stroke: #1a3a2a !important; }
 
 /* YakuHanJPs — self-hosted (約物半角化フォント) */
 @font-face { font-family: YakuHanJPs; font-style: normal; font-weight: 100; font-display: swap; src: url("/fonts/YakuHanJPs/YakuHanJPs-Thin.woff2") format("woff2"); unicode-range: U+3008-3011,U+3014,U+3015,U+300C-300F,U+300A,U+300B,U+FF08,U+FF09,U+FF3B,U+FF3D,U+FF5B,U+FF5D; }
