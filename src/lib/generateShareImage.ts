@@ -84,11 +84,12 @@ export async function generateProductShareImage(product: Product): Promise<strin
 
   // ── レイアウト（論理px） ──
   const W = 720;
+  const TOP_PAD = 24;
   const IMG_H = 480;
   const NAME_AREA_H = 104;
   const TAG_AREA_H = activeIngs.length > 0 ? 112 : 0;
   const BOTTOM_PAD = 20;
-  const H = IMG_H + NAME_AREA_H + TAG_AREA_H + BOTTOM_PAD;
+  const H = TOP_PAD + IMG_H + NAME_AREA_H + TAG_AREA_H + BOTTOM_PAD;
 
   // ── Canvas: 2x 解像度 ──
   const DPR = 2;
@@ -104,9 +105,9 @@ export async function generateProductShareImage(product: Product): Promise<strin
 
   // ══ 製品画像 ══
   ctx.save();
-  // クリップ
+  // クリップ（TOP_PAD分下げる）
   ctx.beginPath();
-  ctx.rect(0, 0, W, IMG_H);
+  ctx.rect(0, TOP_PAD, W, IMG_H);
   ctx.clip();
 
   let photoLoaded = false;
@@ -121,15 +122,15 @@ export async function generateProductShareImage(product: Product): Promise<strin
         const scale = Math.max(W / img.naturalWidth, IMG_H / img.naturalHeight);
         const dw = img.naturalWidth * scale;
         const dh = img.naturalHeight * scale;
-        ctx.drawImage(img, (W - dw) / 2, (IMG_H - dh) / 2, dw, dh);
+        ctx.drawImage(img, (W - dw) / 2, TOP_PAD + (IMG_H - dh) / 2, dw, dh);
       } else {
         // 縦長画像: contain + 左右にソフトな背景
         ctx.fillStyle = "#F5F5F5";
-        ctx.fillRect(0, 0, W, IMG_H);
+        ctx.fillRect(0, TOP_PAD, W, IMG_H);
         const scale = Math.min(W / img.naturalWidth, IMG_H / img.naturalHeight);
         const dw = img.naturalWidth * scale;
         const dh = img.naturalHeight * scale;
-        ctx.drawImage(img, (W - dw) / 2, (IMG_H - dh) / 2, dw, dh);
+        ctx.drawImage(img, (W - dw) / 2, TOP_PAD + (IMG_H - dh) / 2, dw, dh);
       }
       photoLoaded = true;
     } catch { /* fallback */ }
@@ -137,17 +138,17 @@ export async function generateProductShareImage(product: Product): Promise<strin
 
   if (!photoLoaded) {
     // グラデーション背景
-    const g = ctx.createLinearGradient(0, 0, W, IMG_H);
+    const g = ctx.createLinearGradient(0, TOP_PAD, W, TOP_PAD + IMG_H);
     g.addColorStop(0, "#E8F5F0");
     g.addColorStop(1, "#D4F5EF");
     ctx.fillStyle = g;
-    ctx.fillRect(0, 0, W, IMG_H);
+    ctx.fillRect(0, TOP_PAD, W, IMG_H);
   }
 
   ctx.restore();
 
   // ── バッジ（左上: カテゴリ、右上: HADAMI）──
-  const BADGE_TOP = 20;
+  const BADGE_TOP = TOP_PAD + 20;
   const BADGE_FONT_SIZE = 22;
 
   // カテゴリ（絵文字なし、テキストのみ）
@@ -168,7 +169,7 @@ export async function generateProductShareImage(product: Product): Promise<strin
   }
 
   // ── 製品名・ブランド（画像エリアの下に表示）──
-  const NAME_TOP = IMG_H + 28;
+  const NAME_TOP = TOP_PAD + IMG_H + 28;
 
   // 製品名
   ctx.save();
@@ -196,7 +197,7 @@ export async function generateProductShareImage(product: Product): Promise<strin
 
   // ══ 下部：成分タグ ══
   if (activeIngs.length > 0) {
-    const SECTION_TOP = IMG_H + NAME_AREA_H + 16;
+    const SECTION_TOP = TOP_PAD + IMG_H + NAME_AREA_H + 16;
 
     // 「注目成分」ラベル
     ctx.save();
