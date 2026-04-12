@@ -706,7 +706,7 @@ async function searchProductEvidence(
   }
 }
 
-const IDENTIFY_MODEL = process.env.GEMINI_IDENTIFY_MODEL || "gemini-3.1-flash-lite-preview";
+const IDENTIFY_MODEL = process.env.GEMINI_IDENTIFY_MODEL || "gemini-2.5-flash";
 
 const IDENTIFY_PROMPT = [
   "Two images of the same cosmetic product package are shown.",
