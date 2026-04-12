@@ -58,9 +58,8 @@ export default function HistoryPage() {
   const [shareProduct, setShareProduct] = useState<Product | null>(null);
   const [shareImageBase64, setShareImageBase64] = useState<string | undefined>(undefined);
 
-  const DISPLAY_GENRES = ["toner", "serum", "emulsion", "cream", "sunscreen", "mask_pack"];
-
   const { favCount, filtered, activeGenres } = useMemo(() => {
+    const displayGenres = ["toner", "serum", "emulsion", "cream", "sunscreen", "mask_pack"];
     const favCount = products.filter((p) => p.isFavorite).length;
     const filtered = products
       .filter((p) => activeFilter === "all" || (p.productType || "other") === activeFilter)
@@ -71,9 +70,9 @@ export default function HistoryPage() {
       acc[g] = (acc[g] || 0) + 1;
       return acc;
     }, {});
-    const activeGenres = PRODUCT_GENRES.filter((g) => DISPLAY_GENRES.includes(g.key) && genreCountsMap[g.key]);
+    const activeGenres = PRODUCT_GENRES.filter((g) => displayGenres.includes(g.key) && genreCountsMap[g.key]);
     return { favCount, filtered, activeGenres };
-  }, [products, activeFilter, favOnly, DISPLAY_GENRES]);
+  }, [products, activeFilter, favOnly]);
 
   if (loading) return null;
 

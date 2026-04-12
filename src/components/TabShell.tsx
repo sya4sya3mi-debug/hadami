@@ -1,0 +1,88 @@
+"use client";
+
+import { usePathname } from "next/navigation";
+import { useState, useEffect, ReactNode, useCallback } from "react";
+
+// Lazy imports — each tab page is loaded only on first visit
+import dynamic from "next/dynamic";
+const HomePage = dynamic(() => import("@/app/page"), { ssr: false });
+const ZukanPage = dynamic(() => import("@/app/zukan/page"), { ssr: false });
+const ScanPage = dynamic(() => import("@/app/scan/page"), { ssr: false });
+const DeckPage = dynamic(() => import("@/app/deck/page"), { ssr: false });
+const HistoryPage = dynamic(() => import("@/app/history/page"), { ssr: false });
+
+interface TabDef {
+  path: string;
+  match: (pathname: string) => boolean;
+  Component: React.ComponentType;
+}
+
+const TABS: TabDef[] = [
+  { path: "/", match: (p) => p === "/", Component: HomePage },
+  { path: "/zukan", match: (p) => p.startsWith("/zukan"), Component: ZukanPage },
+  { path: "/scan", match: (p) => p.startsWith("/scan"), Component: ScanPage },
+  { path: "/deck", match: (p) => p.startsWith("/deck"), Component: DeckPage },
+  { path: "/history", match: (p) => p.startsWith("/history"), Component: HistoryPage },
+];
+
+function getActiveTab(pathname: string): string | null {
+  return TABS.find((t) => t.match(pathname))?.path ?? null;
+}
+
+/**
+ * Keep-Alive Tab Shell
+ *
+ * - First visit to a tab: mounts the component (normal load)
+ * - Subsequent visits: component is already mounted, just toggle CSS display (INSTANT)
+ * - Non-tab routes (product detail, settings, etc.): fall through to Next.js routing
+ */
+export default function TabShell({ children }: { children: ReactNode }) {
+  const pathname = usePathname();
+  const activeTab = getActiveTab(pathname);
+  const [mounted, setMounted] = useState<Set<string>>(new Set());
+
+  // Mount a tab on first visit
+  useEffect(() => {
+    if (activeTab && !mounted.has(activeTab)) {
+      setMounted((prev) => new Set(prev).add(activeTab));
+    }
+  }, [activeTab, mounted]);
+
+  // Listen for tab navigation events from TabBar
+  const handleTabNav = useCallback((e: Event) => {
+    const href = (e as CustomEvent<string>).detail;
+    const tab = TABS.find((t) => t.match(href));
+    if (tab && !mounted.has(tab.path)) {
+      setMounted((prev) => new Set(prev).add(tab.path));
+    }
+  }, [mounted]);
+
+  useEffect(() => {
+    window.addEventListener("hadami:tab-nav", handleTabNav);
+    return () => window.removeEventListener("hadami:tab-nav", handleTabNav);
+  }, [handleTabNav]);
+
+  // Non-tab route: use Next.js routing as-is
+  if (!activeTab) {
+    return <>{children}</>;
+  }
+
+  // Tab route: render all mounted tabs, hide inactive ones
+  return (
+    <>
+      {TABS.map((tab) => {
+        if (!mounted.has(tab.path)) return null;
+        const isActive = tab.path === activeTab;
+        return (
+          <div
+            key={tab.path}
+            className="animate-fade-in"
+            style={{ display: isActive ? "block" : "none" }}
+          >
+            <tab.Component />
+          </div>
+        );
+      })}
+    </>
+  );
+}

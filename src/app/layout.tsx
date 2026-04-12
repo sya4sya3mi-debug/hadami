@@ -3,6 +3,7 @@ import "./globals.css";
 import TabBar from "@/components/ui/TabBar";
 import PwaRegister from "@/components/PwaRegister";
 import IngredientPreloader from "@/components/IngredientPreloader";
+import TabShell from "@/components/TabShell";
 import { AuthProvider } from "@/lib/auth";
 
 
@@ -53,7 +54,7 @@ export default function RootLayout({
 
           <div id="app-container">
             <main className="pb-[calc(80px+env(safe-area-inset-bottom))]">
-              {children}
+              <TabShell>{children}</TabShell>
             </main>
             <TabBar />
           </div>

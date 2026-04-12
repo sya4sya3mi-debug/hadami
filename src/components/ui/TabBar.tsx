@@ -1,8 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { useUser } from "@/lib/auth";
 import { useZukanStore } from "@/stores/useZukanStore";
 
@@ -98,29 +96,16 @@ const TABS = [
 
 export default function TabBar() {
   const pathname = usePathname();
-  const router = useRouter();
   const { user, loading } = useUser();
   const unsavedScan = useZukanStore((s) => s.unsavedScan);
-
-  // Eagerly prefetch all tab routes on mount
-  useEffect(() => {
-    TABS.forEach((tab) => router.prefetch(tab.href));
-  }, [router]);
-
-  // Optimistic active tab — instantly update on tap, sync back when pathname changes
-  const [optimisticHref, setOptimisticHref] = useState<string | null>(null);
-  const optimisticTimer = useRef<ReturnType<typeof setTimeout>>();
-  useEffect(() => {
-    setOptimisticHref(null);
-  }, [pathname]);
-  useEffect(() => () => clearTimeout(optimisticTimer.current), []);
 
   if (!loading && !user) return null;
 
   const handleClick = (e: React.MouseEvent, href: string) => {
+    e.preventDefault();
+
     // Guard: unsaved scan confirmation
     if (unsavedScan && pathname.startsWith("/scan")) {
-      e.preventDefault();
       if (
         !window.confirm(
           "スキャン結果がまだ保存されていません。破棄しますか？"
@@ -128,21 +113,18 @@ export default function TabBar() {
       )
         return;
       useZukanStore.getState().setUnsavedScan(false);
-      // Re-navigate after confirm
-      window.location.href = href;
-      return;
     }
+
     // Skip if already on target page
     const onTarget = href === "/" ? pathname === "/" : pathname.startsWith(href);
     if (onTarget) {
-      e.preventDefault();
       window.scrollTo({ top: 0, behavior: "smooth" });
       return;
     }
-    // Optimistic: instantly show tapped tab as active
-    setOptimisticHref(href);
-    clearTimeout(optimisticTimer.current);
-    optimisticTimer.current = setTimeout(() => setOptimisticHref(null), 3000);
+
+    // Instant tab switch: push URL + notify TabShell
+    window.history.pushState({}, "", href);
+    window.dispatchEvent(new PopStateEvent("popstate"));
   };
 
   return (
@@ -154,13 +136,11 @@ export default function TabBar() {
     >
       <div className="flex h-[56px] items-end">
         {TABS.map((tab) => {
-          const effectiveHref = optimisticHref ?? pathname;
           const isActive =
-            tab.href === "/" ? effectiveHref === "/" : effectiveHref.startsWith(tab.href);
+            tab.href === "/" ? pathname === "/" : pathname.startsWith(tab.href);
 
-          // Center scan button — raised circle (PayPay style)
+          // Center scan button — raised circle
           if (tab.center) {
-            // On scan page: use <label> to natively open the file picker
             const scanContent = (
               <>
                 <div
@@ -202,30 +182,25 @@ export default function TabBar() {
             }
 
             return (
-              <Link
+              <button
                 key={tab.href}
-                href={tab.href}
-                prefetch={true}
                 onClick={(e) => handleClick(e, tab.href)}
                 aria-label={tab.ariaLabel}
-                aria-current={undefined}
-                className="flex-1 flex flex-col items-center justify-center bg-transparent border-none cursor-pointer p-0 no-underline"
+                className="flex-1 flex flex-col items-center justify-center bg-transparent border-none cursor-pointer p-0"
                 style={{ marginTop: "-18px" }}
               >
                 {scanContent}
-              </Link>
+              </button>
             );
           }
 
           return (
-            <Link
+            <button
               key={tab.href}
-              href={tab.href}
-              prefetch={true}
               onClick={(e) => handleClick(e, tab.href)}
               aria-label={tab.ariaLabel}
               aria-current={isActive ? "page" : undefined}
-              className="flex-1 flex flex-col items-center justify-center gap-[3px] bg-transparent border-none cursor-pointer p-0 h-full no-underline"
+              className="flex-1 flex flex-col items-center justify-center gap-[3px] bg-transparent border-none cursor-pointer p-0 h-full"
               style={{ color: isActive ? "#3A8F7A" : "#8E8E93" }}
             >
               {tab.icon(isActive)}
@@ -238,7 +213,7 @@ export default function TabBar() {
               >
                 {tab.label}
               </span>
-            </Link>
+            </button>
           );
         })}
       </div>
