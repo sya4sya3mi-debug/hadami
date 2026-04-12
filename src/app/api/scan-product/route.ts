@@ -706,9 +706,23 @@ async function searchProductEvidence(
   }
 }
 
-const IDENTIFY_MODEL = process.env.GEMINI_IDENTIFY_MODEL || "gemini-3.1-flash-lite";
+const IDENTIFY_MODEL = process.env.GEMINI_IDENTIFY_MODEL || "gemini-2.5-flash-lite";
 
 const IDENTIFY_PROMPT = [
+  "Two images of the same cosmetic product package are shown.",
+  "Image 1: color photo. Image 2: contrast-enhanced grayscale for text readability.",
+  "Read the text on the package and return:",
+  "",
+  "PRODUCT: product name",
+  "BRAND: brand name",
+  "LANG: ja|ko|en",
+  "TYPE: cleansing / face_wash / toner / serum / emulsion / cream / sunscreen / mask_pack / eye_care / oil / mist / other",
+  "",
+  "For multiple products use PRODUCT1/BRAND1/LANG1/TYPE1 format.",
+  "Always return at least one PRODUCT line.",
+].join("\n");
+
+const IDENTIFY_PROMPT_SINGLE = [
   "Identify the cosmetic product in this photo.",
   "Read the text on the package and return:",
   "",
@@ -733,20 +747,27 @@ const IMAGE_OCR_PROMPT = [
   '{"ingredients_text": "", "active_ingredients": [], "is_quasi_drug": false}',
 ].join("\n");
 
-async function identifyProductsWithRetry(base64Data: string): Promise<IdentifiedProduct[]> {
-  // Attempt 1
+function buildImageParts(colorBase64: string, enhancedBase64?: string) {
+  const parts: Array<{ inlineData: { mimeType: string; data: string } } | { text: string }> = [];
+  parts.push({ inlineData: { mimeType: "image/jpeg", data: colorBase64 } });
+  if (enhancedBase64) {
+    parts.push({ inlineData: { mimeType: "image/jpeg", data: enhancedBase64 } });
+    parts.push({ text: IDENTIFY_PROMPT });
+  } else {
+    parts.push({ text: IDENTIFY_PROMPT_SINGLE });
+  }
+  return parts;
+}
+
+async function identifyProductsWithRetry(
+  base64Data: string,
+  enhancedData?: string,
+): Promise<IdentifiedProduct[]> {
+  // Attempt 1: dual-image (color + enhanced) or single-image
   const firstResponse = await withTimeout(
     client.models.generateContent({
       model: IDENTIFY_MODEL,
-      contents: [
-        {
-          role: "user",
-          parts: [
-            { inlineData: { mimeType: "image/jpeg", data: base64Data } },
-            { text: IDENTIFY_PROMPT },
-          ],
-        },
-      ],
+      contents: [{ role: "user", parts: buildImageParts(base64Data, enhancedData) }],
       config: { maxOutputTokens: 1024 },
     }),
     15000,
@@ -759,7 +780,8 @@ async function identifyProductsWithRetry(base64Data: string): Promise<Identified
   const products = parseIdentifiedProducts(responseText);
   if (products.length > 0) return products;
 
-  // Attempt 2: retry with simpler prompt
+  // Attempt 2: retry with enhanced image only (better text contrast)
+  const retryImage = enhancedData || base64Data;
   const retryResponse = await withTimeout(
     client.models.generateContent({
       model: IDENTIFY_MODEL,
@@ -767,7 +789,7 @@ async function identifyProductsWithRetry(base64Data: string): Promise<Identified
         {
           role: "user",
           parts: [
-            { inlineData: { mimeType: "image/jpeg", data: base64Data } },
+            { inlineData: { mimeType: "image/jpeg", data: retryImage } },
             { text: "Read the text on this cosmetic package.\n\nPRODUCT: (name)\nBRAND: (brand)\nLANG: ja\nTYPE: other" },
           ],
         },
@@ -850,7 +872,7 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  let body: { imageBase64?: unknown };
+  let body: { imageBase64?: unknown; enhancedBase64?: unknown };
   try {
     body = await req.json();
   } catch {
@@ -859,6 +881,14 @@ export async function POST(req: NextRequest) {
 
   const validation = validateImagePayload(body);
   if (!validation.valid) return validation.response;
+
+  // Extract optional enhanced (grayscale+contrast) image
+  let enhancedData: string | undefined;
+  if (typeof body.enhancedBase64 === "string" && body.enhancedBase64) {
+    enhancedData = body.enhancedBase64.includes(",")
+      ? body.enhancedBase64.split(",")[1]
+      : body.enhancedBase64;
+  }
 
   const reserved = await tryReserveScan(auth.supabase, auth.user.id, auth.user.email!);
   if (!reserved) {
@@ -871,7 +901,7 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const identifiedProducts = await identifyProductsWithRetry(validation.base64Data);
+    const identifiedProducts = await identifyProductsWithRetry(validation.base64Data, enhancedData);
 
     // Even if all 3 identify attempts failed, try OCR from image to get at least product name/brand
     if (identifiedProducts.length === 0) {

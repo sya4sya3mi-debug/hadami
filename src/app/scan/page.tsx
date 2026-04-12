@@ -328,7 +328,10 @@ function ScanPageInner() {
         const res = await fetch("/api/scan-product", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ imageBase64: colorImage || imageData }),
+          body: JSON.stringify({
+            imageBase64: colorImage || imageData,
+            enhancedBase64: imageData,
+          }),
         });
 
         if (!res.ok) throw new Error("API error");
