@@ -77,20 +77,21 @@ interface CaptureStepProps {
   onCapture: (imageData: string, colorImage?: string) => void;
   preview?: string;
   disabled?: boolean;
+  openTrigger?: number;
 }
 
-export default function CaptureStep({ onCapture, preview, disabled }: CaptureStepProps) {
+export default function CaptureStep({ onCapture, preview, disabled, openTrigger }: CaptureStepProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [localPreview, setLocalPreview] = useState<string | null>(null);
+  const prevTriggerRef = useRef(openTrigger);
 
-  // Listen for TabBar "open camera" event
+  // Open camera when openTrigger increments
   useEffect(() => {
-    const handler = () => {
+    if (openTrigger !== undefined && openTrigger !== prevTriggerRef.current) {
+      prevTriggerRef.current = openTrigger;
       if (!disabled) fileInputRef.current?.click();
-    };
-    window.addEventListener("hadami:open-camera", handler);
-    return () => window.removeEventListener("hadami:open-camera", handler);
-  }, [disabled]);
+    }
+  }, [openTrigger, disabled]);
 
   const displayPreview = preview || localPreview;
 
