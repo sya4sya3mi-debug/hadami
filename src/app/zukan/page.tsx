@@ -616,7 +616,7 @@ export default function ZukanPage() {
 
   return (
     <AuthGuard>
-      <div className="min-h-screen bg-bo-cream pb-24">
+      <div className="min-h-screen bg-bo-cream pb-24 animate-fade-in">
         {/* ── Header — Apple Health style ── */}
         <div className="pt-5 px-5 pb-5 bg-gradient-to-b from-[#f0faeb] to-bo-cream">
           <div className="flex items-center gap-5">

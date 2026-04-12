@@ -276,7 +276,7 @@ export default function HomePage() {
   const routineProgress = routineSteps.length > 0 ? checkedCount / routineSteps.length : 0;
 
   return (
-    <div className="min-h-screen bg-bo-cream">
+    <div className="min-h-screen bg-bo-cream animate-fade-in">
       <div className="px-5 pt-5 pb-6 relative overflow-hidden">
 
           {/* Header */}

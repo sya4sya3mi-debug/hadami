@@ -174,7 +174,7 @@ export default function DeckPage() {
 
   return (
     <AuthGuard>
-      <div className="min-h-screen bg-bo-cream">
+      <div className="min-h-screen bg-bo-cream animate-fade-in">
         <div className="px-5 pt-4 pb-24">
           {/* Header */}
           <div className="flex items-center justify-between mb-5">

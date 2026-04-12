@@ -666,7 +666,7 @@ function ScanPageInner() {
 
   return (
     <AuthGuard>
-      <div className="min-h-screen bg-bo-cream">
+      <div className="min-h-screen bg-bo-cream animate-fade-in">
         {/* Sticky header — only show when step > 1 */}
         {step > 1 && (
           <div className="sticky top-0 z-50 flex items-center px-4 py-2.5

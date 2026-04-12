@@ -208,7 +208,7 @@ export default function HistoryPage() {
 
   return (
     <AuthGuard>
-      <div className="min-h-screen bg-bo-cream">
+      <div className="min-h-screen bg-bo-cream animate-fade-in">
         <div className="px-5 pt-4 pb-6">
           {/* Header */}
           <div className="mb-5">
