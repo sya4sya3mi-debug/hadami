@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, useSyncExternalStore, ReactNode } from "react";
+import { useState, useEffect, ReactNode } from "react";
+import { usePathname } from "next/navigation";
 
 // Lazy imports — each tab page is loaded only on first visit
 import dynamic from "next/dynamic";
@@ -28,18 +29,6 @@ function getActiveTab(pathname: string): string | null {
   return TABS.find((t) => t.match(pathname))?.path ?? null;
 }
 
-// Track pathname via popstate (works with history.pushState from TabBar)
-function subscribeToPathname(callback: () => void) {
-  window.addEventListener("popstate", callback);
-  return () => window.removeEventListener("popstate", callback);
-}
-function getPathnameSnapshot() {
-  return typeof window !== "undefined" ? window.location.pathname : "/";
-}
-function getServerSnapshot() {
-  return "/";
-}
-
 /**
  * Keep-Alive Tab Shell
  *
@@ -48,8 +37,24 @@ function getServerSnapshot() {
  * - Non-tab routes (product detail, settings, etc.): fall through to Next.js routing
  */
 export default function TabShell({ children }: { children: ReactNode }) {
-  const pathname = useSyncExternalStore(subscribeToPathname, getPathnameSnapshot, getServerSnapshot);
-  const activeTab = getActiveTab(pathname);
+  // usePathname: detects Next.js Link navigations (settings, product detail, etc.)
+  const nextPathname = usePathname();
+  // currentPath: also detects TabBar's history.pushState via popstate
+  const [currentPath, setCurrentPath] = useState(nextPathname);
+
+  // Sync from Next.js navigations (Link, router.push)
+  useEffect(() => {
+    setCurrentPath(nextPathname);
+  }, [nextPathname]);
+
+  // Sync from TabBar's history.pushState (fires popstate)
+  useEffect(() => {
+    const handler = () => setCurrentPath(window.location.pathname);
+    window.addEventListener("popstate", handler);
+    return () => window.removeEventListener("popstate", handler);
+  }, []);
+
+  const activeTab = getActiveTab(currentPath);
   const [mounted, setMounted] = useState<Set<string>>(new Set());
 
   // Mount a tab on first visit
