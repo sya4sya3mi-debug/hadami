@@ -195,29 +195,27 @@ export default function HomePage() {
     fetchScanCount();
   }, [fetchScanCount]);
 
-  if (loading) return null;
-  if (!user) return <LandingPage />;
-
-  const routineDeckItems = deckItems
-    .filter((i) => i.routine === autoRoutine)
-    .sort((a, b) => {
-      const pa = products.find((p) => p.id === a.productId);
-      const pb = products.find((p) => p.id === b.productId);
-      const orderA = getGenreByKey(pa?.productType ?? "other")?.order ?? 99;
-      const orderB = getGenreByKey(pb?.productType ?? "other")?.order ?? 99;
-      return orderA - orderB;
-    });
-  const routineDeckEntries = routineDeckItems.flatMap((deckItem) => {
-    const product = products.find((p) => p.id === deckItem.productId);
-    return product ? [{ deckItem, product }] : [];
-  });
-  const normalizedCheckedSteps = new Set(
-    Array.from(checkedSteps).filter((index) => index < routineDeckEntries.length)
+  const routineDeckItems = useMemo(() =>
+    deckItems
+      .filter((i) => i.routine === autoRoutine)
+      .sort((a, b) => {
+        const pa = products.find((p) => p.id === a.productId);
+        const pb = products.find((p) => p.id === b.productId);
+        const orderA = getGenreByKey(pa?.productType ?? "other")?.order ?? 99;
+        const orderB = getGenreByKey(pb?.productType ?? "other")?.order ?? 99;
+        return orderA - orderB;
+      }),
+    [deckItems, autoRoutine, products]
   );
-  const checkedCount = normalizedCheckedSteps.size;
-  const recentProducts = products.slice(0, 3);
 
-  // Memoize routine steps (skip recalc on checkbox toggle)
+  const routineDeckEntries = useMemo(() =>
+    routineDeckItems.flatMap((deckItem) => {
+      const product = products.find((p) => p.id === deckItem.productId);
+      return product ? [{ deckItem, product }] : [];
+    }),
+    [routineDeckItems, products]
+  );
+
   const routineSteps = useMemo(() => {
     return routineDeckEntries.map(({ product }): RoutineStep => {
       const cats = new Set<CategoryKey>();
@@ -236,6 +234,15 @@ export default function HomePage() {
       };
     });
   }, [routineDeckEntries]);
+
+  if (loading) return null;
+  if (!user) return <LandingPage />;
+
+  const normalizedCheckedSteps = new Set(
+    Array.from(checkedSteps).filter((index) => index < routineDeckEntries.length)
+  );
+  const checkedCount = normalizedCheckedSteps.size;
+  const recentProducts = products.slice(0, 3);
 
   const toggleStep = (i: number) => {
     const wasChecked = normalizedCheckedSteps.has(i);
