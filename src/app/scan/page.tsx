@@ -714,14 +714,44 @@ function ScanPageInner() {
             </div>
           )}
 
-          {/* Step 1: Capture */}
+          {/* Step 1: Capture — hidden file input + guide to bottom scan button */}
           {step === 1 && (
             <>
               <CaptureStep
                 onCapture={handlePackageCapture}
                 disabled={scanLimitReached}
+                hidden
               />
-              <div className="mt-5">
+              <div className="flex flex-col items-center pt-10 pb-6 animate-fade-in">
+                {/* Pulsing ring around camera icon */}
+                <div className="relative w-24 h-24 flex items-center justify-center mb-6">
+                  <div className="absolute inset-0 rounded-full bg-bo-accent/10 animate-[scan-ring_2s_ease-in-out_infinite]" />
+                  <div className="absolute inset-2 rounded-full bg-bo-accent/15 animate-[scan-ring_2s_ease-in-out_infinite_0.4s]" />
+                  <div className="absolute inset-4 rounded-full bg-bo-accent/10 animate-[scan-ring_2s_ease-in-out_infinite_0.8s]" />
+                  <div className="relative w-14 h-14 rounded-full bg-gradient-to-br from-bo-accent to-[#2D7A66] flex items-center justify-center shadow-lg">
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                      <path d="M12 15.2a3.2 3.2 0 100-6.4 3.2 3.2 0 000 6.4z" fill="white"/>
+                      <path d="M9 2L7.17 4H4a2 2 0 00-2 2v12a2 2 0 002 2h16a2 2 0 002-2V6a2 2 0 00-2-2h-3.17L15 2H9zm3 15a5 5 0 110-10 5 5 0 010 10z" fill="white"/>
+                    </svg>
+                  </div>
+                </div>
+
+                <h2 className="text-base font-bold text-bo-ink font-sans mb-2">
+                  パッケージを撮影してスキャン
+                </h2>
+                <p className="text-xs text-bo-ink-muted font-sans leading-relaxed text-center mb-6">
+                  下のスキャンボタンを押して<br/>化粧品のパッケージを撮影してください
+                </p>
+
+                {/* Bouncing arrow pointing to bottom tab */}
+                <div className="animate-bounce text-bo-accent">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                    <path d="M12 5v14M5 12l7 7 7-7"/>
+                  </svg>
+                </div>
+              </div>
+
+              <div className="mt-2">
                 <ScanDiscoveryAd />
               </div>
               <div className="mt-4">

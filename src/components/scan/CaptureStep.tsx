@@ -77,9 +77,10 @@ interface CaptureStepProps {
   onCapture: (imageData: string, colorImage?: string) => void;
   preview?: string;
   disabled?: boolean;
+  hidden?: boolean;
 }
 
-export default function CaptureStep({ onCapture, preview, disabled }: CaptureStepProps) {
+export default function CaptureStep({ onCapture, preview, disabled, hidden }: CaptureStepProps) {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [localPreview, setLocalPreview] = useState<string | null>(null);
 
@@ -107,6 +108,21 @@ export default function CaptureStep({ onCapture, preview, disabled }: CaptureSte
     fileInputRef.current?.click();
   }, []);
 
+  // hidden mode: only render the file input (for TabBar label to trigger)
+  if (hidden) {
+    return (
+      <input
+        id="hadami-camera-input"
+        ref={(el) => { fileInputRef.current = el; }}
+        type="file"
+        accept="image/*"
+        capture="environment"
+        onChange={handleFileChange}
+        className="sr-only"
+      />
+    );
+  }
+
   return (
     <div className="space-y-5 animate-fade-up">
       {/* Hero capture area */}
@@ -118,26 +134,17 @@ export default function CaptureStep({ onCapture, preview, disabled }: CaptureSte
             disabled ? "cursor-not-allowed opacity-50" : "cursor-pointer"
           }`}
         >
-          {/* Gradient top bar */}
           <div className="h-1 bg-gradient-to-r from-bo-accent via-[#7DD3C8] to-bo-accent" />
-
           <div className="flex flex-col items-center py-8 px-6">
-            {/* Camera icon container */}
             <div className="w-20 h-20 rounded-[24px] flex items-center justify-center text-4xl mb-5
                             bg-gradient-to-br from-bo-accent-soft to-[#D4F5EF]
                             shadow-[0_8px_24px_rgba(58,143,122,0.15)]">
               <span className="animate-pulse-ring">📸</span>
             </div>
-
-            <h2 className="text-base font-bold text-bo-ink font-sans mb-1.5">
-              パッケージを撮影
-            </h2>
+            <h2 className="text-base font-bold text-bo-ink font-sans mb-1.5">パッケージを撮影</h2>
             <p className="text-xs text-bo-ink-muted font-sans leading-relaxed text-center">
-              化粧品の表面パッケージを撮影してください<br />
-              ブランド名と製品名が見えるように
+              化粧品の表面パッケージを撮影してください<br />ブランド名と製品名が見えるように
             </p>
-
-            {/* CTA pill */}
             <div className="mt-6 px-8 py-3 rounded-full bg-bo-accent text-white text-sm font-bold font-sans
                             shadow-bo-accent inline-flex items-center gap-2">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
@@ -151,30 +158,17 @@ export default function CaptureStep({ onCapture, preview, disabled }: CaptureSte
       ) : (
         <div className="w-full rounded-r3 relative overflow-hidden shadow-bo2">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={displayPreview}
-            alt="撮影したコスメ"
-            className="w-full h-[200px] object-cover"
-          />
+          <img src={displayPreview} alt="撮影したコスメ" className="w-full h-[200px] object-cover" />
           <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
-
-          {/* Status badge */}
           <div className="absolute top-3 left-3 px-3.5 py-2 rounded-r1 text-xs font-bold text-white
-                          bg-bo-accent/90 backdrop-blur-lg shadow-bo-accent
-                          inline-flex items-center gap-1.5">
+                          bg-bo-accent/90 backdrop-blur-lg shadow-bo-accent inline-flex items-center gap-1.5">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round">
               <path d="M20 6L9 17l-5-5"/>
             </svg>
             撮影完了
           </div>
-
-          {/* Retake button */}
-          <button
-            onClick={handleRetake}
-            className="absolute bottom-3 right-3 px-4 py-2.5 rounded-r1 text-xs font-bold text-white
-                       bg-black/40 backdrop-blur-xl border border-white/20
-                       pressable"
-          >
+          <button onClick={handleRetake} className="absolute bottom-3 right-3 px-4 py-2.5 rounded-r1 text-xs font-bold text-white
+                       bg-black/40 backdrop-blur-xl border border-white/20 pressable">
             📷 撮り直す
           </button>
         </div>
@@ -182,7 +176,7 @@ export default function CaptureStep({ onCapture, preview, disabled }: CaptureSte
 
       <input
         id="hadami-camera-input"
-        ref={fileInputRef}
+        ref={(el) => { fileInputRef.current = el; }}
         type="file"
         accept="image/*"
         capture="environment"
