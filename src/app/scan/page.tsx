@@ -628,10 +628,7 @@ function ScanPageInner() {
     }
   }, [user, supabase, addProduct, productName, brand, productType, packageImage, packageImageColor, foundIngredients, unknownIngredients, userLimit, saved, setRecentlyFound, isQuasiDrug, resolvedActiveIngredients, resolveUploadedImage]);
 
-  const handleReset = useCallback(() => {
-    if (step >= 2 && !saved) {
-      if (!window.confirm("スキャン結果がまだ保存されていません。破棄しますか？")) return;
-    }
+  const doReset = useCallback(() => {
     setStep(1);
     setPackageImage("");
     setPackageImageColor("");
@@ -656,7 +653,35 @@ function ScanPageInner() {
     setShowFallback(false);
     setShowMultiSheet(false);
     setShowManualSheet(false);
-  }, [step, saved]);
+  }, []);
+
+  const handleReset = useCallback(() => {
+    if (step >= 2 && !saved) {
+      if (!window.confirm("スキャン結果がまだ保存されていません。破棄しますか？")) return;
+    }
+    doReset();
+  }, [step, saved, doReset]);
+
+  // TabBar scan button tap: reset if needed, then open camera
+  useEffect(() => {
+    const handler = () => {
+      if (step >= 2 && !saved) {
+        if (!window.confirm("スキャン結果がまだ保存されていません。破棄しますか？")) return;
+      }
+      if (step >= 2) {
+        doReset();
+        // Wait for step 1 to render, then open camera
+        setTimeout(() => {
+          window.dispatchEvent(new CustomEvent("hadami:open-camera"));
+        }, 100);
+      } else {
+        // Already on step 1 — just open camera
+        window.dispatchEvent(new CustomEvent("hadami:open-camera"));
+      }
+    };
+    window.addEventListener("hadami:scan-tap", handler);
+    return () => window.removeEventListener("hadami:scan-tap", handler);
+  }, [step, saved, doReset]);
 
   return (
     <AuthGuard>

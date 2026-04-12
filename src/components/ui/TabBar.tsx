@@ -130,7 +130,11 @@ export default function TabBar() {
     const onTarget = href === "/" ? pathname === "/" : pathname.startsWith(href);
     if (onTarget) {
       e.preventDefault();
-      window.scrollTo({ top: 0, behavior: "smooth" });
+      if (href === "/scan") {
+        window.dispatchEvent(new CustomEvent("hadami:scan-tap"));
+      } else {
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }
       return;
     }
     // Optimistic: instantly show tapped tab as active

@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, useCallback } from "react";
+import { useRef, useState, useCallback, useEffect } from "react";
 
 interface PreprocessResult {
   processed: string;
@@ -82,6 +82,15 @@ interface CaptureStepProps {
 export default function CaptureStep({ onCapture, preview, disabled }: CaptureStepProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [localPreview, setLocalPreview] = useState<string | null>(null);
+
+  // Listen for TabBar "open camera" event
+  useEffect(() => {
+    const handler = () => {
+      if (!disabled) fileInputRef.current?.click();
+    };
+    window.addEventListener("hadami:open-camera", handler);
+    return () => window.removeEventListener("hadami:open-camera", handler);
+  }, [disabled]);
 
   const displayPreview = preview || localPreview;
 
