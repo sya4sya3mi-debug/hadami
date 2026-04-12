@@ -187,7 +187,7 @@ export default function CaptureStep({ onCapture, preview, disabled }: CaptureSte
         accept="image/*"
         capture="environment"
         onChange={handleFileChange}
-        className="hidden"
+        className="sr-only"
       />
     </div>
   );
