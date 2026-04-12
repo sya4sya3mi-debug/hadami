@@ -201,10 +201,6 @@ function isReviewHost(host: string): boolean {
   return REVIEW_HOST_FRAGMENTS.some((fragment) => host.includes(fragment));
 }
 
-function isHttpUrl(url: string): boolean {
-  return /^https?:\/\//i.test(url);
-}
-
 /** Block private / loopback / link-local / metadata IPs to prevent SSRF. */
 function isSafePublicUrl(raw: string): boolean {
   let parsed: URL;
@@ -941,7 +937,7 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    let identifiedProducts = await identifyProductsWithRetry(validation.base64Data);
+    const identifiedProducts = await identifyProductsWithRetry(validation.base64Data);
 
     // Even if all 3 identify attempts failed, try OCR from image to get at least product name/brand
     if (identifiedProducts.length === 0) {
