@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, useCallback, useEffect } from "react";
+import { useRef, useState, useCallback } from "react";
 
 interface PreprocessResult {
   processed: string;
@@ -73,12 +73,6 @@ async function preprocessImage(dataUrl: string): Promise<PreprocessResult> {
   });
 }
 
-// Global ref so TabBar can directly trigger the file input within the user gesture
-let globalFileInputRef: HTMLInputElement | null = null;
-export function triggerCameraOpen() {
-  globalFileInputRef?.click();
-}
-
 interface CaptureStepProps {
   onCapture: (imageData: string, colorImage?: string) => void;
   preview?: string;
@@ -86,14 +80,8 @@ interface CaptureStepProps {
 }
 
 export default function CaptureStep({ onCapture, preview, disabled }: CaptureStepProps) {
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [localPreview, setLocalPreview] = useState<string | null>(null);
-
-  // Keep global ref in sync
-  useEffect(() => {
-    globalFileInputRef = fileInputRef.current;
-    return () => { globalFileInputRef = null; };
-  });
 
   const displayPreview = preview || localPreview;
 
@@ -193,7 +181,13 @@ export default function CaptureStep({ onCapture, preview, disabled }: CaptureSte
       )}
 
       <input
-        ref={fileInputRef}
+        ref={(el) => {
+          fileInputRef.current = el;
+          if (typeof window !== "undefined") {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            (window as any).__hadamiCameraInput = el;
+          }
+        }}
         type="file"
         accept="image/*"
         capture="environment"
