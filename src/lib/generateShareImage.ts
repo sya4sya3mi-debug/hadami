@@ -85,9 +85,10 @@ export async function generateProductShareImage(product: Product): Promise<strin
   // ── レイアウト（論理px） ──
   const W = 720;
   const IMG_H = 480;
-  const NAME_AREA_H = 88;
-  const TAG_AREA_H = activeIngs.length > 0 ? 100 : 0;
-  const H = IMG_H + NAME_AREA_H + TAG_AREA_H;   // 画像 + 名前ブランド帯 + タグ
+  const NAME_AREA_H = 104;
+  const TAG_AREA_H = activeIngs.length > 0 ? 112 : 0;
+  const BOTTOM_PAD = 20;
+  const H = IMG_H + NAME_AREA_H + TAG_AREA_H + BOTTOM_PAD;
 
   // ── Canvas: 2x 解像度 ──
   const DPR = 2;
@@ -112,13 +113,10 @@ export async function generateProductShareImage(product: Product): Promise<strin
   if (product.packageImage) {
     try {
       const img = await loadImage(product.packageImage);
-      // object-fit: contain — 商品全体が見えるように
-      const scale = Math.min(W / img.naturalWidth, IMG_H / img.naturalHeight);
+      // object-fit: cover — 隙間なく画像エリアを埋める
+      const scale = Math.max(W / img.naturalWidth, IMG_H / img.naturalHeight);
       const dw = img.naturalWidth * scale;
       const dh = img.naturalHeight * scale;
-      // 白背景の上に中央配置
-      ctx.fillStyle = "#F8F8F8";
-      ctx.fillRect(0, 0, W, IMG_H);
       ctx.drawImage(img, (W - dw) / 2, (IMG_H - dh) / 2, dw, dh);
       photoLoaded = true;
     } catch { /* fallback */ }
@@ -157,7 +155,7 @@ export async function generateProductShareImage(product: Product): Promise<strin
   }
 
   // ── 製品名・ブランド（画像エリアの下に表示）──
-  const NAME_TOP = IMG_H + 12;
+  const NAME_TOP = IMG_H + 28;
 
   // 製品名
   ctx.save();
@@ -180,12 +178,12 @@ export async function generateProductShareImage(product: Product): Promise<strin
   ctx.textBaseline = "top";
   ctx.textAlign = "left";
   ctx.fillStyle = "#888888";
-  ctx.fillText(product.brand, 24, NAME_TOP + 42);
+  ctx.fillText(product.brand, 24, NAME_TOP + 46);
   ctx.restore();
 
   // ══ 下部：成分タグ ══
   if (activeIngs.length > 0) {
-    const SECTION_TOP = IMG_H + NAME_AREA_H + 4;
+    const SECTION_TOP = IMG_H + NAME_AREA_H + 16;
 
     // 「注目成分」ラベル
     ctx.save();
