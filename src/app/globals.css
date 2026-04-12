@@ -223,10 +223,16 @@ html.scroll-locked body {
 }
 .animate-deck-editor-up { animation: deck-editor-up 0.3s ease-out; }
 
+/* Eliminate 300ms tap delay on all interactive elements */
+a, button, label, [role="button"], .pressable {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
 /* Apple-like press feedback */
 .pressable {
-  transition: transform 0.15s cubic-bezier(0.25, 0.1, 0.25, 1),
-              box-shadow 0.15s ease;
+  transition: transform 0.1s cubic-bezier(0.25, 0.1, 0.25, 1),
+              box-shadow 0.1s ease;
 }
 .pressable:active {
   transform: scale(0.97);
