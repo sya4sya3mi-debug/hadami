@@ -132,7 +132,7 @@ export default function TabBar() {
       role="navigation"
       aria-label="メインナビゲーション"
       style={{ maxWidth: "var(--app-shell-max-width)" }}
-      className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full bg-white/95 border-t border-gray-200/60 z-[200] pb-[env(safe-area-inset-bottom)]"
+      className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full bg-white/95 dark:bg-[#1a1a1a]/95 border-t border-gray-200/60 dark:border-[#333]/60 z-[200] pb-[env(safe-area-inset-bottom)]"
     >
       <div className="flex h-[56px] items-end">
         {TABS.map((tab) => {

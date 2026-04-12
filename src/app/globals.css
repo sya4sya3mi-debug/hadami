@@ -2,6 +2,30 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ── Dark mode overrides for Tailwind utility classes ── */
+@layer utilities {
+  /* Background overrides */
+  .dark .bg-bo-cream { background-color: #121212 !important; }
+  .dark .bg-white { background-color: #1E1E1E !important; }
+  .dark .bg-bo-parchment { background-color: #2A2A2A !important; }
+  .dark .bg-bo-accent-soft { background-color: #1a3a2a !important; }
+  .dark .bg-bo-cream\/90 { background-color: rgba(18,18,18,0.9) !important; }
+
+  /* Text overrides */
+  .dark .text-bo-ink { color: #E0E0E0 !important; }
+  .dark .text-bo-ink-soft { color: #AAAAAA !important; }
+  .dark .text-bo-ink-muted { color: #888888 !important; }
+  .dark .text-bo-ink-faint { color: #666666 !important; }
+
+  /* Border overrides */
+  .dark .border-bo-parchment { border-color: #333333 !important; }
+  .dark .border-bo-parchment\/40 { border-color: rgba(51,51,51,0.4) !important; }
+
+  /* Shadow overrides (softer in dark) */
+  .dark .shadow-bo1 { box-shadow: 0 1px 4px rgba(0,0,0,0.3) !important; }
+  .dark .shadow-bo2 { box-shadow: 0 2px 8px rgba(0,0,0,0.4) !important; }
+}
+
 /* YakuHanJPs — self-hosted (約物半角化フォント) */
 @font-face { font-family: YakuHanJPs; font-style: normal; font-weight: 100; font-display: swap; src: url("/fonts/YakuHanJPs/YakuHanJPs-Thin.woff2") format("woff2"); unicode-range: U+3008-3011,U+3014,U+3015,U+300C-300F,U+300A,U+300B,U+FF08,U+FF09,U+FF3B,U+FF3D,U+FF5B,U+FF5D; }
 @font-face { font-family: YakuHanJPs; font-style: normal; font-weight: 200; font-display: swap; src: url("/fonts/YakuHanJPs/YakuHanJPs-ExtraLight.woff2") format("woff2"); unicode-range: U+3008-3011,U+3014,U+3015,U+300C-300F,U+300A,U+300B,U+FF08,U+FF09,U+FF3B,U+FF3D,U+FF5B,U+FF5D; }
@@ -29,6 +53,22 @@
   --app-shell-max-width: 430px;
 }
 
+/* ── Dark theme ── */
+.dark {
+  --background: #121212;
+  --foreground: #E0E0E0;
+  --primary: #4CAF8A;
+  --primary-light: #1a3a2a;
+  --accent: #4CAF8A;
+  --accent-light: #1a3a2a;
+  --warning: #FFB74D;
+  --warning-light: #2a2010;
+  --info: #7DB8E8;
+  --sub: #888888;
+  --border: #333333;
+  --card: #1E1E1E;
+}
+
 /* Reset */
 *, *::before, *::after {
   box-sizing: border-box;
@@ -44,7 +84,7 @@ html, body {
   padding: 0;
   width: 100%;
   min-height: 100%;
-  background: #f5f6f6;
+  background: var(--background);
 }
 
 body {
@@ -63,7 +103,7 @@ body {
   min-height: 100vh;
   position: relative;
   overflow-x: hidden;
-  background: #f5f6f6;
+  background: var(--background);
 }
 
 @media (min-width: 768px) {

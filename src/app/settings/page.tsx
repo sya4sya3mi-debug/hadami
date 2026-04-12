@@ -7,6 +7,7 @@ import { useUser } from "@/lib/auth";
 
 import AuthGuard from "@/components/ui/AuthGuard";
 import { clearCachedUserData } from "@/lib/userData";
+import { getStoredTheme, setTheme, type Theme } from "@/lib/theme";
 import { getScanCountByEmail, getProductCount, getAccountScanLimit, getUserLimit } from "@/lib/db";
 
 
@@ -29,6 +30,12 @@ export default function SettingsPage() {
   const [deletingHistory, setDeletingHistory] = useState(false);
   const [scanCount, setScanCount] = useState<number | null>(null);
   const [productCount, setProductCount] = useState<number | null>(null);
+  const [currentTheme, setCurrentTheme] = useState<Theme>("light");
+
+  // Initialize theme state on mount
+  useEffect(() => {
+    setCurrentTheme(getStoredTheme());
+  }, []);
 
   const [xAvailable, setXAvailable] = useState(true);
 
@@ -339,6 +346,32 @@ export default function SettingsPage() {
           {/* Personalization */}
           <div className="bg-white rounded-r2 shadow-bo1 p-5 mb-3">
             <h2 className="text-[13px] font-bold text-bo-ink font-sans mb-3.5">パーソナライズ設定</h2>
+
+            {/* Dark mode toggle */}
+            <div className="flex items-center justify-between mb-4 pb-4 border-b border-bo-parchment/40">
+              <div>
+                <div className="text-[13px] font-semibold text-bo-ink font-sans">ダークモード</div>
+                <div className="text-[10px] text-bo-ink-muted font-sans mt-0.5">
+                  画面の配色をダークテーマに切り替え
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  const next: Theme = currentTheme === "dark" ? "light" : "dark";
+                  setTheme(next);
+                  setCurrentTheme(next);
+                }}
+                className={`w-[44px] h-[24px] rounded-full border-none cursor-pointer transition-colors duration-200 relative ${
+                  currentTheme === "dark" ? "bg-bo-accent" : "bg-bo-parchment"
+                }`}
+              >
+                <span
+                  className={`block w-5 h-5 rounded-full bg-white shadow-sm absolute top-[2px] transition-transform duration-200 ${
+                    currentTheme === "dark" ? "translate-x-[22px]" : "translate-x-[2px]"
+                  }`}
+                />
+              </button>
+            </div>
 
             <div className="flex items-center justify-between mb-3">
               <div>

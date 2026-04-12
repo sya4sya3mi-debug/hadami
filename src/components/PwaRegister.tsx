@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 
 // Increment this when you need to force all users to get fresh content
-const APP_VERSION = "10";
+const APP_VERSION = "11";
 
 export default function PwaRegister() {
   useEffect(() => {
