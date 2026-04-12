@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useUser } from "@/lib/auth";
 import { useZukanStore } from "@/stores/useZukanStore";
+import { triggerCameraOpen } from "@/components/scan/CaptureStep";
 
 // Tab definitions — scan is at index 2 (center)
 const TABS = [
@@ -131,7 +132,8 @@ export default function TabBar() {
     if (onTarget) {
       e.preventDefault();
       if (href === "/scan") {
-        window.dispatchEvent(new CustomEvent("hadami:scan-tap"));
+        // Directly click file input within user gesture — dispatching events breaks the gesture chain
+        triggerCameraOpen();
       } else {
         window.scrollTo({ top: 0, behavior: "smooth" });
       }

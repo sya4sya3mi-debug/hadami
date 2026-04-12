@@ -662,24 +662,7 @@ function ScanPageInner() {
     doReset();
   }, [step, saved, doReset]);
 
-  // Camera open trigger — increment to open camera on CaptureStep
-  const [cameraTrigger, setCameraTrigger] = useState(0);
-
-  // TabBar scan button tap: reset if needed, then open camera
-  useEffect(() => {
-    const handler = () => {
-      if (step >= 2 && !saved) {
-        if (!window.confirm("スキャン結果がまだ保存されていません。破棄しますか？")) return;
-      }
-      if (step >= 2) {
-        doReset();
-      }
-      // Trigger camera open (CaptureStep reacts to counter change)
-      setCameraTrigger((c) => c + 1);
-    };
-    window.addEventListener("hadami:scan-tap", handler);
-    return () => window.removeEventListener("hadami:scan-tap", handler);
-  }, [step, saved, doReset]);
+  // No event listener needed — TabBar directly calls triggerCameraOpen() via global ref
 
   return (
     <AuthGuard>
@@ -737,7 +720,6 @@ function ScanPageInner() {
               <CaptureStep
                 onCapture={handlePackageCapture}
                 disabled={scanLimitReached}
-                openTrigger={cameraTrigger}
               />
               <div className="mt-5">
                 <ScanDiscoveryAd />

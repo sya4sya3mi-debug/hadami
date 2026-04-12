@@ -73,25 +73,27 @@ async function preprocessImage(dataUrl: string): Promise<PreprocessResult> {
   });
 }
 
+// Global ref so TabBar can directly trigger the file input within the user gesture
+let globalFileInputRef: HTMLInputElement | null = null;
+export function triggerCameraOpen() {
+  globalFileInputRef?.click();
+}
+
 interface CaptureStepProps {
   onCapture: (imageData: string, colorImage?: string) => void;
   preview?: string;
   disabled?: boolean;
-  openTrigger?: number;
 }
 
-export default function CaptureStep({ onCapture, preview, disabled, openTrigger }: CaptureStepProps) {
+export default function CaptureStep({ onCapture, preview, disabled }: CaptureStepProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [localPreview, setLocalPreview] = useState<string | null>(null);
-  const prevTriggerRef = useRef(openTrigger);
 
-  // Open camera when openTrigger increments
+  // Keep global ref in sync
   useEffect(() => {
-    if (openTrigger !== undefined && openTrigger !== prevTriggerRef.current) {
-      prevTriggerRef.current = openTrigger;
-      if (!disabled) fileInputRef.current?.click();
-    }
-  }, [openTrigger, disabled]);
+    globalFileInputRef = fileInputRef.current;
+    return () => { globalFileInputRef = null; };
+  });
 
   const displayPreview = preview || localPreview;
 
