@@ -126,14 +126,14 @@ export default function DiscoveryModal({ ingredients, onClose }: DiscoveryModalP
 
         <button
           onClick={onClose}
-          className="w-full mt-5 py-3 text-white rounded-2xl font-bold"
+          className="w-full mt-5 py-3.5 text-white rounded-2xl font-bold text-sm border-none cursor-pointer pressable font-sans"
           style={{
             background: hasLegendary
               ? "linear-gradient(135deg, #F59E0B, #FBBF24)"
-              : "linear-gradient(135deg, #3A8F7A, #F9A8C0)",
+              : "#3A8F7A",
           }}
         >
-          {hasLegendary ? "すごい！💎" : "やったー！🌸"}
+          {hasLegendary ? "コレクションに追加" : "OK"}
         </button>
       </div>
     </div>

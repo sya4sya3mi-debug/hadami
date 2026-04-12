@@ -8,9 +8,11 @@ import IdentifyStep from "@/components/scan/IdentifyStep";
 import ClassifyStep from "@/components/scan/ClassifyStep";
 import ScanResult from "@/components/scan/ScanResult";
 import ScanDiscoveryAd from "@/components/recommendations/ScanDiscoveryAd";
-import ManualInputSheet from "@/components/scan/ManualInputSheet";
-import DiscoveryModal from "@/components/ui/DiscoveryModal";
+import dynamic from "next/dynamic";
+const ManualInputSheet = dynamic(() => import("@/components/scan/ManualInputSheet"), { ssr: false });
+const DiscoveryModal = dynamic(() => import("@/components/ui/DiscoveryModal"), { ssr: false });
 import AuthGuard from "@/components/ui/AuthGuard";
+import Disclaimer from "@/components/ui/Disclaimer";
 import { extractIngredients } from "@/lib/ocr";
 import { findCombinations } from "@/lib/combinations";
 import { getIngredientById, getIngredientByInci, getIngredientByName } from "@/lib/ingredients";
@@ -28,6 +30,11 @@ import {
   getScanCountByEmail,
   getProductCount,
 } from "@/lib/db";
+import { getSignedImageUrls } from "@/lib/storage";
+import {
+  getProductImagePath,
+  getProductImageThumbPath,
+} from "@/lib/productImages";
 import { Ingredient, Combination, ProductGenre } from "@/types";
 import { normalizeGenreFromScan } from "@/lib/productGenres";
 
@@ -160,6 +167,36 @@ function ScanPageInner() {
     );
   }, []);
 
+  const resolveUploadedImage = useCallback(
+    async (productId: string, fallbackUrl: string | null) => {
+      if (!user || !fallbackUrl) {
+        return {
+          packageImage: fallbackUrl ?? undefined,
+          packageImagePath: undefined,
+          packageImageThumb: fallbackUrl ?? undefined,
+          packageImageThumbPath: undefined,
+        };
+      }
+
+      const packageImagePath = getProductImagePath(user.id, productId);
+      const packageImageThumbPath = getProductImageThumbPath(user.id, productId);
+      const signedImages = await getSignedImageUrls(supabase, [
+        packageImagePath,
+        packageImageThumbPath,
+      ]);
+      const signedImageUrl = signedImages[packageImagePath];
+      const signedThumbUrl = signedImages[packageImageThumbPath];
+
+      return {
+        packageImage: signedImageUrl ?? fallbackUrl,
+        packageImagePath,
+        packageImageThumb: signedThumbUrl ?? signedImageUrl ?? fallbackUrl,
+        packageImageThumbPath,
+      };
+    },
+    [supabase, user]
+  );
+
   const buildScanEvidenceKey = useCallback(
     (name: string, brandName: string) =>
       `${brandName.trim().toLowerCase()}::${name.trim().toLowerCase()}`,
@@ -291,7 +328,7 @@ function ScanPageInner() {
         const res = await fetch("/api/scan-product", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ imageBase64: imageData }),
+          body: JSON.stringify({ imageBase64: colorImage || imageData }),
         });
 
         if (!res.ok) throw new Error("API error");
@@ -474,6 +511,11 @@ function ScanPageInner() {
 
       if (result.error) return;
 
+      const savedImage = await resolveUploadedImage(
+        result.productId!,
+        result.imageUrl
+      );
+
       discover(foundIngs.map((f) => f.ingredient.id));
       await saveDiscoveriesToDb(supabase, user.id, foundIngs.map((f) => f.ingredient.id));
 
@@ -491,7 +533,10 @@ function ScanPageInner() {
         name: product.productName,
         brand: product.brand,
         productType: normalizeGenreFromScan(product.productType || ""),
-        packageImage: result.imageUrl ?? undefined,
+        packageImagePath: savedImage.packageImagePath,
+        packageImage: savedImage.packageImage,
+        packageImageThumbPath: savedImage.packageImageThumbPath,
+        packageImageThumb: savedImage.packageImageThumb,
         isFavorite: false,
         createdAt: new Date().toISOString(),
         ingredients: foundIngs.map((f) => ({ ingredientId: f.ingredient.id, orderIndex: f.orderIndex })),
@@ -501,7 +546,7 @@ function ScanPageInner() {
 
       setMultiSavedIndexes((prev) => new Set(prev).add(index));
     },
-    [user, supabase, addProduct, discover, packageImage, packageImageColor, multiSavedIndexes, resolveActiveIngredientIds]
+    [user, supabase, addProduct, discover, packageImage, packageImageColor, multiSavedIndexes, resolveActiveIngredientIds, resolveUploadedImage]
   );
 
   // Step 3 → Step 4
@@ -515,57 +560,71 @@ function ScanPageInner() {
     isSavingRef.current = true;
     setSaveError("");
 
-    const result = await saveProductToDb(supabase, user.id, {
-      name: productName,
-      brand,
-      productType,
-      ingredientIds: foundIngredients.map((f) => f.ingredient.id),
-      unknownIngredients,
-      packageImageBase64: packageImageColor || packageImage || undefined,
-      isQuasiDrug,
-      activeIngredientIds: resolvedActiveIngredients.map((ingredient) => ingredient.ingredientId),
-    });
+    try {
+      const result = await saveProductToDb(supabase, user.id, {
+        name: productName,
+        brand,
+        productType,
+        ingredientIds: foundIngredients.map((f) => f.ingredient.id),
+        unknownIngredients,
+        packageImageBase64: packageImageColor || packageImage || undefined,
+        isQuasiDrug,
+        activeIngredientIds: resolvedActiveIngredients.map((ingredient) => ingredient.ingredientId),
+      });
 
-    if (result.error === "limit_reached") {
-      isSavingRef.current = false;
-      setSaveError(`保存上限（${userLimit}件）に達しています。古いコスメを削除してください。`);
-      fetch("/api/rollback-scan", { method: "POST" }).catch(() => {});
-      return;
-    }
-    if (result.error) {
+      if (result.error === "limit_reached") {
+        isSavingRef.current = false;
+        setSaveError(`保存上限（${userLimit}件）に達しています。古いコスメを削除してください。`);
+        fetch("/api/rollback-scan", { method: "POST" }).catch(() => {});
+        return;
+      }
+      if (result.error) {
+        isSavingRef.current = false;
+        setSaveError("保存に失敗しました。もう一度お試しください。");
+        fetch("/api/rollback-scan", { method: "POST" }).catch(() => {});
+        return;
+      }
+
+      const savedImage = await resolveUploadedImage(
+        result.productId!,
+        result.imageUrl
+      );
+
+      await saveDiscoveriesToDb(supabase, user.id, foundIngredients.map((f) => f.ingredient.id));
+
+      // スキャン履歴保存（レコメンド用）
+      saveScanHistory(
+        supabase,
+        user.id,
+        productName,
+        brand,
+        foundIngredients.map((f) => f.ingredient.id)
+      ).catch((e) => console.error("scan history save error:", e));
+
+      addProduct({
+        id: result.productId!,
+        name: productName,
+        brand,
+        productType,
+        packageImagePath: savedImage.packageImagePath,
+        packageImage: savedImage.packageImage,
+        packageImageThumbPath: savedImage.packageImageThumbPath,
+        packageImageThumb: savedImage.packageImageThumb,
+        isFavorite: false,
+        createdAt: new Date().toISOString(),
+        ingredients: foundIngredients.map((f) => ({ ingredientId: f.ingredient.id, orderIndex: f.orderIndex })),
+        isQuasiDrug,
+        activeIngredientIds: resolvedActiveIngredients.map((ingredient) => ingredient.ingredientId),
+      });
+
+      setSaved(true);
+      setRecentlyFound(foundIngredients.map((f) => f.ingredient.id));
+    } catch (e) {
+      console.error("Save error:", e);
       isSavingRef.current = false;
       setSaveError("保存に失敗しました。もう一度お試しください。");
-      fetch("/api/rollback-scan", { method: "POST" }).catch(() => {});
-      return;
     }
-
-    await saveDiscoveriesToDb(supabase, user.id, foundIngredients.map((f) => f.ingredient.id));
-
-    // スキャン履歴保存（レコメンド用）
-    saveScanHistory(
-      supabase,
-      user.id,
-      productName,
-      brand,
-      foundIngredients.map((f) => f.ingredient.id)
-    ).catch((e) => console.error("scan history save error:", e));
-
-    addProduct({
-      id: result.productId!,
-      name: productName,
-      brand,
-      productType,
-      packageImage: result.imageUrl ?? undefined,
-      isFavorite: false,
-      createdAt: new Date().toISOString(),
-      ingredients: foundIngredients.map((f) => ({ ingredientId: f.ingredient.id, orderIndex: f.orderIndex })),
-      isQuasiDrug,
-      activeIngredientIds: resolvedActiveIngredients.map((ingredient) => ingredient.ingredientId),
-    });
-
-    setSaved(true);
-    setRecentlyFound(foundIngredients.map((f) => f.ingredient.id));
-  }, [user, supabase, addProduct, productName, brand, productType, packageImage, packageImageColor, foundIngredients, unknownIngredients, userLimit, saved, setRecentlyFound, isQuasiDrug, resolvedActiveIngredients]);
+  }, [user, supabase, addProduct, productName, brand, productType, packageImage, packageImageColor, foundIngredients, unknownIngredients, userLimit, saved, setRecentlyFound, isQuasiDrug, resolvedActiveIngredients, resolveUploadedImage]);
 
   const handleReset = useCallback(() => {
     if (step >= 2 && !saved) {
@@ -600,39 +659,48 @@ function ScanPageInner() {
   return (
     <AuthGuard>
       <div className="min-h-screen bg-bo-cream">
-        <div className="px-5 pt-4 pb-6">
-          {/* Header */}
-          {step > 1 && (
-            <div className="flex items-center justify-between mb-5">
-              <button
-                onClick={handleReset}
-                className="px-3 py-1.5 rounded-full text-xs font-medium bg-bo-accent-soft text-bo-accent"
-              >
-                最初から
-              </button>
-            </div>
-          )}
+        {/* Sticky header — only show when step > 1 */}
+        {step > 1 && (
+          <div className="sticky top-0 z-50 flex items-center px-4 py-2.5
+                          bg-bo-cream/90 backdrop-blur-xl border-b border-bo-parchment/40">
+            <button
+              onClick={handleReset}
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-r1 bg-white text-sm font-semibold text-bo-ink-muted
+                         cursor-pointer font-sans pressable border-none shadow-bo1"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" aria-hidden="true">
+                <path d="M15 18l-6-6 6-6" />
+              </svg>
+              最初から
+            </button>
+          </div>
+        )}
 
+        <div className="px-5 pt-4 pb-6">
           {/* Step indicator */}
           <StepIndicator currentStep={step} />
 
           {/* Scan limit warning */}
           {scanLimitReached && step === 1 && (
-            <div className="rounded-r2 p-4 mb-4 text-center bg-red-50 border border-red-200">
-              <div className="text-2xl mb-2">🚫</div>
-              <div className="font-bold text-sm mb-1 text-red-400">
+            <div className="rounded-r2 p-5 mb-5 text-center bg-white shadow-bo2">
+              <div className="w-14 h-14 rounded-[18px] mx-auto mb-3 flex items-center justify-center
+                              bg-red-50">
+                <span className="text-2xl">🚫</span>
+              </div>
+              <div className="font-bold text-sm mb-1 text-bo-ink font-sans">
                 無料スキャン上限（{monthlyScanLimit}回）に達しました
               </div>
-              <div className="text-xs text-bo-ink-muted mb-3">
+              <div className="text-xs text-bo-ink-muted mb-4 font-sans">
                 ベータ版では1アカウントにつき{monthlyScanLimit}回まで無料です
               </div>
               <button
                 onClick={() => setShowManualSheet(true)}
-                className="px-5 py-2.5 rounded-full text-sm font-bold text-white bg-bo-accent shadow-bo-accent"
+                className="px-6 py-3 rounded-r2 text-sm font-bold text-white bg-bo-accent shadow-bo-accent
+                           border-none cursor-pointer pressable font-sans"
               >
                 成分を手動入力する
               </button>
-              <div className="text-[10px] text-bo-ink-faint mt-2">
+              <div className="text-[10px] text-bo-ink-faint mt-2.5 font-sans">
                 手動入力はスキャン回数にカウントされません
               </div>
             </div>
@@ -641,13 +709,16 @@ function ScanPageInner() {
           {/* Step 1: Capture */}
           {step === 1 && (
             <>
-              <div className="mb-5">
-                <ScanDiscoveryAd />
-              </div>
               <CaptureStep
                 onCapture={handlePackageCapture}
                 disabled={scanLimitReached}
               />
+              <div className="mt-5">
+                <ScanDiscoveryAd />
+              </div>
+              <div className="mt-4">
+                <Disclaimer />
+              </div>
             </>
           )}
 
@@ -686,8 +757,9 @@ function ScanPageInner() {
           {step === 4 && (
             <>
               {saveError && (
-                <div className="bg-red-50 border border-red-200 rounded-r1 py-3 px-4 mb-3 text-[13px] text-red-400">
-                  {saveError}
+                <div className="flex items-start gap-3 bg-white rounded-r2 py-3.5 px-4 mb-4 shadow-bo1 border border-red-100">
+                  <span className="text-base shrink-0">⚠️</span>
+                  <span className="text-sm text-red-500 font-sans">{saveError}</span>
                 </div>
               )}
               <ScanResult
@@ -698,6 +770,7 @@ function ScanPageInner() {
                 unknownIngredients={unknownIngredients}
                 combinations={combinations}
                 onSave={handleSave}
+                onScanAnother={handleReset}
                 saved={saved}
                 imagePreview={packageImageColor || packageImage}
                 newDiscoveryIds={new Set(newDiscoveries.map((i) => i.id))}

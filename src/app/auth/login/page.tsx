@@ -98,7 +98,7 @@ function LoginPageInner() {
           HADAMI
         </h1>
         <p className="text-[13px] text-bo-ink-muted mt-1">
-          成分図鑑・マイスキンケアデッキ
+          成分図鑑・スキンケアルーティン
         </p>
       </div>
 

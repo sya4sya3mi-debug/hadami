@@ -9,7 +9,7 @@ import Badge from "@/components/ui/Badge";
 import Disclaimer from "@/components/ui/Disclaimer";
 import TargetedRakutenSection from "@/components/recommendations/TargetedRakutenSection";
 import { useUser } from "@/lib/auth";
-import PageLoading from "@/components/ui/PageLoading";
+
 import { ActiveCategoryIcon } from "@/components/ui/CosmeticIcons";
 
 export default function IngredientDetailPage() {
@@ -19,9 +19,7 @@ export default function IngredientDetailPage() {
   const products = useProductStore((s) => s.products);
   const discoveredIds = useZukanStore((s) => s.discoveredIds);
 
-  if (loading) {
-    return <PageLoading message="成分情報を読み込んでいます..." />;
-  }
+  if (loading) return null;
   const isDiscovered = discoveredIds.includes(name);
 
   if (!ingredient) {

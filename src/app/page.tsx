@@ -7,23 +7,25 @@ import { useRouter } from "next/navigation";
 import { useProductStore } from "@/stores/useProductStore";
 import { useZukanStore } from "@/stores/useZukanStore";
 import { useDeckStore } from "@/stores/useDeckStore";
-import { getIngredientById, getIngredientCategoryInfo } from "@/lib/ingredients";
+import { getIngredientById } from "@/lib/ingredients";
 import { getGenreByKey } from "@/lib/productGenres";
 import { getScanCountByEmail, updateLastUsedAtInDb } from "@/lib/db";
 import Disclaimer from "@/components/ui/Disclaimer";
 import InstallBanner from "@/components/ui/InstallBanner";
 import { useUser } from "@/lib/auth";
-import PageLoading from "@/components/ui/PageLoading";
+
 import LandingPage from "@/components/ui/LandingPage";
-import { ProductGenreIcon } from "@/components/ui/CosmeticIcons";
+import { ProductGenreIcon, ActiveCategoryIcon } from "@/components/ui/CosmeticIcons";
 import { BookIcon, PackageIcon, ScanIcon, CameraIcon, LeafIcon, LightbulbIcon, SunIcon, MoonIcon } from "@/components/ui/Icons";
+import { ACTIVE_CATEGORIES } from "@/lib/ingredients";
+import { CategoryKey } from "@/types";
 
 interface RoutineStep {
   name: string;
   brand: string;
   type: string;
   image?: string;
-  ingredients: { name: string; icon: string; cat: string }[];
+  categories: CategoryKey[];
 }
 
 
@@ -90,12 +92,13 @@ const RoutineStepButton = memo(function RoutineStepButton({
     <button
       onClick={() => onToggle(index)}
       aria-label={step.name + (done ? "（完了）" : "")}
-      className={`w-full flex items-center gap-3 py-3 px-3.5 rounded-r2 cursor-pointer text-left relative overflow-hidden
+      className={`w-full flex items-center gap-2.5 py-2 px-3 rounded-r2 cursor-pointer text-left relative overflow-hidden
                   transition-all duration-200 border-none pressable ${
         done
-          ? "bg-bo-accent-soft/60 shadow-bo1 scale-[0.98]"
+          ? "bg-bo-accent-soft/40 shadow-none scale-[0.985]"
           : "bg-white shadow-bo1 scale-100"
       }`}
+      style={done ? { borderLeft: "3px solid #3A8F7A" } : { borderLeft: "3px solid transparent" }}
     >
       {/* Checkbox */}
       <div
@@ -114,38 +117,48 @@ const RoutineStepButton = memo(function RoutineStepButton({
 
       {/* Product image or genre icon */}
       {step.image ? (
-        <div className="w-10 h-10 rounded-[10px] overflow-hidden shrink-0 shadow-bo1 relative">
-          <Image src={step.image} alt={step.name} fill className="object-cover" sizes="40px" loading="lazy" />
+        <div className="w-8 h-8 rounded-[8px] overflow-hidden shrink-0 shadow-bo1 relative">
+          <Image src={step.image} alt={step.name} fill className="object-cover" sizes="32px" loading="lazy" />
         </div>
       ) : genre ? (
         <div
-          className="w-10 h-10 rounded-[10px] flex items-center justify-center shrink-0"
+          className="w-8 h-8 rounded-[8px] flex items-center justify-center shrink-0"
           style={{ background: `${genre.color}15` }}
         >
-          <ProductGenreIcon genre={genre.key} size={18} />
+          <ProductGenreIcon genre={genre.key} size={15} />
         </div>
       ) : null}
 
       {/* Content */}
       <div className="flex-1 min-w-0">
-        <div className={`text-sm font-sans overflow-hidden text-ellipsis whitespace-nowrap ${
-          done ? "font-semibold text-bo-ink-muted line-through" : "font-bold text-bo-ink"
+        <div className={`text-sm font-sans overflow-hidden text-ellipsis whitespace-nowrap transition-colors duration-200 ${
+          done ? "font-semibold text-bo-ink-muted" : "font-bold text-bo-ink"
         }`}>
           {step.name}
         </div>
-        <div className="text-[10px] text-bo-ink-muted font-sans mt-0.5">
-          {step.brand} · {genre?.label || step.type}
+        <div className={`text-[10px] font-sans mt-0.5 transition-colors duration-200 ${done ? "text-bo-accent font-semibold" : "text-bo-ink-muted"}`}>
+          {done ? "✓ 完了" : `${step.brand} · ${genre?.label || step.type}`}
         </div>
       </div>
 
-      {/* Ingredient dots */}
-      <div className="flex gap-0.5 shrink-0">
-        {step.ingredients.map((ing, j) => (
-          <span key={j} className={`text-[11px] transition-opacity duration-300 ${done ? "opacity-30" : "opacity-70"}`}>
-            {ing.icon}
-          </span>
-        ))}
-      </div>
+      {/* Category icons */}
+      {step.categories.length > 0 && (
+        <div className={`flex gap-1 shrink-0 transition-opacity duration-300 ${done ? "opacity-30" : "opacity-100"}`}>
+          {step.categories.slice(0, 3).map((catKey) => {
+            const info = ACTIVE_CATEGORIES.find((c) => c.key === catKey);
+            return info ? (
+              <span
+                key={catKey}
+                className="w-5 h-5 rounded-full inline-flex items-center justify-center"
+                style={{ background: info.color + "20", color: info.color }}
+                title={info.label}
+              >
+                <ActiveCategoryIcon category={info.key} size={11} />
+              </span>
+            ) : null;
+          })}
+        </div>
+      )}
     </button>
   );
 });
@@ -182,7 +195,7 @@ export default function HomePage() {
     fetchScanCount();
   }, [fetchScanCount]);
 
-  if (loading) return <PageLoading />;
+  if (loading) return null;
   if (!user) return <LandingPage />;
 
   const routineDeckItems = deckItems
@@ -205,21 +218,22 @@ export default function HomePage() {
   const recentProducts = products.slice(0, 3);
 
   // Build steps from deck items + products
-  const routineSteps: RoutineStep[] = routineDeckEntries.map(({ product }) => ({
+  const routineSteps: RoutineStep[] = routineDeckEntries.map(({ product }) => {
+    const cats = new Set<CategoryKey>();
+    product.ingredients.forEach((pi) => {
+      const ing = getIngredientById(pi.ingredientId);
+      if (ing?.activeIngredient) {
+        ing.categories.forEach((cat) => cats.add(cat));
+      }
+    });
+    return {
       name: product.name,
       brand: product.brand,
       type: product.productType,
       image: product.packageImageThumb ?? product.packageImage,
-      ingredients: product.ingredients.slice(0, 3).map((pi) => {
-        const ing = getIngredientById(pi.ingredientId);
-        const genreInfo = ing ? getIngredientCategoryInfo(ing) : null;
-        return {
-          name: ing?.nameJa || pi.ingredientId || "",
-          icon: genreInfo?.icon || "🧪",
-          cat: genreInfo?.label || "",
-        };
-      }),
-  }));
+      categories: Array.from(cats),
+    };
+  });
 
   const toggleStep = (i: number) => {
     const wasChecked = normalizedCheckedSteps.has(i);
@@ -278,9 +292,9 @@ export default function HomePage() {
 
         {/* Routine Checklist — auto morning/night */}
         {routineSteps.length > 0 && (
-          <div className="mb-6">
+          <div className="mb-5">
             {/* Routine header with ring progress */}
-            <div className="flex justify-between items-center mb-4">
+            <div className="flex justify-between items-center mb-2.5">
               <div className="flex items-center gap-2.5">
                 <RoutineIcon size={20} color="#3A8F7A" />
                 <div>
@@ -291,14 +305,14 @@ export default function HomePage() {
                 </div>
               </div>
               {/* Mini ring progress */}
-              <div className="relative w-11 h-11">
-                <svg viewBox="0 0 44 44" className="w-full h-full -rotate-90">
-                  <circle cx="22" cy="22" r="18" fill="none" stroke="#E8F5EE" strokeWidth="4" />
+              <div className="relative w-9 h-9">
+                <svg viewBox="0 0 36 36" className="w-full h-full -rotate-90">
+                  <circle cx="18" cy="18" r="15" fill="none" stroke="#E8F5EE" strokeWidth="3.5" />
                   <circle
-                    cx="22" cy="22" r="18" fill="none"
+                    cx="18" cy="18" r="15" fill="none"
                     stroke={allComplete ? "#3A8F7A" : "#3A8F7A"}
-                    strokeWidth="4" strokeLinecap="round"
-                    strokeDasharray={`${routineProgress * 113.1} 999`}
+                    strokeWidth="3.5" strokeLinecap="round"
+                    strokeDasharray={`${routineProgress * 94.2} 999`}
                     className="transition-all duration-700 ease-out"
                   />
                 </svg>
@@ -311,7 +325,7 @@ export default function HomePage() {
             </div>
 
             {/* Step list */}
-            <div className="flex flex-col gap-2">
+            <div className="flex flex-col gap-1.5">
               {routineSteps.map((step, i) => (
                 <RoutineStepButton
                   key={i}

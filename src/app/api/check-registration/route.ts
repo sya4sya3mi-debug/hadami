@@ -1,30 +1,18 @@
-import { createServerClient } from "@supabase/ssr";
-import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
+import { BETA_USER_LIMIT } from "@/lib/limits";
+import { getRegistrationAvailability } from "@/lib/registration";
 
-const BETA_USER_LIMIT = 15;
+export const dynamic = "force-dynamic";
 
 export async function GET() {
-  const cookieStore = await cookies();
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() { return cookieStore.getAll(); },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) =>
-            cookieStore.set(name, value, options)
-          );
-        },
-      },
-    }
-  );
-
-  const { count } = await supabase
-    .from("profiles")
-    .select("*", { count: "exact", head: true });
-
-  const allowed = (count ?? 0) < BETA_USER_LIMIT;
-  return NextResponse.json({ allowed, count: count ?? 0, limit: BETA_USER_LIMIT });
+  try {
+    const { allowed, count, limit } = await getRegistrationAvailability();
+    return NextResponse.json({ allowed, count, limit });
+  } catch (error) {
+    console.error("Failed to check registration availability:", error);
+    return NextResponse.json(
+      { allowed: false, count: BETA_USER_LIMIT, limit: BETA_USER_LIMIT },
+      { status: 500 }
+    );
+  }
 }

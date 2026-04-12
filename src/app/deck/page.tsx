@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import ScrollToTop from "@/components/ui/ScrollToTop";
 import { useDeckStore } from "@/stores/useDeckStore";
 import { useProductStore } from "@/stores/useProductStore";
 import { getIngredientById, ACTIVE_CATEGORIES } from "@/lib/ingredients";
@@ -12,9 +13,10 @@ import DeckSummary from "@/components/deck/DeckSummary";
 import DeckAnalysis from "@/components/deck/DeckAnalysis";
 import EmptyDeckState from "@/components/deck/EmptyDeckState";
 import ProductPicker from "@/components/deck/ProductPicker";
-import AutoRecommendModal from "@/components/deck/AutoRecommendModal";
+import dynamic from "next/dynamic";
+const AutoRecommendModal = dynamic(() => import("@/components/deck/AutoRecommendModal"), { ssr: false });
 import Disclaimer from "@/components/ui/Disclaimer";
-import PageLoading from "@/components/ui/PageLoading";
+
 import { useUser } from "@/lib/auth";
 import AuthGuard from "@/components/ui/AuthGuard";
 import { RoutineType, Product, ProductGenre, RecommendationResult, CategoryKey } from "@/types";
@@ -26,7 +28,7 @@ const DECK_OPTIONS: { key: RoutineType; label: string }[] = [
 ];
 
 export default function DeckPage() {
-  const [deckIndex, setDeckIndex] = useState(0);
+  const [deckIndex, setDeckIndex] = useState(() => new Date().getHours() < 15 ? 0 : 1);
   const [showPicker, setShowPicker] = useState(false);
   const [pickerGenreFilter, setPickerGenreFilter] = useState<ProductGenre | null>(null);
   const [showAnalysis, setShowAnalysis] = useState(false);
@@ -106,9 +108,7 @@ export default function DeckPage() {
     return { categoryCounts, coveredCategories, totalIngredients, combinations, recommendedCombos, cautionCombos, comboWithSources };
   }, [deckProducts]);
 
-  if (loading) {
-    return <PageLoading message="マイスキンケアデッキを読み込んでいます..." />;
-  }
+  if (loading) return null;
 
   const productsByGenre: Record<ProductGenre, Product[]> = {} as Record<ProductGenre, Product[]>;
   GENRE_SLOT_CONFIG.forEach((s) => { productsByGenre[s.genre] = []; });
@@ -248,7 +248,7 @@ export default function DeckPage() {
                            flex items-center justify-center gap-2
                            border border-bo-parchment bg-white text-bo-ink-soft shadow-bo1 pressable"
               >
-                <ChartIcon size={16} /> デッキ分析
+                <ChartIcon size={16} /> ルーティン分析
               </button>
             </>
           ) : (
@@ -297,6 +297,8 @@ export default function DeckPage() {
             onClose={() => { setShowAutoRecommend(false); setAutoResult(null); }}
           />
         )}
+
+        <ScrollToTop />
       </div>
     </AuthGuard>
   );

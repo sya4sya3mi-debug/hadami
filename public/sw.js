@@ -1,9 +1,15 @@
-const CACHE_NAME = "hadami-v5";
+const CACHE_NAME = "hadami-v6";
 
-// Pre-cache the start URL on install
+// Pre-cache the start URL and critical fonts on install
 self.addEventListener("install", (e) => {
   e.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.add("/"))
+    caches.open(CACHE_NAME).then((cache) =>
+      cache.addAll([
+        "/",
+        "/fonts/YakuHanJPs/YakuHanJPs-Regular.woff2",
+        "/fonts/YakuHanJPs/YakuHanJPs-Bold.woff2",
+      ])
+    )
   );
   self.skipWaiting();
 });

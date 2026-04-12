@@ -3,7 +3,8 @@ import type { DeckItem, Product, ProductGenre, RoutineType } from "@/types";
 import { useDeckStore } from "@/stores/useDeckStore";
 import { useProductStore } from "@/stores/useProductStore";
 import { useZukanStore } from "@/stores/useZukanStore";
-import { clearImageUrlCache } from "./storage";
+import { getProductImageThumbPathFromStoredPath } from "@/lib/productImages";
+import { clearImageUrlCache, getSignedImageUrls } from "./storage";
 
 const PRODUCT_STORAGE_KEY = "hadami-products";
 const DECK_STORAGE_KEY = "hadami-deck";
@@ -35,29 +36,46 @@ type DeckRow = {
   order_index: number | null;
 };
 
-function resolveProductImage(productId: string, storedValue: string | null) {
+function isDirectImageUrl(value: string) {
+  return (
+    value.startsWith("http://") ||
+    value.startsWith("https://") ||
+    value.startsWith("/") ||
+    value.startsWith("data:")
+  );
+}
+
+function resolveProductImage(
+  productId: string,
+  storedValue: string | null,
+  signedUrls: Record<string, string | null>
+) {
   if (!storedValue) {
     return {
       packageImagePath: undefined,
       packageImage: undefined,
+      packageImageThumbPath: undefined,
+      packageImageThumb: undefined,
     };
   }
 
-  if (
-    storedValue.startsWith("http://") ||
-    storedValue.startsWith("https://") ||
-    storedValue.startsWith("/") ||
-    storedValue.startsWith("data:")
-  ) {
+  if (isDirectImageUrl(storedValue)) {
     return {
       packageImagePath: storedValue,
       packageImage: storedValue,
+      packageImageThumbPath: storedValue,
+      packageImageThumb: storedValue,
     };
   }
 
+  const thumbPath = getProductImageThumbPathFromStoredPath(storedValue);
+  const fullImage = signedUrls[storedValue] ?? `/api/product-image/${productId}`;
+
   return {
     packageImagePath: storedValue,
-    packageImage: `/api/product-image/${productId}`,
+    packageImage: fullImage,
+    packageImageThumbPath: thumbPath,
+    packageImageThumb: signedUrls[thumbPath] ?? fullImage,
   };
 }
 
@@ -85,9 +103,12 @@ export function clearCachedUserData() {
   window.localStorage.removeItem(CACHE_OWNER_KEY);
 }
 
-function mapProducts(rows: ProductRow[]): Product[] {
+function mapProducts(
+  rows: ProductRow[],
+  signedUrls: Record<string, string | null>
+): Product[] {
   return rows.map((row) => {
-    const image = resolveProductImage(row.id, row.package_image_url);
+    const image = resolveProductImage(row.id, row.package_image_url, signedUrls);
 
     return {
       id: row.id,
@@ -96,6 +117,8 @@ function mapProducts(rows: ProductRow[]): Product[] {
       productType: (row.product_type as ProductGenre) || "other",
       packageImagePath: image.packageImagePath,
       packageImage: image.packageImage,
+      packageImageThumbPath: image.packageImageThumbPath,
+      packageImageThumb: image.packageImageThumb,
       isFavorite: row.is_favorite ?? false,
       createdAt: row.created_at ?? new Date(0).toISOString(),
       lastUsedAt: row.last_used_at ?? undefined,
@@ -116,6 +139,80 @@ function mapDeckItems(rows: DeckRow[]): DeckItem[] {
     routine: row.routine,
     orderIndex: row.order_index ?? index,
   }));
+}
+
+const THUMB_VERSION = 2; // Bump when thumbnail size/quality changes
+const THUMB_VERSION_KEY = "hadami_thumb_version";
+
+async function backfillProductThumbnails(
+  supabase: SupabaseClient,
+  products: Product[]
+) {
+  if (typeof window === "undefined") return;
+
+  const storedVersion = localStorage.getItem(THUMB_VERSION_KEY);
+  const needsForceRegenerate = storedVersion !== String(THUMB_VERSION);
+
+  const targets = needsForceRegenerate
+    ? products.filter(
+        (product) =>
+          typeof product.packageImagePath === "string" &&
+          !isDirectImageUrl(product.packageImagePath)
+      )
+    : products.filter(
+        (product) =>
+          typeof product.packageImagePath === "string" &&
+          !isDirectImageUrl(product.packageImagePath) &&
+          typeof product.packageImageThumbPath === "string" &&
+          product.packageImageThumb === product.packageImage
+      );
+
+  if (targets.length === 0) {
+    if (needsForceRegenerate) localStorage.setItem(THUMB_VERSION_KEY, String(THUMB_VERSION));
+    return;
+  }
+
+  try {
+    const response = await fetch("/api/product-image/backfill", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        productIds: targets.map((product) => product.id),
+        ...(needsForceRegenerate && { force: true }),
+      }),
+    });
+
+    if (!response.ok) {
+      return;
+    }
+
+    const thumbPaths = targets
+      .map((product) => product.packageImageThumbPath)
+      .filter((value): value is string => typeof value === "string");
+
+    if (thumbPaths.length === 0) return;
+
+    const signedThumbs = await getSignedImageUrls(supabase, thumbPaths);
+    const currentProducts = useProductStore.getState().products;
+    const nextProducts = currentProducts.map((product) => {
+      const thumbPath = product.packageImageThumbPath;
+      if (!thumbPath) return product;
+
+      const thumbUrl = signedThumbs[thumbPath];
+      if (!thumbUrl) return product;
+
+      return {
+        ...product,
+        packageImageThumb: thumbUrl,
+      };
+    });
+
+    useProductStore.getState().replaceAll(nextProducts);
+
+    if (needsForceRegenerate) localStorage.setItem(THUMB_VERSION_KEY, String(THUMB_VERSION));
+  } catch (error) {
+    console.warn("thumbnail backfill skipped:", error);
+  }
 }
 
 export async function syncUserData(supabase: SupabaseClient, userId: string) {
@@ -142,9 +239,32 @@ export async function syncUserData(supabase: SupabaseClient, userId: string) {
   if (productsRes.error) {
     errors.push(`products sync failed: ${productsRes.error.message}`);
   } else {
-    const products = mapProducts((productsRes.data ?? []) as ProductRow[]);
+    const productRows = (productsRes.data ?? []) as ProductRow[];
+    const signablePaths = Array.from(
+      new Set(
+        productRows.flatMap((row) => {
+          if (
+            typeof row.package_image_url !== "string" ||
+            isDirectImageUrl(row.package_image_url)
+          ) {
+            return [];
+          }
+
+          return [
+            row.package_image_url,
+            getProductImageThumbPathFromStoredPath(row.package_image_url),
+          ];
+        })
+      )
+    );
+    const signedUrls =
+      signablePaths.length > 0
+        ? await getSignedImageUrls(supabase, signablePaths)
+        : {};
+    const products = mapProducts(productRows, signedUrls);
     syncedProductIds = new Set(products.map((product) => product.id));
     useProductStore.getState().replaceAll(products);
+    void backfillProductThumbnails(supabase, products);
   }
 
   if (discoveriesRes.error) {

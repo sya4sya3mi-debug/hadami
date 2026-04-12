@@ -22,15 +22,12 @@ export default function CoverageChart({ categoryCounts }: CoverageChartProps) {
   }));
 
   return (
-    <div className="bg-white rounded-xl p-4 border border-border">
-      <h3 className="font-bold text-sm mb-2">有効成分カバー率</h3>
-      <ResponsiveContainer width="100%" height={250}>
-        <RadarChart data={data}>
-          <PolarGrid />
-          <PolarAngleAxis dataKey="label" tick={{ fontSize: 10, fill: "#6E7C74" }} />
-          <Radar dataKey="count" stroke="#3A8F7A" fill="#3A8F7A" fillOpacity={0.2} />
-        </RadarChart>
-      </ResponsiveContainer>
-    </div>
+    <ResponsiveContainer width="100%" height={220}>
+      <RadarChart data={data}>
+        <PolarGrid stroke="#E8E8E8" />
+        <PolarAngleAxis dataKey="label" tick={{ fontSize: 11, fill: "#6E7C74" }} />
+        <Radar dataKey="count" stroke="#3A8F7A" fill="#3A8F7A" fillOpacity={0.2} />
+      </RadarChart>
+    </ResponsiveContainer>
   );
 }

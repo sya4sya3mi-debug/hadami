@@ -5,11 +5,13 @@ import { useState, useEffect, useRef, useCallback } from "react";
 export interface ShareModalProps {
   text: string;
   onClose: () => void;
-  /** DOM element to capture as share image */
+  /** DOM element to capture as share image (legacy, slow) */
   captureRef?: React.RefObject<HTMLElement | null>;
+  /** Pre-generated base64 image — skips html2canvas entirely */
+  imageBase64?: string;
 }
 
-export default function ShareModal({ text, onClose, captureRef }: ShareModalProps) {
+export default function ShareModal({ text, onClose, captureRef, imageBase64: imageBase64Prop }: ShareModalProps) {
   const [editableText, setEditableText] = useState(text);
   const [copied, setCopied] = useState(false);
   const [xLinked, setXLinked] = useState<boolean | null>(null);
@@ -32,13 +34,18 @@ export default function ShareModal({ text, onClose, captureRef }: ShareModalProp
       .catch(() => setXLinked(false));
   }, []);
 
-  // Capture the target element as image
+  // imageBase64Prop が変わるたびに cardImage を同期
   useEffect(() => {
+    if (imageBase64Prop) setCardImage(imageBase64Prop);
+  }, [imageBase64Prop]);
+
+  // imageBase64Prop が渡されている場合は html2canvas をスキップ
+  useEffect(() => {
+    if (imageBase64Prop) return;
     if (!captureRef?.current) return;
     setCapturing(true);
 
     const el = captureRef.current;
-    // Temporarily ensure the element is visible for capture
     const origDisplay = el.style.display;
 
     import("html2canvas").then(({ default: html2canvas }) => {
@@ -59,7 +66,7 @@ export default function ShareModal({ text, onClose, captureRef }: ShareModalProp
           setCapturing(false);
         });
     });
-  }, [captureRef]);
+  }, [captureRef, imageBase64Prop]);
 
   // Scroll lock
   useEffect(() => {

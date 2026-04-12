@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useUser } from "@/lib/auth";
-import PageLoading from "@/components/ui/PageLoading";
+
 import AuthGuard from "@/components/ui/AuthGuard";
 import { clearCachedUserData } from "@/lib/userData";
 import { getScanCountByEmail, getProductCount, getAccountScanLimit, getUserLimit } from "@/lib/db";
@@ -48,7 +48,6 @@ export default function SettingsPage() {
       });
   }, []);
 
-  // パーソナライズ設定をlocalStorageから復元
   useEffect(() => {
     const stored = localStorage.getItem("hadami-personalize-enabled");
     if (stored !== null) setPersonalize(stored === "true");
@@ -151,6 +150,12 @@ export default function SettingsPage() {
 
       try {
         await supabase.from("deck_items").delete().eq("user_id", user.id);
+        await supabase.from("scan_ingredients").delete().in(
+          "scan_history_id",
+          (await supabase.from("scan_history").select("id").eq("user_id", user.id)).data?.map((r) => r.id) || []
+        );
+        await supabase.from("scan_history").delete().eq("user_id", user.id);
+        await supabase.from("scan_usage").delete().eq("user_id", user.id);
         await supabase.from("products").delete().eq("user_id", user.id);
         await supabase.from("zukan_discoveries").delete().eq("user_id", user.id);
         await supabase.from("profiles").delete().eq("id", user.id);
@@ -175,9 +180,7 @@ export default function SettingsPage() {
     }
   };
 
-  if (loading) {
-    return <PageLoading message="設定を読み込んでいます..." />;
-  }
+  if (loading) return null;
 
   if (!user) {
     return null;
@@ -186,22 +189,25 @@ export default function SettingsPage() {
   return (
     <AuthGuard>
       <div className="min-h-screen bg-bo-cream">
-        <div className="px-5 pt-4 pb-6">
-          {/* Header */}
-          <div className="flex items-center gap-3 mb-6">
-            <button
-              onClick={() => router.back()}
-              className="w-9 h-9 rounded-[10px] bg-bo-parchment border-none flex items-center justify-center cursor-pointer shrink-0"
-            >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3D4F45" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
-                <path d="M19 12H5M12 19l-7-7 7-7" />
-              </svg>
-            </button>
-            <h1 className="text-2xl font-extrabold font-serif text-bo-ink m-0">設定</h1>
-          </div>
+        {/* Sticky header */}
+        <div className="sticky top-0 z-50 flex items-center gap-3 px-4 py-2.5
+                        bg-bo-cream/90 backdrop-blur-xl border-b border-bo-parchment/40">
+          <button
+            onClick={() => router.back()}
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-r1 bg-white text-sm font-semibold text-bo-ink-muted
+                       cursor-pointer font-sans pressable border-none shadow-bo1"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" aria-hidden="true">
+              <path d="M15 18l-6-6 6-6" />
+            </svg>
+            戻る
+          </button>
+          <h1 className="text-lg font-extrabold font-serif text-bo-ink m-0">設定</h1>
+        </div>
 
+        <div className="px-5 pt-5 pb-6">
           {/* Profile */}
-          <div className="bg-white rounded-r2 border border-bo-parchment shadow-bo1 p-5 mb-3">
+          <div className="bg-white rounded-r2 shadow-bo1 p-5 mb-3">
             <h2 className="text-[13px] font-bold text-bo-ink font-sans mb-3.5">アカウント情報</h2>
 
             <div className="flex items-center gap-3.5 mb-4">
@@ -217,22 +223,22 @@ export default function SettingsPage() {
                       onChange={(e) => setNickname(e.target.value)}
                       maxLength={20}
                       autoFocus
-                      className="w-full text-sm font-bold font-sans text-bo-ink border-[1.5px] border-bo-accent rounded-[10px] py-2 px-3 outline-none bg-bo-cream"
+                      className="w-full text-sm font-bold font-sans text-bo-ink border-[1.5px] border-bo-accent rounded-r1 py-2 px-3 outline-none bg-bo-cream"
                     />
                     {nicknameError && (
-                      <p className="text-xs text-bo-danger mt-1">{nicknameError}</p>
+                      <p className="text-xs text-bo-danger mt-1 font-sans">{nicknameError}</p>
                     )}
                     <div className="flex gap-2 mt-2">
                       <button
                         onClick={handleNicknameSave}
                         disabled={nicknameSaving}
-                        className="px-4 py-1.5 rounded-lg border-none bg-bo-accent text-white text-[11px] font-bold font-sans cursor-pointer disabled:opacity-70"
+                        className="px-4 py-1.5 rounded-r1 border-none bg-bo-accent text-white text-[11px] font-bold font-sans cursor-pointer pressable disabled:opacity-70"
                       >
                         {nicknameSaving ? "保存中..." : "保存"}
                       </button>
                       <button
                         onClick={() => { setEditingNickname(false); setNicknameError(""); }}
-                        className="px-4 py-1.5 rounded-lg border-none bg-bo-parchment text-bo-ink-muted text-[11px] font-semibold font-sans cursor-pointer"
+                        className="px-4 py-1.5 rounded-r1 border-none bg-bo-parchment text-bo-ink-muted text-[11px] font-semibold font-sans cursor-pointer pressable"
                       >
                         キャンセル
                       </button>
@@ -248,7 +254,7 @@ export default function SettingsPage() {
                     </div>
                     <button
                       onClick={() => { setNickname(profile?.display_name || ""); setEditingNickname(true); }}
-                      className="px-3.5 py-1 rounded-full border-none bg-bo-accent-soft text-bo-accent text-[10px] font-bold font-sans cursor-pointer"
+                      className="px-3.5 py-1 rounded-full border-none bg-bo-accent-soft text-bo-accent text-[10px] font-bold font-sans cursor-pointer pressable"
                     >
                       編集
                     </button>
@@ -257,7 +263,7 @@ export default function SettingsPage() {
               </div>
             </div>
 
-            <div className="py-3 px-3.5 rounded-[10px] bg-bo-cream">
+            <div className="py-3 px-3.5 rounded-r1 bg-bo-cream">
               <div className="text-[10px] text-bo-ink-muted font-sans mb-0.5">メールアドレス</div>
               <div className="text-[13px] font-semibold text-bo-ink font-sans">{user.email}</div>
             </div>
@@ -265,7 +271,7 @@ export default function SettingsPage() {
 
           {/* X Integration */}
           {xAvailable && (
-            <div className="bg-white rounded-r2 border border-bo-parchment shadow-bo1 p-5 mb-3">
+            <div className="bg-white rounded-r2 shadow-bo1 p-5 mb-3">
               <h2 className="text-[13px] font-bold text-bo-ink font-sans mb-3.5">X連携</h2>
 
               {xLinked === null ? (
@@ -285,26 +291,26 @@ export default function SettingsPage() {
                     <button
                       onClick={handleXUnlink}
                       disabled={xUnlinking}
-                      className="px-3.5 py-1 rounded-full border-none bg-[#FFEBEE] text-[#E57373] text-[10px] font-bold font-sans cursor-pointer"
+                      className="px-3.5 py-1 rounded-full border-none bg-bo-danger/10 text-bo-danger text-[10px] font-bold font-sans cursor-pointer pressable"
                     >
                       {xUnlinking ? "解除中..." : "連携解除"}
                     </button>
                   </div>
-                  <div className="text-[10px] text-bo-ink-muted font-sans py-2 px-3 bg-bo-cream rounded-lg leading-relaxed">
+                  <div className="text-[10px] text-bo-ink-muted font-sans py-2 px-3 bg-bo-cream rounded-r1 leading-relaxed">
                     シェア画面から画像付きでXに投稿できます（1日3件まで）
                   </div>
                 </div>
               ) : (
                 <div>
                   <p className="text-[11px] text-bo-ink-muted font-sans leading-relaxed mb-3">
-                    Xアカウントを連携すると、成分図鑑やデッキの情報を画像付きでXに投稿できます。
+                    Xアカウントを連携すると、成分図鑑やルーティンの情報を画像付きでXに投稿できます。
                   </p>
                   {xLinkError && (
                     <p className="text-xs text-bo-danger font-sans mb-2">{xLinkError}</p>
                   )}
                   <button
                     onClick={handleXLink}
-                    className="w-full py-3 rounded-r1 border-none bg-[#1DA1F2] text-white text-[13px] font-bold font-sans cursor-pointer"
+                    className="w-full py-3 rounded-r1 border-none bg-black text-white text-[13px] font-bold font-sans cursor-pointer pressable shadow-bo1"
                   >
                     Xに連携する
                   </button>
@@ -314,7 +320,7 @@ export default function SettingsPage() {
           )}
 
           {/* Usage Stats */}
-          <div className="bg-white rounded-r2 border border-bo-parchment shadow-bo1 p-5 mb-3">
+          <div className="bg-white rounded-r2 shadow-bo1 p-5 mb-3">
             <h2 className="text-[13px] font-bold text-bo-ink font-sans mb-3.5">利用状況</h2>
             <div className="flex gap-2.5">
               {[
@@ -331,7 +337,7 @@ export default function SettingsPage() {
           </div>
 
           {/* Personalization */}
-          <div className="bg-white rounded-r2 border border-bo-parchment shadow-bo1 p-5 mb-3">
+          <div className="bg-white rounded-r2 shadow-bo1 p-5 mb-3">
             <h2 className="text-[13px] font-bold text-bo-ink font-sans mb-3.5">パーソナライズ設定</h2>
 
             <div className="flex items-center justify-between mb-3">
@@ -355,10 +361,9 @@ export default function SettingsPage() {
               </button>
             </div>
 
-            {/* スキャン履歴の削除 */}
             {showHistoryConfirm ? (
-              <div className="p-3 rounded-r1 bg-[#FFF5F5] animate-fade-up">
-                <div className="text-[12px] font-bold text-[#E57373] font-sans mb-2">
+              <div className="p-3 rounded-r1 bg-bo-danger/5 animate-fade-up">
+                <div className="text-[12px] font-bold text-bo-danger font-sans mb-2">
                   スキャン履歴をすべて削除しますか？
                 </div>
                 <div className="text-[10px] text-bo-ink-muted font-sans mb-2.5">
@@ -368,14 +373,14 @@ export default function SettingsPage() {
                   <button
                     onClick={handleDeleteScanHistory}
                     disabled={deletingHistory}
-                    className="flex-1 py-2 rounded-lg border-none bg-[#E57373] text-white text-[11px] font-bold font-sans cursor-pointer disabled:opacity-70"
+                    className="flex-1 py-2 rounded-r1 border-none bg-bo-danger text-white text-[11px] font-bold font-sans cursor-pointer pressable disabled:opacity-70"
                   >
                     {deletingHistory ? "削除中..." : "削除する"}
                   </button>
                   <button
                     onClick={() => setShowHistoryConfirm(false)}
                     disabled={deletingHistory}
-                    className="flex-1 py-2 rounded-lg border border-bo-parchment bg-white text-bo-ink-muted text-[11px] font-semibold font-sans cursor-pointer"
+                    className="flex-1 py-2 rounded-r1 border border-bo-parchment bg-white text-bo-ink-muted text-[11px] font-semibold font-sans cursor-pointer pressable"
                   >
                     キャンセル
                   </button>
@@ -394,7 +399,7 @@ export default function SettingsPage() {
           {/* Logout */}
           <button
             onClick={async () => { clearLocalData(); await supabase.auth.signOut(); window.location.href = "/"; }}
-            className="w-full bg-white rounded-r2 border border-bo-parchment shadow-bo1 py-3.5 px-5 mb-3 flex items-center gap-3 cursor-pointer"
+            className="w-full bg-white rounded-r2 shadow-bo1 py-3.5 px-5 mb-3 flex items-center gap-3 cursor-pointer border-none pressable"
           >
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3A8F7A" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
               <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9" />
@@ -403,17 +408,17 @@ export default function SettingsPage() {
           </button>
 
           {/* Legal */}
-          <div className="bg-white rounded-r2 border border-bo-parchment shadow-bo1 p-5 mb-3">
+          <div className="bg-white rounded-r2 shadow-bo1 p-5 mb-3">
             <h2 className="text-[13px] font-bold text-bo-ink font-sans mb-3.5">法的情報</h2>
             {["プライバシーポリシー", "利用規約"].map((item, i) => (
               <div key={i}>
-                {i > 0 && <div className="h-px bg-bo-parchment -mx-5" />}
+                {i > 0 && <div className="h-px bg-bo-parchment/60 -mx-5" />}
                 <Link
                   href={i === 0 ? "/privacy" : "/terms"}
-                  className="flex items-center justify-between py-3 cursor-pointer no-underline"
+                  className="flex items-center justify-between py-3 cursor-pointer no-underline pressable"
                 >
                   <span className="text-[13px] font-semibold text-bo-ink font-sans">{item}</span>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#B5C7BE" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#BDBDBD" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
                     <path d="M9 18l6-6-6-6" />
                   </svg>
                 </Link>
@@ -422,32 +427,32 @@ export default function SettingsPage() {
           </div>
 
           {/* Danger Zone */}
-          <div className="bg-white rounded-r2 border border-[rgba(229,115,115,0.2)] shadow-bo1 p-5">
-            <h2 className="text-[13px] font-bold text-[#E57373] font-sans mb-3.5">アカウント削除</h2>
+          <div className="bg-white rounded-r2 shadow-bo1 border border-bo-danger/10 p-5">
+            <h2 className="text-[13px] font-bold text-bo-danger font-sans mb-3.5">アカウント削除</h2>
             <p className="text-[11px] text-bo-ink-muted font-sans leading-relaxed mb-3.5">
               アカウントを削除すると、保存したコスメ・図鑑データ・写真がすべて完全に削除されます。この操作は取り消せません。
             </p>
 
             {showConfirm ? (
-              <div className="p-4 rounded-r1 bg-[#FFF5F5] animate-fade-up">
-                <div className="text-[13px] font-bold text-[#E57373] font-sans mb-3">
+              <div className="p-4 rounded-r1 bg-bo-danger/5 animate-fade-up">
+                <div className="text-[13px] font-bold text-bo-danger font-sans mb-3">
                   本当に削除しますか？
                 </div>
                 {error && (
-                  <p className="text-xs text-[#E57373] mb-2">{error}</p>
+                  <p className="text-xs text-bo-danger mb-2 font-sans">{error}</p>
                 )}
                 <div className="flex gap-2">
                   <button
                     onClick={handleDeleteAccount}
                     disabled={deleting}
-                    className="flex-1 py-2.5 rounded-[10px] border-none bg-[#E57373] text-white text-xs font-bold font-sans cursor-pointer disabled:opacity-70"
+                    className="flex-1 py-2.5 rounded-r1 border-none bg-bo-danger text-white text-xs font-bold font-sans cursor-pointer pressable disabled:opacity-70"
                   >
                     {deleting ? "削除中..." : "完全に削除する"}
                   </button>
                   <button
                     onClick={() => setShowConfirm(false)}
                     disabled={deleting}
-                    className="flex-1 py-2.5 rounded-[10px] border border-bo-parchment bg-white text-bo-ink-muted text-xs font-semibold font-sans cursor-pointer"
+                    className="flex-1 py-2.5 rounded-r1 border border-bo-parchment bg-white text-bo-ink-muted text-xs font-semibold font-sans cursor-pointer pressable"
                   >
                     キャンセル
                   </button>
@@ -456,7 +461,7 @@ export default function SettingsPage() {
             ) : (
               <button
                 onClick={() => setShowConfirm(true)}
-                className="py-2 px-4.5 rounded-[10px] border border-[#E57373] bg-transparent text-[#E57373] text-xs font-semibold font-sans cursor-pointer"
+                className="py-2 px-4 rounded-r1 border border-bo-danger/30 bg-transparent text-bo-danger text-xs font-semibold font-sans cursor-pointer pressable"
               >
                 アカウントを削除する
               </button>

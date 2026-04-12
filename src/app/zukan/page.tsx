@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo, useCallback } from "react";
+import ScrollToTop from "@/components/ui/ScrollToTop";
 import { useRouter } from "next/navigation";
 import { useZukanStore } from "@/stores/useZukanStore";
 import { useProductStore } from "@/stores/useProductStore";
@@ -14,7 +15,7 @@ import {
 import { SKIN_CONCERNS } from "@/lib/concerns";
 import { RarityKey, Product, CategoryKey } from "@/types";
 import { useUser } from "@/lib/auth";
-import PageLoading from "@/components/ui/PageLoading";
+
 import AuthGuard from "@/components/ui/AuthGuard";
 import Disclaimer from "@/components/ui/Disclaimer";
 import TargetedRakutenSection from "@/components/recommendations/TargetedRakutenSection";
@@ -99,11 +100,11 @@ function CategoryExplorer({
   );
 
   return (
-    <div>
-      {/* Horizontal icon selector */}
+    <div className="animate-fade-up">
+      {/* Category selector — pill cards */}
       <div
-        className="flex gap-1 overflow-x-auto py-3.5 px-4"
-        style={{ WebkitOverflowScrolling: "touch", scrollbarWidth: "none" }}
+        className="flex gap-2 overflow-x-auto py-4 px-5 hide-scrollbar"
+        style={{ WebkitOverflowScrolling: "touch" }}
       >
         {catStats.map((cat) => {
           const active = selectedCat === cat.key;
@@ -111,33 +112,37 @@ function CategoryExplorer({
             <button
               key={cat.key}
               onClick={() => setSelectedCat(cat.key)}
-              className={`shrink-0 flex flex-col items-center gap-[3px] px-2.5 pt-2 pb-1.5 border-none cursor-pointer transition-all duration-200 min-w-[52px] ${
-                active ? "bg-white shadow-bo2 rounded-2xl" : "bg-transparent rounded-2xl"
+              className={`shrink-0 flex items-center gap-2.5 px-4 py-3 border-none cursor-pointer transition-all duration-200 rounded-r2 pressable ${
+                active
+                  ? "bg-white shadow-bo2"
+                  : "bg-white/50 shadow-bo1"
               }`}
             >
               <div
-                className="w-[34px] h-[34px] rounded-[10px] flex items-center justify-center transition-all duration-200"
+                className="w-9 h-9 rounded-[12px] flex items-center justify-center shrink-0 transition-all duration-200"
                 style={{
                   background: `${cat.color}${active ? "20" : "0C"}`,
-                  border: `1.5px solid ${cat.color}${active ? "50" : "15"}`,
+                  border: `1.5px solid ${cat.color}${active ? "40" : "10"}`,
                   color: cat.color,
                 }}
               >
-                <ActiveCategoryIcon category={cat.key} size={16} />
+                <ActiveCategoryIcon category={cat.key} size={17} />
               </div>
-              <span
-                className={`text-[9px] font-sans whitespace-nowrap ${
-                  active ? "font-bold text-bo-ink" : "font-medium text-bo-ink-muted"
-                }`}
-              >
-                {cat.label}
-              </span>
-              <span
-                className="text-[9px] font-bold font-sans"
-                style={{ color: active ? cat.color : "#B5C7BE" }}
-              >
-                {cat.pct}%
-              </span>
+              <div className="text-left">
+                <span
+                  className={`text-xs font-sans whitespace-nowrap block ${
+                    active ? "font-bold text-bo-ink" : "font-medium text-bo-ink-muted"
+                  }`}
+                >
+                  {cat.label}
+                </span>
+                <span
+                  className="text-[11px] font-bold font-sans block mt-px"
+                  style={{ color: active ? cat.color : "#B5C7BE" }}
+                >
+                  {cat.disc}/{cat.total}
+                </span>
+              </div>
             </button>
           );
         })}
@@ -145,35 +150,45 @@ function CategoryExplorer({
 
       {/* Selected category detail */}
       {currentCat && (
-        <div key={currentCat.key} className="px-4 pb-2 animate-fade-up">
+        <div key={currentCat.key} className="px-5 pb-2 animate-fade-up">
           {/* Category header */}
-          <div className="flex items-center justify-between mb-2.5">
-            <div className="flex items-center gap-2">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2.5">
               <span
-                className="inline-flex h-8 w-8 items-center justify-center rounded-xl"
-                style={{ background: `${currentCat.color}12`, color: currentCat.color }}
+                className="inline-flex h-9 w-9 items-center justify-center rounded-[12px]"
+                style={{ background: `${currentCat.color}15`, color: currentCat.color }}
               >
-                <ActiveCategoryIcon category={currentCat.key} size={15} />
+                <ActiveCategoryIcon category={currentCat.key} size={17} />
               </span>
-              <span className="text-base font-extrabold text-bo-ink font-serif">
-                {currentCat.label}
-              </span>
-              <span className="text-[11px] text-bo-ink-muted font-sans">
-                {currentCat.disc}/{currentCat.total}
-              </span>
+              <div>
+                <span className="text-base font-extrabold text-bo-ink font-serif block">
+                  {currentCat.label}
+                </span>
+                <span className="text-[11px] text-bo-ink-muted font-sans">
+                  {currentCat.disc}/{currentCat.total} 発見済み
+                </span>
+              </div>
             </div>
-            <div className="h-1 w-[72px] rounded-sm bg-bo-parchment overflow-hidden">
-              <div
-                className="h-full rounded-sm transition-[width] duration-[600ms] ease-out"
-                style={{
-                  width: `${currentCat.pct}%`,
-                  background: `linear-gradient(90deg, ${currentCat.color}, ${currentCat.color}AA)`,
-                }}
-              />
+            <div className="flex items-center gap-2">
+              <div className="w-16 h-1.5 rounded-full bg-bo-parchment overflow-hidden">
+                <div
+                  className="h-full rounded-full transition-[width] duration-[600ms] ease-out"
+                  style={{
+                    width: `${currentCat.pct}%`,
+                    background: `linear-gradient(90deg, ${currentCat.color}, ${currentCat.color}AA)`,
+                  }}
+                />
+              </div>
+              <span
+                className="text-xs font-bold font-serif"
+                style={{ color: currentCat.color }}
+              >
+                {currentCat.pct}%
+              </span>
             </div>
           </div>
 
-          <div className="mb-3">
+          <div className="mb-4">
             <TargetedRakutenSection
               enabled={categoryTargets.length > 0}
               icon="PR"
@@ -187,7 +202,7 @@ function CategoryExplorer({
           </div>
 
           {/* Ingredient list */}
-          <div className="flex flex-col gap-[5px]">
+          <div className="flex flex-col gap-2">
             {catIngredients.map((ing) => {
               const r = RARITY_VIS[ing.rarity];
               const found = discoveredSet.has(ing.id);
@@ -198,13 +213,15 @@ function CategoryExplorer({
                   onClick={() => {
                     if (found) router.push(`/ingredient/${ing.id}`);
                   }}
-                  className={`flex items-center gap-2.5 px-3 py-2.5 rounded-[13px] relative overflow-hidden ${
-                    found ? "cursor-pointer" : ""
+                  className={`flex items-center gap-3 px-4 py-3.5 rounded-r2 relative overflow-hidden
+                              transition-all duration-150 ${
+                    found ? "cursor-pointer active:scale-[0.98]" : ""
                   }`}
                   style={{
-                    background: found ? r.bg : "rgba(232,240,236,0.4)",
+                    background: found ? "white" : "rgba(232,240,236,0.35)",
                     border: `1px solid ${found ? r.border : "transparent"}`,
-                    opacity: found ? 1 : 0.5,
+                    boxShadow: found ? "0 1px 3px rgba(0,0,0,0.05)" : "none",
+                    opacity: found ? 1 : 0.55,
                   }}
                 >
                   {/* Legendary shimmer */}
@@ -219,20 +236,22 @@ function CategoryExplorer({
                   )}
 
                   {/* Stars */}
-                  <span
-                    className="text-[10px] shrink-0 w-[34px] text-center relative"
-                    style={{ color: r.color }}
-                  >
-                    {"★".repeat(r.star)}
-                    <span className="text-bo-parchment">
+                  <div className="shrink-0 w-10 text-center relative">
+                    <span
+                      className="text-[11px] tracking-wide"
+                      style={{ color: r.color }}
+                    >
+                      {"★".repeat(r.star)}
+                    </span>
+                    <span className="text-[11px] tracking-wide text-bo-parchment">
                       {"★".repeat(4 - r.star)}
                     </span>
-                  </span>
+                  </div>
 
                   {/* Name + note */}
                   <div className="flex-1 min-w-0 relative">
                     <div
-                      className={`text-[13px] font-semibold font-sans truncate ${
+                      className={`text-sm font-semibold font-sans truncate ${
                         found ? "text-bo-ink" : "text-bo-ink-faint"
                       }`}
                     >
@@ -240,13 +259,24 @@ function CategoryExplorer({
                     </div>
                     {(found ? ing.note : ing.funFact) && (
                       <div
-                        className="text-[10px] font-sans mt-px truncate"
+                        className="text-[11px] font-sans mt-0.5 truncate"
                         style={{ color: found ? "#9E9E9E" : "#B08D3A" }}
                       >
                         {found ? ing.note : `💡 ${ing.funFact}`}
                       </div>
                     )}
                   </div>
+
+                  {/* Arrow for discovered */}
+                  {found && (
+                    <svg
+                      width="14" height="14" viewBox="0 0 24 24" fill="none"
+                      stroke="#BDBDBD" strokeWidth="2" strokeLinecap="round"
+                      className="shrink-0"
+                    >
+                      <path d="M9 18l6-6-6-6" />
+                    </svg>
+                  )}
                 </div>
               );
             })}
@@ -297,7 +327,7 @@ function ConcernView({
   /* ── Step 1: Concern list ── */
   if (!concern) {
     return (
-      <div className="flex flex-col gap-2 px-4 py-3.5">
+      <div className="flex flex-col gap-2.5 px-5 py-4 animate-fade-up">
         {SKIN_CONCERNS.map((c) => {
           const covered = c.keyIngredients.filter(
             (k) => getProductsWithIngredient(k.id).length > 0
@@ -307,28 +337,36 @@ function ConcernView({
             <button
               key={c.label}
               onClick={() => setSelectedConcern(c.label)}
-              className="flex items-center gap-3 py-3.5 px-4 rounded-2xl border border-bo-parchment bg-white shadow-bo1 cursor-pointer text-left w-full"
+              className="flex items-center gap-3.5 py-4 px-4 rounded-r2 bg-white shadow-bo1 cursor-pointer text-left w-full
+                         border-none pressable"
             >
               <div
-                className="w-10 h-10 rounded-xl shrink-0 flex items-center justify-center"
+                className="w-11 h-11 rounded-[14px] shrink-0 flex items-center justify-center"
                 style={{
                   background: `${c.color}12`,
-                  border: `1px solid ${c.color}22`,
                   color: c.color,
                 }}
               >
-                <SkinConcernIcon concern={c.label} size={18} />
+                <SkinConcernIcon concern={c.label} size={20} />
               </div>
-              <div className="flex-1">
+              <div className="flex-1 min-w-0">
                 <div className="text-sm font-bold text-bo-ink font-sans">
                   {c.label}
                 </div>
-                <div className="text-[10px] text-bo-ink-muted font-sans mt-0.5">
-                  マイコスメカバー {covered}/{c.keyIngredients.length}
+                <div className="flex items-center gap-2 mt-1">
+                  <div className="flex-1 h-1 rounded-full bg-bo-parchment/60 overflow-hidden">
+                    <div
+                      className="h-full rounded-full transition-all duration-500"
+                      style={{ width: `${coverPct}%`, backgroundColor: c.color }}
+                    />
+                  </div>
+                  <span className="text-[10px] text-bo-ink-muted font-sans shrink-0">
+                    {covered}/{c.keyIngredients.length}
+                  </span>
                 </div>
               </div>
               <div
-                className="w-9 h-9 rounded-[10px] shrink-0 flex items-center justify-center text-sm font-extrabold font-serif"
+                className="w-10 h-10 rounded-[12px] shrink-0 flex items-center justify-center text-sm font-black font-serif"
                 style={{
                   background: `${c.color}10`,
                   color: c.color,
@@ -350,19 +388,20 @@ function ConcernView({
   const coverPct = Math.round((covered / concern.keyIngredients.length) * 100);
 
   return (
-    <div className="py-3 animate-fade-up">
+    <div className="py-4 animate-fade-up">
       {/* Header */}
-      <div className="flex items-center gap-2 px-4 pb-3">
+      <div className="flex items-center gap-3 px-5 pb-4">
         <button
           onClick={() => {
             setSelectedConcern(null);
             setExpandedIng(null);
           }}
-          className="w-[30px] h-[30px] rounded-[9px] border border-bo-parchment bg-white cursor-pointer flex items-center justify-center shrink-0"
+          className="w-9 h-9 rounded-[12px] border border-bo-parchment bg-white cursor-pointer flex items-center justify-center shrink-0
+                     shadow-bo1 pressable"
         >
           <svg
-            width="14"
-            height="14"
+            width="16"
+            height="16"
             viewBox="0 0 24 24"
             fill="none"
             stroke="#9E9E9E"
@@ -373,16 +412,21 @@ function ConcernView({
           </svg>
         </button>
         <span
-          className="inline-flex h-9 w-9 items-center justify-center rounded-xl"
+          className="inline-flex h-10 w-10 items-center justify-center rounded-[14px]"
           style={{ background: `${concern.color}12`, color: concern.color }}
         >
-          <SkinConcernIcon concern={concern.label} size={18} />
+          <SkinConcernIcon concern={concern.label} size={20} />
         </span>
-        <span className="text-base font-extrabold text-bo-ink font-serif flex-1">
-          {concern.label}
-        </span>
+        <div className="flex-1 min-w-0">
+          <span className="text-base font-extrabold text-bo-ink font-serif block">
+            {concern.label}
+          </span>
+          <span className="text-[11px] text-bo-ink-muted font-sans">
+            {covered}/{concern.keyIngredients.length} カバー
+          </span>
+        </div>
         <div
-          className="py-[3px] px-2.5 rounded-lg text-xs font-extrabold font-serif"
+          className="py-1 px-3 rounded-r1 text-sm font-black font-serif"
           style={{ background: `${concern.color}12`, color: concern.color }}
         >
           {coverPct}%
@@ -391,16 +435,16 @@ function ConcernView({
 
       {/* Tip */}
       <div
-        className="mx-4 mb-3 py-2.5 px-3.5 rounded-r1 text-[11px] text-bo-ink-soft font-sans leading-relaxed"
+        className="mx-5 mb-4 py-3 px-4 rounded-r2 text-xs text-bo-ink-soft font-sans leading-relaxed"
         style={{
           background: `${concern.color}08`,
-          border: `1px solid ${concern.color}12`,
+          border: `1px solid ${concern.color}15`,
         }}
       >
         💡 {concern.tip}
       </div>
 
-      <div className="px-4 pb-1">
+      <div className="px-5 pb-2">
         <TargetedRakutenSection
           enabled={concernTargets.length > 0}
           icon="PR"
@@ -414,7 +458,7 @@ function ConcernView({
       </div>
 
       {/* Key Ingredients */}
-      <div className="flex flex-col gap-1.5 px-4">
+      <div className="flex flex-col gap-2 px-5">
         {concern.keyIngredients.map((ing) => {
           const r = RARITY_VIS[ing.rarity];
           const found = discoveredSet.has(ing.id);
@@ -425,49 +469,56 @@ function ConcernView({
           return (
             <div
               key={ing.id}
-              className="rounded-[14px] overflow-hidden bg-white border border-bo-parchment shadow-bo1"
+              className="rounded-r2 overflow-hidden bg-white shadow-bo1"
             >
               {/* Row */}
               <div
                 onClick={() => setExpandedIng(open ? null : ing.id)}
-                className="flex items-center gap-2.5 py-3 px-3.5 cursor-pointer"
+                className="flex items-center gap-3 py-3.5 px-4 cursor-pointer pressable"
               >
                 <div
-                  className="w-6 h-6 rounded-[7px] shrink-0 flex items-center justify-center text-[11px]"
+                  className="w-7 h-7 rounded-[10px] shrink-0 flex items-center justify-center text-sm"
                   style={{
                     background: found
                       ? "rgba(58,143,122,0.08)"
-                      : "rgba(181,199,190,0.15)",
+                      : "rgba(181,199,190,0.12)",
                   }}
                 >
                   {found ? "✅" : "🔒"}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-1.5">
                     <span
-                      className={`text-[13px] font-bold font-sans ${
+                      className={`text-sm font-bold font-sans ${
                         found ? "text-bo-ink" : "text-bo-ink-faint"
                       }`}
                     >
                       {found ? ing.name : "？？？"}
                     </span>
-                    <span className="text-[9px]" style={{ color: r.color }}>
+                    <span className="text-[10px]" style={{ color: r.color }}>
                       {"★".repeat(r.star)}
                     </span>
                   </div>
-                  <div className="text-[10px] text-bo-ink-muted font-sans mt-px truncate">
+                  <div className="text-[11px] text-bo-ink-muted font-sans mt-0.5 truncate">
                     {ing.role}
                   </div>
                 </div>
                 {hasProducts ? (
-                  <span className="text-[10px] font-bold text-bo-accent font-sans shrink-0 py-0.5 px-2 rounded-md bg-bo-accent/[0.08]">
+                  <span className="text-[11px] font-bold text-bo-accent font-sans shrink-0 py-1 px-2.5 rounded-r1 bg-bo-accent/[0.08]">
                     {matchedProducts.length}件
                   </span>
                 ) : (
-                  <span className="text-[10px] text-bo-ink-faint font-sans shrink-0">
+                  <span className="text-[11px] text-bo-ink-faint font-sans shrink-0">
                     {found ? "未配合" : "未発見"}
                   </span>
                 )}
+                <svg
+                  width="12" height="12" viewBox="0 0 24 24" fill="none"
+                  stroke="#BDBDBD" strokeWidth="2" strokeLinecap="round"
+                  className={`shrink-0 transition-transform duration-200 ${open ? "rotate-90" : ""}`}
+                >
+                  <path d="M9 18l6-6-6-6" />
+                </svg>
               </div>
 
               {/* Accordion: Matching products */}
@@ -475,30 +526,38 @@ function ConcernView({
                 className="overflow-hidden transition-[max-height] duration-300 ease-in-out"
                 style={{ maxHeight: open ? 300 : 0 }}
               >
-                <div className="px-3.5 pb-3 border-t border-bo-parchment">
+                <div className="px-4 pb-3.5 border-t border-bo-parchment/60">
                   {hasProducts ? (
                     matchedProducts.map((p) => (
                       <div
                         key={p.id}
                         onClick={() => router.push(`/product/${p.id}`)}
-                        className="flex items-center gap-2 py-2 px-2.5 rounded-[10px] mt-1.5 bg-bo-accent-pale cursor-pointer"
+                        className="flex items-center gap-2.5 py-2.5 px-3 rounded-r1 mt-2 bg-bo-accent-pale cursor-pointer pressable"
                       >
-                        <span className="text-[13px]">📦</span>
+                        <span className="text-sm">📦</span>
                         <div className="flex-1 min-w-0">
-                          <div className="text-[11px] font-semibold text-bo-ink font-sans truncate">
+                          <div className="text-xs font-semibold text-bo-ink font-sans truncate">
                             {p.name}
                           </div>
                           <div className="text-[10px] text-bo-ink-muted font-sans">
                             {p.brand}
                           </div>
                         </div>
+                        <svg
+                          width="12" height="12" viewBox="0 0 24 24" fill="none"
+                          stroke="#BDBDBD" strokeWidth="2" strokeLinecap="round"
+                          className="shrink-0"
+                        >
+                          <path d="M9 18l6-6-6-6" />
+                        </svg>
                       </div>
                     ))
                   ) : (
-                    <div className="py-2.5 text-center">
+                    <div className="py-3 text-center">
                       <button
                         onClick={() => router.push("/scan")}
-                        className="py-2 px-5 rounded-[10px] border-none bg-bo-accent text-white text-[11px] font-bold font-sans cursor-pointer"
+                        className="py-2.5 px-6 rounded-r1 border-none bg-bo-accent text-white text-xs font-bold font-sans cursor-pointer
+                                   shadow-bo-accent pressable"
                       >
                         📸 スキャンして探す
                       </button>
@@ -512,17 +571,17 @@ function ConcernView({
       </div>
 
       {/* Coverage bar */}
-      <div className="flex items-center gap-2.5 mx-4 mt-3">
-        <div className="flex-1 h-1 rounded-sm bg-bo-parchment overflow-hidden">
+      <div className="flex items-center gap-3 mx-5 mt-4 p-3 rounded-r1 bg-white shadow-bo1">
+        <div className="flex-1 h-1.5 rounded-full bg-bo-parchment/60 overflow-hidden">
           <div
-            className="h-full rounded-sm transition-[width] duration-[800ms] ease-out"
+            className="h-full rounded-full transition-[width] duration-[800ms] ease-out"
             style={{
               width: `${coverPct}%`,
               background: `linear-gradient(90deg, ${concern.color}, ${concern.color}AA)`,
             }}
           />
         </div>
-        <span className="text-[10px] text-bo-ink-muted font-sans">
+        <span className="text-xs text-bo-ink-muted font-sans">
           <span className="font-bold" style={{ color: concern.color }}>
             {covered}
           </span>
@@ -548,62 +607,85 @@ export default function ZukanPage() {
   const totalAll = ACTIVE_INGREDIENT_COUNT;
   const pct = totalAll > 0 ? Math.round((totalDisc / totalAll) * 100) : 0;
 
-  if (loading) {
-    return <PageLoading message="図鑑を読み込んでいます..." />;
-  }
+  const circumference = 2 * Math.PI * 34;
+  const dashLength = (pct / 100) * circumference;
+
+  if (loading) return null;
+
+  const tabIndex = tab === "category" ? 0 : 1;
 
   return (
     <AuthGuard>
       <div className="min-h-screen bg-bo-cream pb-24">
-        {/* ── Header ── */}
-        <div
-          className="pt-4 px-5 pb-4"
-          style={{
-            background: "linear-gradient(180deg, #f0faeb 0%, #f5f6f6 100%)",
-          }}
-        >
-          <div className="flex items-baseline justify-between mb-3">
-            <div>
-              <span className="text-[28px] font-extrabold text-bo-accent font-serif leading-none">
-                {pct}
-              </span>
-              <span className="text-xs font-medium text-bo-ink-muted font-sans">
-                % <span className="ml-1">{totalDisc}/{totalAll}</span>
-              </span>
+        {/* ── Header — Apple Health style ── */}
+        <div className="pt-5 px-5 pb-5 bg-gradient-to-b from-[#f0faeb] to-bo-cream">
+          <div className="flex items-center gap-5">
+            {/* Ring chart */}
+            <div className="relative w-[72px] h-[72px] shrink-0">
+              <svg viewBox="0 0 80 80" className="w-full h-full -rotate-90">
+                <circle
+                  cx="40" cy="40" r="34" fill="none"
+                  stroke="#E8F5EE" strokeWidth="6"
+                />
+                <circle
+                  cx="40" cy="40" r="34" fill="none"
+                  stroke="#3A8F7A" strokeWidth="6" strokeLinecap="round"
+                  strokeDasharray={`${dashLength} ${circumference}`}
+                  className="transition-all duration-[1200ms]"
+                  style={{ transitionTimingFunction: "cubic-bezier(0.34, 1.56, 0.64, 1)" }}
+                />
+              </svg>
+              <div className="absolute inset-0 flex items-center justify-center">
+                <span className="text-xl font-black text-bo-accent font-serif">
+                  {pct}%
+                </span>
+              </div>
             </div>
-          </div>
-          <div className="h-[5px] rounded-[3px] bg-bo-parchment overflow-hidden">
-            <div
-              className="h-full rounded-[3px] transition-[width] duration-[1200ms]"
-              style={{
-                width: `${pct}%`,
-                background: "linear-gradient(90deg, #3A8F7A, #3A8F7A)",
-                transitionTimingFunction: "cubic-bezier(0.34, 1.56, 0.64, 1)",
-              }}
-            />
+
+            {/* Text */}
+            <div className="flex-1">
+              <p className="text-xs text-bo-ink-muted font-sans m-0 mb-1">
+                有効成分コンプリート率
+              </p>
+              <div className="flex items-baseline gap-1.5">
+                <span className="text-2xl font-black text-bo-ink font-serif">
+                  {totalDisc}
+                </span>
+                <span className="text-sm text-bo-ink-muted font-sans">
+                  / {totalAll} 種
+                </span>
+              </div>
+            </div>
           </div>
         </div>
 
-        {/* ── Tabs ── */}
-        <div className="flex px-4 border-b border-bo-parchment">
-          {(
-            [
-              { key: "category", label: "効果別" },
-              { key: "concern", label: "肌悩みから探す" },
-            ] as const
-          ).map((t) => (
-            <button
-              key={t.key}
-              onClick={() => setTab(t.key)}
-              className={`flex-1 py-[11px] border-none cursor-pointer bg-transparent text-[13px] font-sans transition-all duration-200 ${
-                tab === t.key
-                  ? "text-bo-accent font-bold border-b-[2.5px] border-bo-accent"
-                  : "text-bo-ink-muted font-medium border-b-[2.5px] border-transparent"
-              }`}
-            >
-              {t.label}
-            </button>
-          ))}
+        {/* ── Tabs — Apple Segmented Control ── */}
+        <div className="px-5 mb-1">
+          <div className="relative flex bg-white rounded-r2 p-1 shadow-bo1">
+            {/* Sliding indicator */}
+            <div
+              className="absolute top-1 bottom-1 rounded-[12px] bg-bo-accent shadow-bo-accent transition-transform duration-300 ease-[cubic-bezier(0.25,0.1,0.25,1)]"
+              style={{
+                width: `calc(50% - 4px)`,
+                transform: `translateX(${tabIndex * 100}%)`,
+                left: "4px",
+              }}
+            />
+            {([
+              { key: "category" as const, label: "効果別" },
+              { key: "concern" as const, label: "肌悩みから探す" },
+            ]).map((t, i) => (
+              <button
+                key={t.key}
+                onClick={() => setTab(t.key)}
+                className={`relative z-10 flex-1 py-2.5 rounded-[12px] border-none text-sm font-bold font-sans cursor-pointer transition-colors duration-200 ${
+                  tabIndex === i ? "text-white" : "text-bo-ink-muted"
+                }`}
+              >
+                {t.label}
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* ── Tab content ── */}
@@ -616,6 +698,7 @@ export default function ZukanPage() {
         <div className="px-5 pt-4">
           <Disclaimer />
         </div>
+        <ScrollToTop />
       </div>
     </AuthGuard>
   );

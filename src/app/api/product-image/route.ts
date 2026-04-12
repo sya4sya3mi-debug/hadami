@@ -1,13 +1,14 @@
 import { NextResponse } from "next/server";
+import sharp from "sharp";
 import { authenticateRequest, validateImagePayload } from "@/lib/apiAuth";
+import {
+  PRODUCT_IMAGE_BUCKET,
+  PRODUCT_IMAGE_THUMB_SIZE,
+  getProductImagePath,
+  getProductImageThumbPath,
+} from "@/lib/productImages";
 
 export const runtime = "nodejs";
-
-const BUCKET = "product-images";
-
-function getProductImagePath(userId: string, productId: string) {
-  return `${userId}/${productId}.webp`;
-}
 
 export async function POST(request: Request) {
   const auth = await authenticateRequest();
@@ -29,7 +30,7 @@ export async function POST(request: Request) {
 
   const { data: product, error: productError } = await auth.supabase
     .from("products")
-    .select("id")
+    .select("id, package_image_url")
     .eq("id", body.productId)
     .eq("user_id", auth.user.id)
     .maybeSingle();
@@ -44,15 +45,45 @@ export async function POST(request: Request) {
   }
 
   const filePath = getProductImagePath(auth.user.id, body.productId);
+  const thumbPath = getProductImageThumbPath(auth.user.id, body.productId);
   const bytes = Buffer.from(validation.base64Data, "base64");
+  let thumbBytes: Buffer;
+
+  try {
+    thumbBytes = await sharp(bytes)
+      .resize(PRODUCT_IMAGE_THUMB_SIZE, PRODUCT_IMAGE_THUMB_SIZE, {
+        fit: "inside",
+        withoutEnlargement: true,
+      })
+      .webp({ quality: 80 })
+      .toBuffer();
+  } catch (error) {
+    console.error("Failed to generate product thumbnail:", error);
+    return NextResponse.json(
+      { error: "画像サムネイルの生成に失敗しました" },
+      { status: 500 }
+    );
+  }
 
   const { error: uploadError } = await auth.supabase.storage
-    .from(BUCKET)
+    .from(PRODUCT_IMAGE_BUCKET)
     .upload(filePath, bytes, { contentType: "image/webp", upsert: true });
 
   if (uploadError) {
     console.error("Product image upload failed:", uploadError);
     return NextResponse.json({ error: "画像の保存に失敗しました" }, { status: 500 });
+  }
+
+  const { error: thumbUploadError } = await auth.supabase.storage
+    .from(PRODUCT_IMAGE_BUCKET)
+    .upload(thumbPath, thumbBytes, { contentType: "image/webp", upsert: true });
+
+  if (thumbUploadError) {
+    console.error("Product thumbnail upload failed:", thumbUploadError);
+    return NextResponse.json(
+      { error: "画像サムネイルの保存に失敗しました" },
+      { status: 500 }
+    );
   }
 
   const { error: updateError } = await auth.supabase
@@ -63,12 +94,17 @@ export async function POST(request: Request) {
 
   if (updateError) {
     console.error("Failed to persist product image path:", updateError);
-    await auth.supabase.storage.from(BUCKET).remove([filePath]);
+    if (product.package_image_url !== filePath) {
+      await auth.supabase.storage
+        .from(PRODUCT_IMAGE_BUCKET)
+        .remove([filePath, thumbPath]);
+    }
     return NextResponse.json({ error: "画像情報の保存に失敗しました" }, { status: 500 });
   }
 
   return NextResponse.json({
     imageUrl: `/api/product-image/${body.productId}`,
     filePath,
+    thumbPath,
   });
 }

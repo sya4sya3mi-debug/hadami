@@ -1,65 +1,58 @@
 "use client";
 
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
+import { useState } from "react";
 import Image from "next/image";
-import Link from "next/link";
+
 import { useProductStore } from "@/stores/useProductStore";
 import { getIngredientById, getIngredientCategoryInfo } from "@/lib/ingredients";
 import { findCombinations } from "@/lib/combinations";
 import { getGenreByKey } from "@/lib/productGenres";
-import Badge, { StarIcon } from "@/components/ui/Badge";
-import { RARITY } from "@/lib/ingredients";
 import Disclaimer from "@/components/ui/Disclaimer";
 import { useUser } from "@/lib/auth";
-import PageLoading from "@/components/ui/PageLoading";
-import AuthGuard from "@/components/ui/AuthGuard";
-import { updatePurchasedAtInDb } from "@/lib/db";
-import { useState } from "react";
-import { ActiveCategoryIcon, ProductGenreIcon } from "@/components/ui/CosmeticIcons";
 
-function formatDate(iso: string) {
-  const d = new Date(iso);
-  return `${d.getFullYear()}/${String(d.getMonth() + 1).padStart(2, "0")}/${String(d.getDate()).padStart(2, "0")}`;
-}
+import AuthGuard from "@/components/ui/AuthGuard";
+import { toggleFavoriteInDb } from "@/lib/db";
+import { ActiveCategoryIcon, ProductGenreIcon } from "@/components/ui/CosmeticIcons";
+import { StarIcon } from "@/components/ui/Icons";
 
 export default function ProductDetailPage() {
   const { user, supabase, loading } = useUser();
   const { id } = useParams<{ id: string }>();
   const product = useProductStore((s) => s.getProduct(id));
+  const toggleFavorite = useProductStore((s) => s.toggleFavorite);
   const updatePurchasedAt = useProductStore((s) => s.updatePurchasedAt);
   const [editingPurchasedAt, setEditingPurchasedAt] = useState(false);
-  const [purchasedAtInput, setPurchasedAtInput] = useState("");
-  const [savingPurchasedAt, setSavingPurchasedAt] = useState(false);
+  const router = useRouter();
 
-  if (loading) {
-    return <PageLoading message="コスメ情報を読み込んでいます..." />;
-  }
+  if (loading) return null;
 
   if (!product) {
     return (
       <div className="min-h-screen bg-bo-cream">
         <div className="px-5 pt-4">
           <div className="flex items-center gap-3 mb-8">
-            <Link
-              href="/history"
-              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-bo-parchment text-[13px] font-semibold text-bo-accent font-sans active:opacity-70 transition-opacity shrink-0"
+            <button
+              onClick={() => router.back()}
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-r1 bg-white text-sm font-semibold text-bo-ink-muted
+                         cursor-pointer font-sans pressable border-none shadow-bo1"
             >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
-                <path d="M19 12H5M12 19l-7-7 7-7" />
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" aria-hidden="true">
+                <path d="M15 18l-6-6 6-6" />
               </svg>
-              マイコスメ
-            </Link>
+              戻る
+            </button>
             <h1 className="text-lg font-extrabold font-serif text-bo-ink m-0">コスメ詳細</h1>
           </div>
           <div className="text-center py-10">
             <div className="w-14 h-14 rounded-2xl bg-bo-parchment mx-auto mb-3 flex items-center justify-center text-2xl">📦</div>
             <p className="text-[13px] font-semibold text-bo-ink-muted font-sans mb-1">コスメが見つかりません</p>
-            <Link
-              href="/history"
-              className="inline-block mt-3 px-5 py-2.5 rounded-full text-xs font-bold text-white bg-bo-accent no-underline"
+            <button
+              onClick={() => router.back()}
+              className="inline-block mt-3 px-5 py-2.5 rounded-full text-xs font-bold text-white bg-bo-accent border-none cursor-pointer pressable"
             >
-              マイコスメに戻る
-            </Link>
+              戻る
+            </button>
           </div>
         </div>
       </div>
@@ -68,227 +61,262 @@ export default function ProductDetailPage() {
 
   const genre = getGenreByKey(product.productType || "other");
 
-  const ingredients = [...product.ingredients]
+  // 有効成分のみフィルタ
+  const allIngredients = [...product.ingredients]
     .sort((a, b) => a.orderIndex - b.orderIndex)
     .map((pi) => getIngredientById(pi.ingredientId))
     .filter((i) => i !== undefined);
 
-  const ingredientNames = ingredients.map((i) => i.nameJa);
+  const activeIngredients = allIngredients.filter((i) => i.activeIngredient);
+
+  const ingredientNames = allIngredients.map((i) => i.nameJa);
   const combinations = findCombinations(ingredientNames);
+
+  const handleToggleFavorite = async () => {
+    const prevFav = product.isFavorite;
+    toggleFavorite(product.id); // 楽観更新
+    if (user) {
+      const { error } = await toggleFavoriteInDb(supabase, user.id, product.id, !prevFav);
+      if (error) {
+        toggleFavorite(product.id); // ロールバック
+      }
+    }
+  };
+
   return (
     <AuthGuard>
-    <div className="min-h-screen bg-bo-cream">
-      <div className="px-5 pt-4 pb-6">
-        {/* Header */}
-        <div className="flex items-center gap-3 mb-5">
-          <Link
-            href="/history"
-            className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-bo-parchment text-[13px] font-semibold text-bo-accent font-sans active:opacity-70 transition-opacity shrink-0"
+      <div className="min-h-screen bg-bo-cream">
+        {/* Sticky header */}
+        <div className="sticky top-0 z-[310] flex items-center justify-between px-4 py-2.5
+                        bg-bo-cream/90 backdrop-blur-xl border-b border-bo-parchment/40">
+          <button
+            onClick={() => router.back()}
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-r1 bg-white text-sm font-semibold text-bo-ink-muted
+                       cursor-pointer font-sans pressable border-none shadow-bo1"
           >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
-              <path d="M19 12H5M12 19l-7-7 7-7" />
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" aria-hidden="true">
+              <path d="M15 18l-6-6 6-6" />
             </svg>
-            マイコスメ
-          </Link>
-          <h1 className="text-lg font-extrabold font-serif text-bo-ink m-0">コスメ詳細</h1>
+            戻る
+          </button>
+          <button
+            onClick={handleToggleFavorite}
+            className="w-10 h-10 rounded-r1 bg-white border-none flex items-center justify-center cursor-pointer text-lg
+                       shadow-bo1 pressable"
+          >
+            {product.isFavorite ? <StarIcon size={18} color="#F59E0B" filled /> : <StarIcon size={18} color="#BDBDBD" />}
+          </button>
         </div>
 
-        {/* Product photo */}
-        {product.packageImage && (
-          <div className="mb-3 rounded-r2 overflow-hidden bg-white shadow-bo1 border border-bo-parchment">
-            <div className="relative w-full aspect-[4/3]">
-              <Image
-                src={product.packageImage}
-                alt={product.name}
-                fill
-                className="object-contain"
-                sizes="(max-width: 430px) 100vw, 430px"
-                priority
-              />
-            </div>
-          </div>
-        )}
-
-        {/* Product header */}
-        <div className="flex items-center gap-3 mb-5 bg-white rounded-r2 p-3.5 shadow-bo1 border border-bo-parchment">
-          {!product.packageImage && (
-            <div className="relative w-12 h-12 rounded-xl flex items-center justify-center text-[0px] text-bo-accent shrink-0 bg-gradient-to-br from-bo-accent-soft to-bo-parchment">
-              📦
-              <span className="absolute inset-0 flex items-center justify-center text-inherit">
-                <ProductGenreIcon genre={product.productType || "other"} size={22} />
-              </span>
+        {/* Hero image */}
+        <div className="relative h-[260px] overflow-hidden">
+          {product.packageImage ? (
+            <Image
+              src={product.packageImage}
+              alt={product.name}
+              fill
+              className="object-cover"
+              sizes="(max-width: 430px) 100vw, 430px"
+              priority
+            />
+          ) : (
+            <div className="w-full h-full bg-gradient-to-br from-bo-accent-soft to-bo-parchment flex items-center justify-center">
+              {genre ? <ProductGenreIcon genre={genre.key} size={64} /> : <span className="text-5xl">📦</span>}
             </div>
           )}
-          <div className="flex-1 min-w-0">
-            <h1 className="font-bold text-base text-bo-ink font-sans truncate">{product.name}</h1>
-            <p className="text-xs text-bo-ink-muted font-sans">{product.brand}</p>
+          <div className="absolute inset-0 bg-gradient-to-t from-[rgba(27,38,32,0.75)] via-transparent to-transparent pointer-events-none" />
+
+          {/* Product info overlay */}
+          <div className="absolute bottom-6 left-5 right-5">
+            <div className="text-xs text-white/70 font-sans tracking-wide uppercase font-semibold">
+              {product.brand}
+            </div>
+            <div className="text-xl font-extrabold text-white font-serif leading-tight mt-1.5">
+              {product.name}
+            </div>
             {genre && (
-              <span
-                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] mt-1 font-sans"
-                style={{ background: `${genre.color}18`, color: genre.color }}
-              >
-                <ProductGenreIcon genre={genre.key} size={12} />
-                {genre.label}
-              </span>
+              <div className="flex gap-1.5 mt-2.5">
+                <span className="text-[10px] font-bold text-white bg-white/20 backdrop-blur-lg py-1 px-3 rounded-r1 font-sans
+                                 inline-flex items-center gap-1.5">
+                  <ProductGenreIcon genre={genre.key} size={12} />
+                  {genre.label}
+                </span>
+              </div>
             )}
           </div>
         </div>
 
-        {/* Date info */}
-        {(product.lastUsedAt || product.purchasedAt || true) && (
-          <div className="mb-5 bg-white rounded-r2 p-3.5 shadow-bo1 border border-bo-parchment space-y-2.5">
-            {/* 最終使用日 */}
-            <div className="flex items-center justify-between">
-              <span className="text-[11px] text-bo-ink-muted font-sans">最終使用日</span>
-              <span className="text-[12px] font-semibold text-bo-ink font-sans">
-                {product.lastUsedAt ? formatDate(product.lastUsedAt) : "—"}
-              </span>
+        {/* Content */}
+        <div className="px-5 pt-6 -mt-4 rounded-t-[20px] bg-bo-cream relative pb-8">
+          {/* Active ingredients section */}
+          {activeIngredients.length > 0 && (
+            <>
+              <div className="flex items-center gap-2 mb-4">
+                <span className="w-1.5 h-5 rounded-full bg-bo-accent inline-block" />
+                <span className="text-base font-bold text-bo-ink font-sans">
+                  有効成分
+                </span>
+                <span className="text-xs text-bo-ink-muted font-sans">
+                  {activeIngredients.length}種
+                </span>
+              </div>
+
+              <div className="flex flex-col gap-2 mb-6">
+                {activeIngredients.map((ing) => {
+                  const catInfo = getIngredientCategoryInfo(ing);
+                  const rarity = ing.rarity === "legendary" ? 4 : ing.rarity === "rare" ? 3 : ing.rarity === "uncommon" ? 2 : 1;
+                  return (
+                    <button
+                      key={ing.id}
+                      onClick={() => router.push(`/ingredient/${encodeURIComponent(ing.id)}`)}
+                      className="flex items-center gap-3 py-3 px-3.5 bg-white rounded-r2 shadow-bo1 cursor-pointer text-left w-full
+                                 border-none pressable"
+                    >
+                      {catInfo ? (
+                        <div
+                          className="w-9 h-9 rounded-[10px] flex items-center justify-center shrink-0"
+                          style={{ background: catInfo.color + "15", color: catInfo.color }}
+                        >
+                          <ActiveCategoryIcon category={catInfo.key} size={16} />
+                        </div>
+                      ) : (
+                        <div className="w-9 h-9 rounded-[10px] flex items-center justify-center shrink-0 bg-bo-parchment">
+                          <span className="text-sm">🧪</span>
+                        </div>
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <div className="text-sm font-bold text-bo-ink font-sans">
+                          {ing.nameJa}
+                        </div>
+                        {catInfo && (
+                          <div className="text-[10px] mt-0.5 font-sans" style={{ color: catInfo.color }}>
+                            {catInfo.label}
+                          </div>
+                        )}
+                      </div>
+                      <span className="text-[10px] text-[#D4A853] tracking-wide shrink-0">
+                        {"★".repeat(rarity)}
+                        {"☆".repeat(5 - rarity)}
+                      </span>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#BDBDBD" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+                        <path d="M9 18l6-6-6-6" />
+                      </svg>
+                    </button>
+                  );
+                })}
+              </div>
+            </>
+          )}
+
+          {activeIngredients.length === 0 && (
+            <div className="mb-6 py-8 text-center">
+              <div className="text-2xl mb-2">🧪</div>
+              <p className="text-xs text-bo-ink-muted font-sans">有効成分は検出されませんでした</p>
             </div>
-            {/* 購入日 */}
-            <div className="flex items-center justify-between gap-2">
-              <span className="text-[11px] text-bo-ink-muted font-sans">購入日</span>
-              {editingPurchasedAt ? (
-                <div className="flex items-center gap-1.5">
-                  <input
-                    type="date"
-                    value={purchasedAtInput}
-                    onChange={(e) => setPurchasedAtInput(e.target.value)}
-                    className="text-[11px] border border-bo-parchment rounded-lg px-2 py-1 font-sans text-bo-ink bg-bo-cream focus:outline-none"
-                  />
-                  <button
-                    onClick={async () => {
-                      if (!user) return;
-                      setSavingPurchasedAt(true);
-                      const val = purchasedAtInput || null;
-                      await updatePurchasedAtInDb(supabase, user.id, product.id, val);
-                      updatePurchasedAt(product.id, val ?? undefined);
-                      setSavingPurchasedAt(false);
-                      setEditingPurchasedAt(false);
-                    }}
-                    disabled={savingPurchasedAt}
-                    className="text-[11px] px-2.5 py-1 rounded-full bg-bo-accent text-white font-bold font-sans disabled:opacity-50"
-                  >
-                    保存
-                  </button>
-                  <button
-                    onClick={() => setEditingPurchasedAt(false)}
-                    className="text-[11px] px-2 py-1 rounded-full border border-bo-parchment text-bo-ink-muted font-sans"
-                  >
-                    ✕
-                  </button>
-                </div>
-              ) : (
-                <div className="flex items-center gap-2">
-                  <span className="text-[12px] font-semibold text-bo-ink font-sans">
-                    {product.purchasedAt ? formatDate(product.purchasedAt) : "—"}
+          )}
+
+          <p className="text-[10px] text-bo-ink-faint font-sans leading-relaxed">
+            成分をタップすると図鑑で詳細を確認できます
+          </p>
+
+          {/* Combinations */}
+          {combinations.length > 0 && (
+            <div className="mt-6 mb-6">
+              <div className="flex items-center gap-2 mb-4">
+                <span className="w-1.5 h-5 rounded-full bg-bo-accent inline-block" />
+                <span className="text-base font-bold text-bo-ink font-sans">
+                  組み合わせ情報
+                </span>
+              </div>
+              <div className="space-y-2">
+                {combinations.map((combo, i) => {
+                  const isGood = combo.type === "recommended";
+                  return (
+                    <div
+                      key={i}
+                      className={`rounded-r2 p-3.5 flex gap-2.5 bg-white border shadow-bo1 ${
+                        isGood
+                          ? "border-bo-safe/20 border-l-[3px] border-l-bo-safe"
+                          : "border-bo-danger/20 border-l-[3px] border-l-bo-danger"
+                      }`}
+                    >
+                      <span className="text-base shrink-0">{isGood ? "📚" : "📋"}</span>
+                      <div className="flex-1 min-w-0">
+                        <div className="font-bold text-xs text-bo-ink font-sans">{combo.label}</div>
+                        <p className="text-[11px] mt-0.5 text-bo-ink-muted font-sans">{combo.desc}</p>
+                        <p className="text-[10px] mt-0.5 text-bo-ink-faint font-sans">出典: {combo.source}</p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Dates */}
+          {(product.lastUsedAt || product.purchasedAt !== undefined || true) && (
+            <div className="mt-6 mb-6 bg-white rounded-r2 shadow-bo1 overflow-hidden">
+              {/* Last used */}
+              {product.lastUsedAt && (
+                <div className="flex items-center justify-between px-4 py-3 border-b border-bo-parchment/40">
+                  <span className="text-xs font-semibold text-bo-ink-muted font-sans">最終使用日</span>
+                  <span className="text-xs font-bold text-bo-ink font-sans">
+                    {new Date(product.lastUsedAt).toLocaleDateString("ja-JP", { year: "numeric", month: "long", day: "numeric" })}
                   </span>
-                  <button
-                    onClick={() => {
-                      setPurchasedAtInput(product.purchasedAt ?? "");
-                      setEditingPurchasedAt(true);
-                    }}
-                    className="text-[10px] px-2 py-0.5 rounded-full border border-bo-parchment text-bo-ink-muted font-sans hover:bg-bo-parchment"
-                  >
-                    編集
-                  </button>
                 </div>
               )}
-            </div>
-          </div>
-        )}
-
-        {/* Ingredients list */}
-        <h2 className="font-bold text-xs mb-2 flex items-center gap-2 text-bo-ink font-sans">
-          <span className="w-1 h-3.5 rounded-full inline-block bg-bo-accent" />
-          全成分（{ingredients.length}種）
-        </h2>
-        <div className="space-y-1.5 mb-5">
-          {ingredients.map((ing, idx) => (
-            <Link
-              key={ing.id}
-              href={`/ingredient/${ing.id}`}
-              className="flex items-center gap-2.5 bg-white rounded-r1 p-2.5 shadow-bo1 border border-bo-parchment"
-            >
-              <span className="inline-flex items-center gap-px shrink-0">
-                {Array.from({ length: RARITY[ing.rarity].star }).map((_, i) => (
-                  <StarIcon key={i} color={RARITY[ing.rarity].color} size={12} />
-                ))}
-              </span>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-1.5 flex-wrap">
-                  <span className="font-bold text-xs text-bo-ink font-sans">{ing.nameJa}</span>
-                  <Badge rarity={ing.rarity} size="sm" />
-                </div>
-                <div className="text-[10px] mt-0.5 text-bo-ink-muted font-sans">{ing.nameInci}</div>
-                {(() => {
-                  const c = getIngredientCategoryInfo(ing);
-                  return c ? (
-                    <div className="flex gap-1 mt-0.5">
-                      <span
-                        className="inline-flex items-center gap-1 text-[9px] px-1.5 py-0.5 rounded-full font-medium font-sans"
-                        style={{ background: c.color + "18", color: c.color }}
-                      >
-                        <ActiveCategoryIcon category={c.key} size={11} />
-                        {c.label}
-                      </span>
-                    </div>
-                  ) : null;
-                })()}
-              </div>
-              <span className="text-[10px] font-medium shrink-0 text-bo-ink-faint font-sans">#{idx + 1}</span>
-            </Link>
-          ))}
-        </div>
-
-        {/* Combinations */}
-        {combinations.length > 0 && (
-          <div className="mb-5">
-            <h2 className="font-bold text-xs mb-2 flex items-center gap-2 text-bo-ink font-sans">
-              <span className="w-1 h-3.5 rounded-full inline-block bg-bo-accent" />
-              組み合わせ情報
-            </h2>
-            <div className="space-y-1.5">
-              {combinations.map((combo, i) => {
-                const isGood = combo.type === "recommended";
-                return (
-                  <div
-                    key={i}
-                    className={`rounded-r2 p-3 flex gap-2.5 bg-white border ${
-                      isGood
-                        ? "border-bo-safe/20 border-l-[3px] border-l-bo-safe"
-                        : "border-bo-danger/20 border-l-[3px] border-l-bo-danger"
-                    }`}
+              {/* Purchase date */}
+              <div className="flex items-center justify-between px-4 py-3">
+                <span className="text-xs font-semibold text-bo-ink-muted font-sans">購入日</span>
+                {editingPurchasedAt ? (
+                  <input
+                    type="date"
+                    defaultValue={product.purchasedAt ? product.purchasedAt.slice(0, 10) : ""}
+                    className="text-xs font-bold text-bo-ink font-sans border border-bo-accent/40 rounded-md px-2 py-1 outline-none"
+                    onBlur={(e) => {
+                      updatePurchasedAt(product.id, e.target.value || undefined);
+                      setEditingPurchasedAt(false);
+                    }}
+                    autoFocus
+                  />
+                ) : (
+                  <button
+                    onClick={() => setEditingPurchasedAt(true)}
+                    className="text-xs font-bold font-sans border-none bg-transparent cursor-pointer pressable
+                               text-bo-ink-muted underline decoration-dotted"
                   >
-                    <span className="text-base shrink-0">{isGood ? "📚" : "📋"}</span>
-                    <div className="flex-1 min-w-0">
-                      <div className="font-bold text-xs text-bo-ink font-sans">{combo.label}</div>
-                      <p className="text-[11px] mt-0.5 text-bo-ink-muted font-sans">{combo.desc}</p>
-                      <p className="text-[10px] mt-0.5 text-bo-ink-faint font-sans">出典: {combo.source}</p>
-                    </div>
-                  </div>
-                );
-              })}
+                    {product.purchasedAt
+                      ? new Date(product.purchasedAt).toLocaleDateString("ja-JP", { year: "numeric", month: "long", day: "numeric" })
+                      : "タップして入力"}
+                  </button>
+                )}
+              </div>
             </div>
-          </div>
-        )}
+          )}
 
-        {product.packageImage && (
-          <div className="flex gap-2 mb-4">
-            <a
-              href={product.packageImage}
-              download={`${product.name}.jpg`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex-1 py-2.5 rounded-r1 text-xs font-medium text-center border border-bo-accent/20 text-bo-accent bg-bo-accent-soft font-sans"
+          {/* Actions */}
+          <div className="flex gap-2.5 mt-6">
+            <button
+              onClick={() => router.push("/deck")}
+              className="flex-1 py-3.5 rounded-r2 bg-white border border-bo-accent/30 text-bo-accent text-sm font-bold font-sans
+                         cursor-pointer shadow-bo1 pressable"
             >
-              写真を保存 📥
-            </a>
+              ルーティンに追加
+            </button>
+            <button
+              onClick={() => router.push("/scan")}
+              className="flex-1 py-3.5 rounded-r2 border-none bg-bo-accent text-white text-sm font-bold font-sans
+                         cursor-pointer shadow-bo-accent pressable flex items-center justify-center gap-1.5"
+            >
+              📷 写真を撮る
+            </button>
           </div>
-        )}
 
-        <Disclaimer />
+          <div className="mt-6">
+            <Disclaimer />
+          </div>
+        </div>
       </div>
-    </div>
     </AuthGuard>
   );
 }

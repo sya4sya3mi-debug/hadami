@@ -134,12 +134,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       setProfile(profileData ?? null);
       setCacheOwner(nextUser.id);
-      setLoading(false);
 
-      // Sync remaining data in background (products, zukan, deck)
-      syncUserData(supabase, nextUser.id).catch((error) =>
-        console.error("Background sync failed:", error)
+      // Sync data before showing page (cache was cleared)
+      await syncUserData(supabase, nextUser.id).catch((error) =>
+        console.error("Sync failed:", error)
       );
+
+      if (syncId !== syncSequence.current) return;
+      setLoading(false);
     } catch (error) {
       if (syncId !== syncSequence.current) return;
       console.error("Failed to fetch profile:", error);

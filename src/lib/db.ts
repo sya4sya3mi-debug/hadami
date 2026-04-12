@@ -1,8 +1,13 @@
 import { SupabaseClient } from "@supabase/supabase-js";
+import {
+  PRODUCT_IMAGE_BUCKET,
+  getProductImagePath,
+  getProductImageThumbPath,
+} from "@/lib/productImages";
 
 const USER_LIMIT = 30;
 const MAX_PRODUCT_IMAGE_BYTES = 5 * 1024 * 1024;
-const UPLOAD_MAX_DIMENSION = 600;
+const UPLOAD_MAX_DIMENSION = 1200;
 const UPLOAD_WEBP_QUALITY = 0.82;
 
 function validateImageSize(base64Data: string): boolean {
@@ -204,8 +209,11 @@ export async function deleteProductImageFromDb(
   userId: string,
   productId: string
 ): Promise<{ error: string | null }> {
-  const filePath = `${userId}/${productId}.webp`;
-  await supabase.storage.from("product-images").remove([filePath]);
+  const filePath = getProductImagePath(userId, productId);
+  const thumbPath = getProductImageThumbPath(userId, productId);
+  await supabase.storage
+    .from(PRODUCT_IMAGE_BUCKET)
+    .remove([filePath, thumbPath]);
 
   const { error } = await supabase
     .from("products")
@@ -221,8 +229,11 @@ export async function deleteProductFromDb(
   userId: string,
   productId: string
 ) {
-  const filePath = `${userId}/${productId}.webp`;
-  await supabase.storage.from("product-images").remove([filePath]);
+  const filePath = getProductImagePath(userId, productId);
+  const thumbPath = getProductImageThumbPath(userId, productId);
+  await supabase.storage
+    .from(PRODUCT_IMAGE_BUCKET)
+    .remove([filePath, thumbPath]);
 
   const { error } = await supabase
     .from("products")

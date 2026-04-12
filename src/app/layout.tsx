@@ -7,7 +7,7 @@ import { AuthProvider } from "@/lib/auth";
 
 export const metadata: Metadata = {
   title: "HADAMI（ハダミ）- 成分図鑑",
-  description: "化粧品の成分表を撮影するだけで成分を解析し、図鑑として集め、マイスキンケアデッキを組めるアプリ",
+  description: "化粧品の成分表を撮影するだけで成分を解析し、図鑑として集め、スキンケアルーティンを組めるアプリ",
   manifest: "/manifest.json",
   icons: {
     icon: "/favicon.ico",
@@ -41,13 +41,16 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ja">
-      <head />
+      <head>
+        <link rel="preload" href="/fonts/YakuHanJPs/YakuHanJPs-Regular.woff2" as="font" type="font/woff2" crossOrigin="anonymous" />
+        <link rel="preload" href="/fonts/YakuHanJPs/YakuHanJPs-Bold.woff2" as="font" type="font/woff2" crossOrigin="anonymous" />
+      </head>
       <body>
         <AuthProvider>
           <PwaRegister />
 
           <div id="app-container">
-            <main className="pb-[calc(72px+env(safe-area-inset-bottom))]">
+            <main className="pb-[calc(80px+env(safe-area-inset-bottom))]">
               {children}
             </main>
             <TabBar />

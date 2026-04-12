@@ -77,6 +77,8 @@ export interface Product {
   productType: ProductGenre;
   packageImage?: string;
   packageImagePath?: string;
+  packageImageThumb?: string;
+  packageImageThumbPath?: string;
   isFavorite: boolean;
   createdAt: string;
   lastUsedAt?: string;
@@ -92,7 +94,7 @@ export interface ProductIngredient {
   isActiveInProduct?: boolean;
 }
 
-// ── デッキ ──
+// ── ルーティン ──
 export type RoutineType = "morning" | "night" | "spring_summer" | "autumn_winter";
 
 export interface DeckItem {
@@ -112,7 +114,7 @@ export interface Combination {
   source: string;
 }
 
-// ── おすすめデッキ結果 ──
+// ── おすすめルーティン結果 ──
 export interface RecommendationResult {
   productIds: string[];
   score: number;

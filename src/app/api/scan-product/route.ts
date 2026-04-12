@@ -205,6 +205,64 @@ function isHttpUrl(url: string): boolean {
   return /^https?:\/\//i.test(url);
 }
 
+/** Block private / loopback / link-local / metadata IPs to prevent SSRF. */
+function isSafePublicUrl(raw: string): boolean {
+  let parsed: URL;
+  try {
+    parsed = new URL(raw);
+  } catch {
+    return false;
+  }
+
+  if (parsed.protocol !== "https:" && parsed.protocol !== "http:") return false;
+
+  // Block non-default ports (only 80/443 allowed)
+  if (parsed.port && parsed.port !== "80" && parsed.port !== "443") return false;
+
+  const hostname = parsed.hostname.replace(/^\[|\]$/g, ""); // strip IPv6 brackets
+
+  // Blocked hostnames
+  const blockedHosts = ["localhost", "metadata.google.internal", "metadata.goog"];
+  if (blockedHosts.includes(hostname.toLowerCase())) return false;
+
+  // IPv4 check
+  const ipv4Match = /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/.exec(hostname);
+  if (ipv4Match) {
+    const [, a, b, c] = ipv4Match.map(Number);
+    if (
+      a === 127 ||                           // 127.0.0.0/8  loopback
+      a === 10 ||                            // 10.0.0.0/8   private
+      (a === 172 && b >= 16 && b <= 31) ||   // 172.16.0.0/12 private
+      (a === 192 && b === 168) ||            // 192.168.0.0/16 private
+      (a === 169 && b === 254) ||            // 169.254.0.0/16 link-local
+      a === 0 ||                             // 0.0.0.0/8
+      (a === 100 && b >= 64 && b <= 127) ||  // 100.64.0.0/10 CGNAT
+      (a === 198 && (b === 18 || b === 19))  // 198.18.0.0/15 benchmarking
+    ) {
+      return false;
+    }
+    // Block if last octet gives broadcast-like patterns (0.0.0.0)
+    if (a === 0 && b === 0 && c === 0) return false;
+    return true;
+  }
+
+  // IPv6 check — block loopback (::1) and private ranges (fc00::/7, fe80::/10)
+  if (hostname.includes(":")) {
+    const lower = hostname.toLowerCase();
+    if (
+      lower === "::1" ||
+      lower === "0:0:0:0:0:0:0:1" ||
+      lower.startsWith("fc") ||
+      lower.startsWith("fd") ||
+      lower.startsWith("fe80")
+    ) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
 function decodeHtmlEntities(text: string): string {
   return text
     .replace(/&nbsp;/gi, " ")
@@ -388,23 +446,44 @@ function scoreEvidence(
   return Math.max(0, Math.min(100, score));
 }
 
+async function safeFetch(url: string, timeoutMs: number): Promise<Response | null> {
+  const MAX_REDIRECTS = 3;
+  let currentUrl = url;
+  for (let i = 0; i <= MAX_REDIRECTS; i++) {
+    if (!isSafePublicUrl(currentUrl)) {
+      console.warn(`[scan-product] Blocked unsafe URL: ${currentUrl}`);
+      return null;
+    }
+    const response = await withTimeout(
+      fetch(currentUrl, {
+        headers: { "user-agent": "Mozilla/5.0 (compatible; HadamiBot/1.0)" },
+        redirect: "manual",
+      }),
+      timeoutMs,
+      `Timed out while fetching ${currentUrl}`,
+    );
+    if (response.status >= 300 && response.status < 400) {
+      const location = response.headers.get("location");
+      if (!location) return null;
+      // Resolve relative redirects
+      currentUrl = new URL(location, currentUrl).href;
+      continue;
+    }
+    return response;
+  }
+  console.warn(`[scan-product] Too many redirects for: ${url}`);
+  return null;
+}
+
 async function fetchPageEvidence(
   url: string,
   product: string,
   brand: string,
 ): Promise<PageEvidence | null> {
   try {
-    const response = await withTimeout(
-      fetch(url, {
-        headers: {
-          "user-agent": "Mozilla/5.0 (compatible; HadamiBot/1.0)",
-        },
-      }),
-      8000,
-      `Timed out while fetching ${url}`,
-    );
+    const response = await safeFetch(url, 8000);
 
-    if (!response.ok) return null;
+    if (!response || !response.ok) return null;
 
     const contentType = response.headers.get("content-type") || "";
     if (!/text\/html|text\/plain/i.test(contentType)) return null;
@@ -550,7 +629,7 @@ async function searchProductEvidence(
       ...(parsedCandidate.source_urls || []),
       ...parseGroundingUrls(searchResponse),
     ])
-      .filter(isHttpUrl)
+      .filter(isSafePublicUrl)
       .slice(0, 4);
 
     const pageEvidence = (

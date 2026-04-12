@@ -11,6 +11,7 @@ const nextConfig = {
     return config;
   },
   images: {
+    // Intentionally disabled: product images are served through authenticated API routes.
     unoptimized: true,
     remotePatterns: [
       {

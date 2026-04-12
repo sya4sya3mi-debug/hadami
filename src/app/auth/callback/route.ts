@@ -1,5 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextRequest, NextResponse } from "next/server";
+import { getRegistrationAvailability } from "@/lib/registration";
 
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url);
@@ -27,7 +28,6 @@ export async function GET(request: NextRequest) {
 
     const { data: sessionData } = await supabase.auth.exchangeCodeForSession(code);
 
-    // プロフィール未設定ならプロフィール画面へ
     if (sessionData?.user) {
       const { data: profile } = await supabase
         .from("profiles")
@@ -36,12 +36,17 @@ export async function GET(request: NextRequest) {
         .single();
 
       if (!profile?.display_name) {
-        // 新規ユーザー：登録上限チェック
-        const { count } = await supabase
-          .from("profiles")
-          .select("*", { count: "exact", head: true });
+        // getRegistrationAvailability が失敗しても 500 にしない
+        let allowed = true;
+        try {
+          const result = await getRegistrationAvailability();
+          allowed = result.allowed;
+        } catch {
+          // 可用性チェック失敗時は通過させてプロフィール設定へ
+          allowed = true;
+        }
 
-        if ((count ?? 0) >= 10) {
+        if (!allowed) {
           await supabase.auth.signOut();
           response.headers.set("Location", `${origin}/auth/login?error=registration_limit_reached`);
           return response;

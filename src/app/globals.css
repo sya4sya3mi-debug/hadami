@@ -43,7 +43,7 @@ html, body {
   margin: 0;
   padding: 0;
   width: 100%;
-  height: 100%;
+  min-height: 100%;
   background: #f5f6f6;
 }
 
@@ -63,8 +63,6 @@ body {
   min-height: 100vh;
   position: relative;
   overflow-x: hidden;
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
   background: #f5f6f6;
 }
 
@@ -195,25 +193,17 @@ body {
 .animate-slide-down { animation: slide-down 0.3s ease-in forwards; }
 .animate-fade-in { animation: fade-in 0.2s ease-out forwards; }
 .animate-fade-out { animation: fade-out 0.2s ease-in forwards; }
-.animate-stagger-in { animation: stagger-in 0.4s ease-out forwards; }
+.animate-stagger-in { animation: stagger-in 0.4s ease-out both; }
 .animate-check-pop { animation: check-pop 0.4s ease-out forwards; }
 
 /* Modal/BottomSheet open: 背景スクロール完全ロック */
-html.scroll-locked,
-html.scroll-locked body,
-html.scroll-locked body > div,
-html.scroll-locked #__next,
-html.scroll-locked #app-container,
-html.scroll-locked main {
+html.scroll-locked {
   overflow: hidden !important;
-  -webkit-overflow-scrolling: auto !important;
-  touch-action: none !important;
   overscroll-behavior: none !important;
-  height: 100% !important;
 }
-html.scroll-locked body,
-html.scroll-locked #__next,
-html.scroll-locked #app-container {
+html.scroll-locked body {
+  overflow: hidden !important;
+  overscroll-behavior: none !important;
   position: fixed !important;
   left: 0 !important;
   right: 0 !important;
@@ -232,6 +222,15 @@ html.scroll-locked #app-container {
   to { transform: translateY(0); }
 }
 .animate-deck-editor-up { animation: deck-editor-up 0.3s ease-out; }
+
+/* Apple-like press feedback */
+.pressable {
+  transition: transform 0.15s cubic-bezier(0.25, 0.1, 0.25, 1),
+              box-shadow 0.15s ease;
+}
+.pressable:active {
+  transform: scale(0.97);
+}
 
 /* Hide scrollbar for genre chips */
 .hide-scrollbar::-webkit-scrollbar { display: none; }

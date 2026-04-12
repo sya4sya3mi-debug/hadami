@@ -4,6 +4,8 @@ import { useState, useEffect, useRef, ReactNode } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { getAccountScanLimit } from "@/lib/db";
+import { CameraIcon, BookIcon, SparkleIcon, SunIcon, LeafIcon, ScanIcon, PackageIcon } from "@/components/ui/Icons";
+import { ActiveCategoryIcon } from "@/components/ui/CosmeticIcons";
 
 /* ─── Animated Number Counter ─── */
 function AnimNum({ to, dur = 1200 }: { to: number; dur?: number }) {
@@ -90,73 +92,82 @@ function Reveal({
 const STEPS = [
   {
     step: "01",
-    icon: "📸",
+    Icon: CameraIcon,
+    iconColor: "#3A8F7A",
     title: "撮る",
     desc: "コスメのパッケージにカメラを向けるだけ。AIが商品を特定し、ネットから成分情報を自動で取得します。",
     bgClass: "bg-[#E3F0EC]",
   },
   {
     step: "02",
-    icon: "🔍",
+    Icon: ScanIcon,
+    iconColor: "#D4A853",
     title: "知る",
     desc: "AIが成分を検索し、特徴や★レアリティを表示。成分の組み合わせ相性もわかります。",
     bgClass: "bg-[#FFF3DC]",
   },
   {
     step: "03",
-    icon: "✨",
+    Icon: SparkleIcon,
+    iconColor: "#9C27B0",
     title: "集める・組む",
-    desc: "成分を図鑑にコレクトし、製品をデッキとして管理。朝・夜のルーティンを組んで毎日チェックできます。",
+    desc: "成分を図鑑にコレクトし、製品をルーティンとして管理。朝・夜のルーティンを組んで毎日チェックできます。",
     bgClass: "bg-[#EDE3F0]",
   },
 ];
 
 const FEATURES = [
   {
-    icon: "🧪",
+    Icon: ScanIcon,
+    iconColor: "#3A8F7A",
     title: "AI成分検索",
-    desc: "120種の成分に対応。パッケージを撮影するだけでAIが商品を特定し、成分の特徴をお伝えします",
+    desc: "80種の有効成分に対応。パッケージを撮影するだけでAIが商品を特定し、成分の特徴をお伝えします",
   },
   {
-    icon: "📖",
+    Icon: BookIcon,
+    iconColor: "#D4A853",
     title: "成分図鑑＋★レアリティ",
     desc: "見つけた成分をコレクト。出現頻度に応じた★1〜★4のレアリティ付き。コンプリートを目指そう",
   },
   {
-    icon: "🃏",
-    title: "スキンケアデッキ",
-    desc: "お気に入り製品をデッキに並べて朝・夜のルーティンを管理。カテゴリカバー率や成分の相乗効果も分析",
+    Icon: SparkleIcon,
+    iconColor: "#9C27B0",
+    title: "スキンケアルーティン",
+    desc: "お気に入り製品をルーティンに並べて朝・夜のルーティンを管理。カテゴリカバー率や成分の相乗効果も分析",
   },
   {
-    icon: "☀️",
-    title: "朝夜ルーティン＋連続記録",
-    desc: "デッキに登録した製品が毎日のチェックリストに。連続達成日数を記録してモチベーションアップ",
+    Icon: SunIcon,
+    iconColor: "#E89A00",
+    title: "朝夜ルーティンチェック",
+    desc: "ルーティンに登録した製品が毎日のチェックリストに。進捗リングで達成度をひと目で確認できます",
   },
   {
-    icon: "🛍️",
+    Icon: LeafIcon,
+    iconColor: "#4CAF50",
     title: "おすすめ商品レコメンド",
     desc: "スキャン履歴からあなたの成分傾向を分析し、まだ出会っていない成分を含む商品をおすすめ",
   },
   {
-    icon: "📸",
+    Icon: PackageIcon,
+    iconColor: "#6B4A8A",
     title: "Myコスメ写真管理",
     desc: "スキャンした製品を写真グリッドで一覧管理。お気に入り・カテゴリで絞り込み",
   },
 ];
 
 const SCAN_PREVIEW_INGREDIENTS = [
-  { name: "パンテノール", cat: "修復", rarity: 1 },
-  { name: "ツボクサエキス", cat: "鎮静", rarity: 3 },
-  { name: "ヒアルロン酸Na", cat: "保湿", rarity: 1 },
+  { name: "パンテノール", cat: "ビタミン", rarity: 1 },
+  { name: "ツボクサエキス", cat: "ボタニカル", rarity: 2 },
+  { name: "ヒアルロン酸Na", cat: "うるおい", rarity: 1 },
 ];
 
 const MOCKUP_ITEMS = [
-  { ic: "💧", r: 1 },
-  { ic: "✨", r: 3 },
-  { ic: "🌿", r: 2 },
-  { ic: "🔬", r: 4 },
-  { ic: "🍊", r: 1 },
-  { ic: "🔒", r: 0 },
+  { cat: "moisturizing" as const, color: "#4FC3F7", r: 1 },
+  { cat: "brightening" as const, color: "#CE93D8", r: 3 },
+  { cat: "soothing" as const, color: "#4CAF50", r: 2 },
+  { cat: "turnover" as const, color: "#FFB74D", r: 4 },
+  { cat: "barrier" as const, color: "#F9A8C0", r: 1 },
+  { cat: null, color: "#BDBDBD", r: 0 },
 ];
 
 /* ═══════════════════════════════════════════ */
@@ -200,7 +211,7 @@ export default function LandingPage() {
             </span>
           </div>
           <Link
-            href="/auth/login"
+            href="#"
             className="px-5 py-2 rounded-[10px] bg-bo-accent text-white text-xs font-bold font-sans shadow-bo-accent transition-transform hover:scale-105"
           >
             無料で始める
@@ -215,11 +226,17 @@ export default function LandingPage() {
 
         <div className="relative max-w-[600px] text-center z-[1]">
           <Reveal>
-            <div className="inline-flex items-center gap-1.5 bg-bo-accent-soft rounded-[20px] px-4 py-1.5 mb-7">
-              <span className="text-xs">🌿</span>
-              <span className="text-[11px] font-bold text-bo-accent font-sans tracking-[0.04em]">
-                無料で使えるコスメ成分アプリ
-              </span>
+            <div className="flex items-center justify-center gap-2 flex-wrap mb-7">
+              <div className="inline-flex items-center gap-1.5 bg-bo-accent-soft rounded-[20px] px-4 py-1.5">
+                <LeafIcon size={13} color="#3A8F7A" />
+                <span className="text-[11px] font-bold text-bo-accent font-sans tracking-[0.04em]">
+                  無料で使えるコスメ成分アプリ
+                </span>
+              </div>
+              <div className="inline-flex items-center gap-1 bg-[#FFF3DC] rounded-[20px] px-3 py-1.5">
+                <span className="text-[10px] font-black text-[#D4A853] font-sans tracking-[0.05em]">β</span>
+                <span className="text-[11px] font-bold text-[#D4A853] font-sans">クローズドベータ版</span>
+              </div>
             </div>
           </Reveal>
 
@@ -237,7 +254,7 @@ export default function LandingPage() {
             <p className="text-[clamp(14px,2.5vw,17px)] text-bo-ink-muted leading-[1.8] max-w-[440px] mx-auto mb-9 font-sans">
               パッケージを撮影するだけでAIが成分を検索。
               <br />
-              図鑑に集めて、デッキに組んで、
+              図鑑に集めて、ルーティンに組んで、
               <br />
               毎日のスキンケアを成分から見直せるアプリです。
             </p>
@@ -246,10 +263,10 @@ export default function LandingPage() {
           <Reveal delay={300}>
             <div className="flex gap-3 justify-center flex-wrap">
               <Link
-                href="/auth/login"
-                className="px-8 py-3.5 rounded-[14px] bg-gradient-to-br from-bo-accent to-bo-accent-dark text-white text-[15px] font-bold font-sans shadow-bo-accent transition-transform hover:scale-105"
+                href="#"
+                className="inline-flex items-center gap-2 px-8 py-3.5 rounded-[14px] bg-gradient-to-br from-bo-accent to-bo-accent-dark text-white text-[15px] font-bold font-sans shadow-bo-accent transition-transform hover:scale-105"
               >
-                📸 無料で始める
+                <CameraIcon size={16} color="white" /> 無料で始める
               </Link>
               <a
                 href="#how-it-works"
@@ -287,7 +304,9 @@ export default function LandingPage() {
                           i < 5 ? "bg-white" : "bg-bo-parchment opacity-40"
                         }`}
                       >
-                        <span className="text-[10px]">{item.ic}</span>
+                        <span style={{ color: item.color }}>
+                          <ActiveCategoryIcon category={item.cat} size={14} />
+                        </span>
                         {i < 5 && (
                           <span className="text-[5px] text-[#D4A853]">
                             {"★".repeat(item.r)}
@@ -308,7 +327,7 @@ export default function LandingPage() {
       <section className="py-[60px] px-6 bg-white border-t border-b border-bo-parchment">
         <div className="max-w-[700px] mx-auto grid grid-cols-3 gap-6 text-center">
           {[
-            { n: 120, suffix: "種", label: "対応成分" },
+            { n: 80, suffix: "種", label: "有効成分" },
             { n: 12, suffix: "種", label: "コスメカテゴリ" },
             { n: 6, suffix: "軸", label: "効果カテゴリ" },
           ].map((s, i) => (
@@ -346,9 +365,9 @@ export default function LandingPage() {
               <Reveal key={i} delay={i * 120}>
                 <div className="flex gap-[18px] py-7 px-6 bg-white rounded-[20px] border border-bo-parchment shadow-[0_2px_12px_rgba(27,38,32,0.04)] items-start">
                   <div
-                    className={`w-14 h-14 rounded-2xl flex items-center justify-center text-[26px] shrink-0 ${s.bgClass}`}
+                    className={`w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 ${s.bgClass}`}
                   >
-                    {s.icon}
+                    <s.Icon size={28} color={s.iconColor} />
                   </div>
                   <div className="flex-1">
                     <div className="flex items-baseline gap-2 mb-1.5">
@@ -388,8 +407,9 @@ export default function LandingPage() {
             {FEATURES.map((f, i) => (
               <Reveal key={i} delay={i * 80}>
                 <div className="p-6 px-5 rounded-r2 bg-white border border-bo-parchment shadow-[0_2px_12px_rgba(27,38,32,0.03)] h-full">
-                  <div className="w-11 h-11 rounded-[13px] bg-bo-accent-soft flex items-center justify-center text-xl mb-3.5">
-                    {f.icon}
+                  <div className="w-11 h-11 rounded-[13px] flex items-center justify-center mb-3.5"
+                       style={{ background: f.iconColor + "18" }}>
+                    <f.Icon size={22} color={f.iconColor} />
                   </div>
                   <div className="text-sm font-bold text-bo-ink font-sans mb-1.5">
                     {f.title}
@@ -477,7 +497,11 @@ export default function LandingPage() {
       <section className="py-[100px] px-6 bg-gradient-to-b from-bo-cream to-bo-accent-soft text-center">
         <Reveal>
           <div className="max-w-[480px] mx-auto">
-            <div className="text-[40px] mb-5">🌿</div>
+            <div className="flex justify-center mb-5">
+              <div className="w-14 h-14 rounded-[18px] bg-bo-accent-soft flex items-center justify-center">
+                <LeafIcon size={32} color="#3A8F7A" />
+              </div>
+            </div>
             <h2 className="text-[clamp(24px,5vw,36px)] font-extrabold font-serif leading-[1.3] mb-4 text-bo-ink">
               成分を知ることが、
               <br />
@@ -487,10 +511,10 @@ export default function LandingPage() {
               無料で使えます。まずは手元の化粧品をスキャンしてみてください。
             </p>
             <Link
-              href="/auth/login"
-              className="inline-block px-10 py-4 rounded-2xl bg-gradient-to-br from-bo-accent to-bo-accent-dark text-white text-base font-bold font-sans shadow-bo-accent transition-transform hover:scale-105"
+              href="#"
+              className="inline-flex items-center gap-2 px-10 py-4 rounded-2xl bg-gradient-to-br from-bo-accent to-bo-accent-dark text-white text-base font-bold font-sans shadow-bo-accent transition-transform hover:scale-105"
             >
-              📸 無料で始める
+              <CameraIcon size={18} color="white" /> 無料で始める
             </Link>
             <p className="text-[11px] text-bo-ink-faint mt-3.5 font-sans">
               {scanLimit}回までスキャン無料
@@ -499,19 +523,7 @@ export default function LandingPage() {
         </Reveal>
       </section>
 
-      {/* ─── PRODUCED BY ─── */}
-      <section className="px-6 py-10 bg-bo-cream text-center">
-        <Reveal>
-          <div className="flex flex-col items-center gap-1.5">
-            <div className="text-[9px] text-bo-ink-muted font-sans tracking-[0.15em] uppercase">
-              Produced by
-            </div>
-            <div className="text-base font-extrabold font-serif text-bo-ink">
-              みおのミハダノート
-            </div>
-          </div>
-        </Reveal>
-      </section>
+      {/* (produced by section removed — single instance in footer) */}
 
       {/* ─── DISCLAIMER ─── */}
       <div className="px-6 py-6 pb-7 bg-bo-ink border-b border-bo-ink-faint/10">
@@ -529,7 +541,15 @@ export default function LandingPage() {
           </span>
         </div>
         <div className="text-[10px] text-bo-ink-muted font-sans mb-4">
-          Produced by みおのミハダノート
+          Produced by{" "}
+          <a
+            href="https://blog-engine.com/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-bo-accent-soft underline"
+          >
+            みおのミハダノート
+          </a>
         </div>
         <div className="flex justify-center gap-6 mb-5">
           <Link href="/terms" className="text-[11px] text-bo-ink-muted font-sans">

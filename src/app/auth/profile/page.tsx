@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useUser } from "@/lib/auth";
+import { BETA_USER_LIMIT } from "@/lib/limits";
 
 export default function ProfileSetupPage() {
   const { user, supabase } = useUser();
@@ -11,46 +12,36 @@ export default function ProfileSetupPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
     if (!nickname.trim()) {
       setError("ニックネームを入力してください");
       return;
     }
+
     if (nickname.trim().length > 20) {
       setError("ニックネームは20文字以内で入力してください");
       return;
     }
+
     if (!user) return;
 
     setLoading(true);
     setError("");
 
-    const { data: existing } = await supabase
-      .from("profiles")
-      .select("id")
-      .eq("id", user.id)
-      .single();
-
-    if (!existing) {
-      const { count } = await supabase
-        .from("profiles")
-        .select("*", { count: "exact", head: true });
-
-      if ((count ?? 0) >= 10) {
-        setError("現在ベータ版の新規登録を停止しています。");
-        setLoading(false);
-        return;
-      }
-    }
-
-    const { error: dbError } = await supabase
-      .from("profiles")
-      .upsert(
-        { id: user.id, display_name: nickname.trim() },
-        { onConflict: "id" }
-      );
+    const { data, error: dbError } = await supabase.rpc("upsert_profile_with_limit", {
+      p_display_name: nickname.trim(),
+      p_limit: BETA_USER_LIMIT,
+    });
 
     if (dbError) {
       setError("保存に失敗しました。もう一度お試しください。");
+      setLoading(false);
+      return;
+    }
+
+    const result = data as { allowed?: boolean } | null;
+    if (!result?.allowed) {
+      setError("現在ベータ版の新規登録を停止しています。");
       setLoading(false);
       return;
     }
@@ -61,12 +52,12 @@ export default function ProfileSetupPage() {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center px-6 bg-bo-cream">
       <div className="mb-8 text-center">
-        <div className="text-4xl mb-2">🌿</div>
+        <div className="text-4xl mb-2">H</div>
         <h1 className="text-[28px] font-black font-serif text-bo-accent m-0">
           HADAMI
         </h1>
         <p className="text-[13px] text-bo-ink-muted mt-1">
-          ようこそ！あなたのことを教えてください
+          ようこそ。あなたのことを教えてください
         </p>
       </div>
 
@@ -82,15 +73,16 @@ export default function ProfileSetupPage() {
             </label>
             <input
               type="text"
-              placeholder="例：こっぺ"
+              placeholder="みお"
               value={nickname}
               onChange={(e) => setNickname(e.target.value)}
               maxLength={20}
               className="w-full p-3 border-[1.5px] border-bo-parchment rounded-r1 text-[15px] bg-white outline-none focus:border-bo-accent focus:ring-1 focus:ring-bo-accent/30 transition-colors"
             />
           </div>
+
           <p className="text-[11px] text-bo-ink-muted mb-4">
-            20文字以内で入力してください。後から変更できます。
+            20文字以内で入力してください。あとから変更できます。
           </p>
 
           {error && (

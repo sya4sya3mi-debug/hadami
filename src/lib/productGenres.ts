@@ -35,19 +35,19 @@ export interface GenreSlotConfig {
 }
 
 export const GENRE_SLOT_CONFIG: readonly GenreSlotConfig[] = [
-  { genre: "toner", maxSlots: 1, section: "base", stepLabel: "1" },
-  { genre: "serum", maxSlots: 1, section: "intensive", stepLabel: "2" },
-  { genre: "emulsion", maxSlots: 1, section: "protection", stepLabel: "3" },
-  { genre: "cream", maxSlots: 1, section: "protection", stepLabel: "4" },
+  { genre: "toner",     maxSlots: 1, section: "base",       stepLabel: "1" },
+  { genre: "serum",     maxSlots: 1, section: "intensive",  stepLabel: "2" },
+  { genre: "emulsion",  maxSlots: 1, section: "protection", stepLabel: "3" },
+  { genre: "cream",     maxSlots: 1, section: "protection", stepLabel: "4" },
   { genre: "sunscreen", maxSlots: 1, section: "protection", stepLabel: "5" },
-  { genre: "mask_pack", maxSlots: 1, section: "special", stepLabel: "6" },
+  { genre: "mask_pack", maxSlots: 1, section: "special",    stepLabel: "6" },
 ] as const;
 
 export const SECTION_INFO: Record<string, { label: string; step: string }> = {
-  base: { label: "ベースケア", step: "STEP 1" },
-  intensive: { label: "集中ケア", step: "STEP 2" },
-  protection: { label: "保護ケア", step: "STEP 3-5" },
-  special: { label: "スペシャルケア", step: "STEP 6" },
+  base:       { label: "ベースケア",     step: "STEP 1" },
+  intensive:  { label: "集中ケア",       step: "STEP 2" },
+  protection: { label: "保護ケア",       step: "STEP 3-5" },
+  special:    { label: "スペシャルケア", step: "STEP 6" },
 };
 
 export function getSlotConfig(genre: ProductGenre): GenreSlotConfig | undefined {

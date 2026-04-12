@@ -84,14 +84,15 @@ const config: Config = {
         },
       },
       borderRadius: {
-        r1: "4px",
-        r2: "4px",
-        r3: "8px",
+        r1: "12px",
+        r2: "16px",
+        r3: "20px",
       },
       boxShadow: {
-        bo1: "0 1px 2px rgba(0,0,0,0.04)",
-        bo2: "0 2px 4px rgba(0,0,0,0.1)",
-        "bo-accent": "none",
+        bo1: "0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04)",
+        bo2: "0 4px 12px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.06)",
+        "bo-accent": "0 4px 14px rgba(58,143,122,0.25), 0 1px 3px rgba(58,143,122,0.15)",
+        "bo-lift": "0 8px 24px rgba(0,0,0,0.1), 0 2px 6px rgba(0,0,0,0.06)",
       },
       fontFamily: {
         serif: ["'YakuHanJPs'", "-apple-system", "system-ui", "'Segoe UI'", "'Hiragino Kaku Gothic ProN'", "'Hiragino Sans'", "Meiryo", "sans-serif"],
@@ -105,6 +106,8 @@ const config: Config = {
         "shimmer-legend": "shimmerLegend 3.5s infinite",
         "pop-in": "popIn 0.3s ease forwards",
         "landing-float": "landingFloat 4s ease-in-out infinite",
+        "spring-in": "springIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards",
+        "slide-up-sheet": "slideUpSheet 0.35s cubic-bezier(0.32, 0.72, 0, 1) forwards",
       },
       keyframes: {
         particleFly: {
@@ -140,6 +143,14 @@ const config: Config = {
         landingFloat: {
           "0%, 100%": { transform: "translateY(0)" },
           "50%": { transform: "translateY(-12px)" },
+        },
+        springIn: {
+          "0%": { opacity: "0", transform: "scale(0.9) translateY(8px)" },
+          "100%": { opacity: "1", transform: "scale(1) translateY(0)" },
+        },
+        slideUpSheet: {
+          "0%": { transform: "translateY(100%)" },
+          "100%": { transform: "translateY(0)" },
         },
       },
     },

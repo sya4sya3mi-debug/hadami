@@ -1,52 +1,32 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useProductStore } from "@/stores/useProductStore";
 import { useDeckStore } from "@/stores/useDeckStore";
 import Disclaimer from "@/components/ui/Disclaimer";
+import ScrollToTop from "@/components/ui/ScrollToTop";
 import { useUser } from "@/lib/auth";
-import PageLoading from "@/components/ui/PageLoading";
+
 import AuthGuard from "@/components/ui/AuthGuard";
 import { ProductGenreIcon, ActiveCategoryIcon } from "@/components/ui/CosmeticIcons";
 import { getIngredientById, ACTIVE_CATEGORIES } from "@/lib/ingredients";
 import { CategoryKey, Product } from "@/types";
-import { PackageIcon, StarIcon, ChartIcon } from "@/components/ui/Icons";
+import { StarIcon } from "@/components/ui/Icons";
 import { deleteProductFromDb, updateProductImageInDb, deleteProductImageFromDb, updateProductTypeInDb, toggleFavoriteInDb, updateProductNameInDb } from "@/lib/db";
 import { PRODUCT_GENRES, getGenreByKey } from "@/lib/productGenres";
-import ShareModal from "@/components/ui/ShareModal";
+import dynamic from "next/dynamic";
+const ShareModal = dynamic(() => import("@/components/ui/ShareModal"), { ssr: false });
 import { shareMyCosmetic } from "@/lib/share";
+import { generateProductShareImage } from "@/lib/generateShareImage";
 import { getSignedImageUrls } from "@/lib/storage";
 import { getProductImagePath, getProductImageThumbPath } from "@/lib/productImages";
 import { ProductGenre } from "@/types";
 
 type ViewMode = "photo" | "list";
 
-function Counter({ to, dur = 900 }: { to: number; dur?: number }) {
-  const [v, setV] = useState(0);
-  const ref = useRef<number>(0);
-  const prev = useRef(0);
-
-  useEffect(() => {
-    if (to === prev.current) return;
-    const from = prev.current;
-    prev.current = to;
-    cancelAnimationFrame(ref.current);
-    let s: number | undefined;
-    const step = (t: number) => {
-      if (s === undefined) s = t;
-      const p = Math.min((t - s) / dur, 1);
-      setV(Math.round(from + (to - from) * p * p));
-      if (p < 1) ref.current = requestAnimationFrame(step);
-    };
-    ref.current = requestAnimationFrame(step);
-    return () => cancelAnimationFrame(ref.current);
-  }, [to, dur]);
-
-  return <>{v}</>;
-}
 
 export default function HistoryPage() {
   const { user, supabase, loading } = useUser();
@@ -75,19 +55,11 @@ export default function HistoryPage() {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [editingNameId, setEditingNameId] = useState<string | null>(null);
   const [editNameValue, setEditNameValue] = useState("");
-  const [showScrollTop, setShowScrollTop] = useState(false);
   const captureRef = useRef<HTMLDivElement>(null);
   const [shareProduct, setShareProduct] = useState<Product | null>(null);
+  const [shareImageBase64, setShareImageBase64] = useState<string | undefined>(undefined);
 
-  useEffect(() => {
-    const onScroll = () => setShowScrollTop(window.scrollY > 400);
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
-  }, []);
-
-  if (loading) {
-    return <PageLoading message="コスメ一覧を読み込んでいます..." />;
-  }
+  if (loading) return null;
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const handleCameraCapture = (productId: string) => {
@@ -297,25 +269,6 @@ export default function HistoryPage() {
             </div>
           </div>
 
-          {/* Stats */}
-          <div className="grid grid-cols-3 gap-2.5 mb-5">
-            {[
-              { n: products.length, label: "登録製品", Icon: PackageIcon, color: "#3A8F7A" },
-              { n: favCount, label: "お気に入り", Icon: StarIcon, color: "#E91E8C" },
-              { n: activeGenres.length, label: "カテゴリ", Icon: ChartIcon, color: "#D4A853" },
-            ].map((s) => (
-              <div key={s.label} className="py-4 px-3 text-center rounded-r2 bg-white shadow-bo1">
-                <div className="flex justify-center mb-1">
-                  <s.Icon size={18} color={s.color} />
-                </div>
-                <div className="text-xl font-black font-serif text-bo-accent leading-none">
-                  <Counter to={s.n} />
-                </div>
-                <div className="text-[10px] text-bo-ink-muted font-sans mt-1">{s.label}</div>
-              </div>
-            ))}
-          </div>
-
           <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
           <input ref={cameraInputRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={handleFileChange} />
           {imageError && (
@@ -340,7 +293,7 @@ export default function HistoryPage() {
               <button
                 onClick={() => setActiveFilter("all")}
                 className={`py-2 px-3 rounded-r1 border-none text-[11px] font-semibold font-sans cursor-pointer whitespace-nowrap shrink-0 pressable ${
-                  activeFilter === "all" ? "bg-bo-ink text-white shadow-bo2" : "bg-white text-bo-ink-muted shadow-bo1"
+                  activeFilter === "all" ? "bg-bo-accent text-white shadow-bo-accent" : "bg-white text-bo-ink-muted shadow-bo1"
                 }`}
               >
                 すべて
@@ -350,7 +303,7 @@ export default function HistoryPage() {
                   key={g.key}
                   onClick={() => setActiveFilter(g.key)}
                   className={`py-2 px-3 rounded-r1 border-none text-[11px] font-semibold font-sans cursor-pointer whitespace-nowrap shrink-0 pressable ${
-                    activeFilter === g.key ? "bg-bo-ink text-white shadow-bo2" : "bg-white text-bo-ink-muted shadow-bo1"
+                    activeFilter === g.key ? "bg-bo-accent text-white shadow-bo-accent" : "bg-white text-bo-ink-muted shadow-bo1"
                   }`}
                 >
                   <span className="inline-flex items-center gap-1">
@@ -438,7 +391,7 @@ export default function HistoryPage() {
                                   {p.isFavorite ? <StarIcon size={14} color="#F59E0B" filled /> : <StarIcon size={14} color="#BDBDBD" />}
                                 </button>
                                 <button
-                                  onClick={(e) => { e.stopPropagation(); setShareProduct(p); }}
+                                  onClick={(e) => { e.stopPropagation(); setShareImageBase64(undefined); setShareProduct(p); generateProductShareImage(p).then(setShareImageBase64).catch(() => {}); }}
                                   className="w-8 h-8 rounded-[10px] bg-white/80 backdrop-blur-lg flex items-center justify-center
                                              border-none cursor-pointer p-0 pressable shadow-bo1"
                                   title="Xに投稿"
@@ -494,13 +447,13 @@ export default function HistoryPage() {
                               });
                               const catArr = Array.from(cats).slice(0, 4);
                               return catArr.length > 0 ? (
-                                <div className="flex gap-1 mt-1.5 flex-wrap">
+                                <div className="flex gap-1 mt-1.5 overflow-hidden">
                                   {catArr.map((catKey) => {
                                     const info = ACTIVE_CATEGORIES.find((c) => c.key === catKey);
                                     return info ? (
                                       <span
                                         key={catKey}
-                                        className="w-5 h-5 rounded-full inline-flex items-center justify-center"
+                                        className="w-5 h-5 rounded-full inline-flex items-center justify-center shrink-0"
                                         style={{ background: info.color + "20", color: info.color }}
                                         title={info.label}
                                       >
@@ -651,7 +604,7 @@ export default function HistoryPage() {
                                     {p.isFavorite ? <StarIcon size={14} color="#F59E0B" filled /> : <StarIcon size={14} color="#BDBDBD" />}
                                   </button>
                                   <button
-                                    onClick={(e) => { e.stopPropagation(); setShareProduct(p); }}
+                                    onClick={(e) => { e.stopPropagation(); setShareImageBase64(undefined); setShareProduct(p); generateProductShareImage(p).then(setShareImageBase64).catch(() => {}); }}
                                     className="border-none bg-transparent cursor-pointer p-0 pressable"
                                     title="Xに投稿"
                                   >
@@ -667,19 +620,24 @@ export default function HistoryPage() {
                                     const ing = getIngredientById(pi.ingredientId);
                                     if (ing?.activeIngredient) ing.categories.forEach((c) => cats.add(c));
                                   });
-                                  return Array.from(cats).slice(0, 3).map((catKey) => {
-                                    const info = ACTIVE_CATEGORIES.find((c) => c.key === catKey);
-                                    return info ? (
-                                      <span
-                                        key={catKey}
-                                        className="w-5 h-5 rounded-full inline-flex items-center justify-center"
-                                        style={{ background: info.color + "20", color: info.color }}
-                                        title={info.label}
-                                      >
-                                        <ActiveCategoryIcon category={info.key} size={11} />
-                                      </span>
-                                    ) : null;
-                                  });
+                                  const catArr = Array.from(cats).slice(0, 4);
+                                  return catArr.length > 0 ? (
+                                    <div className="flex gap-1">
+                                      {catArr.map((catKey) => {
+                                        const info = ACTIVE_CATEGORIES.find((c) => c.key === catKey);
+                                        return info ? (
+                                          <span
+                                            key={catKey}
+                                            className="w-5 h-5 rounded-full inline-flex items-center justify-center shrink-0"
+                                            style={{ background: info.color + "20", color: info.color }}
+                                            title={info.label}
+                                          >
+                                            <ActiveCategoryIcon category={info.key} size={11} />
+                                          </span>
+                                        ) : null;
+                                      })}
+                                    </div>
+                                  ) : null;
                                 })()}
                               </>
                             )}
@@ -746,7 +704,7 @@ export default function HistoryPage() {
         </div>
       </div>
 
-      {/* Share Modal */}
+      {/* Share Modal（Canvas生成済み画像を直接渡す） */}
       {shareProduct && (
         <ShareModal
           text={shareMyCosmetic(
@@ -756,23 +714,12 @@ export default function HistoryPage() {
               .map((pi) => getIngredientById(pi.ingredientId)?.nameJa)
               .filter((n): n is string => !!n)
           )}
-          onClose={() => setShareProduct(null)}
+          onClose={() => { setShareProduct(null); setShareImageBase64(undefined); }}
+          imageBase64={shareImageBase64}
         />
       )}
 
-      {/* Scroll to top */}
-      {showScrollTop && (
-        <button
-          onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-          className="fixed bottom-28 right-4 z-[100] w-11 h-11 rounded-r1 bg-bo-accent text-white border-none
-                     shadow-bo-accent flex items-center justify-center cursor-pointer pressable"
-          aria-label="上に戻る"
-        >
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" aria-hidden="true">
-            <path d="M12 19V5M5 12l7-7 7 7" />
-          </svg>
-        </button>
-      )}
+      <ScrollToTop />
     </AuthGuard>
   );
 }
