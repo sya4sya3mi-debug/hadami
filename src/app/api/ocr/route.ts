@@ -56,7 +56,7 @@ export async function POST(req: NextRequest) {
   // 5. Call Gemini OCR（医薬部外品の有効成分セクション検出対応）
   try {
     const response = await client.models.generateContent({
-      model: process.env.GEMINI_IDENTIFY_MODEL || "gemini-2.5-flash",
+      model: process.env.GEMINI_IDENTIFY_MODEL || "gemini-2.5-flash-lite",
       contents: [
         {
           role: "user",
