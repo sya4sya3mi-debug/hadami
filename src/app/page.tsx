@@ -400,7 +400,7 @@ export default function HomePage() {
                   <Link
                     key={item.id}
                     href={`/product/${item.id}`}
-                    className="min-w-[170px] snap-start bg-white rounded-r2 overflow-hidden shadow-bo1
+                    className="min-w-[170px] max-w-[170px] snap-start bg-white rounded-r2 overflow-hidden shadow-bo1
                                cursor-pointer shrink-0 no-underline pressable"
                   >
                     {/* Product image or gradient placeholder */}
@@ -434,7 +434,7 @@ export default function HomePage() {
                       <div className="text-xs font-bold text-bo-ink font-sans mb-0.5 leading-snug line-clamp-2">
                         {item.name}
                       </div>
-                      <div className="text-[10px] text-bo-ink-muted font-sans">{item.brand}</div>
+                      <div className="text-[10px] text-bo-ink-muted font-sans truncate">{item.brand}</div>
                     </div>
                   </Link>
                 );
