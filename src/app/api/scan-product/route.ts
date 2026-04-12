@@ -706,167 +706,82 @@ async function searchProductEvidence(
   }
 }
 
-const IDENTIFY_MODEL = process.env.GEMINI_IDENTIFY_MODEL || "gemini-2.5-flash";
+const IDENTIFY_MODEL = process.env.GEMINI_IDENTIFY_MODEL || "gemini-3.1-flash-lite";
 
-// Phase 1 prompt: Pure OCR — just read all text, no classification
-const OCR_READ_ALL_TEXT_PROMPT = [
-  "この画像に写っている文字を全て読み取ってください。",
-  "ロゴ、ブランド名、商品名、シリーズ名、容量、説明文など、見える文字は全て含めてください。",
-  "縦書き・曲線・小さい文字・デザインされた文字も全て読んでください。",
-  "英語・日本語・韓国語、どの言語でも構いません。",
+const IDENTIFY_PROMPT = [
+  "Identify the cosmetic product in this photo.",
+  "Read the text on the package and return:",
   "",
-  "1行に1つのテキスト要素を書いてください。",
-  "余計な説明は不要です。読み取ったテキストだけを返してください。",
-].join("\n");
-
-// Phase 2 prompt: Classify OCR text into brand/product (text-only, no vision)
-const CLASSIFY_TEXT_PROMPT_TEMPLATE = (ocrText: string) => [
-  "以下は化粧品のパッケージから読み取ったテキストです：",
-  "---",
-  ocrText,
-  "---",
-  "",
-  "このテキストから化粧品のブランド名と商品名を特定してください。",
-  "",
-  "判定のヒント：",
-  "- ブランド名: メーカーやブランドの名前（例：SHISEIDO, 資生堂, SK-II, 無印良品, ANUA, Dior, ロート, KOSE）",
-  "- 商品名: シリーズ名＋製品タイプを結合（例：エリクシール シュペリエル リフトモイスト ローション T II）",
-  "- 容量（mL, g）は商品名に含めないこと",
-  "",
-  "以下の形式で回答してください（余計な文章不要）：",
-  "PRODUCT: 商品名",
-  "BRAND: ブランド名",
-  "LANG: ja|ko|en",
-  "TYPE: cleansing / face_wash / toner / serum / emulsion / cream / sunscreen / mask_pack / eye_care / oil / mist / other",
-].join("\n");
-
-// Fallback: single-shot identify (combined OCR+classify in one call)
-const SINGLE_SHOT_IDENTIFY_PROMPT = [
-  "この化粧品パッケージの写真から、ブランド名と商品名を読み取ってください。",
-  "ぼやけていても、部分的でも、ベストな推定で構いません。",
-  "",
-  "PRODUCT: 商品名",
-  "BRAND: ブランド名",
+  "PRODUCT: product name",
+  "BRAND: brand name",
   "LANG: ja|ko|en",
   "TYPE: cleansing / face_wash / toner / serum / emulsion / cream / sunscreen / mask_pack / eye_care / oil / mist / other",
   "",
-  "必ずPRODUCTとBRANDの行を返してください。",
+  "For multiple products use PRODUCT1/BRAND1/LANG1/TYPE1 format.",
+  "Always return at least one PRODUCT line.",
 ].join("\n");
 
 const IMAGE_OCR_PROMPT = [
-  "Look carefully at this cosmetic product package image.",
-  "Find and extract the ingredient list (成分, 全成分, INGREDIENTS, or similar).",
+  "Extract the ingredient list from this cosmetic product image.",
+  "Look for 成分, 全成分, INGREDIENTS, or similar labels.",
   "If there is a 有効成分 (active ingredients) section, extract it separately.",
   "",
-  "Return JSON only (no markdown):",
-  "{",
-  '  "ingredients_text": "full comma-separated ingredient list, exactly as written",',
-  '  "active_ingredients": ["active ingredient 1", "active ingredient 2"],',
-  '  "is_quasi_drug": false',
-  "}",
+  "Return JSON only:",
+  '{"ingredients_text": "full comma-separated list", "active_ingredients": ["name1"], "is_quasi_drug": false}',
   "",
-  "If no ingredient list is visible in the image, return:",
+  "If no ingredients visible:",
   '{"ingredients_text": "", "active_ingredients": [], "is_quasi_drug": false}',
-  "",
-  "Do NOT guess or add ingredients not visible in the image.",
 ].join("\n");
 
 async function identifyProductsWithRetry(base64Data: string): Promise<IdentifiedProduct[]> {
-  // ── Phase 1: Pure OCR (vision + thinking) ──
-  // Only reads text from image, no classification burden
-  let ocrText = "";
-  try {
-    const ocrResponse = await withTimeout(
-      client.models.generateContent({
-        model: IDENTIFY_MODEL,
-        contents: [
-          {
-            role: "user",
-            parts: [
-              { inlineData: { mimeType: "image/jpeg", data: base64Data } },
-              { text: OCR_READ_ALL_TEXT_PROMPT },
-            ],
-          },
-        ],
-        config: {
-          maxOutputTokens: 2048,
-          thinkingConfig: { thinkingBudget: 2048 },
-        },
-      }),
-      20000,
-      "Timed out while reading text from image",
-    );
-    ocrText = (ocrResponse.text ?? "").trim();
-    console.log("[scan-product] Phase 1 OCR result:", ocrText.slice(0, 500));
-  } catch (e) {
-    console.warn("[scan-product] Phase 1 OCR failed:", e);
-  }
-
-  // ── Phase 2: Classify OCR text (text-only, no vision needed) ──
-  if (ocrText) {
-    try {
-      const classifyResponse = await withTimeout(
-        client.models.generateContent({
-          model: IDENTIFY_MODEL,
-          contents: [
-            {
-              role: "user",
-              parts: [{ text: CLASSIFY_TEXT_PROMPT_TEMPLATE(ocrText) }],
-            },
+  // Attempt 1
+  const firstResponse = await withTimeout(
+    client.models.generateContent({
+      model: IDENTIFY_MODEL,
+      contents: [
+        {
+          role: "user",
+          parts: [
+            { inlineData: { mimeType: "image/jpeg", data: base64Data } },
+            { text: IDENTIFY_PROMPT },
           ],
-          config: { maxOutputTokens: 512 },
-        }),
-        10000,
-        "Timed out while classifying product text",
-      );
-      const classifyText = classifyResponse.text ?? "";
-      console.log("[scan-product] Phase 2 classify result:", classifyText.slice(0, 300));
-      const products = parseIdentifiedProducts(classifyText);
-      if (products.length > 0) return products;
-    } catch (e) {
-      console.warn("[scan-product] Phase 2 classify failed:", e);
-    }
+        },
+      ],
+      config: { maxOutputTokens: 1024 },
+    }),
+    15000,
+    "Timed out while identifying product",
+  ).catch(() => null);
 
-    // If classification failed but OCR succeeded, try to extract from raw OCR text
-    const fromOcr = parseIdentifiedProducts(ocrText);
-    if (fromOcr.length > 0) return fromOcr;
-  }
+  const responseText = firstResponse?.text ?? "";
+  console.log("[scan-product] identify response:", responseText.slice(0, 500));
 
-  // ── Fallback: Single-shot identify (combined approach) ──
-  console.log("[scan-product] Falling back to single-shot identify");
-  try {
-    const fallbackResponse = await withTimeout(
-      client.models.generateContent({
-        model: IDENTIFY_MODEL,
-        contents: [
-          {
-            role: "user",
-            parts: [
-              { inlineData: { mimeType: "image/jpeg", data: base64Data } },
-              { text: SINGLE_SHOT_IDENTIFY_PROMPT },
-            ],
-          },
-        ],
-        config: { maxOutputTokens: 512 },
-      }),
-      15000,
-      "Timed out while identifying product (fallback)",
-    );
-    const fallbackText = fallbackResponse.text ?? "";
-    console.log("[scan-product] Fallback identify result:", fallbackText.slice(0, 300));
-    return parseIdentifiedProducts(fallbackText);
-  } catch (e) {
-    console.warn("[scan-product] Fallback identify failed:", e);
-  }
+  const products = parseIdentifiedProducts(responseText);
+  if (products.length > 0) return products;
 
-  // Last resort: return OCR text as-is for product name
-  if (ocrText) {
-    const lines = ocrText.split("\n").map((l) => l.trim()).filter(Boolean);
-    // Use the most prominent (first) line as product name
-    return [{ product: lines[0] || ocrText.slice(0, 100), brand: lines[1] || "", lang: "ja", type: "other" }];
-  }
+  // Attempt 2: retry with simpler prompt
+  const retryResponse = await withTimeout(
+    client.models.generateContent({
+      model: IDENTIFY_MODEL,
+      contents: [
+        {
+          role: "user",
+          parts: [
+            { inlineData: { mimeType: "image/jpeg", data: base64Data } },
+            { text: "Read the text on this cosmetic package.\n\nPRODUCT: (name)\nBRAND: (brand)\nLANG: ja\nTYPE: other" },
+          ],
+        },
+      ],
+      config: { maxOutputTokens: 512 },
+    }),
+    15000,
+    "Timed out while identifying product (retry)",
+  ).catch(() => null);
 
-  return [];
+  const retryText = retryResponse?.text ?? "";
+  console.log("[scan-product] identify retry response:", retryText.slice(0, 500));
+
+  return parseIdentifiedProducts(retryText);
 }
 
 async function ocrIngredientsFromImage(base64Data: string): Promise<{
