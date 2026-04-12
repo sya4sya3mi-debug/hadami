@@ -11,7 +11,7 @@ async function preprocessImage(dataUrl: string): Promise<PreprocessResult> {
   return new Promise((resolve) => {
     const img = new Image();
     img.onload = () => {
-      const MAX_SIDE = 1800;
+      const MAX_SIDE = 2400;
       let { width, height } = img;
       if (width > MAX_SIDE || height > MAX_SIDE) {
         const scale = MAX_SIDE / Math.max(width, height);
@@ -24,7 +24,7 @@ async function preprocessImage(dataUrl: string): Promise<PreprocessResult> {
       colorCanvas.height = height;
       const colorCtx = colorCanvas.getContext("2d")!;
       colorCtx.drawImage(img, 0, 0, width, height);
-      const color = colorCanvas.toDataURL("image/jpeg", 0.92);
+      const color = colorCanvas.toDataURL("image/jpeg", 0.95);
 
       const canvas = document.createElement("canvas");
       canvas.width = width;
@@ -81,44 +81,75 @@ export default function CaptureStep({ onCapture, preview, disabled }: CaptureSte
   }, []);
 
   return (
-    <div className="space-y-4 animate-fade-up">
-      {/* Hero capture card */}
+    <div className="space-y-5 animate-fade-up">
+      {/* Hero capture area */}
       {!displayPreview ? (
         <button
           onClick={() => { if (!disabled) fileInputRef.current?.click(); }}
           disabled={disabled}
-          className={`w-full rounded-r3 flex items-center gap-3 relative overflow-hidden py-3 px-4 bg-white/70 backdrop-blur-[12px] border border-bo-accent/20 shadow-[0_4px_24px_rgba(58,143,122,0.08)] ${
+          className={`w-full rounded-r3 overflow-hidden border-none bg-white shadow-bo2 pressable ${
             disabled ? "cursor-not-allowed opacity-50" : "cursor-pointer"
           }`}
         >
-          <div className="w-[44px] h-[44px] shrink-0 rounded-full flex items-center justify-center text-[22px] bg-gradient-to-br from-bo-accent-soft to-[#D4F5EF] animate-pulse-ring">
-            <span>📸</span>
-          </div>
-          <div className="text-left flex-1">
-            <div className="font-bold text-[14px] text-bo-ink font-sans leading-tight">
-              表のパッケージを撮影
+          {/* Gradient top bar */}
+          <div className="h-1 bg-gradient-to-r from-bo-accent via-[#7DD3C8] to-bo-accent" />
+
+          <div className="flex flex-col items-center py-8 px-6">
+            {/* Camera icon container */}
+            <div className="w-20 h-20 rounded-[24px] flex items-center justify-center text-4xl mb-5
+                            bg-gradient-to-br from-bo-accent-soft to-[#D4F5EF]
+                            shadow-[0_8px_24px_rgba(58,143,122,0.15)]">
+              <span className="animate-pulse-ring">📸</span>
+            </div>
+
+            <h2 className="text-base font-bold text-bo-ink font-sans mb-1.5">
+              パッケージを撮影
+            </h2>
+            <p className="text-xs text-bo-ink-muted font-sans leading-relaxed text-center">
+              化粧品の表面パッケージを撮影してください<br />
+              ブランド名と製品名が見えるように
+            </p>
+
+            {/* CTA pill */}
+            <div className="mt-6 px-8 py-3 rounded-full bg-bo-accent text-white text-sm font-bold font-sans
+                            shadow-bo-accent inline-flex items-center gap-2">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                <path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/>
+                <circle cx="12" cy="13" r="4"/>
+              </svg>
+              撮影する
             </div>
           </div>
-          <svg className="shrink-0 text-bo-accent" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M9 18l6-6-6-6"/></svg>
         </button>
       ) : (
-        <div className="w-full h-[168px] rounded-r3 relative overflow-hidden border border-bo-accent/20 shadow-[0_4px_24px_rgba(58,143,122,0.08)]">
+        <div className="w-full rounded-r3 relative overflow-hidden shadow-bo2">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={displayPreview}
             alt="撮影したコスメ"
-            className="w-full h-full object-cover"
+            className="w-full h-[200px] object-cover"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
+
+          {/* Status badge */}
+          <div className="absolute top-3 left-3 px-3.5 py-2 rounded-r1 text-xs font-bold text-white
+                          bg-bo-accent/90 backdrop-blur-lg shadow-bo-accent
+                          inline-flex items-center gap-1.5">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round">
+              <path d="M20 6L9 17l-5-5"/>
+            </svg>
+            撮影完了
+          </div>
+
+          {/* Retake button */}
           <button
             onClick={handleRetake}
-            className="absolute bottom-3 right-3 px-4 py-2 rounded-full text-xs font-bold text-white bg-black/50 backdrop-blur-lg"
+            className="absolute bottom-3 right-3 px-4 py-2.5 rounded-r1 text-xs font-bold text-white
+                       bg-black/40 backdrop-blur-xl border border-white/20
+                       pressable"
           >
             📷 撮り直す
           </button>
-          <div className="absolute top-3 left-3 px-3 py-1.5 rounded-full text-xs font-bold text-white bg-bo-accent/85 backdrop-blur-lg">
-            ✓ 撮影完了
-          </div>
         </div>
       )}
 
@@ -130,7 +161,6 @@ export default function CaptureStep({ onCapture, preview, disabled }: CaptureSte
         onChange={handleFileChange}
         className="hidden"
       />
-
     </div>
   );
 }

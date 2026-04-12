@@ -63,7 +63,6 @@ interface ProductEvidenceResult {
 }
 
 const SUSPICIOUS_HOST_FRAGMENTS = [
-  "cosme.net",
   "lips",
   "rakuten",
   "amazon",
@@ -72,6 +71,10 @@ const SUSPICIOUS_HOST_FRAGMENTS = [
   "qoo10",
   "wowma",
   "shoplist",
+];
+
+const REVIEW_HOST_FRAGMENTS = [
+  "cosme.net",
   "atcosme",
 ];
 
@@ -192,6 +195,10 @@ function getHost(url: string): string {
 
 function isSuspiciousHost(host: string): boolean {
   return SUSPICIOUS_HOST_FRAGMENTS.some((fragment) => host.includes(fragment));
+}
+
+function isReviewHost(host: string): boolean {
+  return REVIEW_HOST_FRAGMENTS.some((fragment) => host.includes(fragment));
 }
 
 function isHttpUrl(url: string): boolean {
@@ -332,14 +339,17 @@ function extractMarkedActiveIngredients(record?: IngredientRecord): string[] {
 function buildSearchQueries(product: string, brand: string, lang: string): string[] {
   const exact = [brand, product].filter(Boolean).join(" ").trim();
   const queries = [
+    `"${exact}" 全成分`,
     `"${exact}" ${QUASI_DRUG_TEXT} ${ACTIVE_TEXT}`,
     `"${exact}" ${SALES_NAME_TEXT} ${INGREDIENT_TEXT}`,
+    `"${exact}" 全成分表示`,
     `"${exact}" "*\u306F\u300C${ACTIVE_TEXT}\u300D"`,
     `site:pmda.go.jp "${exact}"`,
   ];
 
   if (lang === "en") {
     queries.push(`"${exact}" active ingredient quasi-drug`);
+    queries.push(`"${exact}" full ingredients list`);
   }
 
   return queries;
@@ -369,6 +379,7 @@ function scoreEvidence(
 
   if (host.endsWith("pmda.go.jp")) score += 12;
   else if (host.endsWith("mhlw.go.jp")) score += 10;
+  else if (isReviewHost(host)) score -= 8;
   else if (!isSuspiciousHost(host) && host) score += 14;
 
   if (isSuspiciousHost(host)) score -= 24;
@@ -489,33 +500,37 @@ async function searchProductEvidence(
   try {
     const searchResponse = await withTimeout(
       client.models.generateContent({
-        model: "gemini-2.5-flash-lite",
+        model: IDENTIFY_MODEL,
         contents: [
           {
             role: "user",
             parts: [
               {
                 text: [
-                  "Find the exact cosmetic product on the web using Google Search grounding.",
-                  "Prefer manufacturer official pages, manufacturer online shops, PMDA, and MHLW sources.",
-                  "Avoid review sites and marketplaces unless nothing else exists.",
+                  "You are a cosmetic ingredient researcher. Use Google Search to find the COMPLETE ingredient list for this product.",
+                  "Search for the product on manufacturer sites, official stores, PMDA, and MHLW. Avoid marketplaces.",
                   "",
                   `Product: ${queryText}`,
                   "Search hints:",
                   ...searchQueries.map((query, index) => `${index + 1}. ${query}`),
                   "",
-                  "Return JSON only:",
+                  "CRITICAL: Extract the FULL ingredient list exactly as written on the product or official source.",
+                  "Do NOT truncate or summarize — copy every single ingredient name.",
+                  "",
+                  "Return JSON only (no markdown, no extra text):",
                   "{",
-                  '  "likely_sales_name": "",',
+                  '  "likely_sales_name": "exact product sales name if found, else empty string",',
                   '  "is_quasi_drug_candidate": false,',
-                  '  "ingredients_text_candidate": "",',
-                  '  "active_ingredients_candidate": [],',
-                  '  "source_urls": []',
+                  '  "ingredients_text_candidate": "FULL comma-separated ingredient list here — do not shorten",',
+                  '  "active_ingredients_candidate": ["only ingredients explicitly labeled as 有効成分 or active ingredient"],',
+                  '  "source_urls": ["url1", "url2"]',
                   "}",
                   "",
                   "Rules:",
-                  "- active_ingredients_candidate must contain only ingredients explicitly labeled as active ingredients.",
-                  "- If you are not sure, use an empty array.",
+                  "- ingredients_text_candidate: include ALL ingredients, comma-separated, exactly as listed",
+                  "- If the product is 医薬部外品 (quasi-drug), set is_quasi_drug_candidate to true",
+                  "- active_ingredients_candidate: ONLY explicitly labeled active/有効 ingredients, NOT all ingredients",
+                  "- If no ingredient list is found anywhere, return empty string for ingredients_text_candidate",
                 ].join("\n"),
               },
             ],
@@ -523,7 +538,7 @@ async function searchProductEvidence(
         ],
         config: {
           tools: [{ googleSearch: {} }],
-          maxOutputTokens: 1024,
+          maxOutputTokens: 4096,
         },
       }),
       20000,
@@ -536,7 +551,7 @@ async function searchProductEvidence(
       ...parseGroundingUrls(searchResponse),
     ])
       .filter(isHttpUrl)
-      .slice(0, 6);
+      .slice(0, 4);
 
     const pageEvidence = (
       await Promise.all(candidateUrls.map((url) => fetchPageEvidence(url, product, brand)))
@@ -600,6 +615,215 @@ async function searchProductEvidence(
   }
 }
 
+const IDENTIFY_MODEL = process.env.GEMINI_IDENTIFY_MODEL || "gemini-2.5-flash";
+
+const STANDARD_IDENTIFY_PROMPT = [
+  "You are an expert at reading text on Japanese cosmetic product packages.",
+  "",
+  "STEP 1 — Read ALL text visible on this package photo.",
+  "Japanese cosmetics typically display text in this order:",
+  "  - BRAND name: usually a logo or large styled text at the top or center (often in English, katakana, or a mix)",
+  "  - Series / line name: sometimes written below the brand",
+  "  - Product name: describes the product function (e.g. 化粧水, 美容液, クリーム, UV, etc.)",
+  "  - Volume (mL, g): sometimes near the bottom",
+  "Text may be in Japanese (kanji, hiragana, katakana), English, Korean, or mixed.",
+  "Text may be vertical, curved, small, or partially obscured — read it all anyway.",
+  "",
+  "STEP 2 — From the text you read, determine:",
+  "  - BRAND: the manufacturer or brand name (e.g. 資生堂, SHISEIDO, SK-II, ロート, 無印良品, Dior, etc.)",
+  "  - PRODUCT: the full product name including series and variant (e.g. エリクシール シュペリエル リフトモイスト ローション T II)",
+  "  - Do NOT include volume (mL, g) in the product name.",
+  "",
+  "STEP 3 — Return EXACTLY in this format (no extra text):",
+  "",
+  "Use TYPE values from this list:",
+  "cleansing / face_wash / toner / serum / emulsion / cream / sunscreen / mask_pack / eye_care / oil / mist / other",
+  "",
+  "Single product:",
+  "PRODUCT: ...",
+  "BRAND: ...",
+  "LANG: ja|ko|en",
+  "TYPE: ...",
+  "",
+  "Multiple products:",
+  "PRODUCT1: ...",
+  "BRAND1: ...",
+  "LANG1: ja|ko|en",
+  "TYPE1: ...",
+  "PRODUCT2: ...",
+  "BRAND2: ...",
+  "LANG2: ja|ko|en",
+  "TYPE2: ...",
+  "",
+  "IMPORTANT: You MUST return at least one PRODUCT line. Even if unsure, give your best reading of the text.",
+  "Do not say you cannot identify it. Do not add commentary.",
+].join("\n");
+
+const RETRY_IDENTIFY_PROMPT = [
+  "This is a photo of a cosmetic or skincare product package.",
+  "Your job is to READ EVERY PIECE OF TEXT visible in this image — no matter how small, blurry, tilted, or partially hidden.",
+  "",
+  "Common text locations on cosmetic packages:",
+  "- Front center or top: brand name / logo (often English or katakana)",
+  "- Below brand: series name or product line name",
+  "- Center or bottom: product type description (化粧水, 乳液, クリーム, セラム, 美容液, 日焼け止め, etc.)",
+  "- Small text: volume (mL, g), ingredients, warnings",
+  "",
+  "After reading all text, classify:",
+  "- BRAND: the brand/manufacturer name",
+  "- PRODUCT: the product name (combine series + product type if visible)",
+  "",
+  "Return in EXACTLY this format:",
+  "PRODUCT: (your best reading of the product name)",
+  "BRAND: (your best reading of the brand name)",
+  "LANG: ja|ko|en",
+  "TYPE: cleansing / face_wash / toner / serum / emulsion / cream / sunscreen / mask_pack / eye_care / oil / mist / other",
+  "",
+  "You MUST return at least one PRODUCT line. Partial or approximate readings are acceptable.",
+  "Do NOT say you cannot identify it. Do NOT add commentary.",
+].join("\n");
+
+const IMAGE_OCR_PROMPT = [
+  "Look carefully at this cosmetic product package image.",
+  "Find and extract the ingredient list (成分, 全成分, INGREDIENTS, or similar).",
+  "If there is a 有効成分 (active ingredients) section, extract it separately.",
+  "",
+  "Return JSON only (no markdown):",
+  "{",
+  '  "ingredients_text": "full comma-separated ingredient list, exactly as written",',
+  '  "active_ingredients": ["active ingredient 1", "active ingredient 2"],',
+  '  "is_quasi_drug": false',
+  "}",
+  "",
+  "If no ingredient list is visible in the image, return:",
+  '{"ingredients_text": "", "active_ingredients": [], "is_quasi_drug": false}',
+  "",
+  "Do NOT guess or add ingredients not visible in the image.",
+].join("\n");
+
+const OCR_FALLBACK_IDENTIFY_PROMPT = [
+  "Read ALL text visible in this cosmetic product package photo.",
+  "List every text element you can see, then determine the brand and product name.",
+  "",
+  "Output format (strictly follow this):",
+  "PRODUCT: (product name — combine series name + product type if both are visible)",
+  "BRAND: (brand or manufacturer name)",
+  "LANG: ja|ko|en",
+  "TYPE: cleansing / face_wash / toner / serum / emulsion / cream / sunscreen / mask_pack / eye_care / oil / mist / other",
+  "",
+  "Rules:",
+  "- If you can only read partial text, still return your best guess.",
+  "- If you see ONLY a brand name and no product name, return BRAND with the brand and PRODUCT with whatever descriptive text you see.",
+  "- If you see text but cannot determine brand vs product, put the most prominent text in PRODUCT and any secondary text in BRAND.",
+  "- You MUST always return at least PRODUCT and BRAND lines. NEVER return empty.",
+].join("\n");
+
+async function identifyProductsWithRetry(base64Data: string): Promise<IdentifiedProduct[]> {
+  // Attempt 1: primary model + standard prompt (detailed Japanese-focused)
+  const firstResponse = await withTimeout(
+    client.models.generateContent({
+      model: IDENTIFY_MODEL,
+      contents: [
+        {
+          role: "user",
+          parts: [
+            { inlineData: { mimeType: "image/jpeg", data: base64Data } },
+            { text: STANDARD_IDENTIFY_PROMPT },
+          ],
+        },
+      ],
+      config: { maxOutputTokens: 1024 },
+    }),
+    15000,
+    "Timed out while identifying product (attempt 1)",
+  ).catch(() => null);
+
+  const firstProducts = parseIdentifiedProducts(firstResponse?.text ?? "");
+  if (firstProducts.length > 0) return firstProducts;
+
+  // Attempt 2: same model + retry prompt (more lenient, text-reading focused)
+  const retryResponse = await withTimeout(
+    client.models.generateContent({
+      model: IDENTIFY_MODEL,
+      contents: [
+        {
+          role: "user",
+          parts: [
+            { inlineData: { mimeType: "image/jpeg", data: base64Data } },
+            { text: RETRY_IDENTIFY_PROMPT },
+          ],
+        },
+      ],
+      config: { maxOutputTokens: 1024 },
+    }),
+    15000,
+    "Timed out while identifying product (attempt 2)",
+  ).catch(() => null);
+
+  const retryProducts = parseIdentifiedProducts(retryResponse?.text ?? "");
+  if (retryProducts.length > 0) return retryProducts;
+
+  // Attempt 3: OCR fallback — pure text extraction approach
+  const ocrResponse = await withTimeout(
+    client.models.generateContent({
+      model: IDENTIFY_MODEL,
+      contents: [
+        {
+          role: "user",
+          parts: [
+            { inlineData: { mimeType: "image/jpeg", data: base64Data } },
+            { text: OCR_FALLBACK_IDENTIFY_PROMPT },
+          ],
+        },
+      ],
+      config: { maxOutputTokens: 1024 },
+    }),
+    15000,
+    "Timed out while identifying product (attempt 3 — OCR fallback)",
+  ).catch(() => null);
+
+  return parseIdentifiedProducts(ocrResponse?.text ?? "");
+}
+
+async function ocrIngredientsFromImage(base64Data: string): Promise<{
+  ingredients_text: string;
+  active_ingredients: string[];
+  is_quasi_drug: boolean;
+} | null> {
+  try {
+    const response = await withTimeout(
+      client.models.generateContent({
+        model: IDENTIFY_MODEL,
+        contents: [
+          {
+            role: "user",
+            parts: [
+              { inlineData: { mimeType: "image/jpeg", data: base64Data } },
+              { text: IMAGE_OCR_PROMPT },
+            ],
+          },
+        ],
+        config: { maxOutputTokens: 4096 },
+      }),
+      15000,
+      "Timed out while OCR-ing ingredients from image",
+    );
+
+    const text = response.text ?? "";
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) return null;
+    const parsed = JSON.parse(jsonMatch[0]);
+    if (typeof parsed.ingredients_text !== "string") return null;
+    return {
+      ingredients_text: parsed.ingredients_text,
+      active_ingredients: Array.isArray(parsed.active_ingredients) ? parsed.active_ingredients : [],
+      is_quasi_drug: parsed.is_quasi_drug === true,
+    };
+  } catch {
+    return null;
+  }
+}
+
 export async function POST(req: NextRequest) {
   const ip = getClientIp(req);
   const rl = rateLimit(ip, 60_000, 10);
@@ -648,64 +872,21 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const identifyResponse = await withTimeout(
-      client.models.generateContent({
-        model: "gemini-2.5-flash-lite",
-        contents: [
-          {
-            role: "user",
-            parts: [
-              {
-                inlineData: {
-                  mimeType: "image/jpeg",
-                  data: validation.base64Data,
-                },
-              },
-              {
-                text: [
-                  "Identify every cosmetic or skincare product visible in this package photo.",
-                  "Return the answer in the exact text format below.",
-                  "Use TYPE values from this list:",
-                  "cleansing / face_wash / toner / serum / emulsion / cream / sunscreen / mask_pack / eye_care / oil / mist / other",
-                  "",
-                  "Single product:",
-                  "PRODUCT: ...",
-                  "BRAND: ...",
-                  "LANG: ja|ko|en",
-                  "TYPE: ...",
-                  "",
-                  "Multiple products:",
-                  "PRODUCT1: ...",
-                  "BRAND1: ...",
-                  "LANG1: ja|ko|en",
-                  "TYPE1: ...",
-                  "PRODUCT2: ...",
-                  "BRAND2: ...",
-                  "LANG2: ja|ko|en",
-                  "TYPE2: ...",
-                  "",
-                  "Do not add any extra commentary.",
-                ].join("\n"),
-              },
-            ],
-          },
-        ],
-        config: { maxOutputTokens: 512 },
-      }),
-      30000,
-      "Timed out while identifying product",
-    );
+    let identifiedProducts = await identifyProductsWithRetry(validation.base64Data);
 
-    const identifiedProducts = parseIdentifiedProducts(identifyResponse.text ?? "");
-
+    // Even if all 3 identify attempts failed, try OCR from image to get at least product name/brand
     if (identifiedProducts.length === 0) {
+      const imageOcr = await ocrIngredientsFromImage(validation.base64Data);
+      // Return partial result so the user can at least see/edit the product name
       await rollbackScan(auth.supabase, auth.user.id, auth.user.email!);
       return NextResponse.json({
         products: [],
         productName: "",
         brand: "",
-        found: false,
-        ingredients: "",
+        found: Boolean(imageOcr?.ingredients_text),
+        ingredients: imageOcr?.ingredients_text || "",
+        isQuasiDrug: imageOcr?.is_quasi_drug || false,
+        activeIngredients: imageOcr?.active_ingredients || [],
       });
     }
 
@@ -731,6 +912,24 @@ export async function POST(req: NextRequest) {
             identifiedProduct.brand,
             identifiedProduct.lang,
           );
+        }
+
+        // Fallback: if web search found no ingredients, try OCR from the image
+        if (!evidence.found || !evidence.ingredients) {
+          const imageOcr = await ocrIngredientsFromImage(validation.base64Data);
+          if (imageOcr?.ingredients_text) {
+            evidence = {
+              found: true,
+              ingredients: imageOcr.ingredients_text,
+              isQuasiDrug: imageOcr.is_quasi_drug,
+              activeIngredients: normalizeActiveNames(imageOcr.active_ingredients),
+              activeEvidenceText: undefined,
+              salesName: evidence.salesName,
+              sourceUrls: evidence.sourceUrls,
+              decision: imageOcr.active_ingredients.length > 0 ? "accepted" : "rejected",
+              confidenceScore: 50,
+            };
+          }
         }
 
         if (evidence.found && evidence.ingredients) {
