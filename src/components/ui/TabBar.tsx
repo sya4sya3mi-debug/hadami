@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { usePathname, useRouter } from "next/navigation";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useUser } from "@/lib/auth";
 import { useZukanStore } from "@/stores/useZukanStore";
 
@@ -97,7 +98,6 @@ const TABS = [
 
 export default function TabBar() {
   const pathname = usePathname();
-  const router = useRouter();
   const { user, loading } = useUser();
   const unsavedScan = useZukanStore((s) => s.unsavedScan);
 
@@ -109,19 +109,12 @@ export default function TabBar() {
   }, [pathname]);
   useEffect(() => () => clearTimeout(optimisticTimer.current), []);
 
-  // Prefetch all tab routes on mount for instant navigation
-  useEffect(() => {
-    TABS.forEach((tab) => router.prefetch(tab.href));
-  }, [router]);
-
   if (!loading && !user) return null;
 
-  const handleTouchStart = (href: string) => {
-    router.prefetch(href);
-  };
-
-  const handleNavigation = (href: string) => {
+  const handleClick = (e: React.MouseEvent, href: string) => {
+    // Guard: unsaved scan confirmation
     if (unsavedScan && pathname.startsWith("/scan")) {
+      e.preventDefault();
       if (
         !window.confirm(
           "スキャン結果がまだ保存されていません。破棄しますか？"
@@ -129,13 +122,21 @@ export default function TabBar() {
       )
         return;
       useZukanStore.getState().setUnsavedScan(false);
+      // Re-navigate after confirm
+      window.location.href = href;
+      return;
+    }
+    // Skip if already on target page
+    const onTarget = href === "/" ? pathname === "/" : pathname.startsWith(href);
+    if (onTarget) {
+      e.preventDefault();
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      return;
     }
     // Optimistic: instantly show tapped tab as active
     setOptimisticHref(href);
-    // Fallback: clear optimistic state if navigation takes too long
     clearTimeout(optimisticTimer.current);
     optimisticTimer.current = setTimeout(() => setOptimisticHref(null), 3000);
-    router.push(href);
   };
 
   return (
@@ -154,13 +155,14 @@ export default function TabBar() {
           // Center scan button — raised circle (PayPay style)
           if (tab.center) {
             return (
-              <button
+              <Link
                 key={tab.href}
-                onClick={() => handleNavigation(tab.href)}
-                onTouchStart={() => handleTouchStart(tab.href)}
+                href={tab.href}
+                prefetch={true}
+                onClick={(e) => handleClick(e, tab.href)}
                 aria-label={tab.ariaLabel}
                 aria-current={isActive ? "page" : undefined}
-                className="flex-1 flex flex-col items-center justify-center bg-transparent border-none cursor-pointer p-0"
+                className="flex-1 flex flex-col items-center justify-center bg-transparent border-none cursor-pointer p-0 no-underline"
                 style={{ marginTop: "-18px" }}
               >
                 <div
@@ -184,18 +186,19 @@ export default function TabBar() {
                 >
                   {tab.label}
                 </span>
-              </button>
+              </Link>
             );
           }
 
           return (
-            <button
+            <Link
               key={tab.href}
-              onClick={() => handleNavigation(tab.href)}
-              onTouchStart={() => handleTouchStart(tab.href)}
+              href={tab.href}
+              prefetch={true}
+              onClick={(e) => handleClick(e, tab.href)}
               aria-label={tab.ariaLabel}
               aria-current={isActive ? "page" : undefined}
-              className="flex-1 flex flex-col items-center justify-center gap-[3px] bg-transparent border-none cursor-pointer p-0 h-full"
+              className="flex-1 flex flex-col items-center justify-center gap-[3px] bg-transparent border-none cursor-pointer p-0 h-full no-underline"
               style={{ color: isActive ? "#3A8F7A" : "#8E8E93" }}
             >
               {tab.icon(isActive)}
@@ -208,7 +211,7 @@ export default function TabBar() {
               >
                 {tab.label}
               </span>
-            </button>
+            </Link>
           );
         })}
       </div>
