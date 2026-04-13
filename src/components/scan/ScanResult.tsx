@@ -1,9 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
+import { createPortal } from "react-dom";
 import { Ingredient, Combination, ProductGenre } from "@/types";
-import { RARITY, ACTIVE_CATEGORIES, getIngredientCategoryInfo, getIngredientCategories } from "@/lib/ingredients";
+import { RARITY, ACTIVE_CATEGORIES, getIngredientCategoryInfo, getIngredientCategories, isActiveIngredient } from "@/lib/ingredients";
 import { getGenreByKey } from "@/lib/productGenres";
 import Badge, { StarIcon } from "@/components/ui/Badge";
 import Disclaimer from "@/components/ui/Disclaimer";
@@ -45,9 +45,13 @@ export default function ScanResult({
 
   const genre = getGenreByKey(productType);
 
-  // Group ingredients by effect category
+  // 有効成分とその他を分離
+  const activeIngredients = foundIngredients.filter((f) => isActiveIngredient(f.ingredient.id));
+  const otherIngredients = foundIngredients.filter((f) => !isActiveIngredient(f.ingredient.id));
+
+  // Group active ingredients by effect category
   const grouped = new Map<string, { ingredient: Ingredient; orderIndex: number }[]>();
-  for (const item of foundIngredients) {
+  for (const item of activeIngredients) {
     const catKey = item.ingredient.categories[0] || "_other";
     if (!grouped.has(catKey)) grouped.set(catKey, []);
     grouped.get(catKey)!.push(item);
@@ -67,13 +71,12 @@ export default function ScanResult({
     onSave();
   };
 
-  const showGrouped = foundIngredients.length > 8;
   const contentPaddingClass = saved ? "pb-48" : "pb-24";
 
   return (
     <div className={`space-y-5 animate-fade-up ${contentPaddingClass}`}>
       {/* Product header card */}
-      <div className="bg-white rounded-r3 overflow-hidden shadow-bo2">
+      <div className="bg-white dark:bg-gray-800 rounded-r3 overflow-hidden shadow-bo2">
         <div className="h-1 bg-gradient-to-r from-bo-accent via-bo-safe to-[#6BC4A0]" />
         <div className="p-5">
           <div className="flex items-center gap-3.5">
@@ -89,8 +92,8 @@ export default function ScanResult({
               </div>
             )}
             <div className="flex-1 min-w-0">
-              <div className="font-extrabold text-base font-serif truncate text-bo-ink">{productName}</div>
-              <div className="text-xs mt-0.5 truncate text-bo-ink-muted font-sans tracking-wide">{brand}</div>
+              <div className="font-extrabold text-base font-serif truncate text-bo-ink dark:text-white">{productName}</div>
+              <div className="text-xs mt-0.5 truncate text-bo-ink-muted dark:text-gray-400 font-sans tracking-wide">{brand}</div>
             </div>
             {genre && (
               <span
@@ -104,21 +107,21 @@ export default function ScanResult({
           </div>
 
           {/* Stats row */}
-          <div className="flex items-center justify-center gap-3 mt-4 pt-4 border-t border-bo-parchment">
+          <div className="flex items-center justify-center gap-3 mt-4 pt-4 border-t border-bo-parchment dark:border-gray-700">
             <div className="flex-1 text-center">
-              <div className="text-lg font-black text-bo-accent font-sans">{foundIngredients.length}</div>
-              <div className="text-[10px] text-bo-ink-muted font-sans mt-0.5">検出有効成分</div>
+              <div className="text-lg font-black text-bo-accent font-sans">{activeIngredients.length}</div>
+              <div className="text-[10px] text-bo-ink-muted dark:text-gray-400 font-sans mt-0.5">有効成分</div>
             </div>
-            {unknownIngredients.length > 0 && (
-              <div className="flex-1 text-center border-l border-bo-parchment">
-                <div className="text-lg font-black text-bo-ink-muted font-sans">{unknownIngredients.length}</div>
-                <div className="text-[10px] text-bo-ink-muted font-sans mt-0.5">未登録</div>
+            {otherIngredients.length > 0 && (
+              <div className="flex-1 text-center border-l border-bo-parchment dark:border-gray-700">
+                <div className="text-lg font-black text-bo-ink-muted dark:text-gray-300 font-sans">{otherIngredients.length}</div>
+                <div className="text-[10px] text-bo-ink-muted dark:text-gray-400 font-sans mt-0.5">その他の成分</div>
               </div>
             )}
             {combinations.length > 0 && (
-              <div className="flex-1 text-center border-l border-bo-parchment">
+              <div className="flex-1 text-center border-l border-bo-parchment dark:border-gray-700">
                 <div className="text-lg font-black text-bo-accent font-sans">{combinations.length}</div>
-                <div className="text-[10px] text-bo-ink-muted font-sans mt-0.5">組み合わせ</div>
+                <div className="text-[10px] text-bo-ink-muted dark:text-gray-400 font-sans mt-0.5">組み合わせ</div>
               </div>
             )}
           </div>
@@ -152,14 +155,14 @@ export default function ScanResult({
         </div>
       </div>
 
-      {/* Ingredients */}
+      {/* 有効成分セクション */}
       <div>
-        <h3 className="font-bold text-sm mb-3 flex items-center gap-2 text-bo-ink font-sans">
+        <h3 className="font-bold text-sm mb-3 flex items-center gap-2 text-bo-ink dark:text-white font-sans">
           <span className="w-1.5 h-5 rounded-full inline-block bg-bo-accent" />
-          検出有効成分
+          有効成分（図鑑登録対象）
         </h3>
 
-        {showGrouped ? (
+        {activeIngredients.length > 8 ? (
           <div className="space-y-2.5">
             {Array.from(grouped.entries()).map(([catKey, items]) => {
               const catInfo = ACTIVE_CATEGORIES.find((c) => c.key === catKey);
@@ -169,7 +172,7 @@ export default function ScanResult({
                   <button
                     onClick={() => toggleCategory(catKey)}
                     className="w-full flex items-center justify-between rounded-r2 px-4 py-3 text-sm
-                               bg-white shadow-bo1 border-none cursor-pointer pressable"
+                               bg-white dark:bg-gray-800 shadow-bo1 border-none cursor-pointer pressable"
                   >
                     <div className="flex items-center gap-2.5">
                       {catInfo ? (
@@ -182,7 +185,7 @@ export default function ScanResult({
                       ) : (
                         <span className="text-base">📋</span>
                       )}
-                      <span className="font-bold text-sm font-sans" style={{ color: catInfo?.color || "#212121" }}>
+                      <span className="font-bold text-sm font-sans dark:brightness-125" style={{ color: catInfo?.color || "#212121" }}>
                         {catInfo?.label || "その他"}
                       </span>
                       <span className="text-xs text-bo-ink-faint font-sans">({items.length})</span>
@@ -215,7 +218,7 @@ export default function ScanResult({
           </div>
         ) : (
           <div className="space-y-2">
-            {foundIngredients.map(({ ingredient, orderIndex }, idx) => (
+            {activeIngredients.map(({ ingredient, orderIndex }, idx) => (
               <IngredientRow
                 key={ingredient.id}
                 ingredient={ingredient}
@@ -228,22 +231,22 @@ export default function ScanResult({
           </div>
         )}
 
-        {foundIngredients.length === 0 && (
+        {activeIngredients.length === 0 && (
           <div className="text-center py-10 rounded-r2 bg-white shadow-bo1">
             <div className="text-3xl mb-3">🔍</div>
-            <p className="text-sm text-bo-ink-muted font-sans">成分が検出されませんでした</p>
+            <p className="text-sm text-bo-ink-muted font-sans">有効成分が検出されませんでした</p>
           </div>
         )}
       </div>
 
-      {/* Unknown ingredients */}
-      {unknownIngredients.length > 0 && (
+      {/* その他の成分（折りたたみ） */}
+      {otherIngredients.length > 0 && (
         <div>
           <button
             onClick={() => setShowUnknown(!showUnknown)}
-            className="flex items-center gap-2 text-sm text-bo-ink-muted font-sans bg-transparent border-none cursor-pointer pressable"
+            className="flex items-center gap-2 text-sm text-bo-ink-muted dark:text-gray-400 font-sans bg-transparent border-none cursor-pointer pressable"
           >
-            <span>未登録成分（{unknownIngredients.length}種）</span>
+            <span>その他の成分（{otherIngredients.length}種）</span>
             <svg
               width="14" height="14" viewBox="0 0 24 24" fill="none"
               stroke="currentColor" strokeWidth="2" strokeLinecap="round"
@@ -253,17 +256,34 @@ export default function ScanResult({
             </svg>
           </button>
           {showUnknown && (
-            <div className="mt-2 rounded-r2 p-4 text-xs bg-white shadow-bo1 text-bo-ink-muted font-sans leading-relaxed">
-              {unknownIngredients.join("、")}
+            <div className="mt-2 space-y-2">
+              {otherIngredients.map(({ ingredient, orderIndex }, idx) => (
+                <IngredientRow
+                  key={ingredient.id}
+                  ingredient={ingredient}
+                  orderIndex={orderIndex}
+                  delay={Math.min(idx, 10) * 30}
+                  onSelect={setSelectedIngredient}
+                />
+              ))}
             </div>
           )}
+        </div>
+      )}
+
+      {/* 未登録成分 */}
+      {unknownIngredients.length > 0 && (
+        <div>
+          <div className="text-xs text-bo-ink-faint dark:text-gray-500 font-sans">
+            未登録成分（{unknownIngredients.length}種）：{unknownIngredients.join("、")}
+          </div>
         </div>
       )}
 
       {/* Combinations */}
       {combinations.length > 0 && (
         <div>
-          <h3 className="font-bold text-sm mb-3 flex items-center gap-2 text-bo-ink font-sans">
+          <h3 className="font-bold text-sm mb-3 flex items-center gap-2 text-bo-ink dark:text-white font-sans">
             <span className="w-1.5 h-5 rounded-full inline-block bg-bo-accent" />
             組み合わせ情報
           </h3>
@@ -273,7 +293,7 @@ export default function ScanResult({
               return (
                 <div
                   key={i}
-                  className="rounded-r2 overflow-hidden bg-white shadow-bo1"
+                  className="rounded-r2 overflow-hidden bg-white dark:bg-gray-800 shadow-bo1"
                 >
                   {/* Left color accent via top bar */}
                   <div className={`h-0.5 ${isGood ? "bg-bo-safe" : "bg-bo-danger"}`} />
@@ -286,9 +306,9 @@ export default function ScanResult({
                       {isGood ? "✨" : "⚠️"}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="font-bold text-sm text-bo-ink font-sans">{combo.label}</div>
-                      <p className="text-xs mt-1 text-bo-ink-muted font-sans leading-relaxed">{combo.desc}</p>
-                      <p className="text-[10px] mt-1.5 text-bo-ink-faint font-sans">出典: {combo.source}</p>
+                      <div className="font-bold text-sm text-bo-ink dark:text-white font-sans">{combo.label}</div>
+                      <p className="text-xs mt-1 text-bo-ink-muted dark:text-gray-400 font-sans leading-relaxed">{combo.desc}</p>
+                      <p className="text-[10px] mt-1.5 text-bo-ink-faint dark:text-gray-500 font-sans">出典: {combo.source}</p>
                     </div>
                   </div>
                 </div>
@@ -303,17 +323,20 @@ export default function ScanResult({
 
       <Disclaimer />
 
-      {/* 成分詳細シート（ページ遷移なしで表示） */}
-      <IngredientDetailSheet
-        ingredient={selectedIngredient}
-        onClose={() => setSelectedIngredient(null)}
-      />
+      {/* 成分詳細シート（Portal経由で最前面に表示） */}
+      {selectedIngredient && typeof document !== "undefined" && createPortal(
+        <IngredientDetailSheet
+          ingredient={selectedIngredient}
+          onClose={() => setSelectedIngredient(null)}
+        />,
+        document.body,
+      )}
 
       {/* Sticky bottom bar — only after save */}
       {saved && (
-        <div className="fixed left-0 right-0 z-40 bottom-0 px-5 pt-4 pb-[calc(12px+env(safe-area-inset-bottom)+56px)]
+        <div className="fixed left-0 right-0 z-40 bottom-0 px-4 pt-3 pb-[calc(8px+env(safe-area-inset-bottom)+56px)]
                         bg-white/95 backdrop-blur-xl border-t border-bo-parchment/60 shadow-[0_-4px_20px_rgba(0,0,0,0.06)]">
-          <div className="animate-fade-up flex gap-2.5">
+          <div className="animate-fade-up flex gap-2">
             <button
               onClick={onScanAnother}
               className="flex-1 py-3.5 rounded-r2 font-bold text-sm font-sans border-none cursor-pointer
@@ -362,8 +385,8 @@ function IngredientRow({
       onClick={() => onSelect(ingredient)}
       className={`w-full text-left flex items-center gap-3 rounded-r2 p-3.5 animate-stagger-in pressable border-none cursor-pointer ${
         isNew
-          ? "border-2 border-bo-accent shadow-[0_2px_12px_rgba(58,143,122,0.18)] bg-bo-accent-soft/30"
-          : "bg-white shadow-bo1"
+          ? "border-2 border-bo-accent shadow-[0_2px_12px_rgba(58,143,122,0.18)] bg-bo-accent-soft/30 dark:bg-bo-accent/10"
+          : "bg-white dark:bg-gray-800 shadow-bo1"
       }`}
       style={{ animationDelay: `${delay}ms` }}
     >
@@ -374,7 +397,7 @@ function IngredientRow({
       </span>
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 flex-wrap">
-          <span className="font-bold text-sm text-bo-ink font-sans">{ingredient.nameJa}</span>
+          <span className="font-bold text-sm text-bo-ink dark:text-white font-sans">{ingredient.nameJa}</span>
           <Badge rarity={ingredient.rarity} size="sm" />
           {isNew && (
             <span className="text-[9px] px-2 py-0.5 rounded-full font-bold bg-bo-accent text-white shadow-bo-accent">
@@ -382,7 +405,7 @@ function IngredientRow({
             </span>
           )}
         </div>
-        <div className="text-[11px] mt-0.5 text-bo-ink-muted font-sans">{ingredient.nameInci}</div>
+        <div className="text-[11px] mt-0.5 text-bo-ink-muted dark:text-gray-400 font-sans">{ingredient.nameInci}</div>
         {(() => {
           const c = getIngredientCategoryInfo(ingredient);
           return c ? (
@@ -470,13 +493,6 @@ function IngredientDetailSheet({
           </div>
         )}
 
-        {/* Link to full page */}
-        <Link
-          href={`/ingredient/${ingredient.id}`}
-          className="block text-center text-xs text-bo-accent font-sans font-medium py-2"
-        >
-          成分の詳細ページを開く →
-        </Link>
       </div>
     </BottomSheet>
   );
