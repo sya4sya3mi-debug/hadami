@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import { createPortal } from "react-dom";
 import { Ingredient, Combination, ProductGenre } from "@/types";
