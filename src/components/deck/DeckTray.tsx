@@ -15,25 +15,13 @@ export default function DeckTray({ productsByGenre, onAddSlot, onRemoveProduct }
 
   return (
     <div>
-      {sections.map((section, sectionIdx) => {
+      {sections.map((section) => {
         const info = SECTION_INFO[section];
         const slotsInSection = GENRE_SLOT_CONFIG.filter((s) => s.section === section);
 
         return (
           <div key={section}>
-            {/* Arrow connector between sections */}
-            {sectionIdx > 0 && (
-              <div className="flex justify-center my-2">
-                <div className="flex flex-col items-center">
-                  <div className="w-0.5 h-4 bg-gradient-to-b from-bo-accent/40 to-bo-accent/20" />
-                  <svg width="14" height="10" viewBox="0 0 14 10" fill="none" className="-mt-px">
-                    <path d="M1 1L7 8L13 1" stroke="#3A8F7A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" opacity="0.4" />
-                  </svg>
-                </div>
-              </div>
-            )}
-
-            {/* Section header */}
+              {/* Section header */}
             <div className="flex items-center gap-3 mb-3">
               <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-bo-accent/[0.08]">
                 <span className="text-[11px] font-extrabold tracking-widest text-bo-accent uppercase font-sans">

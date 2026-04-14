@@ -37,13 +37,26 @@ const TIPS = [
 
 const ROUTINE_CHECK_KEY = "hadami-routine-checks";
 
+/**
+ * ルーティンチェックの有効期間キーを生成
+ * 朝ルーティン: その日の日付 + "morning"（15時に夜に切り替わった時点でリセット）
+ * 夜ルーティン: その日の日付 + "night"（翌朝に朝に切り替わった時点でリセット）
+ */
+function getRoutinePeriodKey(routine: string): string {
+  const now = new Date();
+  // 夜ルーティンは翌朝まで有効にするため、15時以降は当日の日付を使う
+  const dateStr = `${now.getFullYear()}-${now.getMonth() + 1}-${now.getDate()}`;
+  return `${dateStr}:${routine}`;
+}
+
 function getRoutineChecks(routine: string): Set<number> {
   if (typeof window === "undefined") return new Set();
   try {
     const raw = localStorage.getItem(ROUTINE_CHECK_KEY);
     if (raw) {
       const data = JSON.parse(raw);
-      if (data.routine === routine) {
+      const periodKey = getRoutinePeriodKey(routine);
+      if (data.periodKey === periodKey) {
         return new Set(data.checked as number[]);
       }
     }
@@ -54,7 +67,7 @@ function getRoutineChecks(routine: string): Set<number> {
 function saveRoutineChecks(routine: string, checked: Set<number>) {
   if (typeof window === "undefined") return;
   localStorage.setItem(ROUTINE_CHECK_KEY, JSON.stringify({
-    routine,
+    periodKey: getRoutinePeriodKey(routine),
     checked: Array.from(checked),
   }));
 }
@@ -95,8 +108,8 @@ const RoutineStepButton = memo(function RoutineStepButton({
       className={`w-full flex items-center gap-2.5 py-2 px-3 rounded-r2 cursor-pointer text-left relative overflow-hidden
                   transition-all duration-200 border-none pressable ${
         done
-          ? "bg-bo-accent-soft/40 shadow-none scale-[0.985]"
-          : "bg-white shadow-bo1 scale-100"
+          ? "bg-bo-accent-soft/40 dark:bg-bo-accent/10 shadow-none scale-[0.985]"
+          : "bg-white dark:bg-white/5 shadow-bo1 scale-100"
       }`}
       style={done ? { borderLeft: "3px solid #3A8F7A" } : { borderLeft: "3px solid transparent" }}
     >
@@ -104,8 +117,8 @@ const RoutineStepButton = memo(function RoutineStepButton({
       <div
         className={`w-6 h-6 rounded-[8px] shrink-0 flex items-center justify-center transition-all duration-300 ${
           done
-            ? "bg-bo-accent shadow-bo-accent scale-110"
-            : "bg-white border-2 border-bo-ink-faint/40 scale-100"
+            ? "bg-bo-accent dark:bg-bo-accent-dark shadow-bo-accent scale-110"
+            : "bg-white dark:bg-white/10 border-2 border-bo-ink-faint/40 scale-100"
         }`}
       >
         {done && (
@@ -136,7 +149,7 @@ const RoutineStepButton = memo(function RoutineStepButton({
         }`}>
           {step.name}
         </div>
-        <div className={`text-[10px] font-sans mt-0.5 transition-colors duration-200 ${done ? "text-bo-accent font-semibold" : "text-bo-ink-muted"}`}>
+        <div className={`text-[10px] font-sans mt-0.5 transition-colors duration-200 ${done ? "text-bo-accent dark:text-bo-accent-dark font-semibold" : "text-bo-ink-muted"}`}>
           {done ? "✓ 完了" : `${step.brand} · ${genre?.label || step.type}`}
         </div>
       </div>
@@ -314,19 +327,19 @@ export default function HomePage() {
                 </div>
               </div>
               {/* Mini ring progress */}
-              <div className="relative w-9 h-9">
-                <svg viewBox="0 0 36 36" className="w-full h-full -rotate-90">
-                  <circle cx="18" cy="18" r="15" fill="none" stroke="#E8F5EE" strokeWidth="3.5" />
+              <div className="relative w-12 h-12">
+                <svg viewBox="0 0 44 44" className="w-full h-full -rotate-90">
+                  <circle cx="22" cy="22" r="18" fill="none" stroke="#E8F5EE" strokeWidth="3.5" />
                   <circle
-                    cx="18" cy="18" r="15" fill="none"
-                    stroke={allComplete ? "#3A8F7A" : "#3A8F7A"}
+                    cx="22" cy="22" r="18" fill="none"
+                    stroke="#3A8F7A"
                     strokeWidth="3.5" strokeLinecap="round"
-                    strokeDasharray={`${routineProgress * 94.2} 999`}
+                    strokeDasharray={`${routineProgress * 113.1} 999`}
                     className="transition-all duration-700 ease-out"
                   />
                 </svg>
                 <div className="absolute inset-0 flex items-center justify-center">
-                  <span className={`text-[11px] font-black font-sans ${allComplete ? "text-bo-accent" : "text-bo-ink"}`}>
+                  <span className={`text-[10px] font-black font-sans leading-none ${allComplete ? "text-bo-accent" : "text-bo-ink"}`}>
                     {Math.round(routineProgress * 100)}%
                   </span>
                 </div>

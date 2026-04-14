@@ -20,11 +20,11 @@ export default function ShareModal({ text, onClose, captureRef, imageBase64: ima
   const [cardImage, setCardImage] = useState<string | null>(null);
   const [capturing, setCapturing] = useState(false);
   const [linkError, setLinkError] = useState<string | null>(null);
+  const [showConfirm, setShowConfirm] = useState(false);
   const MAX_CHARS = 280;
   const isOverLimit = editableText.length > MAX_CHARS;
   const overlayRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
-  const startYRef = useRef(0);
 
   // Check X link status
   useEffect(() => {
@@ -68,53 +68,12 @@ export default function ShareModal({ text, onClose, captureRef, imageBase64: ima
     });
   }, [captureRef, imageBase64Prop]);
 
-  // Scroll lock
+  // Scroll lock — overflow: hidden only, no position:fixed to avoid broken cleanup on navigation
   useEffect(() => {
-    const container = document.getElementById("app-container");
-    const nextDiv = document.getElementById("__next");
-    const scrollY = window.scrollY;
-    const topValue = `-${scrollY}px`;
-    document.body.style.top = topValue;
-    if (nextDiv) nextDiv.style.top = topValue;
-    if (container) container.style.top = topValue;
-    document.documentElement.classList.add("scroll-locked");
-
-    const overlay = overlayRef.current;
-    const content = contentRef.current;
-
-    const handleTouchStart = (e: TouchEvent) => {
-      startYRef.current = e.touches[0].clientY;
-    };
-
-    const handleTouchMove = (e: TouchEvent) => {
-      if (content && content.contains(e.target as Node)) {
-        const scrollTop = content.scrollTop;
-        const scrollHeight = content.scrollHeight;
-        const clientHeight = content.clientHeight;
-        const touchY = e.touches[0].clientY;
-        const deltaY = startYRef.current - touchY;
-        if (scrollTop <= 0 && deltaY < 0) { e.preventDefault(); return; }
-        if (scrollTop + clientHeight >= scrollHeight && deltaY > 0) { e.preventDefault(); return; }
-        return;
-      }
-      e.preventDefault();
-    };
-
-    if (overlay) {
-      overlay.addEventListener("touchstart", handleTouchStart, { passive: true });
-      overlay.addEventListener("touchmove", handleTouchMove, { passive: false });
-    }
-
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
     return () => {
-      if (overlay) {
-        overlay.removeEventListener("touchstart", handleTouchStart);
-        overlay.removeEventListener("touchmove", handleTouchMove);
-      }
-      document.documentElement.classList.remove("scroll-locked");
-      document.body.style.top = "";
-      if (nextDiv) nextDiv.style.top = "";
-      if (container) container.style.top = "";
-      window.scrollTo(0, scrollY);
+      document.body.style.overflow = prev;
     };
   }, []);
 
@@ -170,6 +129,35 @@ export default function ShareModal({ text, onClose, captureRef, imageBase64: ima
   }, [editableText, cardImage]);
 
   return (
+    <>
+    {showConfirm && (
+      <div className="fixed inset-0 bg-black/50 z-[60] flex items-center justify-center px-6">
+        <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-xl">
+          <p className="text-base font-bold text-center mb-1" style={{ color: "#2D2D2D" }}>
+            Xに投稿しますか？
+          </p>
+          <p className="text-xs text-center mb-5" style={{ color: "#9B9B9B" }}>
+            {cardImage ? "画像付きで投稿されます" : "テキストのみ投稿されます"}
+          </p>
+          <div className="flex gap-3">
+            <button
+              onClick={() => setShowConfirm(false)}
+              className="flex-1 py-3 rounded-xl text-sm font-bold"
+              style={{ background: "#F3F3F3", color: "#2D2D2D" }}
+            >
+              キャンセル
+            </button>
+            <button
+              onClick={() => { setShowConfirm(false); handlePostToX(); }}
+              className="flex-1 py-3 rounded-xl text-sm font-bold text-white"
+              style={{ background: "linear-gradient(135deg, #F9A8C0, #F48FB1)" }}
+            >
+              投稿する
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
     <div
       ref={overlayRef}
       className="fixed inset-0 bg-black/40 z-50 flex items-end justify-center"
@@ -250,7 +238,7 @@ export default function ShareModal({ text, onClose, captureRef, imageBase64: ima
           {/* X API post button (if linked) */}
           {xLinked === true && !postResult?.success && (
             <button
-              onClick={handlePostToX}
+              onClick={() => setShowConfirm(true)}
               disabled={posting || capturing || isOverLimit}
               className="w-full py-3 rounded-2xl text-white text-center text-sm font-bold"
               style={{
@@ -310,5 +298,6 @@ export default function ShareModal({ text, onClose, captureRef, imageBase64: ima
         </div>
       </div>
     </div>
+    </>
   );
 }

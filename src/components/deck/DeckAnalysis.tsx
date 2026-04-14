@@ -8,6 +8,8 @@ import { ACTIVE_CATEGORIES, getIngredientById } from "@/lib/ingredients";
 import { SKIN_CONCERNS } from "@/lib/concerns";
 import CombinationCard from "./CombinationCard";
 import BottomSheet from "@/components/scan/BottomSheet";
+import { ActiveCategoryIcon, SkinConcernIcon } from "@/components/ui/CosmeticIcons";
+import { AlertIcon, CheckCircleIcon } from "@/components/ui/Icons";
 
 const CoverageChart = dynamic(() => import("./CoverageChart"), {
   loading: () => (
@@ -123,11 +125,16 @@ export default function DeckAnalysis({
                   <div key={concern.label} className="mb-3 last:mb-0">
                     <div className="flex justify-between items-center mb-1.5">
                       <span
-                        className={`text-xs font-semibold font-sans ${
+                        className={`text-xs font-semibold font-sans flex items-center gap-1 ${
                           covered ? "text-bo-ink-soft" : "text-bo-ink-faint"
                         }`}
                       >
-                        {covered ? "✓" : "✗"} {concern.icon} {concern.label}
+                        {covered
+                          ? <CheckCircleIcon size={12} color="#3A8F7A" />
+                          : <svg width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="1.8" /><path d="M15 9l-6 6M9 9l6 6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /></svg>
+                        }
+                        <SkinConcernIcon concern={concern.label} size={12} />
+                        {concern.label}
                       </span>
                       <span className="text-[11px] text-bo-ink-muted font-sans">
                         {covered
@@ -161,7 +168,6 @@ export default function DeckAnalysis({
           <div className="animate-fade-up">
             {combinations.length === 0 ? (
               <div className="text-center py-12 text-sm text-bo-ink-muted font-sans">
-                <div className="text-3xl mb-3">🧪</div>
                 <p>成分の組み合わせ情報はまだありません</p>
               </div>
             ) : (
@@ -196,7 +202,7 @@ export default function DeckAnalysis({
                 {cautionCombos.length > 0 && (
                   <div>
                     <h3 className="font-bold text-sm text-bo-ink mb-3 flex items-center gap-2 font-sans">
-                      <span className="text-sm">⚠️</span>
+                      <AlertIcon size={16} color="#F59E0B" />
                       注意が必要な組み合わせ
                       <span className="text-xs font-normal text-bo-ink-muted">
                         ({cautionCombos.length}件)
@@ -243,14 +249,14 @@ export default function DeckAnalysis({
               return (
                 <div
                   key={cat.key}
-                  className="rounded-r2 p-4 shadow-bo1"
+                  className="w-full rounded-r2 p-4 shadow-bo1"
                   style={{
                     background: cat.color + "0A",
                     border: `1px solid ${cat.color}20`,
                   }}
                 >
                   <div className="flex items-center gap-1.5 mb-2">
-                    <span>{cat.icon}</span>
+                    <span style={{ color: cat.color }}><ActiveCategoryIcon category={cat.key} size={16} /></span>
                     <span className="text-sm font-bold font-sans" style={{ color: cat.color }}>
                       {cat.label}
                     </span>

@@ -4791,6 +4791,11 @@ export function getGenreTotal(genre: string): number {
 }
 
 // ── 有効成分 ──
+/** この成分が図鑑対象の有効成分かどうか */
+export function isActiveIngredient(id: string): boolean {
+  return getIndexes()._activeIngredients.some((i) => i.id === id);
+}
+
 export function getActiveIngredients(): Ingredient[] {
   return getIndexes()._activeIngredients;
 }

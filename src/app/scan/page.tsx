@@ -14,7 +14,7 @@ import AuthGuard from "@/components/ui/AuthGuard";
 import Disclaimer from "@/components/ui/Disclaimer";
 import { extractIngredients } from "@/lib/ocr";
 import { findCombinations } from "@/lib/combinations";
-import { getIngredientById, getIngredientByInci, getIngredientByName } from "@/lib/ingredients";
+import { getIngredientById, getIngredientByInci, getIngredientByName, isActiveIngredient } from "@/lib/ingredients";
 import { resolveActiveIngredient } from "@/lib/mhlwActiveIngredients";
 import { resolveActiveIngredients, type ResolvedActiveIngredient } from "@/lib/activeIngredientResolver";
 import { useProductStore } from "@/stores/useProductStore";
@@ -47,11 +47,6 @@ interface ScannedProduct {
   ingredients: string;
   isQuasiDrug?: boolean;
   activeIngredients?: string[];
-  activeEvidenceText?: string;
-  salesName?: string;
-  sourceUrls?: string[];
-  decision?: "accepted" | "needs_more_image" | "rejected";
-  confidenceScore?: number;
 }
 
 export default function ScanPage() {
@@ -236,7 +231,11 @@ function ScanPageInner() {
 
       const ingredientNames = foundIngs.map((f) => f.ingredient.nameJa);
       const combos = findCombinations(ingredientNames);
-      const newIds = discover(foundIngs.map((f) => f.ingredient.id));
+      // 図鑑登録は有効成分のみ
+      const activeFoundIds = foundIngs
+        .filter((f) => isActiveIngredient(f.ingredient.id))
+        .map((f) => f.ingredient.id);
+      const newIds = discover(activeFoundIds);
       const discoveries = newIds
         .map((id) => getIngredientById(id))
         .filter((i): i is Ingredient => i !== null);
@@ -518,8 +517,9 @@ function ScanPageInner() {
         result.imageUrl
       );
 
-      discover(foundIngs.map((f) => f.ingredient.id));
-      await saveDiscoveriesToDb(supabase, user.id, foundIngs.map((f) => f.ingredient.id));
+      const activeIds = foundIngs.filter((f) => isActiveIngredient(f.ingredient.id)).map((f) => f.ingredient.id);
+      discover(activeIds);
+      await saveDiscoveriesToDb(supabase, user.id, activeIds);
 
       // スキャン履歴保存（レコメンド用）
       saveScanHistory(
@@ -592,7 +592,10 @@ function ScanPageInner() {
         result.imageUrl
       );
 
-      await saveDiscoveriesToDb(supabase, user.id, foundIngredients.map((f) => f.ingredient.id));
+      const activeDiscoveryIds = foundIngredients
+        .filter((f) => isActiveIngredient(f.ingredient.id))
+        .map((f) => f.ingredient.id);
+      await saveDiscoveriesToDb(supabase, user.id, activeDiscoveryIds);
 
       // スキャン履歴保存（レコメンド用）
       saveScanHistory(
@@ -788,12 +791,25 @@ function ScanPageInner() {
               onBrandChange={setBrand}
               onProductTypeChange={setProductType}
               onContinue={handleClassifyContinue}
+              onBack={() => setStep(2)}
             />
           )}
 
           {/* Step 4: Results */}
           {step === 4 && (
             <>
+              {!saved && (
+                <button
+                  onClick={() => setStep(3)}
+                  className="flex items-center gap-1.5 text-sm text-bo-ink-muted font-sans font-bold mb-3
+                             bg-white rounded-r2 px-3 py-2 shadow-bo1 border-none cursor-pointer pressable"
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                    <path d="M15 18l-6-6 6-6"/>
+                  </svg>
+                  分類に戻る
+                </button>
+              )}
               {saveError && (
                 <div className="flex items-start gap-3 bg-white rounded-r2 py-3.5 px-4 mb-4 shadow-bo1 border border-red-100">
                   <span className="text-base shrink-0">⚠️</span>

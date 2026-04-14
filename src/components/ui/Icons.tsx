@@ -140,3 +140,31 @@ export function InfoIcon({ size = 20, color = "currentColor", className }: IconP
     </svg>
   );
 }
+
+export function QuestionMarkCircleIcon({ size = 20, color = "currentColor", className }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true" className={className}>
+      <circle cx="12" cy="12" r="10" stroke={color} strokeWidth="1.8" />
+      <path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+      <line x1="12" y1="17" x2="12" y2="17.5" stroke={color} strokeWidth="2.5" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+export function AlertIcon({ size = 20, color = "currentColor", className }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true" className={className}>
+      <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+      <line x1="12" y1="9" x2="12" y2="13" stroke={color} strokeWidth="1.8" strokeLinecap="round" />
+      <line x1="12" y1="17" x2="12" y2="17.5" stroke={color} strokeWidth="2.5" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+export function ChevronRightIcon({ size = 20, color = "currentColor", className }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true" className={className}>
+      <path d="M9 18l6-6-6-6" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}

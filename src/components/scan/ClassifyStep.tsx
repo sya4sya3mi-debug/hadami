@@ -17,6 +17,7 @@ interface ClassifyStepProps {
   onBrandChange: (brand: string) => void;
   onProductTypeChange: (type: ProductGenre) => void;
   onContinue: () => void;
+  onBack?: () => void;
 }
 
 export default function ClassifyStep({
@@ -28,6 +29,7 @@ export default function ClassifyStep({
   onBrandChange,
   onProductTypeChange,
   onContinue,
+  onBack,
 }: ClassifyStepProps) {
   const needsType = !SCAN_GENRES.some((g) => g.key === productType);
 
@@ -121,18 +123,32 @@ export default function ClassifyStep({
         </div>
       </div>
 
-      {/* Continue button */}
-      <button
-        onClick={onContinue}
-        className="w-full py-4 rounded-r2 bg-bo-accent text-white text-sm font-bold font-sans
-                   shadow-bo-accent pressable border-none cursor-pointer
-                   flex items-center justify-center gap-2"
-      >
-        成分を確認する
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-          <path d="M9 18l6-6-6-6"/>
-        </svg>
-      </button>
+      {/* Buttons */}
+      <div className="flex gap-2">
+        {onBack && (
+          <button
+            onClick={onBack}
+            className="flex-none py-4 px-4 rounded-r2 bg-white text-bo-ink-muted text-sm font-bold font-sans
+                       shadow-bo1 pressable border-none cursor-pointer flex items-center gap-1.5"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+              <path d="M15 18l-6-6 6-6"/>
+            </svg>
+            特定
+          </button>
+        )}
+        <button
+          onClick={onContinue}
+          className="flex-1 py-4 rounded-r2 bg-bo-accent text-white text-sm font-bold font-sans
+                     shadow-bo-accent pressable border-none cursor-pointer
+                     flex items-center justify-center gap-2"
+        >
+          成分を確認する
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+            <path d="M9 18l6-6-6-6"/>
+          </svg>
+        </button>
+      </div>
     </div>
   );
 }

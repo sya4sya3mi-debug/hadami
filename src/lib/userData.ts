@@ -69,7 +69,7 @@ function resolveProductImage(
   }
 
   const thumbPath = getProductImageThumbPathFromStoredPath(storedValue);
-  const fullImage = signedUrls[storedValue] ?? `/api/product-image/${productId}`;
+  const fullImage = signedUrls[storedValue] ?? undefined;
 
   return {
     packageImagePath: storedValue,

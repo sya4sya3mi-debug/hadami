@@ -102,8 +102,12 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "画像情報の保存に失敗しました" }, { status: 500 });
   }
 
+  const { data: publicUrlData } = auth.supabase.storage
+    .from(PRODUCT_IMAGE_BUCKET)
+    .getPublicUrl(filePath);
+
   return NextResponse.json({
-    imageUrl: `/api/product-image/${body.productId}`,
+    imageUrl: publicUrlData.publicUrl,
     filePath,
     thumbPath,
   });

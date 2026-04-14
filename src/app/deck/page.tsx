@@ -203,7 +203,7 @@ export default function DeckPage() {
               <button
                 key={opt.key}
                 onClick={() => setDeckIndex(i)}
-                className={`relative z-10 flex-1 py-3 rounded-[12px] border-none text-sm font-bold font-sans cursor-pointer transition-colors duration-200 ${
+                className={`relative z-10 flex-1 py-2.5 rounded-[12px] border-none text-sm font-bold font-sans cursor-pointer transition-colors duration-200 ${
                   deckIndex === i ? "text-white" : "text-bo-ink-muted"
                 }`}
               >

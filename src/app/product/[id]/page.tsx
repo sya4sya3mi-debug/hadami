@@ -210,7 +210,6 @@ export default function ProductDetailPage() {
 
           {activeIngredients.length === 0 && (
             <div className="mb-6 py-8 text-center">
-              <div className="text-2xl mb-2">🧪</div>
               <p className="text-xs text-bo-ink-muted font-sans">有効成分は検出されませんでした</p>
             </div>
           )}
