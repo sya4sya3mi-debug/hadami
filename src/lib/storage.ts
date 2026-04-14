@@ -18,6 +18,7 @@ function resolveUrl(_supabase: SupabaseClient, filePath: string): string | null 
 export async function getSignedImageUrls(
   supabase: SupabaseClient,
   filePaths: string[],
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   _expiresIn?: number
 ): Promise<Record<string, string | null>> {
   const result: Record<string, string | null> = {};
@@ -34,6 +35,7 @@ export async function getSignedImageUrls(
 export async function getSignedImageUrl(
   supabase: SupabaseClient,
   filePath: string,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   _expiresIn?: number
 ): Promise<string | null> {
   return resolveUrl(supabase, filePath);
