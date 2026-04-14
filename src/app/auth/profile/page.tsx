@@ -34,7 +34,8 @@ export default function ProfileSetupPage() {
     });
 
     if (dbError) {
-      setError("保存に失敗しました。もう一度お試しください。");
+      console.error("profile save error:", dbError);
+      setError(`保存に失敗しました: ${dbError.message}`);
       setLoading(false);
       return;
     }
