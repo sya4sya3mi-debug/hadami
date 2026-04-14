@@ -1,9 +1,9 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 import {
-  PRODUCT_IMAGE_BUCKET,
   getProductImagePath,
   getProductImageThumbPath,
 } from "@/lib/productImages";
+import { r2Delete } from "@/lib/r2";
 
 const USER_LIMIT = 30;
 const MAX_PRODUCT_IMAGE_BYTES = 5 * 1024 * 1024;
@@ -211,9 +211,7 @@ export async function deleteProductImageFromDb(
 ): Promise<{ error: string | null }> {
   const filePath = getProductImagePath(userId, productId);
   const thumbPath = getProductImageThumbPath(userId, productId);
-  await supabase.storage
-    .from(PRODUCT_IMAGE_BUCKET)
-    .remove([filePath, thumbPath]);
+  await r2Delete([filePath, thumbPath]);
 
   const { error } = await supabase
     .from("products")
@@ -231,9 +229,7 @@ export async function deleteProductFromDb(
 ) {
   const filePath = getProductImagePath(userId, productId);
   const thumbPath = getProductImageThumbPath(userId, productId);
-  await supabase.storage
-    .from(PRODUCT_IMAGE_BUCKET)
-    .remove([filePath, thumbPath]);
+  await r2Delete([filePath, thumbPath]);
 
   const { error } = await supabase
     .from("products")

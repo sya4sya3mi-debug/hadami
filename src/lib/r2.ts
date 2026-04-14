@@ -1,0 +1,73 @@
+import {
+  S3Client,
+  PutObjectCommand,
+  DeleteObjectsCommand,
+  GetObjectCommand,
+} from "@aws-sdk/client-s3";
+
+const R2_ENDPOINT = process.env.R2_ENDPOINT!;
+const R2_ACCESS_KEY_ID = process.env.R2_ACCESS_KEY_ID!;
+const R2_SECRET_ACCESS_KEY = process.env.R2_SECRET_ACCESS_KEY!;
+const R2_BUCKET = process.env.R2_BUCKET ?? "hadami-images";
+const R2_PUBLIC_URL = process.env.NEXT_PUBLIC_R2_PUBLIC_URL!;
+
+let _client: S3Client | null = null;
+
+function getClient(): S3Client {
+  if (!_client) {
+    _client = new S3Client({
+      region: "auto",
+      endpoint: R2_ENDPOINT,
+      credentials: {
+        accessKeyId: R2_ACCESS_KEY_ID,
+        secretAccessKey: R2_SECRET_ACCESS_KEY,
+      },
+    });
+  }
+  return _client;
+}
+
+export async function r2Upload(
+  key: string,
+  body: Buffer | Uint8Array,
+  contentType: string
+): Promise<void> {
+  await getClient().send(
+    new PutObjectCommand({
+      Bucket: R2_BUCKET,
+      Key: key,
+      Body: body,
+      ContentType: contentType,
+    })
+  );
+}
+
+export async function r2Delete(keys: string[]): Promise<void> {
+  if (keys.length === 0) return;
+  await getClient().send(
+    new DeleteObjectsCommand({
+      Bucket: R2_BUCKET,
+      Delete: {
+        Objects: keys.map((Key) => ({ Key })),
+        Quiet: true,
+      },
+    })
+  );
+}
+
+export async function r2Download(key: string): Promise<Buffer | null> {
+  try {
+    const res = await getClient().send(
+      new GetObjectCommand({ Bucket: R2_BUCKET, Key: key })
+    );
+    if (!res.Body) return null;
+    const bytes = await res.Body.transformToByteArray();
+    return Buffer.from(bytes);
+  } catch {
+    return null;
+  }
+}
+
+export function r2PublicUrl(key: string): string {
+  return `${R2_PUBLIC_URL}/${key}`;
+}

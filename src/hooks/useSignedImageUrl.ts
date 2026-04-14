@@ -1,17 +1,14 @@
 "use client";
 
 import { useMemo } from "react";
-import { useUser } from "@/lib/auth";
 
-const BUCKET = "product-images";
+const R2_PUBLIC_URL = process.env.NEXT_PUBLIC_R2_PUBLIC_URL ?? "";
 
 /**
- * 画像パスからパブリックURLを同期的に解決するフック。
+ * 画像パスからR2パブリックURLを同期的に解決するフック。
  * 既にHTTP URLの場合はそのまま返す。
  */
 export function useSignedImageUrl(path: string | undefined): string | undefined {
-  const { supabase } = useUser();
-
   return useMemo(() => {
     if (!path) return undefined;
     if (
@@ -21,7 +18,6 @@ export function useSignedImageUrl(path: string | undefined): string | undefined 
       path.startsWith("data:")
     ) return path;
 
-    const { data } = supabase.storage.from(BUCKET).getPublicUrl(path);
-    return data.publicUrl;
-  }, [path, supabase]);
+    return `${R2_PUBLIC_URL}/${path}`;
+  }, [path]);
 }

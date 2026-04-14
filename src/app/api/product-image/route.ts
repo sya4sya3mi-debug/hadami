@@ -2,11 +2,11 @@ import { NextResponse } from "next/server";
 import sharp from "sharp";
 import { authenticateRequest, validateImagePayload } from "@/lib/apiAuth";
 import {
-  PRODUCT_IMAGE_BUCKET,
   PRODUCT_IMAGE_THUMB_SIZE,
   getProductImagePath,
   getProductImageThumbPath,
 } from "@/lib/productImages";
+import { r2Upload, r2Delete, r2PublicUrl } from "@/lib/r2";
 
 export const runtime = "nodejs";
 
@@ -65,25 +65,14 @@ export async function POST(request: Request) {
     );
   }
 
-  const { error: uploadError } = await auth.supabase.storage
-    .from(PRODUCT_IMAGE_BUCKET)
-    .upload(filePath, bytes, { contentType: "image/webp", upsert: true });
-
-  if (uploadError) {
-    console.error("Product image upload failed:", uploadError);
+  try {
+    await Promise.all([
+      r2Upload(filePath, bytes, "image/webp"),
+      r2Upload(thumbPath, thumbBytes, "image/webp"),
+    ]);
+  } catch (error) {
+    console.error("R2 upload failed:", error);
     return NextResponse.json({ error: "画像の保存に失敗しました" }, { status: 500 });
-  }
-
-  const { error: thumbUploadError } = await auth.supabase.storage
-    .from(PRODUCT_IMAGE_BUCKET)
-    .upload(thumbPath, thumbBytes, { contentType: "image/webp", upsert: true });
-
-  if (thumbUploadError) {
-    console.error("Product thumbnail upload failed:", thumbUploadError);
-    return NextResponse.json(
-      { error: "画像サムネイルの保存に失敗しました" },
-      { status: 500 }
-    );
   }
 
   const { error: updateError } = await auth.supabase
@@ -95,19 +84,13 @@ export async function POST(request: Request) {
   if (updateError) {
     console.error("Failed to persist product image path:", updateError);
     if (product.package_image_url !== filePath) {
-      await auth.supabase.storage
-        .from(PRODUCT_IMAGE_BUCKET)
-        .remove([filePath, thumbPath]);
+      await r2Delete([filePath, thumbPath]);
     }
     return NextResponse.json({ error: "画像情報の保存に失敗しました" }, { status: 500 });
   }
 
-  const { data: publicUrlData } = auth.supabase.storage
-    .from(PRODUCT_IMAGE_BUCKET)
-    .getPublicUrl(filePath);
-
   return NextResponse.json({
-    imageUrl: publicUrlData.publicUrl,
+    imageUrl: r2PublicUrl(filePath),
     filePath,
     thumbPath,
   });

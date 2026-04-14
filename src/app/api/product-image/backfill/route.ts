@@ -2,10 +2,10 @@ import { NextResponse } from "next/server";
 import sharp from "sharp";
 import { authenticateRequest } from "@/lib/apiAuth";
 import {
-  PRODUCT_IMAGE_BUCKET,
   PRODUCT_IMAGE_THUMB_SIZE,
   getProductImageThumbPathFromStoredPath,
 } from "@/lib/productImages";
+import { r2Upload, r2Download } from "@/lib/r2";
 
 export const runtime = "nodejs";
 
@@ -53,24 +53,20 @@ export async function POST(request: Request) {
       if (!product.package_image_url) return null;
 
       const thumbPath = getProductImageThumbPathFromStoredPath(product.package_image_url);
-      const { data: existingThumb } = await auth.supabase.storage
-        .from(PRODUCT_IMAGE_BUCKET)
-        .download(thumbPath);
 
-      if (existingThumb && !forceRegenerate) {
-        return { productId: product.id, thumbPath };
+      if (!forceRegenerate) {
+        const existing = await r2Download(thumbPath);
+        if (existing) {
+          return { productId: product.id, thumbPath };
+        }
       }
 
-      const { data: original, error: originalError } = await auth.supabase.storage
-        .from(PRODUCT_IMAGE_BUCKET)
-        .download(product.package_image_url);
-
-      if (originalError || !original) {
-        throw originalError ?? new Error("original image missing");
+      const original = await r2Download(product.package_image_url);
+      if (!original) {
+        throw new Error("original image missing");
       }
 
-      const originalBytes = Buffer.from(await original.arrayBuffer());
-      const thumbBytes = await sharp(originalBytes)
+      const thumbBytes = await sharp(original)
         .resize(PRODUCT_IMAGE_THUMB_SIZE, PRODUCT_IMAGE_THUMB_SIZE, {
           fit: "inside",
           withoutEnlargement: true,
@@ -78,16 +74,7 @@ export async function POST(request: Request) {
         .webp({ quality: 80 })
         .toBuffer();
 
-      const { error: uploadError } = await auth.supabase.storage
-        .from(PRODUCT_IMAGE_BUCKET)
-        .upload(thumbPath, thumbBytes, {
-          contentType: "image/webp",
-          upsert: true,
-        });
-
-      if (uploadError) {
-        throw uploadError;
-      }
+      await r2Upload(thumbPath, thumbBytes, "image/webp");
 
       return { productId: product.id, thumbPath };
     })

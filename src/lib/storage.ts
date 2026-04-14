@@ -1,9 +1,8 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-const BUCKET = "product-images";
+const R2_PUBLIC_URL = process.env.NEXT_PUBLIC_R2_PUBLIC_URL ?? "";
 
-/** ストレージパスからパブリックURLを同期的に生成する */
-function resolveUrl(supabase: SupabaseClient, filePath: string): string | null {
+function resolveUrl(_supabase: SupabaseClient, filePath: string): string | null {
   if (
     filePath.startsWith("http://") ||
     filePath.startsWith("https://") ||
@@ -12,15 +11,13 @@ function resolveUrl(supabase: SupabaseClient, filePath: string): string | null {
   ) {
     return filePath;
   }
-  const { data } = supabase.storage.from(BUCKET).getPublicUrl(filePath);
-  return data.publicUrl;
+  return `${R2_PUBLIC_URL}/${filePath}`;
 }
 
 /** 複数パスのパブリックURLを一括取得（ネットワーク不要） */
 export async function getSignedImageUrls(
   supabase: SupabaseClient,
   filePaths: string[],
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   _expiresIn?: number
 ): Promise<Record<string, string | null>> {
   const result: Record<string, string | null> = {};
@@ -37,7 +34,6 @@ export async function getSignedImageUrls(
 export async function getSignedImageUrl(
   supabase: SupabaseClient,
   filePath: string,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   _expiresIn?: number
 ): Promise<string | null> {
   return resolveUrl(supabase, filePath);
@@ -45,7 +41,6 @@ export async function getSignedImageUrl(
 
 /** キャッシュクリア — パブリックURL方式ではキャッシュ不要のため no-op */
 export function clearImageUrlCache() {
-  // パブリックURLは決定的なのでキャッシュ不要
   if (typeof window !== "undefined") {
     window.localStorage.removeItem("hadami-img-cache");
   }
