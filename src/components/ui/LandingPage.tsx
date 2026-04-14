@@ -211,7 +211,7 @@ export default function LandingPage() {
             </span>
           </div>
           <Link
-            href="#"
+            href="/auth/login"
             className="px-5 py-2 rounded-[10px] bg-bo-accent text-white text-xs font-bold font-sans shadow-bo-accent transition-transform hover:scale-105"
           >
             無料で始める
@@ -263,7 +263,7 @@ export default function LandingPage() {
           <Reveal delay={300}>
             <div className="flex gap-3 justify-center flex-wrap">
               <Link
-                href="#"
+                href="/auth/login"
                 className="inline-flex items-center gap-2 px-8 py-3.5 rounded-[14px] bg-gradient-to-br from-bo-accent to-bo-accent-dark text-white text-[15px] font-bold font-sans shadow-bo-accent transition-transform hover:scale-105"
               >
                 <CameraIcon size={16} color="white" /> 無料で始める
@@ -511,7 +511,7 @@ export default function LandingPage() {
               無料で使えます。まずは手元の化粧品をスキャンしてみてください。
             </p>
             <Link
-              href="#"
+              href="/auth/login"
               className="inline-flex items-center gap-2 px-10 py-4 rounded-2xl bg-gradient-to-br from-bo-accent to-bo-accent-dark text-white text-base font-bold font-sans shadow-bo-accent transition-transform hover:scale-105"
             >
               <CameraIcon size={18} color="white" /> 無料で始める
