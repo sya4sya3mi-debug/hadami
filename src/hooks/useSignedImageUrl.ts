@@ -2,8 +2,6 @@
 
 import { useState, useEffect } from "react";
 
-const R2_PUBLIC_URL = process.env.NEXT_PUBLIC_R2_PUBLIC_URL ?? "";
-
 type CacheEntry = { url: string; expiresAt: number };
 const cache = new Map<string, CacheEntry>();
 const CACHE_TTL_MS = 50 * 60 * 1000; // 50分
@@ -54,13 +52,9 @@ export function useSignedImageUrl(
         if (signed) {
           cache.set(path, { url: signed, expiresAt: Date.now() + CACHE_TTL_MS });
           setUrl(signed);
-        } else {
-          setUrl(`${R2_PUBLIC_URL}/${path}`);
         }
       })
-      .catch(() => {
-        if (!cancelled) setUrl(`${R2_PUBLIC_URL}/${path}`);
-      });
+      .catch(() => {});
 
     return () => {
       cancelled = true;

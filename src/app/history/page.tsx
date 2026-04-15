@@ -100,17 +100,17 @@ export default function HistoryPage() {
     reader.onload = async (ev) => {
       const imageBase64 = ev.target?.result as string;
       if (!imageBase64) { setImageError("画像データが取得できませんでした。"); setUpdatingImageId(null); return; }
-      const { error, imageUrl } = await updateProductImageInDb(supabase, user.id, productId, imageBase64);
+      const { error, filePath } = await updateProductImageInDb(supabase, user.id, productId, imageBase64);
       if (error) { setImageError(`保存に失敗しました: ${error}`); }
-      else if (imageUrl) {
+      else if (filePath) {
         const imagePath = getProductImagePath(user.id, productId);
         const thumbPath = getProductImageThumbPath(user.id, productId);
         const signedImages = await getSignedImageUrls(supabase, [imagePath, thumbPath]);
         updateProductImage(
           productId,
-          signedImages[imagePath] ?? imageUrl,
+          signedImages[imagePath] ?? undefined,
           imagePath,
-          signedImages[thumbPath] ?? signedImages[imagePath] ?? imageUrl,
+          signedImages[thumbPath] ?? signedImages[imagePath] ?? undefined,
           thumbPath
         );
       }

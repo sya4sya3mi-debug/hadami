@@ -13,13 +13,7 @@ const nextConfig = {
   images: {
     // Intentionally disabled: product images are served through authenticated API routes.
     unoptimized: true,
-    remotePatterns: [
-      {
-        protocol: "https",
-        hostname: "pub-76f5a75f96bf42b19e32eaa1edd58300.r2.dev",
-        pathname: "/**",
-      },
-    ],
+    remotePatterns: [],
     formats: ["image/avif", "image/webp"],
   },
   async headers() {

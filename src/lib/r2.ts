@@ -10,8 +10,6 @@ const R2_ENDPOINT = process.env.R2_ENDPOINT!;
 const R2_ACCESS_KEY_ID = process.env.R2_ACCESS_KEY_ID!;
 const R2_SECRET_ACCESS_KEY = process.env.R2_SECRET_ACCESS_KEY!;
 const R2_BUCKET = process.env.R2_BUCKET ?? "hadami-images";
-const R2_PUBLIC_URL = process.env.NEXT_PUBLIC_R2_PUBLIC_URL!;
-
 let _client: S3Client | null = null;
 
 function getClient(): S3Client {
@@ -67,10 +65,6 @@ export async function r2Download(key: string): Promise<Buffer | null> {
   } catch {
     return null;
   }
-}
-
-export function r2PublicUrl(key: string): string {
-  return `${R2_PUBLIC_URL}/${key}`;
 }
 
 const SIGNED_URL_EXPIRY = 3600; // 1時間

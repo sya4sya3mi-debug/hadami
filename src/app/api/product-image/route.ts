@@ -6,7 +6,7 @@ import {
   getProductImagePath,
   getProductImageThumbPath,
 } from "@/lib/productImages";
-import { r2Upload, r2Delete, r2PublicUrl } from "@/lib/r2";
+import { r2Upload, r2Delete } from "@/lib/r2";
 
 export const runtime = "nodejs";
 
@@ -90,7 +90,6 @@ export async function POST(request: Request) {
   }
 
   return NextResponse.json({
-    imageUrl: r2PublicUrl(filePath),
     filePath,
     thumbPath,
   });

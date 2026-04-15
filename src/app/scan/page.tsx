@@ -162,12 +162,12 @@ function ScanPageInner() {
   }, []);
 
   const resolveUploadedImage = useCallback(
-    async (productId: string, fallbackUrl: string | null) => {
-      if (!user || !fallbackUrl) {
+    async (productId: string, savedFilePath: string | null) => {
+      if (!user || !savedFilePath) {
         return {
-          packageImage: fallbackUrl ?? undefined,
+          packageImage: undefined,
           packageImagePath: undefined,
-          packageImageThumb: fallbackUrl ?? undefined,
+          packageImageThumb: undefined,
           packageImageThumbPath: undefined,
         };
       }
@@ -182,9 +182,9 @@ function ScanPageInner() {
       const signedThumbUrl = signedImages[packageImageThumbPath];
 
       return {
-        packageImage: signedImageUrl ?? fallbackUrl,
+        packageImage: signedImageUrl ?? undefined,
         packageImagePath,
-        packageImageThumb: signedThumbUrl ?? signedImageUrl ?? fallbackUrl,
+        packageImageThumb: signedThumbUrl ?? signedImageUrl ?? undefined,
         packageImageThumbPath,
       };
     },
@@ -514,7 +514,7 @@ function ScanPageInner() {
 
       const savedImage = await resolveUploadedImage(
         result.productId!,
-        result.imageUrl
+        result.filePath
       );
 
       const activeIds = foundIngs.filter((f) => isActiveIngredient(f.ingredient.id)).map((f) => f.ingredient.id);
@@ -589,7 +589,7 @@ function ScanPageInner() {
 
       const savedImage = await resolveUploadedImage(
         result.productId!,
-        result.imageUrl
+        result.filePath
       );
 
       const activeDiscoveryIds = foundIngredients

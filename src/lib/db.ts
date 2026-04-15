@@ -71,7 +71,7 @@ async function prepareProductImage(
 async function persistProductImage(
   productId: string,
   imageBase64: string
-): Promise<{ error: string | null; imageUrl: string | null }> {
+): Promise<{ error: string | null; filePath: string | null }> {
   const response = await fetch("/api/product-image", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -82,19 +82,19 @@ async function persistProductImage(
   });
 
   const payload = (await response.json().catch(() => null)) as
-    | { error?: string; imageUrl?: string }
+    | { error?: string; filePath?: string }
     | null;
 
   if (!response.ok) {
     return {
       error: payload?.error ?? "画像の保存に失敗しました",
-      imageUrl: null,
+      filePath: null,
     };
   }
 
   return {
     error: null,
-    imageUrl: payload?.imageUrl ?? null,
+    filePath: payload?.filePath ?? null,
   };
 }
 
@@ -118,7 +118,7 @@ export async function saveProductToDb(
     .eq("user_id", userId);
 
   if (count !== null && count >= USER_LIMIT) {
-    return { error: "limit_reached", productId: null, imageUrl: null };
+    return { error: "limit_reached", productId: null, filePath: null };
   }
 
   const insertData: Record<string, unknown> = {
@@ -145,10 +145,10 @@ export async function saveProductToDb(
     .single();
 
   if (error) {
-    return { error: error.message, productId: null, imageUrl: null };
+    return { error: error.message, productId: null, filePath: null };
   }
 
-  let imageUrl: string | null = null;
+  let filePath: string | null = null;
 
   if (product.packageImageBase64) {
     const preparedImage = await prepareProductImage(product.packageImageBase64);
@@ -162,7 +162,7 @@ export async function saveProductToDb(
       return {
         error: preparedImage.error ?? "画像の保存に失敗しました",
         productId: null,
-        imageUrl: null,
+        filePath: null,
       };
     }
 
@@ -177,14 +177,14 @@ export async function saveProductToDb(
       return {
         error: imageResult.error,
         productId: null,
-        imageUrl: null,
+        filePath: null,
       };
     }
 
-    imageUrl = imageResult.imageUrl;
+    filePath = imageResult.filePath;
   }
 
-  return { error: null, productId: data.id, imageUrl };
+  return { error: null, productId: data.id, filePath };
 }
 
 export async function updateProductImageInDb(
@@ -192,12 +192,12 @@ export async function updateProductImageInDb(
   _userId: string,
   productId: string,
   imageBase64: string
-): Promise<{ error: string | null; imageUrl: string | null }> {
+): Promise<{ error: string | null; filePath: string | null }> {
   const preparedImage = await prepareProductImage(imageBase64);
   if (preparedImage.error || !preparedImage.imageDataUrl) {
     return {
       error: preparedImage.error ?? "画像の保存に失敗しました",
-      imageUrl: null,
+      filePath: null,
     };
   }
 

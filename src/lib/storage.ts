@@ -1,7 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-const R2_PUBLIC_URL = process.env.NEXT_PUBLIC_R2_PUBLIC_URL ?? "";
-
 // --- インメモリキャッシュ（署名付きURL用） ---
 type CacheEntry = { url: string; expiresAt: number };
 const urlCache = new Map<string, CacheEntry>();
@@ -40,12 +38,8 @@ async function fetchSignedUrls(keys: string[]): Promise<Record<string, string>> 
   });
 
   if (!res.ok) {
-    console.warn("signed-url fetch failed, falling back to public URLs");
-    const fallback: Record<string, string> = {};
-    for (const key of keys) {
-      fallback[key] = `${R2_PUBLIC_URL}/${key}`;
-    }
-    return fallback;
+    console.warn("signed-url fetch failed:", res.status);
+    return {};
   }
 
   const data = await res.json();
