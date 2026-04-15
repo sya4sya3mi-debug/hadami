@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { createPortal } from "react-dom";
 import { Ingredient, Combination, ProductGenre } from "@/types";
 import { RARITY, ACTIVE_CATEGORIES, getIngredientCategoryInfo, getIngredientCategories, isActiveIngredient } from "@/lib/ingredients";
@@ -12,6 +12,9 @@ import Disclaimer from "@/components/ui/Disclaimer";
 import RecommendSection from "@/components/recommendations/RecommendSection";
 import { ActiveCategoryIcon, ProductGenreIcon } from "@/components/ui/CosmeticIcons";
 import BottomSheet from "@/components/scan/BottomSheet";
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+import ShareModal from "@/components/ui/ShareModal";
+import { generateScanResultShareImage } from "@/lib/generateShareImage";
 
 interface ScanResultProps {
   productName: string;
@@ -43,6 +46,10 @@ export default function ScanResult({
   const [showUnknown, setShowUnknown] = useState(false);
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set(["_all"]));
   const [selectedIngredient, setSelectedIngredient] = useState<Ingredient | null>(null);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [shareModalOpen, setShareModalOpen] = useState(false);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [shareImageBase64, setShareImageBase64] = useState<string | null>(null);
 
   const genre = getGenreByKey(productType);
 
@@ -71,6 +78,23 @@ export default function ScanResult({
     if (!onSave || saved) return;
     onSave();
   };
+
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const handleShare = useCallback(async () => {
+    const activeIngs = foundIngredients
+      .filter((f) => isActiveIngredient(f.ingredient.id))
+      .sort((a, b) => a.orderIndex - b.orderIndex)
+      .map((f) => f.ingredient);
+    const img = await generateScanResultShareImage({
+      productName,
+      brand,
+      productType,
+      imagePreview,
+      activeIngredients: activeIngs,
+    });
+    setShareImageBase64(img);
+    setShareModalOpen(true);
+  }, [productName, brand, productType, imagePreview, foundIngredients]);
 
   const contentPaddingClass = saved ? "pb-48" : "pb-24";
 
@@ -333,6 +357,16 @@ export default function ScanResult({
         document.body,
       )}
 
+      {/* Share modal */}
+      {shareModalOpen && typeof document !== "undefined" && createPortal(
+        <ShareModal
+          text={`【コスメチェック】${productName}（${brand}）\n注目成分：${activeIngredients.slice(0, 3).map((f) => f.ingredient.nameJa).join(" / ")}\n\n#HADAMI #成分チェック`}
+          onClose={() => setShareModalOpen(false)}
+          imageBase64={shareImageBase64 ?? undefined}
+        />,
+        document.body,
+      )}
+
       {/* Sticky bottom bar — only after save */}
       {saved && (
         <div className="fixed left-0 right-0 z-40 bottom-0 px-4 pt-3 pb-[calc(8px+env(safe-area-inset-bottom)+56px)]
@@ -350,16 +384,30 @@ export default function ScanResult({
               </svg>
               続けてスキャン
             </button>
+            <button
+              onClick={handleShare}
+              className="py-3.5 px-4 rounded-r2 font-bold text-sm font-sans border-none cursor-pointer
+                         bg-white shadow-bo1 pressable
+                         flex items-center justify-center gap-1.5"
+              style={{ color: "#3A8F7A" }}
+            >
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/>
+                <polyline points="16 6 12 2 8 6"/>
+                <line x1="12" y1="2" x2="12" y2="15"/>
+              </svg>
+              シェア
+            </button>
             <Link
               href="/history"
-              className="flex-1 py-3.5 rounded-r2 font-bold text-sm font-sans text-center
+              className="py-3.5 px-4 rounded-r2 font-bold text-sm font-sans text-center
                          bg-white text-bo-ink-muted shadow-bo1 no-underline pressable
                          flex items-center justify-center gap-1.5"
             >
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
                 <rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/>
               </svg>
-              <span style={{ color: "#9B9B9B" }}>コスメ一覧</span>
+              <span style={{ color: "#9B9B9B" }}>一覧</span>
             </Link>
           </div>
         </div>

@@ -4,6 +4,7 @@ import {
   DeleteObjectsCommand,
   GetObjectCommand,
 } from "@aws-sdk/client-s3";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
 const R2_ENDPOINT = process.env.R2_ENDPOINT!;
 const R2_ACCESS_KEY_ID = process.env.R2_ACCESS_KEY_ID!;
@@ -70,4 +71,20 @@ export async function r2Download(key: string): Promise<Buffer | null> {
 
 export function r2PublicUrl(key: string): string {
   return `${R2_PUBLIC_URL}/${key}`;
+}
+
+const SIGNED_URL_EXPIRY = 3600; // 1時間
+
+export async function r2GetSignedUrl(key: string): Promise<string> {
+  const command = new GetObjectCommand({ Bucket: R2_BUCKET, Key: key });
+  return getSignedUrl(getClient(), command, { expiresIn: SIGNED_URL_EXPIRY });
+}
+
+export async function r2GetSignedUrls(
+  keys: string[]
+): Promise<Record<string, string>> {
+  const entries = await Promise.all(
+    keys.map(async (key) => [key, await r2GetSignedUrl(key)] as const)
+  );
+  return Object.fromEntries(entries);
 }
