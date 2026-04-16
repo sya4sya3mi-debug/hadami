@@ -150,7 +150,7 @@ const FEATURES = [
   {
     Icon: PackageIcon,
     iconColor: "#6B4A8A",
-    title: "Myコスメ写真管理",
+    title: "マイコスメ写真管理",
     desc: "スキャンした製品を写真グリッドで一覧管理。お気に入り・カテゴリで絞り込み。ダークモードにも対応",
   },
 ];
