@@ -52,14 +52,24 @@ function readStoredUser(): User | null {
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const storedUser = useMemo(() => readStoredUser(), []);
-  const cacheMatchesUser =
-    typeof window !== "undefined" &&
-    storedUser !== null &&
-    localStorage.getItem("hadami-cache-owner") === storedUser.id;
+
+  let cacheMatchesUser = false;
+  try {
+    cacheMatchesUser =
+      typeof window !== "undefined" &&
+      storedUser !== null &&
+      localStorage.getItem("hadami-cache-owner") === storedUser.id;
+  } catch {
+    // localStorage アクセス失敗（プライベートブラウジング等）
+  }
 
   // If cache belongs to a different user, clear it before first render
-  if (typeof window !== "undefined" && !cacheMatchesUser && localStorage.getItem("hadami-cache-owner") !== null) {
-    clearCachedUserData();
+  try {
+    if (typeof window !== "undefined" && !cacheMatchesUser && localStorage.getItem("hadami-cache-owner") !== null) {
+      clearCachedUserData();
+    }
+  } catch {
+    // localStorage アクセス失敗時は無視
   }
 
   const [user, setUser] = useState<User | null>(storedUser);
