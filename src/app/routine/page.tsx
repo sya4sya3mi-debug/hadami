@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useUser } from "@/lib/auth";
 import AuthGuard from "@/components/ui/AuthGuard";
 import { getUserRoutines, getAmSteps, getPmSteps, type Routine } from "@/lib/routines";
-import { createRoutineWithDeckAction } from "@/app/actions/routineActions";
+// Routine creation uses /api/routine/create
 import ScrollToTop from "@/components/ui/ScrollToTop";
 
 export default function RoutineListPage() {
@@ -31,9 +31,18 @@ function RoutineListContent() {
   }, [user]);
 
   const handleCreate = async () => {
-    const result = await createRoutineWithDeckAction();
-    if (result.routineId) {
-      router.push(`/routine/${result.routineId}/share`);
+    try {
+      const res = await fetch("/api/routine/create", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({}),
+      });
+      const data = await res.json();
+      if (data.routineId) {
+        router.push(`/routine/${data.routineId}/share`);
+      }
+    } catch (e) {
+      console.error("Failed to create routine:", e);
     }
   };
 
@@ -57,15 +66,16 @@ function RoutineListContent() {
         >
           マイルーティン
         </h1>
-        <form action={handleCreate}>
+        <div>
           <button
-            type="submit"
+            onClick={handleCreate}
+            type="button"
             className="flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-semibold text-white transition-colors"
             style={{ backgroundColor: "#3A8F7A" }}
           >
             <span>＋</span> 新規作成
           </button>
-        </form>
+        </div>
       </div>
 
       {/* Empty State */}

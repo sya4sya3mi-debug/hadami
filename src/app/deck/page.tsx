@@ -21,7 +21,7 @@ import { useUser } from "@/lib/auth";
 import AuthGuard from "@/components/ui/AuthGuard";
 import { RoutineType, Product, ProductGenre, RecommendationResult, CategoryKey } from "@/types";
 import { SparkleIcon, ChartIcon, SunIcon, MoonIcon } from "@/components/ui/Icons";
-import { createRoutineWithDeckAction } from "@/app/actions/routineActions";
+// Routine creation uses /api/routine/create
 
 const DECK_OPTIONS: { key: RoutineType; label: string }[] = [
   { key: "morning", label: "朝" },
@@ -190,12 +190,21 @@ export default function DeckPage() {
         });
     };
 
-    const result = await createRoutineWithDeckAction({
-      amSteps: buildSteps("morning"),
-      pmSteps: buildSteps("night"),
-    });
-    if (result.routineId) {
-      router.push(`/routine/${result.routineId}/share`);
+    try {
+      const res = await fetch("/api/routine/create", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          amSteps: buildSteps("morning"),
+          pmSteps: buildSteps("night"),
+        }),
+      });
+      const data = await res.json();
+      if (data.routineId) {
+        router.push(`/routine/${data.routineId}/share`);
+      }
+    } catch (e) {
+      console.error("Failed to create routine:", e);
     }
   };
 
