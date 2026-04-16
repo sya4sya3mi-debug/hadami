@@ -96,7 +96,7 @@ export default function ScanResult({
     setShareModalOpen(true);
   }, [productName, brand, productType, imagePreview, foundIngredients]);
 
-  const contentPaddingClass = saved ? "pb-48" : "pb-24";
+  const contentPaddingClass = saved ? "pb-36" : "pb-24";
 
   return (
     <div className={`space-y-5 animate-fade-up ${contentPaddingClass}`}>
@@ -180,11 +180,14 @@ export default function ScanResult({
         </div>
       </div>
 
-      {/* 有効成分セクション */}
+      {/* レコメンドセクション（保存後に表示） */}
+      {saved && <RecommendSection enabled={saved} />}
+
+      {/* 検出成分セクション */}
       <div>
         <h3 className="font-bold text-sm mb-3 flex items-center gap-2 text-bo-ink dark:text-white font-sans">
           <span className="w-1.5 h-5 rounded-full inline-block bg-bo-accent" />
-          美容成分（図鑑登録対象）
+          検出成分
         </h3>
 
         {activeIngredients.length > 8 ? (
@@ -343,9 +346,6 @@ export default function ScanResult({
         </div>
       )}
 
-      {/* レコメンドセクション（保存後に表示） */}
-      {saved && <RecommendSection enabled={saved} />}
-
       <Disclaimer />
 
       {/* 成分詳細シート（Portal経由で最前面に表示） */}
@@ -369,7 +369,7 @@ export default function ScanResult({
 
       {/* Sticky bottom bar — only after save */}
       {saved && (
-        <div className="fixed left-0 right-0 z-40 bottom-0 px-4 pt-3 pb-[calc(8px+env(safe-area-inset-bottom)+56px)]
+        <div className="fixed left-0 right-0 z-40 bottom-0 px-4 pt-3 pb-[calc(env(safe-area-inset-bottom)+56px)]
                         bg-white/95 backdrop-blur-xl border-t border-bo-parchment/60 shadow-[0_-4px_20px_rgba(0,0,0,0.06)]">
           <div className="animate-fade-up flex gap-2">
             <Link
