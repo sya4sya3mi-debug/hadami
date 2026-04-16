@@ -209,9 +209,15 @@ export async function deleteProductImageFromDb(
   userId: string,
   productId: string
 ): Promise<{ error: string | null }> {
-  const filePath = getProductImagePath(userId, productId);
-  const thumbPath = getProductImageThumbPath(userId, productId);
-  await r2Delete([filePath, thumbPath]);
+  if (typeof window === "undefined") {
+    try {
+      const filePath = getProductImagePath(userId, productId);
+      const thumbPath = getProductImageThumbPath(userId, productId);
+      await r2Delete([filePath, thumbPath]);
+    } catch (e) {
+      console.error("R2 image delete failed (non-blocking):", e);
+    }
+  }
 
   const { error } = await supabase
     .from("products")
@@ -227,9 +233,16 @@ export async function deleteProductFromDb(
   userId: string,
   productId: string
 ) {
-  const filePath = getProductImagePath(userId, productId);
-  const thumbPath = getProductImageThumbPath(userId, productId);
-  await r2Delete([filePath, thumbPath]);
+  // R2画像削除はサーバーサイドでのみ実行（クライアントではクレデンシャルが無くフリーズする）
+  if (typeof window === "undefined") {
+    try {
+      const filePath = getProductImagePath(userId, productId);
+      const thumbPath = getProductImageThumbPath(userId, productId);
+      await r2Delete([filePath, thumbPath]);
+    } catch (e) {
+      console.error("R2 delete failed (non-blocking):", e);
+    }
+  }
 
   const { error } = await supabase
     .from("products")
@@ -407,6 +420,18 @@ export async function getScanCountByEmail(supabase: SupabaseClient, email: strin
   return data?.total_count ?? 0;
 }
 
+/** 当月のスキャン回数を取得（月次リセット対応） */
+export async function getMonthlyScanCount(supabase: SupabaseClient, userId: string): Promise<number> {
+  const month = getCurrentMonth();
+  const { data } = await supabase
+    .from("scan_usage")
+    .select("count")
+    .eq("user_id", userId)
+    .eq("month", month)
+    .single();
+  return data?.count ?? 0;
+}
+
 export async function tryReserveScan(
   supabase: SupabaseClient,
   userId: string,
@@ -423,20 +448,6 @@ export async function tryReserveScan(
     return false;
   }
   return data === true;
-}
-
-export async function rollbackScan(
-  supabase: SupabaseClient,
-  userId: string,
-  email: string
-): Promise<void> {
-  const { error } = await supabase.rpc("rollback_scan", {
-    p_email: email,
-    p_user_id: userId,
-  });
-  if (error) {
-    console.error("rollbackScan RPC error:", error);
-  }
 }
 
 export async function incrementScanCount(supabase: SupabaseClient, userId: string, email: string) {

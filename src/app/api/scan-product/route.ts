@@ -3,8 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { authenticateRequest, validateImagePayload } from "@/lib/apiAuth";
 import {
   tryReserveScan,
-  rollbackScan,
-  getScanCountByEmail,
+  getMonthlyScanCount,
   getAccountScanLimit,
 } from "@/lib/db";
 import { rateLimit, getClientIp } from "@/lib/rateLimit";
@@ -15,6 +14,7 @@ import {
 import { MASTER_INGREDIENTS, getIngredientByName, getIngredientByInci } from "@/lib/ingredients";
 import { resolveActiveIngredient } from "@/lib/mhlwActiveIngredients";
 import { normalizeIngredientName } from "@/lib/normalize";
+import { ocrSpaceExtract } from "@/lib/ocrSpace";
 
 const client = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 const IDENTIFY_MODEL = process.env.GEMINI_IDENTIFY_MODEL || "gemini-2.5-flash-lite";
@@ -161,53 +161,50 @@ function parseIdentifiedProducts(text: string): IdentifiedProduct[] {
   return products;
 }
 
-const IDENTIFY_PROMPT = [
-  "Two images of the same cosmetic product package are shown.",
-  "Image 1: color photo. Image 2: contrast-enhanced grayscale for text readability.",
-  "Read the text on the package and return:",
-  "",
-  "PRODUCT: product name",
-  "BRAND: brand name",
-  "LANG: ja|ko|en",
-  "TYPE: cleansing / face_wash / toner / serum / emulsion / cream / sunscreen / mask_pack / eye_care / oil / mist / other",
-  "",
-  "For multiple products use PRODUCT1/BRAND1/LANG1/TYPE1 format.",
-  "Always return at least one PRODUCT line.",
-].join("\n");
-
-const IDENTIFY_PROMPT_SINGLE = [
-  "Identify the cosmetic product in this photo.",
-  "Read the text on the package and return:",
-  "",
-  "PRODUCT: product name",
-  "BRAND: brand name",
-  "LANG: ja|ko|en",
-  "TYPE: cleansing / face_wash / toner / serum / emulsion / cream / sunscreen / mask_pack / eye_care / oil / mist / other",
-  "",
-  "For multiple products use PRODUCT1/BRAND1/LANG1/TYPE1 format.",
-  "Always return at least one PRODUCT line.",
-].join("\n");
-
-function buildImageParts(colorBase64: string, enhancedBase64?: string) {
-  const parts: Array<{ inlineData: { mimeType: string; data: string } } | { text: string }> = [];
-  parts.push({ inlineData: { mimeType: "image/jpeg", data: colorBase64 } });
-  if (enhancedBase64) {
-    parts.push({ inlineData: { mimeType: "image/jpeg", data: enhancedBase64 } });
-    parts.push({ text: IDENTIFY_PROMPT });
-  } else {
-    parts.push({ text: IDENTIFY_PROMPT_SINGLE });
-  }
-  return parts;
+function buildIdentifyPrompt(ocrText: string): string {
+  return [
+    "以下のOCRテキストは化粧品パッケージから読み取ったものです。",
+    "製品情報を特定してください。",
+    "",
+    "OCRテキスト:",
+    ocrText,
+    "",
+    "回答フォーマット:",
+    "PRODUCT: product name",
+    "BRAND: brand name",
+    "LANG: ja|ko|en",
+    "TYPE: cleansing / face_wash / toner / serum / emulsion / cream / sunscreen / mask_pack / eye_care / oil / mist / other",
+    "",
+    "For multiple products use PRODUCT1/BRAND1/LANG1/TYPE1 format.",
+    "Always return at least one PRODUCT line.",
+  ].join("\n");
 }
 
 async function identifyProducts(
   base64Data: string,
   enhancedData?: string,
 ): Promise<IdentifiedProduct[]> {
+  // OCR.space でテキスト抽出（強調画像優先）
+  let ocrText = await ocrSpaceExtract(enhancedData || base64Data);
+
+  // 空ならカラー画像でリトライ
+  if (!ocrText && enhancedData) {
+    console.log("[scan-product] OCR retry with color image");
+    ocrText = await ocrSpaceExtract(base64Data);
+  }
+
+  if (!ocrText) {
+    console.log("[scan-product] OCR returned empty text");
+    return [];
+  }
+
+  console.log("[scan-product] OCR text:", ocrText.slice(0, 300));
+
+  // Gemini（テキストのみ）で商品情報を解析
   const response = await withTimeout(
     client.models.generateContent({
       model: IDENTIFY_MODEL,
-      contents: [{ role: "user", parts: buildImageParts(base64Data, enhancedData) }],
+      contents: [{ role: "user", parts: [{ text: buildIdentifyPrompt(ocrText) }] }],
       config: {
         maxOutputTokens: 1024,
         thinkingConfig: { thinkingBudget: 0 },
@@ -220,33 +217,7 @@ async function identifyProducts(
   const text = response?.text ?? "";
   console.log("[scan-product] identify:", text.slice(0, 500));
 
-  const products = parseIdentifiedProducts(text);
-  if (products.length > 0) return products;
-
-  // リトライ: 強調画像のみ
-  const retryImage = enhancedData || base64Data;
-  const retryResponse = await withTimeout(
-    client.models.generateContent({
-      model: IDENTIFY_MODEL,
-      contents: [
-        {
-          role: "user",
-          parts: [
-            { inlineData: { mimeType: "image/jpeg", data: retryImage } },
-            { text: "Read the text on this cosmetic package.\n\nPRODUCT: (name)\nBRAND: (brand)\nLANG: ja\nTYPE: other" },
-          ],
-        },
-      ],
-      config: {
-        maxOutputTokens: 512,
-        thinkingConfig: { thinkingBudget: 0 },
-      },
-    }),
-    15000,
-    "Timed out while identifying product (retry)",
-  ).catch(() => null);
-
-  return parseIdentifiedProducts(retryResponse?.text ?? "");
+  return parseIdentifiedProducts(text);
 }
 
 // ── STEP 2: 有効成分検索 (Gemini + Google Search) ──
@@ -371,7 +342,7 @@ async function searchKeyIngredients(
 export async function POST(req: NextRequest) {
   // 1. レート制限
   const ip = getClientIp(req);
-  const rl = rateLimit(ip, 60_000, 10);
+  const rl = await rateLimit(ip, 60_000, 10, "scan-product");
   if (!rl.allowed) {
     return NextResponse.json(
       { error: "リクエストが多すぎます。しばらくしてから再度お試しください。" },
@@ -411,7 +382,7 @@ export async function POST(req: NextRequest) {
   // 5. スキャン枠予約
   const reserved = await tryReserveScan(auth.supabase, auth.user.id, auth.user.email!);
   if (!reserved) {
-    const count = await getScanCountByEmail(auth.supabase, auth.user.email!);
+    const count = await getMonthlyScanCount(auth.supabase, auth.user.id);
     const limit = getAccountScanLimit();
     return NextResponse.json(
       { error: "スキャン回数の上限に達しました", count, limit },
@@ -424,7 +395,6 @@ export async function POST(req: NextRequest) {
     const identifiedProducts = await identifyProducts(validation.base64Data, enhancedData);
 
     if (identifiedProducts.length === 0) {
-      await rollbackScan(auth.supabase, auth.user.id, auth.user.email!);
       return NextResponse.json({
         products: [],
         productName: "",
@@ -497,12 +467,6 @@ export async function POST(req: NextRequest) {
       }),
     );
 
-    // 成分が1つも見つからなかった場合、スキャン枠返却
-    const hasUsableResult = results.some((r) => r.found);
-    if (!hasUsableResult) {
-      await rollbackScan(auth.supabase, auth.user.id, auth.user.email!);
-    }
-
     const first = results[0];
     return NextResponse.json({
       productName: first.productName,
@@ -515,7 +479,6 @@ export async function POST(req: NextRequest) {
       products: results,
     });
   } catch (error) {
-    await rollbackScan(auth.supabase, auth.user.id, auth.user.email!);
     console.error("Scan product error:", error instanceof Error ? error.message : error);
     return NextResponse.json({ error: "Failed to identify product" }, { status: 500 });
   }

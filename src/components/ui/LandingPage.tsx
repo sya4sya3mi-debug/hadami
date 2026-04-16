@@ -517,7 +517,7 @@ export default function LandingPage() {
               <CameraIcon size={18} color="white" /> 無料で始める
             </Link>
             <p className="text-[11px] text-bo-ink-faint mt-3.5 font-sans">
-              {scanLimit}回までスキャン無料
+              月{scanLimit}回までスキャン無料
             </p>
           </div>
         </Reveal>

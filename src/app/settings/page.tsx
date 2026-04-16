@@ -8,7 +8,7 @@ import { useUser } from "@/lib/auth";
 import AuthGuard from "@/components/ui/AuthGuard";
 import { clearCachedUserData } from "@/lib/userData";
 import { getStoredTheme, setTheme, type Theme } from "@/lib/theme";
-import { getScanCountByEmail, getProductCount, getAccountScanLimit, getUserLimit } from "@/lib/db";
+import { getMonthlyScanCount, getProductCount, getAccountScanLimit, getUserLimit } from "@/lib/db";
 
 
 export default function SettingsPage() {
@@ -56,9 +56,7 @@ export default function SettingsPage() {
 
   useEffect(() => {
     if (!user) return;
-    if (user.email) {
-      getScanCountByEmail(supabase, user.email).then(setScanCount);
-    }
+    getMonthlyScanCount(supabase, user.id).then(setScanCount);
     getProductCount(supabase, user.id).then(setProductCount);
   }, [user, supabase]);
 
@@ -215,7 +213,7 @@ export default function SettingsPage() {
             <h2 className="text-[13px] font-bold text-bo-ink font-sans mb-3.5">利用状況</h2>
             <div className="flex gap-2.5">
               {[
-                { label: "スキャン回数", icon: "📸", value: scanCount !== null ? `${scanCount}/${getAccountScanLimit()}` : "..." },
+                { label: "スキャン回数 (今月)", icon: "📸", value: scanCount !== null ? `${scanCount}/${getAccountScanLimit()}` : "..." },
                 { label: "保存コスメ", icon: "📦", value: productCount !== null ? `${productCount}/${getUserLimit()}` : "..." },
               ].map((s, i) => (
                 <div key={i} className="flex-1 py-3.5 px-3 rounded-r1 bg-bo-cream text-center">
@@ -323,6 +321,28 @@ export default function SettingsPage() {
             </svg>
             <span className="text-[13px] font-bold text-bo-accent font-sans">ログアウト</span>
           </button>
+
+          {/* Admin */}
+          {user && ["751ac531-dcdb-4e77-a3ea-67a01677c432"].includes(user.id) && (
+            <div className="bg-white rounded-r2 shadow-bo1 p-5 mb-3">
+              <h2 className="text-[13px] font-bold text-bo-ink font-sans mb-3.5">管理者メニュー</h2>
+              <Link
+                href="/admin/invites"
+                className="flex items-center justify-between py-3 cursor-pointer no-underline pressable"
+              >
+                <div className="flex items-center gap-2.5">
+                  <span className="w-8 h-8 rounded-lg bg-[#FFF3DC] flex items-center justify-center text-sm">🔑</span>
+                  <div>
+                    <span className="text-[13px] font-semibold text-bo-ink font-sans block">招待コード管理</span>
+                    <span className="text-[10px] text-bo-ink-muted font-sans">コードの発行・無効化</span>
+                  </div>
+                </div>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#BDBDBD" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+                  <path d="M9 18l6-6-6-6" />
+                </svg>
+              </Link>
+            </div>
+          )}
 
           {/* Legal */}
           <div className="bg-white rounded-r2 shadow-bo1 p-5 mb-3">

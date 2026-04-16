@@ -26,7 +26,7 @@ import {
   saveScanHistory,
   getUserLimit,
   getMonthlyScanLimit,
-  getScanCountByEmail,
+  getMonthlyScanCount,
   getProductCount,
 } from "@/lib/db";
 import { getSignedImageUrls } from "@/lib/storage";
@@ -138,7 +138,7 @@ function ScanPageInner() {
 
   useEffect(() => {
     if (!user?.email) return;
-    getScanCountByEmail(supabase, user.email).then((count) => {
+    getMonthlyScanCount(supabase, user.id).then((count) => {
       if (count >= monthlyScanLimit) setScanLimitReached(true);
     });
   }, [user, supabase, monthlyScanLimit]);
@@ -287,7 +287,7 @@ function ScanPageInner() {
 
   const checkScanLimit = useCallback(async (): Promise<boolean> => {
     if (!user?.email) return false;
-    const count = await getScanCountByEmail(supabase, user.email);
+    const count = await getMonthlyScanCount(supabase, user.id);
     if (count >= monthlyScanLimit) {
       setScanLimitReached(true);
       return false;
@@ -381,8 +381,6 @@ function ScanPageInner() {
         }
       } catch (error) {
         console.error("Product search error:", error);
-        // フロント側エラー時もスキャン枠を返却
-        fetch("/api/rollback-scan", { method: "POST" }).catch(() => {});
         setProgressMsg("検索に失敗しました");
         setTimeout(() => setShowFallback(true), 1000);
       }
@@ -448,8 +446,6 @@ function ScanPageInner() {
         }, 500);
       } catch (error) {
         console.error("OCR error:", error);
-        // エラー時もスキャン枠を返却
-        fetch("/api/rollback-scan", { method: "POST" }).catch(() => {});
         setProgressMsg("エラーが発生しました。もう一度お試しください。");
         setTimeout(() => setShowFallback(true), 2000);
       }
@@ -577,13 +573,11 @@ function ScanPageInner() {
       if (result.error === "limit_reached") {
         isSavingRef.current = false;
         setSaveError(`保存上限（${userLimit}件）に達しています。古いコスメを削除してください。`);
-        fetch("/api/rollback-scan", { method: "POST" }).catch(() => {});
         return;
       }
       if (result.error) {
         isSavingRef.current = false;
         setSaveError("保存に失敗しました。もう一度お試しください。");
-        fetch("/api/rollback-scan", { method: "POST" }).catch(() => {});
         return;
       }
 
@@ -699,10 +693,10 @@ function ScanPageInner() {
                 <span className="text-2xl">🚫</span>
               </div>
               <div className="font-bold text-sm mb-1 text-bo-ink font-sans">
-                無料スキャン上限（{monthlyScanLimit}回）に達しました
+                今月のスキャン上限（{monthlyScanLimit}回）に達しました
               </div>
               <div className="text-xs text-bo-ink-muted mb-4 font-sans">
-                ベータ版では1アカウントにつき{monthlyScanLimit}回まで無料です
+                ベータ版では月{monthlyScanLimit}回まで無料です。翌月1日にリセットされます
               </div>
               <button
                 onClick={() => setShowManualSheet(true)}

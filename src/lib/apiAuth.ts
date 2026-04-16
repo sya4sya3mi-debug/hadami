@@ -2,7 +2,7 @@ import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import type { SupabaseClient, User } from "@supabase/supabase-js";
-import { getScanCountByEmail, getAccountScanLimit } from "./db";
+import { getMonthlyScanCount, getAccountScanLimit } from "./db";
 
 type AuthSuccess = { authenticated: true; supabase: SupabaseClient; user: User };
 type AuthFailure = { authenticated: false; response: NextResponse };

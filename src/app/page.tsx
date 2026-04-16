@@ -9,7 +9,7 @@ import { useZukanStore } from "@/stores/useZukanStore";
 import { useDeckStore } from "@/stores/useDeckStore";
 import { getIngredientById } from "@/lib/ingredients";
 import { getGenreByKey } from "@/lib/productGenres";
-import { getScanCountByEmail, updateLastUsedAtInDb } from "@/lib/db";
+import { getMonthlyScanCount, updateLastUsedAtInDb } from "@/lib/db";
 import Disclaimer from "@/components/ui/Disclaimer";
 import InstallBanner from "@/components/ui/InstallBanner";
 import { useUser } from "@/lib/auth";
@@ -199,8 +199,8 @@ export default function HomePage() {
   }, [loading, user, profile, router]);
 
   const fetchScanCount = useCallback(async () => {
-    if (!user?.email) return;
-    const count = await getScanCountByEmail(supabase, user.email);
+    if (!user) return;
+    const count = await getMonthlyScanCount(supabase, user.id);
     setScanCount(count);
   }, [user, supabase]);
 
