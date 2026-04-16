@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { useRouter } from "next/navigation";
+// useRouter removed — share card uses server action redirect
 import ScrollToTop from "@/components/ui/ScrollToTop";
 import { useDeckStore } from "@/stores/useDeckStore";
 import { useProductStore } from "@/stores/useProductStore";
@@ -21,6 +21,7 @@ import { useUser } from "@/lib/auth";
 import AuthGuard from "@/components/ui/AuthGuard";
 import { RoutineType, Product, ProductGenre, RecommendationResult, CategoryKey } from "@/types";
 import { SparkleIcon, ChartIcon, SunIcon, MoonIcon } from "@/components/ui/Icons";
+import { createRoutineAction } from "@/app/actions/routineActions";
 
 const DECK_OPTIONS: { key: RoutineType; label: string }[] = [
   { key: "morning", label: "朝" },
@@ -35,7 +36,6 @@ export default function DeckPage() {
   const [showAutoRecommend, setShowAutoRecommend] = useState(false);
   const [autoResult, setAutoResult] = useState<RecommendationResult | null>(null);
   const { user, supabase, loading } = useUser();
-  const router = useRouter();
 
   const routine = DECK_OPTIONS[deckIndex].key;
 
@@ -165,6 +165,36 @@ export default function DeckPage() {
     }
   };
 
+  /** デッキの朝/夜アイテムからシェアカード用ステップを生成して新規作成 */
+  const handleCreateShareCard = async () => {
+    const buildSteps = (routineKey: RoutineType) => {
+      return allDeckItems
+        .filter((i) => i.routine === routineKey)
+        .sort((a, b) => {
+          const pa = getProduct(a.productId);
+          const pb = getProduct(b.productId);
+          const orderA = getGenreByKey(pa?.productType ?? "other")?.order ?? 99;
+          const orderB = getGenreByKey(pb?.productType ?? "other")?.order ?? 99;
+          return orderA - orderB;
+        })
+        .map((item) => {
+          const product = getProduct(item.productId);
+          const genre = getGenreByKey(product?.productType ?? "other");
+          return {
+            step_name: genre?.label ?? "その他",
+            product_name: product ? `${product.brand ? product.brand + " " : ""}${product.name}` : undefined,
+            product_id: product?.id,
+            icon: genre?.icon ?? "🌿",
+          };
+        });
+    };
+
+    await createRoutineAction({
+      amSteps: buildSteps("morning"),
+      pmSteps: buildSteps("night"),
+    });
+  };
+
   const openPicker = (genre: ProductGenre | null) => {
     setPickerGenreFilter(genre);
     setShowPicker(true);
@@ -239,19 +269,15 @@ export default function DeckPage() {
               </button>
 
               {/* Share card link */}
-              <a
-                href="/routine"
-                onClick={(e) => {
-                  e.preventDefault();
-                  router.push("/routine");
-                }}
+              <button
+                onClick={() => { void handleCreateShareCard(); }}
                 className="w-full mt-3 py-3.5 rounded-r2 text-sm font-bold font-sans cursor-pointer
                            flex items-center justify-center gap-2
-                           border-none text-white shadow-bo1 pressable no-underline"
+                           border-none text-white shadow-bo1 pressable"
                 style={{ background: "linear-gradient(135deg, #3A8F7A, #2D7A66)" }}
               >
                 🌿 シェアカードを作成
-              </a>
+              </button>
             </>
           ) : (
             <>
@@ -261,19 +287,15 @@ export default function DeckPage() {
                 onCreateRoutine={() => openPicker(null)}
                 onAutoRecommend={handleAutoRecommend}
               />
-              <a
-                href="/routine"
-                onClick={(e) => {
-                  e.preventDefault();
-                  router.push("/routine");
-                }}
+              <button
+                onClick={() => { void handleCreateShareCard(); }}
                 className="w-full mt-6 py-3.5 rounded-r2 text-sm font-bold font-sans cursor-pointer
                            flex items-center justify-center gap-2
-                           border-none text-white shadow-bo1 pressable no-underline"
+                           border-none text-white shadow-bo1 pressable"
                 style={{ background: "linear-gradient(135deg, #3A8F7A, #2D7A66)" }}
               >
                 🌿 シェアカードを作成
-              </a>
+              </button>
             </>
           )}
 

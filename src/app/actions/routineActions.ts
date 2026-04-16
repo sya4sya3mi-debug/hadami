@@ -33,7 +33,12 @@ async function getUser() {
   return { supabase, user };
 }
 
-export async function createRoutineAction() {
+export async function createRoutineAction(
+  prefill?: {
+    amSteps?: { step_name: string; product_name?: string; product_id?: string; icon?: string }[];
+    pmSteps?: { step_name: string; product_name?: string; product_id?: string; icon?: string }[];
+  }
+) {
   const { supabase, user } = await getUser();
   if (!user) redirect("/auth/login");
 
@@ -49,7 +54,41 @@ export async function createRoutineAction() {
     .single();
 
   if (error || !data) redirect("/routine");
-  redirect(`/routine/${data.id}/share`);
+
+  // デッキからのprefillステップを挿入
+  const routineId = data.id;
+  const amSteps = prefill?.amSteps ?? [];
+  const pmSteps = prefill?.pmSteps ?? [];
+
+  if (amSteps.length > 0) {
+    await supabase.from("routine_steps").insert(
+      amSteps.map((s, i) => ({
+        routine_id: routineId,
+        time_of_day: "am" as const,
+        step_order: i + 1,
+        step_name: s.step_name,
+        product_name: s.product_name ?? null,
+        product_id: s.product_id ?? null,
+        icon: s.icon ?? "🌿",
+      }))
+    );
+  }
+
+  if (pmSteps.length > 0) {
+    await supabase.from("routine_steps").insert(
+      pmSteps.map((s, i) => ({
+        routine_id: routineId,
+        time_of_day: "pm" as const,
+        step_order: i + 1,
+        step_name: s.step_name,
+        product_name: s.product_name ?? null,
+        product_id: s.product_id ?? null,
+        icon: s.icon ?? "🌿",
+      }))
+    );
+  }
+
+  redirect(`/routine/${routineId}/share`);
 }
 
 export async function saveRoutineAction(
