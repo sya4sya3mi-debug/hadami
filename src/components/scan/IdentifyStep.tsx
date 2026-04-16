@@ -29,7 +29,7 @@ async function preprocessImage(dataUrl: string): Promise<string> {
   return new Promise((resolve) => {
     const img = new Image();
     img.onload = () => {
-      const MAX_SIDE = 2400;
+      const MAX_SIDE = 1200;
       let { width, height } = img;
       if (width > MAX_SIDE || height > MAX_SIDE) {
         const scale = MAX_SIDE / Math.max(width, height);
@@ -48,7 +48,7 @@ async function preprocessImage(dataUrl: string): Promise<string> {
         d.data[i] = d.data[i + 1] = d.data[i + 2] = contrast;
       }
       ctx.putImageData(d, 0, 0);
-      resolve(canvas.toDataURL("image/jpeg", 0.92));
+      resolve(canvas.toDataURL("image/jpeg", 0.80));
     };
     img.src = dataUrl;
   });

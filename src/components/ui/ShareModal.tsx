@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
+import { downloadShareImage } from "@/lib/downloadImage";
 
 export interface ShareModalProps {
   text: string;
@@ -14,25 +15,13 @@ export interface ShareModalProps {
 export default function ShareModal({ text, onClose, captureRef, imageBase64: imageBase64Prop }: ShareModalProps) {
   const [editableText, setEditableText] = useState(text);
   const [copied, setCopied] = useState(false);
-  const [xLinked, setXLinked] = useState<boolean | null>(null);
-  const [posting, setPosting] = useState(false);
-  const [postResult, setPostResult] = useState<{ success: boolean; message: string } | null>(null);
   const [cardImage, setCardImage] = useState<string | null>(null);
   const [capturing, setCapturing] = useState(false);
-  const [linkError, setLinkError] = useState<string | null>(null);
-  const [showConfirm, setShowConfirm] = useState(false);
+  const [downloaded, setDownloaded] = useState(false);
   const MAX_CHARS = 280;
   const isOverLimit = editableText.length > MAX_CHARS;
   const overlayRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
-
-  // Check X link status
-  useEffect(() => {
-    fetch("/api/x-auth/status")
-      .then((r) => r.json())
-      .then((d) => setXLinked(d.linked))
-      .catch(() => setXLinked(false));
-  }, []);
 
   // imageBase64Prop が変わるたびに cardImage を同期
   useEffect(() => {
@@ -77,7 +66,7 @@ export default function ShareModal({ text, onClose, captureRef, imageBase64: ima
     };
   }, []);
 
-  const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(editableText)}`;
+  const xIntentUrl = `https://x.com/intent/tweet?text=${encodeURIComponent(editableText)}`;
 
   const handleCopy = async () => {
     await navigator.clipboard.writeText(editableText);
@@ -85,79 +74,13 @@ export default function ShareModal({ text, onClose, captureRef, imageBase64: ima
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const handleXLink = useCallback(async () => {
-    setLinkError(null);
-    try {
-      const res = await fetch("/api/x-auth/request-token");
-      const data = await res.json();
-      if (data.authUrl) {
-        window.location.href = data.authUrl;
-      } else {
-        setLinkError(data.error || "X連携に失敗しました");
-      }
-    } catch {
-      setLinkError("通信エラーが発生しました");
-    }
-  }, []);
-
-  const handlePostToX = useCallback(async () => {
-    setPosting(true);
-    setPostResult(null);
-    try {
-      const res = await fetch("/api/x-tweet", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          text: editableText,
-          imageBase64: cardImage || undefined,
-        }),
-      });
-      const data = await res.json();
-      if (res.ok) {
-        setPostResult({
-          success: true,
-          message: `投稿しました！（残り${data.remaining}件/日）`,
-        });
-      } else {
-        setPostResult({ success: false, message: data.error || "投稿に失敗しました" });
-      }
-    } catch {
-      setPostResult({ success: false, message: "通信エラーが発生しました" });
-    } finally {
-      setPosting(false);
-    }
-  }, [editableText, cardImage]);
+  const handleDownload = useCallback(() => {
+    if (!cardImage) return;
+    downloadShareImage(cardImage);
+    setDownloaded(true);
+  }, [cardImage]);
 
   return (
-    <>
-    {showConfirm && (
-      <div className="fixed inset-0 bg-black/50 z-[60] flex items-center justify-center px-6">
-        <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-xl">
-          <p className="text-base font-bold text-center mb-1" style={{ color: "#2D2D2D" }}>
-            Xに投稿しますか？
-          </p>
-          <p className="text-xs text-center mb-5" style={{ color: "#9B9B9B" }}>
-            {cardImage ? "画像付きで投稿されます" : "テキストのみ投稿されます"}
-          </p>
-          <div className="flex gap-3">
-            <button
-              onClick={() => setShowConfirm(false)}
-              className="flex-1 py-3 rounded-xl text-sm font-bold"
-              style={{ background: "#F3F3F3", color: "#2D2D2D" }}
-            >
-              キャンセル
-            </button>
-            <button
-              onClick={() => { setShowConfirm(false); handlePostToX(); }}
-              className="flex-1 py-3 rounded-xl text-sm font-bold text-white"
-              style={{ background: "linear-gradient(135deg, #F9A8C0, #F48FB1)" }}
-            >
-              投稿する
-            </button>
-          </div>
-        </div>
-      </div>
-    )}
     <div
       ref={overlayRef}
       className="fixed inset-0 bg-black/40 z-50 flex items-end justify-center"
@@ -173,7 +96,7 @@ export default function ShareModal({ text, onClose, captureRef, imageBase64: ima
         <div className="px-6 pt-4 pb-3 shrink-0">
           <div className="w-10 h-1 rounded-full mx-auto mb-4" style={{ background: "#E0E0E0" }} />
           <div className="flex justify-between items-center">
-            <h3 className="font-bold text-base" style={{ color: "#2D2D2D" }}>Xに投稿</h3>
+            <h3 className="font-bold text-base" style={{ color: "#2D2D2D" }}>シェアカードを作成</h3>
             <button onClick={onClose} className="text-xl" style={{ color: "#9B9B9B" }}>✕</button>
           </div>
         </div>
@@ -218,63 +141,41 @@ export default function ShareModal({ text, onClose, captureRef, imageBase64: ima
               {editableText.length}/{MAX_CHARS}
             </div>
           </div>
-
-          {/* Post result */}
-          {postResult && (
-            <div
-              className="rounded-xl p-3 mb-4 text-sm font-medium text-center"
-              style={{
-                background: postResult.success ? "#E8F5E9" : "#FFEBEE",
-                color: postResult.success ? "#2E7D32" : "#C62828",
-              }}
-            >
-              {postResult.message}
-            </div>
-          )}
         </div>
 
         {/* Buttons */}
         <div className="px-6 pb-8 pt-3 shrink-0 space-y-3">
-          {/* X API post button (if linked) */}
-          {xLinked === true && !postResult?.success && (
+          {/* Step indicator */}
+          <div className="text-center text-xs font-medium mb-1" style={{ color: "#9B9B9B" }}>
+            {downloaded ? "✓ 画像を保存しました — Xに投稿しましょう" : "① 画像を保存 → ② Xで投稿"}
+          </div>
+
+          {/* Download button */}
+          {!downloaded && (
             <button
-              onClick={() => setShowConfirm(true)}
-              disabled={posting || capturing || isOverLimit}
-              className="w-full py-3 rounded-2xl text-white text-center text-sm font-bold"
+              onClick={handleDownload}
+              disabled={!cardImage || capturing}
+              className="w-full py-3 rounded-2xl text-white text-center text-sm font-bold transition-opacity"
               style={{
-                background: posting || capturing || isOverLimit
-                  ? "#BDBDBD"
-                  : "linear-gradient(135deg, #F9A8C0, #F48FB1)",
-                opacity: posting || capturing || isOverLimit ? 0.7 : 1,
+                background: !cardImage || capturing ? "#BDBDBD" : "#3A8F7A",
+                opacity: !cardImage || capturing ? 0.7 : 1,
               }}
             >
-              {posting ? "投稿中..." : cardImage ? "画像付きでXに投稿" : "Xに投稿する"}
+              {capturing ? "画像を生成中..." : "画像をダウンロード"}
             </button>
           )}
 
-          {/* X link prompt */}
-          {xLinked === false && (
-            <>
-              <button
-                onClick={handleXLink}
-                className="w-full py-3 rounded-2xl text-sm font-bold"
-                style={{
-                  background: "#F9F9F9",
-                  color: "#2D2D2D",
-                  border: "1.5px solid #E0E0E0",
-                }}
-              >
-                Xアカウントを連携して画像付き投稿
-              </button>
-              {linkError && (
-                <div
-                  className="rounded-xl p-3 mt-2 text-sm font-medium text-center"
-                  style={{ background: "#FFEBEE", color: "#C62828" }}
-                >
-                  {linkError}
-                </div>
-              )}
-            </>
+          {/* X intent button (appears after download) */}
+          {downloaded && (
+            <a
+              href={xIntentUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block w-full py-3 rounded-2xl text-white text-center text-sm font-bold"
+              style={{ background: "#0F1419" }}
+            >
+              Xで投稿する（画像を添付してね）
+            </a>
           )}
 
           <div className="flex gap-3">
@@ -285,19 +186,18 @@ export default function ShareModal({ text, onClose, captureRef, imageBase64: ima
             >
               {copied ? "✓ コピー済み" : "コピー"}
             </button>
-            <a
-              href={twitterUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex-1 py-3 rounded-2xl text-center text-sm font-medium"
-              style={{ border: "1.5px solid #F2F2F2", color: "#9B9B9B" }}
-            >
-              Web版で投稿
-            </a>
+            {downloaded && (
+              <button
+                onClick={handleDownload}
+                className="flex-1 py-3 rounded-2xl text-sm font-medium"
+                style={{ border: "1.5px solid #F2F2F2", color: "#9B9B9B" }}
+              >
+                もう一度ダウンロード
+              </button>
+            )}
           </div>
         </div>
       </div>
     </div>
-    </>
   );
 }

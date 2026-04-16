@@ -1,0 +1,2064 @@
+[
+  {
+    "excel_id": 1,
+    "name": "ヒアルロン酸Na",
+    "main_category_ja": "保湿・水分保持",
+    "effect_summary": "角層（肌のいちばん外側）で水分を抱え込み、乾燥しやすい肌をしっとり見せやすい。",
+    "suitable_for": "乾燥肌・インナードライ",
+    "caution_note": "即効性のあるうるおい感は出やすいが、単独ではフタ役が必要なことがある。",
+    "combination_caution": "基本は併用しやすい。乾燥が強い日はセラミドや油分も重ねる。刺激の強い酸・レチノイドで荒れている日はしみることがある。",
+    "synergy_partners": [
+      "セラミド",
+      "コレステロール",
+      "スクワラン",
+      "シア脂"
+    ],
+    "synergy_summary": "水分を抱え込み、バリア成分と油分でフタをすると保湿の持続感が上がりやすい。",
+    "reference_url": "https://www.aad.org/public/everyday-care/skin-care-secrets/routine/facial-masks-and-skin-care | https://health.clevelandclinic.org/vitamin-b5-for-skin-hair | https://health.clevelandclinic.org/skin-care-ingredients-explained",
+    "main_cat_key": "moisturizing",
+    "sub_cat_keys": [
+      "turnover"
+    ]
+  },
+  {
+    "excel_id": 2,
+    "name": "加水分解ヒアルロン酸",
+    "main_category_ja": "保湿・浸透感サポート",
+    "effect_summary": "分子を小さくしたタイプで、みずみずしい使用感の保湿設計に使われやすい。",
+    "suitable_for": "乾燥肌・軽い保湿志向",
+    "caution_note": "製品により分子設計が異なるため、体感差が出やすい。",
+    "combination_caution": "基本は併用しやすい。乾燥が強い日はセラミドや油分も重ねる。刺激の強い酸・レチノイドで荒れている日はしみることがある。",
+    "synergy_partners": [
+      "セラミド",
+      "コレステロール",
+      "スクワラン",
+      "シア脂"
+    ],
+    "synergy_summary": "水分を抱え込み、バリア成分と油分でフタをすると保湿の持続感が上がりやすい。",
+    "reference_url": "https://www.aad.org/public/everyday-care/skin-care-secrets/routine/facial-masks-and-skin-care | https://health.clevelandclinic.org/vitamin-b5-for-skin-hair | https://health.clevelandclinic.org/skin-care-ingredients-explained",
+    "main_cat_key": "moisturizing",
+    "sub_cat_keys": [
+      "turnover"
+    ]
+  },
+  {
+    "excel_id": 3,
+    "name": "アセチルヒアルロン酸Na",
+    "main_category_ja": "保湿・なめらかさ",
+    "effect_summary": "肌なじみのよいうるおい感を出しやすく、乾燥によるつっぱり感を和らげやすい。",
+    "suitable_for": "乾燥肌・ごわつき",
+    "caution_note": "単独でバリア補修まで担うわけではない。",
+    "combination_caution": "基本は併用しやすい。乾燥が強い日はセラミドや油分も重ねる。刺激の強い酸・レチノイドで荒れている日はしみることがある。",
+    "synergy_partners": [
+      "セラミド",
+      "コレステロール",
+      "スクワラン",
+      "シア脂"
+    ],
+    "synergy_summary": "水分を抱え込み、バリア成分と油分でフタをすると保湿の持続感が上がりやすい。",
+    "reference_url": "https://www.aad.org/public/everyday-care/skin-care-secrets/routine/facial-masks-and-skin-care | https://health.clevelandclinic.org/vitamin-b5-for-skin-hair | https://health.clevelandclinic.org/skin-care-ingredients-explained",
+    "main_cat_key": "moisturizing",
+    "sub_cat_keys": [
+      "turnover"
+    ]
+  },
+  {
+    "excel_id": 4,
+    "name": "ヒアルロン酸クロスポリマーNa",
+    "main_category_ja": "保湿・保水膜",
+    "effect_summary": "肌表面にうるおいの膜をつくり、しっとり感を持続させやすい。",
+    "suitable_for": "乾燥肌・日中乾燥",
+    "caution_note": "膜感が苦手な人は重く感じることがある。",
+    "combination_caution": "基本は併用しやすい。乾燥が強い日はセラミドや油分も重ねる。刺激の強い酸・レチノイドで荒れている日はしみることがある。",
+    "synergy_partners": [
+      "セラミド",
+      "コレステロール",
+      "スクワラン",
+      "シア脂"
+    ],
+    "synergy_summary": "水分を抱え込み、バリア成分と油分でフタをすると保湿の持続感が上がりやすい。",
+    "reference_url": "https://www.aad.org/public/everyday-care/skin-care-secrets/routine/facial-masks-and-skin-care | https://health.clevelandclinic.org/vitamin-b5-for-skin-hair | https://health.clevelandclinic.org/skin-care-ingredients-explained",
+    "main_cat_key": "moisturizing",
+    "sub_cat_keys": [
+      "turnover"
+    ]
+  },
+  {
+    "excel_id": 5,
+    "name": "グリセリン",
+    "main_category_ja": "保湿・吸湿",
+    "effect_summary": "空気や角層から水分を引き寄せ、シンプルで安定した保湿の土台になりやすい。",
+    "suitable_for": "ほぼ全肌質",
+    "caution_note": "高配合だとベタつきが気になることがある。",
+    "combination_caution": "基本は併用しやすい。乾燥が強い日はセラミドや油分も重ねる。刺激の強い酸・レチノイドで荒れている日はしみることがある。",
+    "synergy_partners": [
+      "セラミド",
+      "コレステロール",
+      "スクワラン",
+      "シア脂"
+    ],
+    "synergy_summary": "水分を抱え込み、バリア成分と油分でフタをすると保湿の持続感が上がりやすい。",
+    "reference_url": "https://www.aad.org/public/everyday-care/skin-care-secrets/routine/facial-masks-and-skin-care | https://health.clevelandclinic.org/vitamin-b5-for-skin-hair | https://health.clevelandclinic.org/skin-care-ingredients-explained",
+    "main_cat_key": "moisturizing",
+    "sub_cat_keys": [
+      "soothing"
+    ]
+  },
+  {
+    "excel_id": 6,
+    "name": "PCA-Na",
+    "main_category_ja": "保湿・天然保湿因子",
+    "effect_summary": "肌にもともとある保湿成分に近く、みずみずしい保湿を助ける。",
+    "suitable_for": "乾燥肌・普通肌",
+    "caution_note": "しっとり感はあるが、油分不足には別の補助が必要。",
+    "combination_caution": "基本は併用しやすい。乾燥が強い日はセラミドや油分も重ねる。刺激の強い酸・レチノイドで荒れている日はしみることがある。",
+    "synergy_partners": [
+      "セラミド",
+      "コレステロール",
+      "スクワラン",
+      "シア脂"
+    ],
+    "synergy_summary": "水分を抱え込み、バリア成分と油分でフタをすると保湿の持続感が上がりやすい。",
+    "reference_url": "https://www.aad.org/public/everyday-care/skin-care-secrets/routine/facial-masks-and-skin-care | https://health.clevelandclinic.org/vitamin-b5-for-skin-hair | https://health.clevelandclinic.org/skin-care-ingredients-explained",
+    "main_cat_key": "moisturizing",
+    "sub_cat_keys": []
+  },
+  {
+    "excel_id": 7,
+    "name": "乳酸Na",
+    "main_category_ja": "保湿・やわらかさ",
+    "effect_summary": "水分保持を助けながら、乾燥で硬くなった角層をやわらかく見せやすい。",
+    "suitable_for": "乾燥肌・ごわつき",
+    "caution_note": "敏感肌ではしみることがある。",
+    "combination_caution": "基本は併用しやすい。乾燥が強い日はセラミドや油分も重ねる。刺激の強い酸・レチノイドで荒れている日はしみることがある。",
+    "synergy_partners": [
+      "セラミド",
+      "コレステロール",
+      "スクワラン",
+      "シア脂"
+    ],
+    "synergy_summary": "水分を抱え込み、バリア成分と油分でフタをすると保湿の持続感が上がりやすい。",
+    "reference_url": "https://www.aad.org/public/everyday-care/skin-care-secrets/routine/facial-masks-and-skin-care | https://health.clevelandclinic.org/vitamin-b5-for-skin-hair | https://health.clevelandclinic.org/skin-care-ingredients-explained",
+    "main_cat_key": "moisturizing",
+    "sub_cat_keys": [
+      "keratin"
+    ]
+  },
+  {
+    "excel_id": 8,
+    "name": "ベタイン",
+    "main_category_ja": "保湿・刺激緩和サポート",
+    "effect_summary": "水分バランスを整え、やさしい使用感の保湿処方に使われやすい。",
+    "suitable_for": "敏感肌・乾燥肌",
+    "caution_note": "大きな即効性より、補助的な役割で入ることが多い。",
+    "combination_caution": "基本は併用しやすい。乾燥が強い日はセラミドや油分も重ねる。刺激の強い酸・レチノイドで荒れている日はしみることがある。",
+    "synergy_partners": [
+      "セラミド",
+      "コレステロール",
+      "スクワラン",
+      "シア脂"
+    ],
+    "synergy_summary": "水分を抱え込み、バリア成分と油分でフタをすると保湿の持続感が上がりやすい。",
+    "reference_url": "https://www.aad.org/public/everyday-care/skin-care-secrets/routine/facial-masks-and-skin-care | https://health.clevelandclinic.org/vitamin-b5-for-skin-hair | https://health.clevelandclinic.org/skin-care-ingredients-explained",
+    "main_cat_key": "moisturizing",
+    "sub_cat_keys": [
+      "soothing"
+    ]
+  },
+  {
+    "excel_id": 9,
+    "name": "トレハロース",
+    "main_category_ja": "保湿・乾燥対策",
+    "effect_summary": "水分を抱え込み、乾燥によるカサつきや粉ふきを抑える設計に使われやすい。",
+    "suitable_for": "乾燥肌",
+    "caution_note": "単独で高い密封力はない。",
+    "combination_caution": "基本は併用しやすい。乾燥が強い日はセラミドや油分も重ねる。刺激の強い酸・レチノイドで荒れている日はしみることがある。",
+    "synergy_partners": [
+      "セラミド",
+      "コレステロール",
+      "スクワラン",
+      "シア脂"
+    ],
+    "synergy_summary": "水分を抱え込み、バリア成分と油分でフタをすると保湿の持続感が上がりやすい。",
+    "reference_url": "https://www.aad.org/public/everyday-care/skin-care-secrets/routine/facial-masks-and-skin-care | https://health.clevelandclinic.org/vitamin-b5-for-skin-hair | https://health.clevelandclinic.org/skin-care-ingredients-explained",
+    "main_cat_key": "moisturizing",
+    "sub_cat_keys": []
+  },
+  {
+    "excel_id": 10,
+    "name": "ソルビトール",
+    "main_category_ja": "保湿・柔軟",
+    "effect_summary": "水分を引き寄せて角層をやわらげ、しっとり感を出しやすい。",
+    "suitable_for": "乾燥肌・普通肌",
+    "caution_note": "ベース成分として入ることも多く、主役成分ではない場合もある。",
+    "combination_caution": "基本は併用しやすい。乾燥が強い日はセラミドや油分も重ねる。刺激の強い酸・レチノイドで荒れている日はしみることがある。",
+    "synergy_partners": [
+      "セラミド",
+      "コレステロール",
+      "スクワラン",
+      "シア脂"
+    ],
+    "synergy_summary": "水分を抱え込み、バリア成分と油分でフタをすると保湿の持続感が上がりやすい。",
+    "reference_url": "https://www.aad.org/public/everyday-care/skin-care-secrets/routine/facial-masks-and-skin-care | https://health.clevelandclinic.org/vitamin-b5-for-skin-hair | https://health.clevelandclinic.org/skin-care-ingredients-explained",
+    "main_cat_key": "moisturizing",
+    "sub_cat_keys": []
+  },
+  {
+    "excel_id": 11,
+    "name": "尿素",
+    "main_category_ja": "保湿・角質柔軟",
+    "effect_summary": "水分保持と角質をやわらかくする働きがあり、乾燥でごわつく肌になじみやすい。",
+    "suitable_for": "乾燥肌・かかと/ひじ",
+    "caution_note": "刺激を感じる人もおり、傷んだ肌には不向きな場合がある。",
+    "combination_caution": "角質が薄い部位や荒れた肌ではしみやすい。AHA/BHA、レチノイド、強いビタミンCとの同時重ねは刺激に注意。",
+    "synergy_partners": [
+      "セラミド",
+      "スクワラン",
+      "ヒアルロン酸Na"
+    ],
+    "synergy_summary": "角質をやわらげながら水分を引き込み、バリア成分を重ねると乾燥・ごわつき対策がしやすい。",
+    "reference_url": "https://www.aad.org/public/everyday-care/skin-care-secrets/routine/facial-masks-and-skin-care | https://health.clevelandclinic.org/vitamin-b5-for-skin-hair | https://health.clevelandclinic.org/skin-care-ingredients-explained",
+    "main_cat_key": "moisturizing",
+    "sub_cat_keys": [
+      "keratin"
+    ]
+  },
+  {
+    "excel_id": 12,
+    "name": "セラミドNP",
+    "main_category_ja": "バリアサポート",
+    "effect_summary": "肌のバリア機能（外部刺激から守る働き）を支える代表成分で、乾燥しにくい状態づくりを助ける。",
+    "suitable_for": "乾燥肌・敏感肌",
+    "caution_note": "配合量や処方全体で実感差が大きい。",
+    "combination_caution": "基本は併用しやすい。重ねる順番は化粧水系のあとが使いやすい。油分が多い処方では重く感じることがある。",
+    "synergy_partners": [
+      "ヒアルロン酸Na",
+      "グリセリン",
+      "パンテノール",
+      "ナイアシンアミド"
+    ],
+    "synergy_summary": "水分保持成分と組むと、抱えた水分を逃がしにくくし、乾燥しにくい設計にしやすい。",
+    "reference_url": "https://www.aad.org/public/everyday-care/skin-care-secrets/routine/facial-masks-and-skin-care | https://health.clevelandclinic.org/vitamin-b5-for-skin-hair | https://health.clevelandclinic.org/skin-care-ingredients-explained",
+    "main_cat_key": "moisturizing",
+    "sub_cat_keys": [
+      "soothing"
+    ]
+  },
+  {
+    "excel_id": 13,
+    "name": "セラミドAP",
+    "main_category_ja": "バリアサポート",
+    "effect_summary": "うるおい保持を助け、乾燥しやすい肌を整えやすい。",
+    "suitable_for": "乾燥肌・敏感肌",
+    "caution_note": "単体より複数セラミド併用のほうが設計上は相性がよいことが多い。",
+    "combination_caution": "基本は併用しやすい。重ねる順番は化粧水系のあとが使いやすい。油分が多い処方では重く感じることがある。",
+    "synergy_partners": [
+      "ヒアルロン酸Na",
+      "グリセリン",
+      "パンテノール",
+      "ナイアシンアミド"
+    ],
+    "synergy_summary": "水分保持成分と組むと、抱えた水分を逃がしにくくし、乾燥しにくい設計にしやすい。",
+    "reference_url": "https://www.aad.org/public/everyday-care/skin-care-secrets/routine/facial-masks-and-skin-care | https://health.clevelandclinic.org/vitamin-b5-for-skin-hair | https://health.clevelandclinic.org/skin-care-ingredients-explained",
+    "main_cat_key": "moisturizing",
+    "sub_cat_keys": [
+      "soothing"
+    ]
+  },
+  {
+    "excel_id": 14,
+    "name": "セラミドEOP",
+    "main_category_ja": "バリアサポート",
+    "effect_summary": "角層の脂質バランスを支える一員として、乾燥やつっぱり感のケアに向く。",
+    "suitable_for": "乾燥肌・敏感肌",
+    "caution_note": "高価格帯処方に多く、価格へ影響しやすい。",
+    "combination_caution": "基本は併用しやすい。重ねる順番は化粧水系のあとが使いやすい。油分が多い処方では重く感じることがある。",
+    "synergy_partners": [
+      "ヒアルロン酸Na",
+      "グリセリン",
+      "パンテノール",
+      "ナイアシンアミド"
+    ],
+    "synergy_summary": "水分保持成分と組むと、抱えた水分を逃がしにくくし、乾燥しにくい設計にしやすい。",
+    "reference_url": "https://www.aad.org/public/everyday-care/skin-care-secrets/routine/facial-masks-and-skin-care | https://health.clevelandclinic.org/vitamin-b5-for-skin-hair | https://health.clevelandclinic.org/skin-care-ingredients-explained",
+    "main_cat_key": "moisturizing",
+    "sub_cat_keys": [
+      "soothing"
+    ]
+  },
+  {
+    "excel_id": 15,
+    "name": "セラミドNG",
+    "main_category_ja": "バリアサポート",
+    "effect_summary": "肌のうるおい保持を助け、乾燥で不安定な肌を整えやすい。",
+    "suitable_for": "乾燥肌・ゆらぎ肌",
+    "caution_note": "即時の手触り改善より、継続使用向き。",
+    "combination_caution": "基本は併用しやすい。重ねる順番は化粧水系のあとが使いやすい。油分が多い処方では重く感じることがある。",
+    "synergy_partners": [
+      "ヒアルロン酸Na",
+      "グリセリン",
+      "パンテノール",
+      "ナイアシンアミド"
+    ],
+    "synergy_summary": "水分保持成分と組むと、抱えた水分を逃がしにくくし、乾燥しにくい設計にしやすい。",
+    "reference_url": "https://www.aad.org/public/everyday-care/skin-care-secrets/routine/facial-masks-and-skin-care | https://health.clevelandclinic.org/vitamin-b5-for-skin-hair | https://health.clevelandclinic.org/skin-care-ingredients-explained",
+    "main_cat_key": "moisturizing",
+    "sub_cat_keys": [
+      "soothing"
+    ]
+  },
+  {
+    "excel_id": 16,
+    "name": "コレステロール",
+    "main_category_ja": "バリアサポート",
+    "effect_summary": "セラミドなどと一緒に角層の油分バランスを支え、しなやかさを保ちやすい。",
+    "suitable_for": "乾燥肌・敏感肌",
+    "caution_note": "単独よりセラミドや脂肪酸との組み合わせで活きやすい。",
+    "combination_caution": "基本は併用しやすい。重ねる順番は化粧水系のあとが使いやすい。油分が多い処方では重く感じることがある。",
+    "synergy_partners": [
+      "ヒアルロン酸Na",
+      "グリセリン",
+      "パンテノール",
+      "ナイアシンアミド"
+    ],
+    "synergy_summary": "水分保持成分と組むと、抱えた水分を逃がしにくくし、乾燥しにくい設計にしやすい。",
+    "reference_url": "https://www.aad.org/public/everyday-care/skin-care-secrets/routine/facial-masks-and-skin-care | https://health.clevelandclinic.org/vitamin-b5-for-skin-hair | https://health.clevelandclinic.org/skin-care-ingredients-explained",
+    "main_cat_key": "moisturizing",
+    "sub_cat_keys": [
+      "soothing"
+    ]
+  },
+  {
+    "excel_id": 17,
+    "name": "フィトスフィンゴシン",
+    "main_category_ja": "バリアサポート・整肌",
+    "effect_summary": "角層環境を整える補助成分として、乾燥しやすい肌の土台づくりに使われやすい。",
+    "suitable_for": "乾燥肌・ゆらぎ肌",
+    "caution_note": "高配合例は多くなく、脇役成分のことも多い。",
+    "combination_caution": "基本は併用しやすい。重ねる順番は化粧水系のあとが使いやすい。油分が多い処方では重く感じることがある。",
+    "synergy_partners": [
+      "ヒアルロン酸Na",
+      "グリセリン",
+      "パンテノール",
+      "ナイアシンアミド"
+    ],
+    "synergy_summary": "水分保持成分と組むと、抱えた水分を逃がしにくくし、乾燥しにくい設計にしやすい。",
+    "reference_url": "https://www.aad.org/public/everyday-care/skin-care-secrets/routine/facial-masks-and-skin-care | https://health.clevelandclinic.org/vitamin-b5-for-skin-hair | https://health.clevelandclinic.org/skin-care-ingredients-explained",
+    "main_cat_key": "moisturizing",
+    "sub_cat_keys": [
+      "soothing"
+    ]
+  },
+  {
+    "excel_id": 18,
+    "name": "スクワラン",
+    "main_category_ja": "エモリエント（油分保護）",
+    "effect_summary": "肌表面をなめらかにして水分蒸発を抑え、柔らかい感触を出しやすい。",
+    "suitable_for": "乾燥肌・普通肌",
+    "caution_note": "脂性肌では重く感じる人もいる。",
+    "combination_caution": "脂性肌・毛穴が気になる肌は重く感じることがある。ニキビが出やすい人は量と部位を調整。",
+    "synergy_partners": [
+      "ヒアルロン酸Na",
+      "グリセリン",
+      "セラミドNP",
+      "パンテノール"
+    ],
+    "synergy_summary": "水分系成分の上から重ねると蒸発を防ぎ、つっぱりや粉ふきを抑えやすい。",
+    "reference_url": "https://www.aad.org/public/everyday-care/skin-care-secrets/routine/facial-masks-and-skin-care | https://health.clevelandclinic.org/vitamin-b5-for-skin-hair | https://health.clevelandclinic.org/skin-care-ingredients-explained",
+    "main_cat_key": "moisturizing",
+    "sub_cat_keys": [
+      "soothing"
+    ]
+  },
+  {
+    "excel_id": 19,
+    "name": "シア脂",
+    "main_category_ja": "エモリエント（油分保護）",
+    "effect_summary": "こっくりした油分で乾燥を防ぎ、皮膜感のある保護膜をつくりやすい。",
+    "suitable_for": "乾燥肌・冬場",
+    "caution_note": "ニキビができやすい人は重さを感じることがある。",
+    "combination_caution": "脂性肌・毛穴が気になる肌は重く感じることがある。ニキビが出やすい人は量と部位を調整。",
+    "synergy_partners": [
+      "ヒアルロン酸Na",
+      "グリセリン",
+      "セラミドNP",
+      "パンテノール"
+    ],
+    "synergy_summary": "水分系成分の上から重ねると蒸発を防ぎ、つっぱりや粉ふきを抑えやすい。",
+    "reference_url": "https://www.aad.org/public/everyday-care/skin-care-secrets/routine/facial-masks-and-skin-care | https://health.clevelandclinic.org/vitamin-b5-for-skin-hair | https://health.clevelandclinic.org/skin-care-ingredients-explained",
+    "main_cat_key": "moisturizing",
+    "sub_cat_keys": [
+      "soothing"
+    ]
+  },
+  {
+    "excel_id": 20,
+    "name": "ポリグルタミン酸",
+    "main_category_ja": "保湿・保水膜",
+    "effect_summary": "肌表面にうるおいを抱えた膜をつくり、しっとり感を長持ちさせやすい。",
+    "suitable_for": "乾燥肌",
+    "caution_note": "ぬるつきを感じる場合がある。",
+    "combination_caution": "基本は併用しやすい。乾燥が強い日はセラミドや油分も重ねる。刺激の強い酸・レチノイドで荒れている日はしみることがある。",
+    "synergy_partners": [
+      "セラミド",
+      "コレステロール",
+      "スクワラン",
+      "シア脂"
+    ],
+    "synergy_summary": "水分を抱え込み、バリア成分と油分でフタをすると保湿の持続感が上がりやすい。",
+    "reference_url": "https://www.aad.org/public/everyday-care/skin-care-secrets/routine/facial-masks-and-skin-care | https://health.clevelandclinic.org/vitamin-b5-for-skin-hair | https://health.clevelandclinic.org/skin-care-ingredients-explained",
+    "main_cat_key": "moisturizing",
+    "sub_cat_keys": [
+      "turnover"
+    ]
+  },
+  {
+    "excel_id": 21,
+    "name": "パンテノール",
+    "main_category_ja": "整肌・保湿",
+    "effect_summary": "うるおいを保ちながら肌をすこやかに保ち、乾燥や軽い荒れ感のケアに向く。",
+    "suitable_for": "乾燥肌・敏感肌",
+    "caution_note": "穏やかな成分で、劇的変化より積み上げ型。",
+    "combination_caution": "基本は併用しやすい。植物由来は相性差があるため、敏感肌は新規追加を少しずつ。",
+    "synergy_partners": [
+      "レチノール",
+      "サリチル酸",
+      "グリコール酸",
+      "ナイアシンアミド"
+    ],
+    "synergy_summary": "刺激が出やすい攻めの成分の間に入れると、赤み・乾燥感を和らげやすい。",
+    "reference_url": "https://www.aad.org/public/everyday-care/skin-care-secrets/routine/facial-masks-and-skin-care | https://health.clevelandclinic.org/vitamin-b5-for-skin-hair | https://health.clevelandclinic.org/skin-care-ingredients-explained",
+    "main_cat_key": "soothing",
+    "sub_cat_keys": [
+      "moisturizing"
+    ]
+  },
+  {
+    "excel_id": 22,
+    "name": "アラントイン",
+    "main_category_ja": "整肌・肌あれ防止",
+    "effect_summary": "荒れやすい肌を落ち着かせ、なめらかな状態を保つ設計でよく使われる。",
+    "suitable_for": "敏感肌・肌あれしやすい肌",
+    "caution_note": "医薬部外品では有効成分として使われることもある。",
+    "combination_caution": "基本は併用しやすい。植物由来は相性差があるため、敏感肌は新規追加を少しずつ。",
+    "synergy_partners": [
+      "レチノール",
+      "サリチル酸",
+      "グリコール酸",
+      "ナイアシンアミド"
+    ],
+    "synergy_summary": "刺激が出やすい攻めの成分の間に入れると、赤み・乾燥感を和らげやすい。",
+    "reference_url": "https://www.aad.org/public/everyday-care/skin-care-secrets/routine/facial-masks-and-skin-care | https://health.clevelandclinic.org/vitamin-b5-for-skin-hair | https://health.clevelandclinic.org/skin-care-ingredients-explained",
+    "main_cat_key": "soothing",
+    "sub_cat_keys": [
+      "moisturizing"
+    ]
+  },
+  {
+    "excel_id": 23,
+    "name": "β-グルカン",
+    "main_category_ja": "整肌・保湿",
+    "effect_summary": "うるおいを守りながら、乾燥で不安定になった肌を整えやすい。",
+    "suitable_for": "乾燥肌・敏感肌",
+    "caution_note": "目立つ即効性よりサポート役。",
+    "combination_caution": "基本は併用しやすい。植物由来は相性差があるため、敏感肌は新規追加を少しずつ。",
+    "synergy_partners": [
+      "レチノール",
+      "サリチル酸",
+      "グリコール酸",
+      "ナイアシンアミド"
+    ],
+    "synergy_summary": "刺激が出やすい攻めの成分の間に入れると、赤み・乾燥感を和らげやすい。",
+    "reference_url": "https://www.aad.org/public/everyday-care/skin-care-secrets/routine/facial-masks-and-skin-care | https://health.clevelandclinic.org/vitamin-b5-for-skin-hair | https://health.clevelandclinic.org/skin-care-ingredients-explained",
+    "main_cat_key": "soothing",
+    "sub_cat_keys": [
+      "moisturizing"
+    ]
+  },
+  {
+    "excel_id": 24,
+    "name": "エクトイン",
+    "main_category_ja": "保護・環境ストレス対策",
+    "effect_summary": "乾燥や外的ストレスから肌を守る設計で注目される保護系成分。",
+    "suitable_for": "乾燥肌・敏感肌",
+    "caution_note": "配合製品数はまだ多くない。",
+    "combination_caution": "基本は併用しやすい。植物由来は相性差があるため、敏感肌は新規追加を少しずつ。",
+    "synergy_partners": [
+      "レチノール",
+      "サリチル酸",
+      "グリコール酸",
+      "ナイアシンアミド"
+    ],
+    "synergy_summary": "刺激が出やすい攻めの成分の間に入れると、赤み・乾燥感を和らげやすい。",
+    "reference_url": "https://www.aad.org/public/everyday-care/skin-care-secrets/routine/facial-masks-and-skin-care | https://health.clevelandclinic.org/vitamin-b5-for-skin-hair | https://health.clevelandclinic.org/skin-care-ingredients-explained",
+    "main_cat_key": "moisturizing",
+    "sub_cat_keys": [
+      "soothing"
+    ]
+  },
+  {
+    "excel_id": 25,
+    "name": "コロイド性オートミール",
+    "main_category_ja": "整肌・かゆみ感サポート",
+    "effect_summary": "乾燥や刺激で落ち着かない肌をなだめる方向で使われやすい。",
+    "suitable_for": "敏感肌・乾燥肌",
+    "caution_note": "穀物由来に敏感な人は注意。",
+    "combination_caution": "基本は併用しやすい。植物由来は相性差があるため、敏感肌は新規追加を少しずつ。",
+    "synergy_partners": [
+      "レチノール",
+      "サリチル酸",
+      "グリコール酸",
+      "ナイアシンアミド"
+    ],
+    "synergy_summary": "刺激が出やすい攻めの成分の間に入れると、赤み・乾燥感を和らげやすい。",
+    "reference_url": "https://www.aad.org/public/everyday-care/skin-care-secrets/routine/facial-masks-and-skin-care | https://health.clevelandclinic.org/vitamin-b5-for-skin-hair | https://health.clevelandclinic.org/skin-care-ingredients-explained",
+    "main_cat_key": "soothing",
+    "sub_cat_keys": [
+      "moisturizing"
+    ]
+  },
+  {
+    "excel_id": 26,
+    "name": "アロエベラ葉エキス",
+    "main_category_ja": "整肌・保湿",
+    "effect_summary": "みずみずしい保湿と肌を整える目的で幅広く使われる植物成分。",
+    "suitable_for": "普通肌・乾燥肌",
+    "caution_note": "植物エキスなので相性差がある。",
+    "combination_caution": "基本は併用しやすい。植物由来は相性差があるため、敏感肌は新規追加を少しずつ。",
+    "synergy_partners": [
+      "レチノール",
+      "サリチル酸",
+      "グリコール酸",
+      "ナイアシンアミド"
+    ],
+    "synergy_summary": "刺激が出やすい攻めの成分の間に入れると、赤み・乾燥感を和らげやすい。",
+    "reference_url": "https://www.aad.org/public/everyday-care/skin-care-secrets/routine/facial-masks-and-skin-care | https://health.clevelandclinic.org/vitamin-b5-for-skin-hair | https://health.clevelandclinic.org/skin-care-ingredients-explained",
+    "main_cat_key": "soothing",
+    "sub_cat_keys": [
+      "moisturizing"
+    ]
+  },
+  {
+    "excel_id": 27,
+    "name": "ツボクサエキス",
+    "main_category_ja": "整肌・肌あれサポート",
+    "effect_summary": "ゆらぎやすい肌を落ち着かせる目的で人気の植物成分。",
+    "suitable_for": "敏感肌・赤みが出やすい肌",
+    "caution_note": "製品ごとに有効成分量の差が大きい。",
+    "combination_caution": "基本は併用しやすい。植物由来は相性差があるため、敏感肌は新規追加を少しずつ。",
+    "synergy_partners": [
+      "レチノール",
+      "サリチル酸",
+      "グリコール酸",
+      "ナイアシンアミド"
+    ],
+    "synergy_summary": "刺激が出やすい攻めの成分の間に入れると、赤み・乾燥感を和らげやすい。",
+    "reference_url": "https://www.aad.org/public/everyday-care/skin-care-secrets/routine/facial-masks-and-skin-care | https://health.clevelandclinic.org/vitamin-b5-for-skin-hair | https://health.clevelandclinic.org/skin-care-ingredients-explained",
+    "main_cat_key": "soothing",
+    "sub_cat_keys": [
+      "turnover"
+    ]
+  },
+  {
+    "excel_id": 28,
+    "name": "マデカッソシド",
+    "main_category_ja": "整肌・肌あれサポート",
+    "effect_summary": "ツボクサ由来の代表成分で、肌をすこやかに保つ補助として使われる。",
+    "suitable_for": "敏感肌・肌あれしやすい肌",
+    "caution_note": "単独高配合製品は限られる。",
+    "combination_caution": "基本は併用しやすい。植物由来は相性差があるため、敏感肌は新規追加を少しずつ。",
+    "synergy_partners": [
+      "レチノール",
+      "サリチル酸",
+      "グリコール酸",
+      "ナイアシンアミド"
+    ],
+    "synergy_summary": "刺激が出やすい攻めの成分の間に入れると、赤み・乾燥感を和らげやすい。",
+    "reference_url": "https://www.aad.org/public/everyday-care/skin-care-secrets/routine/facial-masks-and-skin-care | https://health.clevelandclinic.org/vitamin-b5-for-skin-hair | https://health.clevelandclinic.org/skin-care-ingredients-explained",
+    "main_cat_key": "soothing",
+    "sub_cat_keys": [
+      "turnover"
+    ]
+  },
+  {
+    "excel_id": 29,
+    "name": "アシアチコシド",
+    "main_category_ja": "整肌・肌あれサポート",
+    "effect_summary": "ツボクサ由来成分の一つで、ゆらぎやすい肌のコンディション調整に向く。",
+    "suitable_for": "敏感肌",
+    "caution_note": "派手な成分ではなく補助役になりやすい。",
+    "combination_caution": "基本は併用しやすい。植物由来は相性差があるため、敏感肌は新規追加を少しずつ。",
+    "synergy_partners": [
+      "レチノール",
+      "サリチル酸",
+      "グリコール酸",
+      "ナイアシンアミド"
+    ],
+    "synergy_summary": "刺激が出やすい攻めの成分の間に入れると、赤み・乾燥感を和らげやすい。",
+    "reference_url": "https://www.aad.org/public/everyday-care/skin-care-secrets/routine/facial-masks-and-skin-care | https://health.clevelandclinic.org/vitamin-b5-for-skin-hair | https://health.clevelandclinic.org/skin-care-ingredients-explained",
+    "main_cat_key": "soothing",
+    "sub_cat_keys": [
+      "turnover"
+    ]
+  },
+  {
+    "excel_id": 30,
+    "name": "グリチルリチン酸2K",
+    "main_category_ja": "肌あれ防止・整肌",
+    "effect_summary": "赤みや荒れを抑える方向で非常によく使われる定番成分。",
+    "suitable_for": "敏感肌・肌あれしやすい肌",
+    "caution_note": "医薬部外品で有効成分になる場合がある。",
+    "combination_caution": "基本は併用しやすい。植物由来は相性差があるため、敏感肌は新規追加を少しずつ。",
+    "synergy_partners": [
+      "レチノール",
+      "サリチル酸",
+      "グリコール酸",
+      "ナイアシンアミド"
+    ],
+    "synergy_summary": "刺激が出やすい攻めの成分の間に入れると、赤み・乾燥感を和らげやすい。",
+    "reference_url": "https://www.aad.org/public/everyday-care/skin-care-secrets/routine/facial-masks-and-skin-care | https://health.clevelandclinic.org/vitamin-b5-for-skin-hair | https://health.clevelandclinic.org/skin-care-ingredients-explained",
+    "main_cat_key": "soothing",
+    "sub_cat_keys": [
+      "moisturizing"
+    ]
+  },
+  {
+    "excel_id": 31,
+    "name": "グリチルレチン酸ステアリル",
+    "main_category_ja": "肌あれ防止・整肌",
+    "effect_summary": "油性ベースでも使いやすく、荒れやすい肌を穏やかに整えやすい。",
+    "suitable_for": "乾燥肌・敏感肌",
+    "caution_note": "さっぱり処方よりクリーム系で見かけやすい。",
+    "combination_caution": "基本は併用しやすい。植物由来は相性差があるため、敏感肌は新規追加を少しずつ。",
+    "synergy_partners": [
+      "レチノール",
+      "サリチル酸",
+      "グリコール酸",
+      "ナイアシンアミド"
+    ],
+    "synergy_summary": "刺激が出やすい攻めの成分の間に入れると、赤み・乾燥感を和らげやすい。",
+    "reference_url": "https://www.aad.org/public/everyday-care/skin-care-secrets/routine/facial-masks-and-skin-care | https://health.clevelandclinic.org/vitamin-b5-for-skin-hair | https://health.clevelandclinic.org/skin-care-ingredients-explained",
+    "main_cat_key": "soothing",
+    "sub_cat_keys": [
+      "moisturizing"
+    ]
+  },
+  {
+    "excel_id": 32,
+    "name": "ドクダミエキス",
+    "main_category_ja": "整肌・皮脂バランスサポート",
+    "effect_summary": "肌をすこやかに保ちながら、皮脂が気になる肌向けにも使われやすい。",
+    "suitable_for": "混合肌・ニキビが気になる肌",
+    "caution_note": "植物エキス由来の相性差に注意。",
+    "combination_caution": "基本は併用しやすい。植物由来は相性差があるため、敏感肌は新規追加を少しずつ。",
+    "synergy_partners": [
+      "レチノール",
+      "サリチル酸",
+      "グリコール酸",
+      "ナイアシンアミド"
+    ],
+    "synergy_summary": "刺激が出やすい攻めの成分の間に入れると、赤み・乾燥感を和らげやすい。",
+    "reference_url": "https://www.aad.org/public/everyday-care/skin-care-secrets/routine/facial-masks-and-skin-care | https://health.clevelandclinic.org/vitamin-b5-for-skin-hair | https://health.clevelandclinic.org/skin-care-ingredients-explained",
+    "main_cat_key": "soothing",
+    "sub_cat_keys": [
+      "keratin"
+    ]
+  },
+  {
+    "excel_id": 33,
+    "name": "カミツレ花エキス",
+    "main_category_ja": "整肌・保湿",
+    "effect_summary": "肌を落ち着かせながら、乾燥しがちな肌のうるおい保持を助ける。",
+    "suitable_for": "乾燥肌・敏感肌",
+    "caution_note": "植物由来ゆえ合わない人もいる。",
+    "combination_caution": "基本は併用しやすい。植物由来は相性差があるため、敏感肌は新規追加を少しずつ。",
+    "synergy_partners": [
+      "レチノール",
+      "サリチル酸",
+      "グリコール酸",
+      "ナイアシンアミド"
+    ],
+    "synergy_summary": "刺激が出やすい攻めの成分の間に入れると、赤み・乾燥感を和らげやすい。",
+    "reference_url": "https://www.aad.org/public/everyday-care/skin-care-secrets/routine/facial-masks-and-skin-care | https://health.clevelandclinic.org/vitamin-b5-for-skin-hair | https://health.clevelandclinic.org/skin-care-ingredients-explained",
+    "main_cat_key": "soothing",
+    "sub_cat_keys": [
+      "moisturizing"
+    ]
+  },
+  {
+    "excel_id": 34,
+    "name": "カレンデュラ花エキス",
+    "main_category_ja": "整肌・保護",
+    "effect_summary": "荒れやすい肌のサポート成分として用いられ、穏やかな保護感が特徴。",
+    "suitable_for": "敏感肌・乾燥肌",
+    "caution_note": "キク科アレルギーの人は注意。",
+    "combination_caution": "基本は併用しやすい。植物由来は相性差があるため、敏感肌は新規追加を少しずつ。",
+    "synergy_partners": [
+      "レチノール",
+      "サリチル酸",
+      "グリコール酸",
+      "ナイアシンアミド"
+    ],
+    "synergy_summary": "刺激が出やすい攻めの成分の間に入れると、赤み・乾燥感を和らげやすい。",
+    "reference_url": "https://www.aad.org/public/everyday-care/skin-care-secrets/routine/facial-masks-and-skin-care | https://health.clevelandclinic.org/vitamin-b5-for-skin-hair | https://health.clevelandclinic.org/skin-care-ingredients-explained",
+    "main_cat_key": "soothing",
+    "sub_cat_keys": [
+      "moisturizing"
+    ]
+  },
+  {
+    "excel_id": 35,
+    "name": "ビサボロール",
+    "main_category_ja": "整肌・透明感サポート",
+    "effect_summary": "肌を穏やかに整えながら、くすみ感ケアの補助として使われることがある。",
+    "suitable_for": "敏感肌・くすみが気になる肌",
+    "caution_note": "主役というよりサポート成分。",
+    "combination_caution": "基本は併用しやすい。植物由来は相性差があるため、敏感肌は新規追加を少しずつ。",
+    "synergy_partners": [
+      "レチノール",
+      "サリチル酸",
+      "グリコール酸",
+      "ナイアシンアミド"
+    ],
+    "synergy_summary": "刺激が出やすい攻めの成分の間に入れると、赤み・乾燥感を和らげやすい。",
+    "reference_url": "https://www.aad.org/public/everyday-care/skin-care-secrets/routine/facial-masks-and-skin-care | https://health.clevelandclinic.org/vitamin-b5-for-skin-hair | https://health.clevelandclinic.org/skin-care-ingredients-explained",
+    "main_cat_key": "soothing",
+    "sub_cat_keys": [
+      "brightening"
+    ]
+  },
+  {
+    "excel_id": 36,
+    "name": "ナイアシンアミド",
+    "main_category_ja": "整肌・皮脂・ハリ・くすみケア",
+    "effect_summary": "皮脂バランス、ハリ、乾燥小ジワ、くすみ感など幅広い悩みに使われやすい万能成分。",
+    "suitable_for": "毛穴・皮脂・年齢肌・くすみ",
+    "caution_note": "高濃度では赤みや刺激が出ることがある。",
+    "combination_caution": "高濃度では赤みやむずつきが出ることがある。低pHの強い酸や純粋アスコルビン酸の直後はしみる人も。",
+    "synergy_partners": [
+      "セラミド",
+      "ヒアルロン酸Na",
+      "トラネキサム酸",
+      "亜鉛PCA",
+      "ビタミンC誘導体"
+    ],
+    "synergy_summary": "皮脂・バリア・くすみを広く支えやすく、保湿系や透明感ケア成分と組みやすい。",
+    "reference_url": "https://www.aad.org/public/everyday-care/skin-care-secrets/routine/facial-masks-and-skin-care | https://health.clevelandclinic.org/skin-care-ingredients-explained",
+    "main_cat_key": "turnover",
+    "sub_cat_keys": [
+      "brightening",
+      "soothing",
+      "moisturizing"
+    ]
+  },
+  {
+    "excel_id": 37,
+    "name": "アスコルビン酸",
+    "main_category_ja": "ビタミンC・抗酸化",
+    "effect_summary": "肌を明るく見せるケアや、酸化ダメージ対策の主役として使われる。",
+    "suitable_for": "くすみ・毛穴・皮脂",
+    "caution_note": "不安定で刺激を感じやすい場合がある。",
+    "combination_caution": "低pHで刺激を感じやすい。AHA/BHA、レチノイド、ピーリング系と同時に重ねるとヒリつく人がいる。銅ペプチドは時間をずらす運用が無難。",
+    "synergy_partners": [
+      "トコフェロール",
+      "フェルラ酸",
+      "酸化亜鉛/酸化チタン",
+      "ナイアシンアミド"
+    ],
+    "synergy_summary": "ビタミンEやフェルラ酸と組むと抗酸化の補完が期待しやすく、朝はUVケアと相性がよい。",
+    "reference_url": "https://health.clevelandclinic.org/skin-care-ingredients-explained | https://health.clevelandclinic.org/ferulic-acid | https://www.aad.org/public/everyday-care/sun-protection/shade-clothing-sunscreen/how-to-apply-sunscreen",
+    "main_cat_key": "brightening",
+    "sub_cat_keys": [
+      "turnover"
+    ]
+  },
+  {
+    "excel_id": 38,
+    "name": "3-O-エチルアスコルビン酸",
+    "main_category_ja": "ビタミンC誘導体",
+    "effect_summary": "安定性と使いやすさを高めたビタミンC誘導体で、透明感ケアに向く。",
+    "suitable_for": "くすみ・毛穴",
+    "caution_note": "人によってはピリつく。",
+    "combination_caution": "純粋VCより穏やかだが、高濃度や他の酸・レチノイドと重ねると刺激が出ることがある。",
+    "synergy_partners": [
+      "トコフェロール",
+      "フェルラ酸",
+      "ナイアシンアミド",
+      "酸化亜鉛/酸化チタン"
+    ],
+    "synergy_summary": "抗酸化ケアをしながら、ナイアシンアミドやUVケアと組むと透明感設計を組みやすい。",
+    "reference_url": "https://health.clevelandclinic.org/skin-care-ingredients-explained | https://health.clevelandclinic.org/ferulic-acid | https://www.aad.org/public/everyday-care/sun-protection/shade-clothing-sunscreen/how-to-apply-sunscreen",
+    "main_cat_key": "brightening",
+    "sub_cat_keys": [
+      "turnover"
+    ]
+  },
+  {
+    "excel_id": 39,
+    "name": "アスコルビルグルコシド",
+    "main_category_ja": "ビタミンC誘導体",
+    "effect_summary": "穏やかな使い心地で、毎日使いやすいビタミンC誘導体として人気。",
+    "suitable_for": "初心者向けビタミンC",
+    "caution_note": "即効性はマイルドになりやすい。",
+    "combination_caution": "純粋VCより穏やかだが、高濃度や他の酸・レチノイドと重ねると刺激が出ることがある。",
+    "synergy_partners": [
+      "トコフェロール",
+      "フェルラ酸",
+      "ナイアシンアミド",
+      "酸化亜鉛/酸化チタン"
+    ],
+    "synergy_summary": "抗酸化ケアをしながら、ナイアシンアミドやUVケアと組むと透明感設計を組みやすい。",
+    "reference_url": "https://health.clevelandclinic.org/skin-care-ingredients-explained | https://health.clevelandclinic.org/ferulic-acid | https://www.aad.org/public/everyday-care/sun-protection/shade-clothing-sunscreen/how-to-apply-sunscreen",
+    "main_cat_key": "brightening",
+    "sub_cat_keys": [
+      "turnover"
+    ]
+  },
+  {
+    "excel_id": 40,
+    "name": "リン酸アスコルビルMg",
+    "main_category_ja": "ビタミンC誘導体",
+    "effect_summary": "比較的安定で、皮脂や毛穴、くすみ感のケアによく使われる。",
+    "suitable_for": "脂性肌・混合肌",
+    "caution_note": "製品によっては乾燥感が出る。",
+    "combination_caution": "純粋VCより穏やかだが、高濃度や他の酸・レチノイドと重ねると刺激が出ることがある。",
+    "synergy_partners": [
+      "トコフェロール",
+      "フェルラ酸",
+      "ナイアシンアミド",
+      "酸化亜鉛/酸化チタン"
+    ],
+    "synergy_summary": "抗酸化ケアをしながら、ナイアシンアミドやUVケアと組むと透明感設計を組みやすい。",
+    "reference_url": "https://health.clevelandclinic.org/skin-care-ingredients-explained | https://health.clevelandclinic.org/ferulic-acid | https://www.aad.org/public/everyday-care/sun-protection/shade-clothing-sunscreen/how-to-apply-sunscreen",
+    "main_cat_key": "brightening",
+    "sub_cat_keys": [
+      "turnover"
+    ]
+  },
+  {
+    "excel_id": 41,
+    "name": "パルミチン酸アスコルビルリン酸3Na",
+    "main_category_ja": "ビタミンC誘導体",
+    "effect_summary": "安定性と使用感を両立しやすく、整肌や透明感ケアに向く。",
+    "suitable_for": "毛穴・くすみ",
+    "caution_note": "配合量が低いと体感しにくい。",
+    "combination_caution": "純粋VCより穏やかだが、高濃度や他の酸・レチノイドと重ねると刺激が出ることがある。",
+    "synergy_partners": [
+      "トコフェロール",
+      "フェルラ酸",
+      "ナイアシンアミド",
+      "酸化亜鉛/酸化チタン"
+    ],
+    "synergy_summary": "抗酸化ケアをしながら、ナイアシンアミドやUVケアと組むと透明感設計を組みやすい。",
+    "reference_url": "https://health.clevelandclinic.org/skin-care-ingredients-explained | https://health.clevelandclinic.org/ferulic-acid | https://www.aad.org/public/everyday-care/sun-protection/shade-clothing-sunscreen/how-to-apply-sunscreen",
+    "main_cat_key": "brightening",
+    "sub_cat_keys": [
+      "turnover"
+    ]
+  },
+  {
+    "excel_id": 42,
+    "name": "テトラヘキシルデカン酸アスコルビル",
+    "main_category_ja": "油溶性ビタミンC",
+    "effect_summary": "オイルとなじみやすく、ハリやくすみ感ケアをねらう処方に使われやすい。",
+    "suitable_for": "乾燥肌・年齢肌",
+    "caution_note": "油分が合わない肌では重く感じる。",
+    "combination_caution": "純粋VCより穏やかだが、高濃度や他の酸・レチノイドと重ねると刺激が出ることがある。",
+    "synergy_partners": [
+      "トコフェロール",
+      "フェルラ酸",
+      "ナイアシンアミド",
+      "酸化亜鉛/酸化チタン"
+    ],
+    "synergy_summary": "抗酸化ケアをしながら、ナイアシンアミドやUVケアと組むと透明感設計を組みやすい。",
+    "reference_url": "https://health.clevelandclinic.org/skin-care-ingredients-explained | https://health.clevelandclinic.org/ferulic-acid | https://www.aad.org/public/everyday-care/sun-protection/shade-clothing-sunscreen/how-to-apply-sunscreen",
+    "main_cat_key": "brightening",
+    "sub_cat_keys": [
+      "turnover"
+    ]
+  },
+  {
+    "excel_id": 43,
+    "name": "トコフェロール",
+    "main_category_ja": "抗酸化・整肌",
+    "effect_summary": "肌をすこやかに保つビタミンEで、酸化ストレス対策の補助に向く。",
+    "suitable_for": "乾燥肌・年齢肌",
+    "caution_note": "単独で大きな変化より補助役。",
+    "combination_caution": "基本は併用しやすい。高活性成分を多く重ねるより、UVケアや保湿とセットで考えると使いやすい。",
+    "synergy_partners": [
+      "アスコルビン酸",
+      "トコフェロール",
+      "ナイアシンアミド",
+      "酸化亜鉛/酸化チタン"
+    ],
+    "synergy_summary": "抗酸化成分どうしや日中のUVケアと組むと、外的ストレス対策の層を厚くしやすい。",
+    "reference_url": "https://health.clevelandclinic.org/skin-care-ingredients-explained | https://health.clevelandclinic.org/ferulic-acid | https://www.aad.org/public/everyday-care/sun-protection/shade-clothing-sunscreen/how-to-apply-sunscreen",
+    "main_cat_key": "turnover",
+    "sub_cat_keys": [
+      "soothing"
+    ]
+  },
+  {
+    "excel_id": 44,
+    "name": "トコフェロール酢酸エステル",
+    "main_category_ja": "抗酸化・整肌",
+    "effect_summary": "安定性を高めたビタミンEで、荒れ予防や保護感のある処方に使われやすい。",
+    "suitable_for": "乾燥肌・肌あれケア",
+    "caution_note": "医薬部外品で有効成分になる場合がある。",
+    "combination_caution": "基本は併用しやすい。高活性成分を多く重ねるより、UVケアや保湿とセットで考えると使いやすい。",
+    "synergy_partners": [
+      "アスコルビン酸",
+      "トコフェロール",
+      "ナイアシンアミド",
+      "酸化亜鉛/酸化チタン"
+    ],
+    "synergy_summary": "抗酸化成分どうしや日中のUVケアと組むと、外的ストレス対策の層を厚くしやすい。",
+    "reference_url": "https://health.clevelandclinic.org/skin-care-ingredients-explained | https://health.clevelandclinic.org/ferulic-acid | https://www.aad.org/public/everyday-care/sun-protection/shade-clothing-sunscreen/how-to-apply-sunscreen",
+    "main_cat_key": "turnover",
+    "sub_cat_keys": [
+      "soothing"
+    ]
+  },
+  {
+    "excel_id": 45,
+    "name": "ユビキノン",
+    "main_category_ja": "抗酸化・年齢肌ケア",
+    "effect_summary": "年齢とともに気になるハリ不足やくすみ感のケアに使われる抗酸化成分。",
+    "suitable_for": "年齢肌",
+    "caution_note": "劇的変化より継続向き。",
+    "combination_caution": "基本は併用しやすい。高活性成分を多く重ねるより、UVケアや保湿とセットで考えると使いやすい。",
+    "synergy_partners": [
+      "アスコルビン酸",
+      "トコフェロール",
+      "ナイアシンアミド",
+      "酸化亜鉛/酸化チタン"
+    ],
+    "synergy_summary": "抗酸化成分どうしや日中のUVケアと組むと、外的ストレス対策の層を厚くしやすい。",
+    "reference_url": "https://health.clevelandclinic.org/skin-care-ingredients-explained | https://health.clevelandclinic.org/ferulic-acid | https://www.aad.org/public/everyday-care/sun-protection/shade-clothing-sunscreen/how-to-apply-sunscreen",
+    "main_cat_key": "turnover",
+    "sub_cat_keys": [
+      "brightening"
+    ]
+  },
+  {
+    "excel_id": 46,
+    "name": "フェルラ酸",
+    "main_category_ja": "抗酸化・補助安定化",
+    "effect_summary": "ビタミンCやEと組み合わせて使われることが多く、光や酸化への対策を助ける。",
+    "suitable_for": "年齢肌・くすみ",
+    "caution_note": "単独主役より組み合わせで活きやすい。",
+    "combination_caution": "酸性寄りの処方では刺激を感じることがある。酸・レチノイドを多く重ねる日は様子見。",
+    "synergy_partners": [
+      "アスコルビン酸",
+      "トコフェロール",
+      "酸化亜鉛/酸化チタン"
+    ],
+    "synergy_summary": "ビタミンC・Eの補助役として使われやすく、抗酸化設計を底上げしやすい。",
+    "reference_url": "https://health.clevelandclinic.org/skin-care-ingredients-explained | https://health.clevelandclinic.org/ferulic-acid | https://www.aad.org/public/everyday-care/sun-protection/shade-clothing-sunscreen/how-to-apply-sunscreen",
+    "main_cat_key": "turnover",
+    "sub_cat_keys": [
+      "brightening"
+    ]
+  },
+  {
+    "excel_id": 47,
+    "name": "レスベラトロール",
+    "main_category_ja": "抗酸化・整肌",
+    "effect_summary": "植物由来の抗酸化成分として、くすみや年齢肌のケア文脈で使われやすい。",
+    "suitable_for": "年齢肌・くすみ",
+    "caution_note": "研究はあるが製品実感は処方差が大きい。",
+    "combination_caution": "基本は併用しやすい。高活性成分を多く重ねるより、UVケアや保湿とセットで考えると使いやすい。",
+    "synergy_partners": [
+      "アスコルビン酸",
+      "トコフェロール",
+      "ナイアシンアミド",
+      "酸化亜鉛/酸化チタン"
+    ],
+    "synergy_summary": "抗酸化成分どうしや日中のUVケアと組むと、外的ストレス対策の層を厚くしやすい。",
+    "reference_url": "https://health.clevelandclinic.org/skin-care-ingredients-explained | https://health.clevelandclinic.org/ferulic-acid | https://www.aad.org/public/everyday-care/sun-protection/shade-clothing-sunscreen/how-to-apply-sunscreen",
+    "main_cat_key": "turnover",
+    "sub_cat_keys": [
+      "soothing"
+    ]
+  },
+  {
+    "excel_id": 48,
+    "name": "フラーレン",
+    "main_category_ja": "抗酸化・整肌",
+    "effect_summary": "酸化ストレス対策成分として人気で、肌をすこやかに保つ目的で配合される。",
+    "suitable_for": "年齢肌・外的ストレスが気になる肌",
+    "caution_note": "高価格帯に多い。",
+    "combination_caution": "基本は併用しやすい。高活性成分を多く重ねるより、UVケアや保湿とセットで考えると使いやすい。",
+    "synergy_partners": [
+      "アスコルビン酸",
+      "トコフェロール",
+      "ナイアシンアミド",
+      "酸化亜鉛/酸化チタン"
+    ],
+    "synergy_summary": "抗酸化成分どうしや日中のUVケアと組むと、外的ストレス対策の層を厚くしやすい。",
+    "reference_url": "https://health.clevelandclinic.org/skin-care-ingredients-explained | https://health.clevelandclinic.org/ferulic-acid | https://www.aad.org/public/everyday-care/sun-protection/shade-clothing-sunscreen/how-to-apply-sunscreen",
+    "main_cat_key": "turnover",
+    "sub_cat_keys": [
+      "brightening"
+    ]
+  },
+  {
+    "excel_id": 49,
+    "name": "緑茶エキス",
+    "main_category_ja": "抗酸化・整肌",
+    "effect_summary": "肌を落ち着かせながら、皮脂や外的刺激のケア補助として使われる。",
+    "suitable_for": "混合肌・脂性肌",
+    "caution_note": "植物由来なので相性差あり。",
+    "combination_caution": "基本は併用しやすい。植物由来は相性差があるため、敏感肌は新規追加を少しずつ。",
+    "synergy_partners": [
+      "レチノール",
+      "サリチル酸",
+      "グリコール酸",
+      "ナイアシンアミド"
+    ],
+    "synergy_summary": "刺激が出やすい攻めの成分の間に入れると、赤み・乾燥感を和らげやすい。",
+    "reference_url": "https://www.aad.org/public/everyday-care/skin-care-secrets/routine/facial-masks-and-skin-care | https://health.clevelandclinic.org/vitamin-b5-for-skin-hair | https://health.clevelandclinic.org/skin-care-ingredients-explained",
+    "main_cat_key": "soothing",
+    "sub_cat_keys": [
+      "turnover"
+    ]
+  },
+  {
+    "excel_id": 50,
+    "name": "アスタキサンチン",
+    "main_category_ja": "抗酸化・ハリ感サポート",
+    "effect_summary": "赤い色素成分で、年齢肌向けのハリ・つやケアによく使われる。",
+    "suitable_for": "年齢肌・乾燥肌",
+    "caution_note": "色移りや香りが気になる製品もある。",
+    "combination_caution": "基本は併用しやすい。高活性成分を多く重ねるより、UVケアや保湿とセットで考えると使いやすい。",
+    "synergy_partners": [
+      "アスコルビン酸",
+      "トコフェロール",
+      "ナイアシンアミド",
+      "酸化亜鉛/酸化チタン"
+    ],
+    "synergy_summary": "抗酸化成分どうしや日中のUVケアと組むと、外的ストレス対策の層を厚くしやすい。",
+    "reference_url": "https://health.clevelandclinic.org/skin-care-ingredients-explained | https://health.clevelandclinic.org/ferulic-acid | https://www.aad.org/public/everyday-care/sun-protection/shade-clothing-sunscreen/how-to-apply-sunscreen",
+    "main_cat_key": "turnover",
+    "sub_cat_keys": [
+      "brightening"
+    ]
+  },
+  {
+    "excel_id": 51,
+    "name": "アルブチン",
+    "main_category_ja": "透明感ケア",
+    "effect_summary": "くすみや色ムラが気になる肌を明るく見せるケアで定番。",
+    "suitable_for": "シミ予防系の訴求が好きな人",
+    "caution_note": "変化は緩やかで紫外線対策も必須。",
+    "combination_caution": "基本は併用しやすいが、角質ケア成分やレチノイドを重ねすぎると乾燥・刺激が出ることがある。朝はUV対策をセットに。",
+    "synergy_partners": [
+      "ナイアシンアミド",
+      "ビタミンC誘導体",
+      "トラネキサム酸",
+      "酸化亜鉛/酸化チタン"
+    ],
+    "synergy_summary": "透明感ケア成分を役割分担で組み合わせ、最後にUVケアを足すと色ムラ対策の設計がしやすい。",
+    "reference_url": "https://my.clevelandclinic.org/health/diseases/21885-hyperpigmentation | https://www.aad.org/public/diseases/acne/derm-treat/treat | https://www.aad.org/public/everyday-care/sun-protection/shade-clothing-sunscreen/how-to-apply-sunscreen",
+    "main_cat_key": "brightening",
+    "sub_cat_keys": []
+  },
+  {
+    "excel_id": 52,
+    "name": "α-アルブチン",
+    "main_category_ja": "透明感ケア",
+    "effect_summary": "アルブチン系の中でも人気が高く、均一感のある肌印象を目指す処方で使われやすい。",
+    "suitable_for": "くすみ・色ムラ",
+    "caution_note": "濃度や安定性で体感差が出る。",
+    "combination_caution": "基本は併用しやすいが、角質ケア成分やレチノイドを重ねすぎると乾燥・刺激が出ることがある。朝はUV対策をセットに。",
+    "synergy_partners": [
+      "ナイアシンアミド",
+      "ビタミンC誘導体",
+      "トラネキサム酸",
+      "酸化亜鉛/酸化チタン"
+    ],
+    "synergy_summary": "透明感ケア成分を役割分担で組み合わせ、最後にUVケアを足すと色ムラ対策の設計がしやすい。",
+    "reference_url": "https://my.clevelandclinic.org/health/diseases/21885-hyperpigmentation | https://www.aad.org/public/diseases/acne/derm-treat/treat | https://www.aad.org/public/everyday-care/sun-protection/shade-clothing-sunscreen/how-to-apply-sunscreen",
+    "main_cat_key": "brightening",
+    "sub_cat_keys": []
+  },
+  {
+    "excel_id": 53,
+    "name": "コウジ酸",
+    "main_category_ja": "透明感ケア",
+    "effect_summary": "くすみ感や色ムラのケアでよく知られる成分。",
+    "suitable_for": "シミ・色ムラが気になる肌",
+    "caution_note": "刺激が出る場合があり、相性確認が必要。",
+    "combination_caution": "刺激が出やすい人はAHA/BHA、レチノイド、純粋VCとの同時重ねに注意。朝はUV対策をセットに。",
+    "synergy_partners": [
+      "ナイアシンアミド",
+      "ビタミンC誘導体",
+      "トラネキサム酸",
+      "酸化亜鉛/酸化チタン"
+    ],
+    "synergy_summary": "透明感ケア成分を役割分担で組み合わせ、最後にUVケアを足すと色ムラ対策の設計がしやすい。",
+    "reference_url": "https://my.clevelandclinic.org/health/diseases/21885-hyperpigmentation | https://www.aad.org/public/diseases/acne/derm-treat/treat | https://www.aad.org/public/everyday-care/sun-protection/shade-clothing-sunscreen/how-to-apply-sunscreen",
+    "main_cat_key": "brightening",
+    "sub_cat_keys": []
+  },
+  {
+    "excel_id": 54,
+    "name": "トラネキサム酸",
+    "main_category_ja": "肌あれ・透明感ケア",
+    "effect_summary": "肌あれを防ぎながら、くすみ印象のケアにも使われる成分。",
+    "suitable_for": "赤み・色ムラが気になる肌",
+    "caution_note": "医薬部外品で有効成分になることがある。",
+    "combination_caution": "基本は併用しやすいが、角質ケア成分やレチノイドを重ねすぎると乾燥・刺激が出ることがある。朝はUV対策をセットに。",
+    "synergy_partners": [
+      "ナイアシンアミド",
+      "ビタミンC誘導体",
+      "トラネキサム酸",
+      "酸化亜鉛/酸化チタン"
+    ],
+    "synergy_summary": "透明感ケア成分を役割分担で組み合わせ、最後にUVケアを足すと色ムラ対策の設計がしやすい。",
+    "reference_url": "https://my.clevelandclinic.org/health/diseases/21885-hyperpigmentation | https://www.aad.org/public/diseases/acne/derm-treat/treat | https://www.aad.org/public/everyday-care/sun-protection/shade-clothing-sunscreen/how-to-apply-sunscreen",
+    "main_cat_key": "brightening",
+    "sub_cat_keys": [
+      "soothing"
+    ]
+  },
+  {
+    "excel_id": 55,
+    "name": "4MSK",
+    "main_category_ja": "角質ケア・透明感ケア",
+    "effect_summary": "不要な角質をためにくくし、なめらかで明るい印象の肌を目指す設計に使われる。",
+    "suitable_for": "くすみ・ごわつき",
+    "caution_note": "刺激を感じる人もいる。",
+    "combination_caution": "刺激が出やすい人はAHA/BHA、レチノイド、純粋VCとの同時重ねに注意。朝はUV対策をセットに。",
+    "synergy_partners": [
+      "ナイアシンアミド",
+      "ビタミンC誘導体",
+      "トラネキサム酸",
+      "酸化亜鉛/酸化チタン"
+    ],
+    "synergy_summary": "透明感ケア成分を役割分担で組み合わせ、最後にUVケアを足すと色ムラ対策の設計がしやすい。",
+    "reference_url": "https://my.clevelandclinic.org/health/diseases/21885-hyperpigmentation | https://www.aad.org/public/diseases/acne/derm-treat/treat | https://www.aad.org/public/everyday-care/sun-protection/shade-clothing-sunscreen/how-to-apply-sunscreen",
+    "main_cat_key": "brightening",
+    "sub_cat_keys": []
+  },
+  {
+    "excel_id": 56,
+    "name": "エラグ酸",
+    "main_category_ja": "透明感ケア",
+    "effect_summary": "くすみや色ムラへのアプローチ成分として知られる。",
+    "suitable_for": "色ムラが気になる肌",
+    "caution_note": "配合製品数はそこまで多くない。",
+    "combination_caution": "基本は併用しやすいが、角質ケア成分やレチノイドを重ねすぎると乾燥・刺激が出ることがある。朝はUV対策をセットに。",
+    "synergy_partners": [
+      "ナイアシンアミド",
+      "ビタミンC誘導体",
+      "トラネキサム酸",
+      "酸化亜鉛/酸化チタン"
+    ],
+    "synergy_summary": "透明感ケア成分を役割分担で組み合わせ、最後にUVケアを足すと色ムラ対策の設計がしやすい。",
+    "reference_url": "https://my.clevelandclinic.org/health/diseases/21885-hyperpigmentation | https://www.aad.org/public/diseases/acne/derm-treat/treat | https://www.aad.org/public/everyday-care/sun-protection/shade-clothing-sunscreen/how-to-apply-sunscreen",
+    "main_cat_key": "brightening",
+    "sub_cat_keys": []
+  },
+  {
+    "excel_id": 57,
+    "name": "ルシノール",
+    "main_category_ja": "透明感ケア",
+    "effect_summary": "明るい印象の肌づくりを目指す成分として、一部の美白系製品で見かける。",
+    "suitable_for": "色ムラ・くすみ",
+    "caution_note": "刺激や乾燥感に注意。",
+    "combination_caution": "基本は併用しやすいが、角質ケア成分やレチノイドを重ねすぎると乾燥・刺激が出ることがある。朝はUV対策をセットに。",
+    "synergy_partners": [
+      "ナイアシンアミド",
+      "ビタミンC誘導体",
+      "トラネキサム酸",
+      "酸化亜鉛/酸化チタン"
+    ],
+    "synergy_summary": "透明感ケア成分を役割分担で組み合わせ、最後にUVケアを足すと色ムラ対策の設計がしやすい。",
+    "reference_url": "https://my.clevelandclinic.org/health/diseases/21885-hyperpigmentation | https://www.aad.org/public/diseases/acne/derm-treat/treat | https://www.aad.org/public/everyday-care/sun-protection/shade-clothing-sunscreen/how-to-apply-sunscreen",
+    "main_cat_key": "brightening",
+    "sub_cat_keys": []
+  },
+  {
+    "excel_id": 58,
+    "name": "アゼライン酸",
+    "main_category_ja": "毛穴・ニキビ・色ムラケア",
+    "effect_summary": "皮脂やざらつき、ニキビ後の色ムラまで幅広くケアしやすい成分。",
+    "suitable_for": "ニキビ・赤み・色ムラ",
+    "caution_note": "ひりつきや乾燥が出ることがある。",
+    "combination_caution": "AHA/BHA、レチノイド、強いビタミンCと同時に重ねるとピリつくことがある。乾燥しやすい人は保湿を厚めに。",
+    "synergy_partners": [
+      "ナイアシンアミド",
+      "トラネキサム酸",
+      "ヒアルロン酸Na",
+      "セラミドNP"
+    ],
+    "synergy_summary": "毛穴・赤み・色ムラの多面的ケアを狙いやすく、保湿成分を添えると続けやすい。",
+    "reference_url": "https://www.aad.org/public/everyday-care/skin-care-secrets/routine/safely-exfoliate-at-home | https://www.aad.org/public/everyday-care/skin-care-basics/dry/oily-skin | https://www.aad.org/public/diseases/acne/derm-treat/treat",
+    "main_cat_key": "brightening",
+    "sub_cat_keys": [
+      "keratin",
+      "soothing"
+    ]
+  },
+  {
+    "excel_id": 59,
+    "name": "N-アセチルグルコサミン",
+    "main_category_ja": "保湿・透明感サポート",
+    "effect_summary": "保湿を助けながら、なめらかで明るい印象の肌づくりを補助する。",
+    "suitable_for": "乾燥くすみ",
+    "caution_note": "単独より他成分との併用で語られることが多い。",
+    "combination_caution": "基本は併用しやすいが、角質ケア成分やレチノイドを重ねすぎると乾燥・刺激が出ることがある。朝はUV対策をセットに。",
+    "synergy_partners": [
+      "ナイアシンアミド",
+      "ビタミンC誘導体",
+      "トラネキサム酸",
+      "酸化亜鉛/酸化チタン"
+    ],
+    "synergy_summary": "透明感ケア成分を役割分担で組み合わせ、最後にUVケアを足すと色ムラ対策の設計がしやすい。",
+    "reference_url": "https://my.clevelandclinic.org/health/diseases/21885-hyperpigmentation | https://www.aad.org/public/diseases/acne/derm-treat/treat | https://www.aad.org/public/everyday-care/sun-protection/shade-clothing-sunscreen/how-to-apply-sunscreen",
+    "main_cat_key": "brightening",
+    "sub_cat_keys": [
+      "moisturizing"
+    ]
+  },
+  {
+    "excel_id": 60,
+    "name": "グルタチオン",
+    "main_category_ja": "透明感サポート・抗酸化",
+    "effect_summary": "くすみ感ケアの文脈で注目される抗酸化成分。",
+    "suitable_for": "くすみが気になる肌",
+    "caution_note": "化粧品での実感は製品差が大きい。",
+    "combination_caution": "基本は併用しやすい。高活性成分を多く重ねるより、UVケアや保湿とセットで考えると使いやすい。",
+    "synergy_partners": [
+      "アスコルビン酸",
+      "トコフェロール",
+      "ナイアシンアミド",
+      "酸化亜鉛/酸化チタン"
+    ],
+    "synergy_summary": "抗酸化成分どうしや日中のUVケアと組むと、外的ストレス対策の層を厚くしやすい。",
+    "reference_url": "https://health.clevelandclinic.org/skin-care-ingredients-explained | https://health.clevelandclinic.org/ferulic-acid | https://www.aad.org/public/everyday-care/sun-protection/shade-clothing-sunscreen/how-to-apply-sunscreen",
+    "main_cat_key": "brightening",
+    "sub_cat_keys": [
+      "turnover"
+    ]
+  },
+  {
+    "excel_id": 61,
+    "name": "アスコルビルリン酸Na",
+    "main_category_ja": "ビタミンC誘導体",
+    "effect_summary": "安定性を高めたビタミンC誘導体で、明るさと整肌の両立を狙いやすい。",
+    "suitable_for": "くすみ・皮脂",
+    "caution_note": "乾燥しやすい人は保湿併用が向く。",
+    "combination_caution": "純粋VCより穏やかだが、高濃度や他の酸・レチノイドと重ねると刺激が出ることがある。",
+    "synergy_partners": [
+      "トコフェロール",
+      "フェルラ酸",
+      "ナイアシンアミド",
+      "酸化亜鉛/酸化チタン"
+    ],
+    "synergy_summary": "抗酸化ケアをしながら、ナイアシンアミドやUVケアと組むと透明感設計を組みやすい。",
+    "reference_url": "https://health.clevelandclinic.org/skin-care-ingredients-explained | https://health.clevelandclinic.org/ferulic-acid | https://www.aad.org/public/everyday-care/sun-protection/shade-clothing-sunscreen/how-to-apply-sunscreen",
+    "main_cat_key": "brightening",
+    "sub_cat_keys": [
+      "turnover"
+    ]
+  },
+  {
+    "excel_id": 62,
+    "name": "プラセンタエキス",
+    "main_category_ja": "整肌・透明感サポート",
+    "effect_summary": "保湿や整肌、透明感訴求で広く使われる成分。",
+    "suitable_for": "乾燥肌・くすみ",
+    "caution_note": "原料由来や香りが気になる人もいる。",
+    "combination_caution": "基本は併用しやすいが、角質ケア成分やレチノイドを重ねすぎると乾燥・刺激が出ることがある。朝はUV対策をセットに。",
+    "synergy_partners": [
+      "ナイアシンアミド",
+      "ビタミンC誘導体",
+      "トラネキサム酸",
+      "酸化亜鉛/酸化チタン"
+    ],
+    "synergy_summary": "透明感ケア成分を役割分担で組み合わせ、最後にUVケアを足すと色ムラ対策の設計がしやすい。",
+    "reference_url": "https://my.clevelandclinic.org/health/diseases/21885-hyperpigmentation | https://www.aad.org/public/diseases/acne/derm-treat/treat | https://www.aad.org/public/everyday-care/sun-protection/shade-clothing-sunscreen/how-to-apply-sunscreen",
+    "main_cat_key": "brightening",
+    "sub_cat_keys": [
+      "soothing"
+    ]
+  },
+  {
+    "excel_id": 63,
+    "name": "レチノール",
+    "main_category_ja": "ハリ・毛穴・キメケア",
+    "effect_summary": "肌のターンオーバー（生まれ変わりの流れ）を整え、ハリや毛穴、キメをケアしやすい。",
+    "suitable_for": "年齢肌・毛穴",
+    "caution_note": "刺激・乾燥・皮むけが出やすく、夜使用が基本。",
+    "combination_caution": "AHA/BHA、ピーリング系、純粋ビタミンCとの同時重ねは刺激が強く出やすい。まずは単独導入が無難。",
+    "synergy_partners": [
+      "セラミド",
+      "ヒアルロン酸Na",
+      "パンテノール",
+      "ナイアシンアミド",
+      "ペプチド"
+    ],
+    "synergy_summary": "保湿とバリア補助を一緒に入れると乾燥・つっぱりを抑えやすく、継続しやすい。",
+    "reference_url": "https://www.aad.org/public/everyday-care/skin-care-secrets/anti-aging/retinoid-retinol | https://health.clevelandclinic.org/skin-care-ingredients-explained | https://www.aad.org/public/everyday-care/sun-protection/shade-clothing-sunscreen/how-to-apply-sunscreen",
+    "main_cat_key": "turnover",
+    "sub_cat_keys": [
+      "keratin"
+    ]
+  },
+  {
+    "excel_id": 64,
+    "name": "レチナール",
+    "main_category_ja": "ハリ・キメケア",
+    "effect_summary": "レチノールより作用を感じやすいことがあり、なめらかさやハリ感を狙う人に人気。",
+    "suitable_for": "年齢肌",
+    "caution_note": "刺激が出やすいので慎重導入向き。",
+    "combination_caution": "AHA/BHA、ピーリング系、純粋ビタミンCとの同時重ねは刺激が強く出やすい。まずは単独導入が無難。",
+    "synergy_partners": [
+      "セラミド",
+      "ヒアルロン酸Na",
+      "パンテノール",
+      "ナイアシンアミド",
+      "ペプチド"
+    ],
+    "synergy_summary": "保湿とバリア補助を一緒に入れると乾燥・つっぱりを抑えやすく、継続しやすい。",
+    "reference_url": "https://www.aad.org/public/everyday-care/skin-care-secrets/anti-aging/retinoid-retinol | https://health.clevelandclinic.org/skin-care-ingredients-explained | https://www.aad.org/public/everyday-care/sun-protection/shade-clothing-sunscreen/how-to-apply-sunscreen",
+    "main_cat_key": "turnover",
+    "sub_cat_keys": [
+      "keratin"
+    ]
+  },
+  {
+    "excel_id": 65,
+    "name": "レチニルパルミテート",
+    "main_category_ja": "やさしめレチノイド",
+    "effect_summary": "レチノール系の中では比較的穏やかで、初心者向け設計に使われやすい。",
+    "suitable_for": "レチノール初心者",
+    "caution_note": "即効性は穏やか。",
+    "combination_caution": "AHA/BHA、ピーリング系、純粋ビタミンCとの同時重ねは刺激が強く出やすい。まずは単独導入が無難。",
+    "synergy_partners": [
+      "セラミド",
+      "ヒアルロン酸Na",
+      "パンテノール",
+      "ナイアシンアミド",
+      "ペプチド"
+    ],
+    "synergy_summary": "保湿とバリア補助を一緒に入れると乾燥・つっぱりを抑えやすく、継続しやすい。",
+    "reference_url": "https://www.aad.org/public/everyday-care/skin-care-secrets/anti-aging/retinoid-retinol | https://health.clevelandclinic.org/skin-care-ingredients-explained | https://www.aad.org/public/everyday-care/sun-protection/shade-clothing-sunscreen/how-to-apply-sunscreen",
+    "main_cat_key": "turnover",
+    "sub_cat_keys": [
+      "brightening"
+    ]
+  },
+  {
+    "excel_id": 66,
+    "name": "レチノイン酸トコフェリル",
+    "main_category_ja": "ハリ・整肌",
+    "effect_summary": "レチノイド系とビタミンEの性質をあわせ持つ整肌成分として使われる。",
+    "suitable_for": "年齢肌",
+    "caution_note": "刺激を感じる場合がある。",
+    "combination_caution": "AHA/BHA、ピーリング系、純粋ビタミンCとの同時重ねは刺激が強く出やすい。まずは単独導入が無難。",
+    "synergy_partners": [
+      "セラミド",
+      "ヒアルロン酸Na",
+      "パンテノール",
+      "ナイアシンアミド",
+      "ペプチド"
+    ],
+    "synergy_summary": "保湿とバリア補助を一緒に入れると乾燥・つっぱりを抑えやすく、継続しやすい。",
+    "reference_url": "https://www.aad.org/public/everyday-care/skin-care-secrets/anti-aging/retinoid-retinol | https://health.clevelandclinic.org/skin-care-ingredients-explained | https://www.aad.org/public/everyday-care/sun-protection/shade-clothing-sunscreen/how-to-apply-sunscreen",
+    "main_cat_key": "turnover",
+    "sub_cat_keys": [
+      "keratin"
+    ]
+  },
+  {
+    "excel_id": 67,
+    "name": "バクチオール",
+    "main_category_ja": "ハリ・整肌",
+    "effect_summary": "レチノール代替として語られることが多く、ハリ感やなめらかさケアに向く。",
+    "suitable_for": "敏感肌・レチノールが苦手な人",
+    "caution_note": "刺激が少ない傾向だが、完全に無刺激ではない。",
+    "combination_caution": "レチノイドより穏やかだが、酸やレチノイドを一気に重ねると敏感肌では刺激になることがある。",
+    "synergy_partners": [
+      "ナイアシンアミド",
+      "セラミド",
+      "ヒアルロン酸Na",
+      "ペプチド"
+    ],
+    "synergy_summary": "ハリ系の土台を作りつつ、保湿やペプチドと組むとやさしく年齢肌ケアを組みやすい。",
+    "reference_url": "https://health.clevelandclinic.org/bakuchiol | https://www.aad.org/public/everyday-care/skin-care-secrets/anti-aging/retinoid-retinol | https://www.aad.org/public/everyday-care/sun-protection/shade-clothing-sunscreen/how-to-apply-sunscreen",
+    "main_cat_key": "turnover",
+    "sub_cat_keys": [
+      "soothing"
+    ]
+  },
+  {
+    "excel_id": 68,
+    "name": "アデノシン",
+    "main_category_ja": "ハリ・しわ感サポート",
+    "effect_summary": "年齢肌向けのハリ感ケアで使われやすい成分。",
+    "suitable_for": "年齢肌",
+    "caution_note": "配合量で体感差が出やすい。",
+    "combination_caution": "基本は併用しやすいが、強い酸や純粋ビタミンCを多く重ねると刺激や使用感の相性が出ることがある。",
+    "synergy_partners": [
+      "ヒアルロン酸Na",
+      "セラミド",
+      "ナイアシンアミド",
+      "レチノイド"
+    ],
+    "synergy_summary": "保湿成分やレチノイドと役割分担しやすく、ハリ感ケアの設計を厚くしやすい。",
+    "reference_url": "https://health.clevelandclinic.org/skin-care-ingredients-explained | https://www.aad.org/public/everyday-care/skin-care-secrets/anti-aging/retinoid-retinol",
+    "main_cat_key": "turnover",
+    "sub_cat_keys": []
+  },
+  {
+    "excel_id": 69,
+    "name": "パルミトイルトリペプチド-1",
+    "main_category_ja": "ペプチド・ハリサポート",
+    "effect_summary": "肌をふっくら見せるハリケア成分として人気。",
+    "suitable_for": "年齢肌",
+    "caution_note": "即効性より継続使用向き。",
+    "combination_caution": "基本は併用しやすいが、強い酸や純粋ビタミンCを多く重ねると刺激や使用感の相性が出ることがある。",
+    "synergy_partners": [
+      "ヒアルロン酸Na",
+      "セラミド",
+      "ナイアシンアミド",
+      "レチノイド"
+    ],
+    "synergy_summary": "保湿成分やレチノイドと役割分担しやすく、ハリ感ケアの設計を厚くしやすい。",
+    "reference_url": "https://health.clevelandclinic.org/skin-care-ingredients-explained | https://www.aad.org/public/everyday-care/skin-care-secrets/anti-aging/retinoid-retinol",
+    "main_cat_key": "turnover",
+    "sub_cat_keys": []
+  },
+  {
+    "excel_id": 70,
+    "name": "パルミトイルテトラペプチド-7",
+    "main_category_ja": "ペプチド・ハリサポート",
+    "effect_summary": "ハリ不足や肌印象の乱れに対するサポート成分として使われる。",
+    "suitable_for": "年齢肌",
+    "caution_note": "単独より複合ペプチド処方が多い。",
+    "combination_caution": "基本は併用しやすいが、強い酸や純粋ビタミンCを多く重ねると刺激や使用感の相性が出ることがある。",
+    "synergy_partners": [
+      "ヒアルロン酸Na",
+      "セラミド",
+      "ナイアシンアミド",
+      "レチノイド"
+    ],
+    "synergy_summary": "保湿成分やレチノイドと役割分担しやすく、ハリ感ケアの設計を厚くしやすい。",
+    "reference_url": "https://health.clevelandclinic.org/skin-care-ingredients-explained | https://www.aad.org/public/everyday-care/skin-care-secrets/anti-aging/retinoid-retinol",
+    "main_cat_key": "turnover",
+    "sub_cat_keys": [
+      "soothing"
+    ]
+  },
+  {
+    "excel_id": 71,
+    "name": "アセチルヘキサペプチド-8",
+    "main_category_ja": "ペプチド・表情ジワケア補助",
+    "effect_summary": "目元や口元などの細かいサインを目立ちにくく見せる設計で使われやすい。",
+    "suitable_for": "目元・口元ケア",
+    "caution_note": "医療的しわ治療とは別物。",
+    "combination_caution": "基本は併用しやすいが、強い酸や純粋ビタミンCを多く重ねると刺激や使用感の相性が出ることがある。",
+    "synergy_partners": [
+      "ヒアルロン酸Na",
+      "セラミド",
+      "ナイアシンアミド",
+      "レチノイド"
+    ],
+    "synergy_summary": "保湿成分やレチノイドと役割分担しやすく、ハリ感ケアの設計を厚くしやすい。",
+    "reference_url": "https://health.clevelandclinic.org/skin-care-ingredients-explained | https://www.aad.org/public/everyday-care/skin-care-secrets/anti-aging/retinoid-retinol",
+    "main_cat_key": "turnover",
+    "sub_cat_keys": []
+  },
+  {
+    "excel_id": 72,
+    "name": "銅トリペプチド-1",
+    "main_category_ja": "ペプチド・整肌",
+    "effect_summary": "肌をすこやかに保ち、ハリ感のある印象づくりを助ける。",
+    "suitable_for": "年齢肌・ダメージ感が気になる肌",
+    "caution_note": "相性の悪い処方では変色しやすい。",
+    "combination_caution": "純粋ビタミンCや低pHの強い酸、強い角質ケアと同時に使うと相性が読みにくいので時間をずらす運用が無難。",
+    "synergy_partners": [
+      "ヒアルロン酸Na",
+      "セラミド",
+      "パンテノール",
+      "ナイアシンアミド"
+    ],
+    "synergy_summary": "保湿・バリア系と組むと整肌とハリ感サポートを両立しやすい。",
+    "reference_url": "https://health.clevelandclinic.org/skin-care-ingredients-explained | https://www.aad.org/public/everyday-care/skin-care-secrets/anti-aging/retinoid-retinol",
+    "main_cat_key": "turnover",
+    "sub_cat_keys": [
+      "soothing"
+    ]
+  },
+  {
+    "excel_id": 73,
+    "name": "オリゴペプチド-1",
+    "main_category_ja": "ペプチド・整肌",
+    "effect_summary": "ハリやなめらかさを狙う高機能美容液に使われやすい。",
+    "suitable_for": "年齢肌",
+    "caution_note": "高価格になりやすい。",
+    "combination_caution": "基本は併用しやすいが、強い酸や純粋ビタミンCを多く重ねると刺激や使用感の相性が出ることがある。",
+    "synergy_partners": [
+      "ヒアルロン酸Na",
+      "セラミド",
+      "ナイアシンアミド",
+      "レチノイド"
+    ],
+    "synergy_summary": "保湿成分やレチノイドと役割分担しやすく、ハリ感ケアの設計を厚くしやすい。",
+    "reference_url": "https://health.clevelandclinic.org/skin-care-ingredients-explained | https://www.aad.org/public/everyday-care/skin-care-secrets/anti-aging/retinoid-retinol",
+    "main_cat_key": "turnover",
+    "sub_cat_keys": [
+      "soothing"
+    ]
+  },
+  {
+    "excel_id": 74,
+    "name": "アセチルテトラペプチド-5",
+    "main_category_ja": "目元ケアサポート",
+    "effect_summary": "乾燥でむくんで見える目元をすっきり見せる目的で使われやすい。",
+    "suitable_for": "目元ケア",
+    "caution_note": "むくみの原因そのものを治すわけではない。",
+    "combination_caution": "基本は併用しやすいが、強い酸や純粋ビタミンCを多く重ねると刺激や使用感の相性が出ることがある。",
+    "synergy_partners": [
+      "ヒアルロン酸Na",
+      "セラミド",
+      "ナイアシンアミド",
+      "レチノイド"
+    ],
+    "synergy_summary": "保湿成分やレチノイドと役割分担しやすく、ハリ感ケアの設計を厚くしやすい。",
+    "reference_url": "https://health.clevelandclinic.org/skin-care-ingredients-explained | https://www.aad.org/public/everyday-care/skin-care-secrets/anti-aging/retinoid-retinol",
+    "main_cat_key": "turnover",
+    "sub_cat_keys": [
+      "moisturizing"
+    ]
+  },
+  {
+    "excel_id": 75,
+    "name": "パルミトイルペンタペプチド-4",
+    "main_category_ja": "ペプチド・ハリサポート",
+    "effect_summary": "年齢肌向けのハリ感サポート成分として定番。",
+    "suitable_for": "年齢肌",
+    "caution_note": "穏やかな実感が多く、継続が前提。",
+    "combination_caution": "基本は併用しやすいが、強い酸や純粋ビタミンCを多く重ねると刺激や使用感の相性が出ることがある。",
+    "synergy_partners": [
+      "ヒアルロン酸Na",
+      "セラミド",
+      "ナイアシンアミド",
+      "レチノイド"
+    ],
+    "synergy_summary": "保湿成分やレチノイドと役割分担しやすく、ハリ感ケアの設計を厚くしやすい。",
+    "reference_url": "https://health.clevelandclinic.org/skin-care-ingredients-explained | https://www.aad.org/public/everyday-care/skin-care-secrets/anti-aging/retinoid-retinol",
+    "main_cat_key": "turnover",
+    "sub_cat_keys": []
+  },
+  {
+    "excel_id": 76,
+    "name": "加水分解コラーゲン",
+    "main_category_ja": "保湿・なめらかさ",
+    "effect_summary": "肌表面をしっとりなめらかに見せ、手触りをよくしやすい。",
+    "suitable_for": "乾燥肌",
+    "caution_note": "コラーゲンを“増やす”とは限らない。",
+    "combination_caution": "基本は併用しやすい。乾燥が強い日はセラミドや油分も重ねる。刺激の強い酸・レチノイドで荒れている日はしみることがある。",
+    "synergy_partners": [
+      "セラミド",
+      "コレステロール",
+      "スクワラン",
+      "シア脂"
+    ],
+    "synergy_summary": "水分を抱え込み、バリア成分と油分でフタをすると保湿の持続感が上がりやすい。",
+    "reference_url": "https://www.aad.org/public/everyday-care/skin-care-secrets/routine/facial-masks-and-skin-care | https://health.clevelandclinic.org/vitamin-b5-for-skin-hair | https://health.clevelandclinic.org/skin-care-ingredients-explained",
+    "main_cat_key": "moisturizing",
+    "sub_cat_keys": [
+      "turnover"
+    ]
+  },
+  {
+    "excel_id": 77,
+    "name": "サリチル酸",
+    "main_category_ja": "角質・毛穴ケア",
+    "effect_summary": "毛穴づまりやざらつきをほぐし、ニキビができやすい肌のケアに向く。",
+    "suitable_for": "脂性肌・毛穴・ニキビ",
+    "caution_note": "乾燥や刺激が出ることがある。",
+    "combination_caution": "他の角質ケア成分、レチノイド、スクラブとの重ねすぎで乾燥しやすい。朝はUV対策を。",
+    "synergy_partners": [
+      "ナイアシンアミド",
+      "亜鉛PCA",
+      "ヒアルロン酸Na",
+      "アロエベラ葉エキス"
+    ],
+    "synergy_summary": "毛穴ケア成分と保湿・整肌成分を組むと、皮脂対策をしながらつっぱりを抑えやすい。",
+    "reference_url": "https://www.aad.org/public/everyday-care/skin-care-secrets/routine/safely-exfoliate-at-home | https://www.aad.org/public/everyday-care/skin-care-basics/dry/oily-skin | https://www.aad.org/public/diseases/acne/derm-treat/treat",
+    "main_cat_key": "keratin",
+    "sub_cat_keys": [
+      "soothing"
+    ]
+  },
+  {
+    "excel_id": 78,
+    "name": "カプリロイルサリチル酸",
+    "main_category_ja": "角質・毛穴ケア",
+    "effect_summary": "LHAとも呼ばれ、サリチル酸より穏やかな角質ケアとして使われやすい。",
+    "suitable_for": "敏感寄りの毛穴ケア",
+    "caution_note": "重ね使いで刺激が増えることがある。",
+    "combination_caution": "他の角質ケア成分、レチノイド、スクラブとの重ねすぎで乾燥しやすい。朝はUV対策を。",
+    "synergy_partners": [
+      "ナイアシンアミド",
+      "亜鉛PCA",
+      "ヒアルロン酸Na",
+      "アロエベラ葉エキス"
+    ],
+    "synergy_summary": "毛穴ケア成分と保湿・整肌成分を組むと、皮脂対策をしながらつっぱりを抑えやすい。",
+    "reference_url": "https://www.aad.org/public/everyday-care/skin-care-secrets/routine/safely-exfoliate-at-home | https://www.aad.org/public/everyday-care/skin-care-basics/dry/oily-skin | https://www.aad.org/public/diseases/acne/derm-treat/treat",
+    "main_cat_key": "keratin",
+    "sub_cat_keys": [
+      "soothing"
+    ]
+  },
+  {
+    "excel_id": 79,
+    "name": "グリコール酸",
+    "main_category_ja": "AHA・角質ケア",
+    "effect_summary": "古い角質をはがれやすくし、くすみやざらつきをケアしやすい。",
+    "suitable_for": "ごわつき・くすみ",
+    "caution_note": "紫外線対策が必須で、刺激も出やすい。",
+    "combination_caution": "他の酸、レチノイド、ピーリング系を重ねると刺激が出やすい。朝はUV対策を。",
+    "synergy_partners": [
+      "ヒアルロン酸Na",
+      "パンテノール",
+      "セラミドNP",
+      "ナイアシンアミド"
+    ],
+    "synergy_summary": "角質をゆるめた後に水分とバリア成分を足すと、ごわつき対策が続けやすい。",
+    "reference_url": "https://www.aad.org/public/everyday-care/skin-care-secrets/routine/safely-exfoliate-at-home | https://www.aad.org/public/everyday-care/skin-care-basics/dry/oily-skin | https://www.aad.org/public/diseases/acne/derm-treat/treat",
+    "main_cat_key": "keratin",
+    "sub_cat_keys": [
+      "turnover"
+    ]
+  },
+  {
+    "excel_id": 80,
+    "name": "乳酸",
+    "main_category_ja": "AHA・角質ケア",
+    "effect_summary": "角質ケアと保湿感のバランスがよく、比較的やわらかい使い心地。",
+    "suitable_for": "乾燥寄りのごわつき肌",
+    "caution_note": "敏感肌ではしみる場合がある。",
+    "combination_caution": "他の酸、レチノイド、ピーリング系を重ねると刺激が出やすい。朝はUV対策を。",
+    "synergy_partners": [
+      "ヒアルロン酸Na",
+      "パンテノール",
+      "セラミドNP",
+      "ナイアシンアミド"
+    ],
+    "synergy_summary": "角質をゆるめた後に水分とバリア成分を足すと、ごわつき対策が続けやすい。",
+    "reference_url": "https://www.aad.org/public/everyday-care/skin-care-secrets/routine/safely-exfoliate-at-home | https://www.aad.org/public/everyday-care/skin-care-basics/dry/oily-skin | https://www.aad.org/public/diseases/acne/derm-treat/treat",
+    "main_cat_key": "keratin",
+    "sub_cat_keys": [
+      "moisturizing"
+    ]
+  },
+  {
+    "excel_id": 81,
+    "name": "マンデル酸",
+    "main_category_ja": "AHA・角質ケア",
+    "effect_summary": "比較的ゆるやかな角質ケアで、毛穴やざらつき対策に使いやすい。",
+    "suitable_for": "敏感寄りの毛穴ケア",
+    "caution_note": "人によっては赤みが出る。",
+    "combination_caution": "他の酸、レチノイド、ピーリング系を重ねると刺激が出やすい。朝はUV対策を。",
+    "synergy_partners": [
+      "ヒアルロン酸Na",
+      "パンテノール",
+      "セラミドNP",
+      "ナイアシンアミド"
+    ],
+    "synergy_summary": "角質をゆるめた後に水分とバリア成分を足すと、ごわつき対策が続けやすい。",
+    "reference_url": "https://www.aad.org/public/everyday-care/skin-care-secrets/routine/safely-exfoliate-at-home | https://www.aad.org/public/everyday-care/skin-care-basics/dry/oily-skin | https://www.aad.org/public/diseases/acne/derm-treat/treat",
+    "main_cat_key": "keratin",
+    "sub_cat_keys": [
+      "brightening"
+    ]
+  },
+  {
+    "excel_id": 82,
+    "name": "グルコノラクトン",
+    "main_category_ja": "PHA・角質ケア",
+    "effect_summary": "刺激を抑えながらなめらかさを目指しやすい角質ケア成分。",
+    "suitable_for": "敏感肌・初心者",
+    "caution_note": "強い即効性は出にくい。",
+    "combination_caution": "比較的穏やかでも、他の酸・レチノイド・ピーリングを重ねると刺激は増える。朝はUV対策を。",
+    "synergy_partners": [
+      "ヒアルロン酸Na",
+      "パンテノール",
+      "ナイアシンアミド",
+      "セラミドNP"
+    ],
+    "synergy_summary": "角質ケアの後に保湿とバリア補助を重ねると、なめらかさと乾燥対策を両立しやすい。",
+    "reference_url": "https://www.aad.org/public/everyday-care/skin-care-secrets/routine/safely-exfoliate-at-home | https://www.aad.org/public/everyday-care/skin-care-basics/dry/oily-skin | https://www.aad.org/public/diseases/acne/derm-treat/treat",
+    "main_cat_key": "keratin",
+    "sub_cat_keys": [
+      "moisturizing"
+    ]
+  },
+  {
+    "excel_id": 83,
+    "name": "ラクトビオン酸",
+    "main_category_ja": "PHA・保湿角質ケア",
+    "effect_summary": "うるおいを保ちながら穏やかに角質を整える。",
+    "suitable_for": "乾燥肌・敏感肌",
+    "caution_note": "角質ケアとしてはマイルド。",
+    "combination_caution": "比較的穏やかでも、他の酸・レチノイド・ピーリングを重ねると刺激は増える。朝はUV対策を。",
+    "synergy_partners": [
+      "ヒアルロン酸Na",
+      "パンテノール",
+      "ナイアシンアミド",
+      "セラミドNP"
+    ],
+    "synergy_summary": "角質ケアの後に保湿とバリア補助を重ねると、なめらかさと乾燥対策を両立しやすい。",
+    "reference_url": "https://www.aad.org/public/everyday-care/skin-care-secrets/routine/safely-exfoliate-at-home | https://www.aad.org/public/everyday-care/skin-care-basics/dry/oily-skin | https://www.aad.org/public/diseases/acne/derm-treat/treat",
+    "main_cat_key": "keratin",
+    "sub_cat_keys": [
+      "moisturizing"
+    ]
+  },
+  {
+    "excel_id": 84,
+    "name": "クエン酸",
+    "main_category_ja": "角質・pH調整",
+    "effect_summary": "肌表面をなめらかに見せる補助や、処方の酸性バランス調整に使われる。",
+    "suitable_for": "ざらつき・ベース処方",
+    "caution_note": "主役ではなく補助成分のことも多い。",
+    "combination_caution": "他の酸、レチノイド、ピーリング系を重ねると刺激が出やすい。朝はUV対策を。",
+    "synergy_partners": [
+      "ヒアルロン酸Na",
+      "パンテノール",
+      "セラミドNP",
+      "ナイアシンアミド"
+    ],
+    "synergy_summary": "角質をゆるめた後に水分とバリア成分を足すと、ごわつき対策が続けやすい。",
+    "reference_url": "https://www.aad.org/public/everyday-care/skin-care-secrets/routine/safely-exfoliate-at-home | https://www.aad.org/public/everyday-care/skin-care-basics/dry/oily-skin | https://www.aad.org/public/diseases/acne/derm-treat/treat",
+    "main_cat_key": "keratin",
+    "sub_cat_keys": [
+      "brightening"
+    ]
+  },
+  {
+    "excel_id": 85,
+    "name": "硫黄",
+    "main_category_ja": "皮脂・ニキビケア",
+    "effect_summary": "皮脂が多くニキビができやすい肌のケアに昔から使われる。",
+    "suitable_for": "脂性肌・ニキビ肌",
+    "caution_note": "乾燥や独特のにおいが気になることがある。",
+    "combination_caution": "乾燥しやすく、サリチル酸・レチノイド・洗浄力の強い洗顔との重ねすぎに注意。",
+    "synergy_partners": [
+      "ヒアルロン酸Na",
+      "ナイアシンアミド",
+      "カオリン"
+    ],
+    "synergy_summary": "皮脂ケアをしつつ保湿や整肌を添えると、乾燥しすぎず使いやすい。",
+    "reference_url": "https://www.aad.org/public/everyday-care/skin-care-secrets/routine/safely-exfoliate-at-home | https://www.aad.org/public/everyday-care/skin-care-basics/dry/oily-skin | https://www.aad.org/public/diseases/acne/derm-treat/treat",
+    "main_cat_key": "keratin",
+    "sub_cat_keys": [
+      "soothing"
+    ]
+  },
+  {
+    "excel_id": 86,
+    "name": "亜鉛PCA",
+    "main_category_ja": "皮脂バランス・毛穴ケア",
+    "effect_summary": "皮脂の出やすい肌をさっぱり整えやすい人気成分。",
+    "suitable_for": "脂性肌・毛穴",
+    "caution_note": "乾燥肌にはさっぱりしすぎる場合がある。",
+    "combination_caution": "基本は併用しやすい。乾燥肌では皮脂を抑えすぎないよう保湿とセットが無難。",
+    "synergy_partners": [
+      "ナイアシンアミド",
+      "サリチル酸",
+      "グリシルグリシン"
+    ],
+    "synergy_summary": "皮脂バランス・毛穴・テカリを多面的に見やすい組み合わせ。",
+    "reference_url": "https://www.aad.org/public/everyday-care/skin-care-secrets/routine/safely-exfoliate-at-home | https://www.aad.org/public/everyday-care/skin-care-basics/dry/oily-skin | https://www.aad.org/public/diseases/acne/derm-treat/treat",
+    "main_cat_key": "keratin",
+    "sub_cat_keys": [
+      "soothing"
+    ]
+  },
+  {
+    "excel_id": 87,
+    "name": "ピロクトンオラミン",
+    "main_category_ja": "頭皮・フケ・整肌",
+    "effect_summary": "フケや頭皮トラブル対策の文脈でよく見かける。",
+    "suitable_for": "頭皮ケア",
+    "caution_note": "顔用では製品数が限られる。",
+    "combination_caution": "主に頭皮向けで、乾燥しやすい人は洗浄力の強い処方との重ねすぎに注意。",
+    "synergy_partners": [
+      "パンテノール",
+      "亜鉛PCA",
+      "サリチル酸"
+    ],
+    "synergy_summary": "フケ・皮脂・頭皮環境を複数方向から整えやすい。",
+    "reference_url": "https://www.aad.org/public/everyday-care/skin-care-secrets/routine/safely-exfoliate-at-home | https://www.aad.org/public/everyday-care/skin-care-basics/dry/oily-skin | https://www.aad.org/public/diseases/acne/derm-treat/treat",
+    "main_cat_key": "soothing",
+    "sub_cat_keys": [
+      "keratin"
+    ]
+  },
+  {
+    "excel_id": 88,
+    "name": "イソプロピルメチルフェノール",
+    "main_category_ja": "殺菌・ニキビケア補助",
+    "effect_summary": "清潔に保つ目的で薬用ニキビケア製品に使われやすい。",
+    "suitable_for": "ニキビが気になる肌",
+    "caution_note": "乾燥しやすい人は保湿も必要。",
+    "combination_caution": "乾燥やつっぱりを感じることがある。刺激が出やすい人は他の殺菌・角質ケアの重ねすぎに注意。",
+    "synergy_partners": [
+      "サリチル酸",
+      "ナイアシンアミド",
+      "アロエベラ葉エキス"
+    ],
+    "synergy_summary": "ニキビケアの土台を作りつつ、整肌成分で使い心地を整えやすい。",
+    "reference_url": "https://www.aad.org/public/everyday-care/skin-care-secrets/routine/safely-exfoliate-at-home | https://www.aad.org/public/everyday-care/skin-care-basics/dry/oily-skin | https://www.aad.org/public/diseases/acne/derm-treat/treat",
+    "main_cat_key": "soothing",
+    "sub_cat_keys": [
+      "keratin"
+    ]
+  },
+  {
+    "excel_id": 89,
+    "name": "ティーツリー葉油",
+    "main_category_ja": "整肌・清潔感サポート",
+    "effect_summary": "皮脂が多い肌をさっぱり整える目的で人気の精油。",
+    "suitable_for": "脂性肌・ニキビが気になる肌",
+    "caution_note": "精油なので刺激や香りの好みが分かれる。",
+    "combination_caution": "精油由来の刺激や香りの相性差がある。酸・レチノイドで荒れている日はしみやすい。",
+    "synergy_partners": [
+      "ナイアシンアミド",
+      "サリチル酸",
+      "アロエベラ葉エキス"
+    ],
+    "synergy_summary": "毛穴ケアや清潔感サポートを狙いつつ、整肌成分で刺激感を和らげやすい。",
+    "reference_url": "https://www.aad.org/public/everyday-care/skin-care-secrets/routine/safely-exfoliate-at-home | https://www.aad.org/public/everyday-care/skin-care-basics/dry/oily-skin | https://www.aad.org/public/diseases/acne/derm-treat/treat",
+    "main_cat_key": "soothing",
+    "sub_cat_keys": [
+      "keratin"
+    ]
+  },
+  {
+    "excel_id": 90,
+    "name": "カオリン",
+    "main_category_ja": "吸着・皮脂ケア",
+    "effect_summary": "余分な皮脂や汚れを吸着し、毛穴をすっきり見せやすい。",
+    "suitable_for": "脂性肌・毛穴",
+    "caution_note": "乾燥肌ではつっぱりやすい。",
+    "combination_caution": "乾燥しやすいので、毎日・長時間の使いすぎや酸/レチノイドとの同日多用に注意。",
+    "synergy_partners": [
+      "サリチル酸",
+      "ナイアシンアミド",
+      "ヒアルロン酸Na"
+    ],
+    "synergy_summary": "余分な皮脂を吸着しつつ、毛穴ケア成分と保湿を組み合わせやすい。",
+    "reference_url": "https://www.aad.org/public/everyday-care/skin-care-secrets/routine/safely-exfoliate-at-home | https://www.aad.org/public/everyday-care/skin-care-basics/dry/oily-skin | https://www.aad.org/public/diseases/acne/derm-treat/treat",
+    "main_cat_key": "keratin",
+    "sub_cat_keys": []
+  },
+  {
+    "excel_id": 91,
+    "name": "ベントナイト",
+    "main_category_ja": "吸着・皮脂ケア",
+    "effect_summary": "クレイ（泥）成分として、皮脂や汚れを吸着して洗い上がりをさっぱりさせる。",
+    "suitable_for": "脂性肌・毛穴",
+    "caution_note": "乾燥肌には頻度調整が必要。",
+    "combination_caution": "乾燥しやすいので、毎日・長時間の使いすぎや酸/レチノイドとの同日多用に注意。",
+    "synergy_partners": [
+      "サリチル酸",
+      "ナイアシンアミド",
+      "ヒアルロン酸Na"
+    ],
+    "synergy_summary": "余分な皮脂を吸着しつつ、毛穴ケア成分と保湿を組み合わせやすい。",
+    "reference_url": "https://www.aad.org/public/everyday-care/skin-care-secrets/routine/safely-exfoliate-at-home | https://www.aad.org/public/everyday-care/skin-care-basics/dry/oily-skin | https://www.aad.org/public/diseases/acne/derm-treat/treat",
+    "main_cat_key": "keratin",
+    "sub_cat_keys": []
+  },
+  {
+    "excel_id": 92,
+    "name": "酸化亜鉛",
+    "main_category_ja": "UV散乱・保護",
+    "effect_summary": "紫外線を反射・散乱し、肌を守る日焼け止め成分として定番。",
+    "suitable_for": "UV対策・敏感肌",
+    "caution_note": "白浮きや乾燥感が出ることがある。",
+    "combination_caution": "併用禁止というより、量不足・塗りムラ・こすれ落ちに注意。酸やレチノイド使用日は特に優先度が高い。",
+    "synergy_partners": [
+      "アスコルビン酸",
+      "ナイアシンアミド",
+      "フェルラ酸",
+      "トコフェロール"
+    ],
+    "synergy_summary": "抗酸化成分と組むと、日中の外的ストレス対策を立体的に組みやすい。",
+    "reference_url": "https://www.aad.org/public/everyday-care/sun-protection/shade-clothing-sunscreen/how-to-apply-sunscreen | https://health.clevelandclinic.org/skin-care-ingredients-explained",
+    "main_cat_key": "barrier",
+    "sub_cat_keys": [
+      "soothing"
+    ]
+  },
+  {
+    "excel_id": 93,
+    "name": "酸化チタン",
+    "main_category_ja": "UV散乱・保護",
+    "effect_summary": "紫外線防御の中心成分として使われ、比較的刺激が少ない処方に向く。",
+    "suitable_for": "UV対策・敏感肌",
+    "caution_note": "白浮きしやすい。",
+    "combination_caution": "併用禁止というより、量不足・塗りムラ・こすれ落ちに注意。酸やレチノイド使用日は特に優先度が高い。",
+    "synergy_partners": [
+      "アスコルビン酸",
+      "ナイアシンアミド",
+      "フェルラ酸",
+      "トコフェロール"
+    ],
+    "synergy_summary": "抗酸化成分と組むと、日中の外的ストレス対策を立体的に組みやすい。",
+    "reference_url": "https://www.aad.org/public/everyday-care/sun-protection/shade-clothing-sunscreen/how-to-apply-sunscreen | https://health.clevelandclinic.org/skin-care-ingredients-explained",
+    "main_cat_key": "barrier",
+    "sub_cat_keys": []
+  },
+  {
+    "excel_id": 94,
+    "name": "トコフェロールニコチン酸エステル",
+    "main_category_ja": "整肌・血色感サポート",
+    "effect_summary": "肌をすこやかに保ち、くすんで見える印象を整える補助に使われる。",
+    "suitable_for": "くすみ・乾燥",
+    "caution_note": "刺激感が出る人もいる。",
+    "combination_caution": "温感や赤みを感じる人がいる。赤ら顔・刺激感が出やすい人は少量から。",
+    "synergy_partners": [
+      "ナイアシンアミド",
+      "ヒアルロン酸Na",
+      "スクワラン"
+    ],
+    "synergy_summary": "保湿成分と組むと乾燥感を抑えやすく、整肌系の補助として使いやすい。",
+    "reference_url": "https://health.clevelandclinic.org/skin-care-ingredients-explained | https://health.clevelandclinic.org/ferulic-acid | https://www.aad.org/public/everyday-care/sun-protection/shade-clothing-sunscreen/how-to-apply-sunscreen",
+    "main_cat_key": "turnover",
+    "sub_cat_keys": [
+      "soothing"
+    ]
+  },
+  {
+    "excel_id": 95,
+    "name": "水溶性プロテオグリカン",
+    "main_category_ja": "保湿・ハリ感サポート",
+    "effect_summary": "保湿とふっくら感の両方を狙う成分として人気。",
+    "suitable_for": "乾燥肌・年齢肌",
+    "caution_note": "価格が高めになりやすい。",
+    "combination_caution": "基本は併用しやすい。乾燥が強い日はセラミドや油分も重ねる。刺激の強い酸・レチノイドで荒れている日はしみることがある。",
+    "synergy_partners": [
+      "セラミド",
+      "コレステロール",
+      "スクワラン",
+      "シア脂"
+    ],
+    "synergy_summary": "水分を抱え込み、バリア成分と油分でフタをすると保湿の持続感が上がりやすい。",
+    "reference_url": "https://www.aad.org/public/everyday-care/skin-care-secrets/routine/facial-masks-and-skin-care | https://health.clevelandclinic.org/vitamin-b5-for-skin-hair | https://health.clevelandclinic.org/skin-care-ingredients-explained",
+    "main_cat_key": "moisturizing",
+    "sub_cat_keys": [
+      "turnover"
+    ]
+  },
+  {
+    "excel_id": 96,
+    "name": "カフェイン",
+    "main_category_ja": "引き締め・むくみ感サポート",
+    "effect_summary": "目元やフェイスラインをすっきり見せる目的で使われやすい。",
+    "suitable_for": "目元ケア・むくみ感",
+    "caution_note": "一時的な見え方改善が中心。",
+    "combination_caution": "広い範囲より、目元やむくみ感が気になる部位での使用が向く。乾燥感が出るときは保湿を追加。",
+    "synergy_partners": [
+      "アセチルテトラペプチド-5",
+      "ヒアルロン酸Na",
+      "緑茶エキス"
+    ],
+    "synergy_summary": "目元のうるおいと引き締め感をまとめて狙いやすい。",
+    "reference_url": "https://www.aad.org/public/everyday-care/skin-care-secrets/routine/safely-exfoliate-at-home | https://www.aad.org/public/everyday-care/skin-care-basics/dry/oily-skin | https://www.aad.org/public/diseases/acne/derm-treat/treat",
+    "main_cat_key": "turnover",
+    "sub_cat_keys": [
+      "soothing"
+    ]
+  },
+  {
+    "excel_id": 97,
+    "name": "グリシルグリシン",
+    "main_category_ja": "毛穴・キメケア",
+    "effect_summary": "開いて見える毛穴まわりをなめらかに整える目的で使われる。",
+    "suitable_for": "毛穴が気になる肌",
+    "caution_note": "単独で劇的変化は出にくい。",
+    "combination_caution": "基本は併用しやすい。高刺激成分を多く重ねるより、毛穴まわりの基礎ケアと組むほうが使いやすい。",
+    "synergy_partners": [
+      "ナイアシンアミド",
+      "亜鉛PCA",
+      "サリチル酸"
+    ],
+    "synergy_summary": "皮脂・毛穴・キメを別方向から支え、つるんとした印象を作りやすい。",
+    "reference_url": "https://www.aad.org/public/everyday-care/skin-care-secrets/routine/safely-exfoliate-at-home | https://www.aad.org/public/everyday-care/skin-care-basics/dry/oily-skin | https://www.aad.org/public/diseases/acne/derm-treat/treat",
+    "main_cat_key": "keratin",
+    "sub_cat_keys": [
+      "moisturizing"
+    ]
+  },
+  {
+    "excel_id": 98,
+    "name": "フィチン酸",
+    "main_category_ja": "整肌・角質ケア補助",
+    "effect_summary": "くすみ感やざらつきのケアを穏やかに補助する成分。",
+    "suitable_for": "くすみ・ごわつき",
+    "caution_note": "主役ではなく補助成分になりやすい。",
+    "combination_caution": "他の酸、レチノイド、ピーリング系を重ねると刺激が出やすい。朝はUV対策を。",
+    "synergy_partners": [
+      "ヒアルロン酸Na",
+      "パンテノール",
+      "セラミドNP",
+      "ナイアシンアミド"
+    ],
+    "synergy_summary": "角質をゆるめた後に水分とバリア成分を足すと、ごわつき対策が続けやすい。",
+    "reference_url": "https://www.aad.org/public/everyday-care/skin-care-secrets/routine/safely-exfoliate-at-home | https://www.aad.org/public/everyday-care/skin-care-basics/dry/oily-skin | https://www.aad.org/public/diseases/acne/derm-treat/treat",
+    "main_cat_key": "keratin",
+    "sub_cat_keys": [
+      "brightening"
+    ]
+  },
+  {
+    "excel_id": 99,
+    "name": "フェニルエチルレゾルシノール",
+    "main_category_ja": "透明感ケア",
+    "effect_summary": "明るく均一な印象の肌を目指す高機能成分として人気。",
+    "suitable_for": "色ムラ・くすみ",
+    "caution_note": "刺激を感じる場合がある。",
+    "combination_caution": "刺激が出やすい人はAHA/BHA、レチノイド、純粋VCとの同時重ねに注意。朝はUV対策をセットに。",
+    "synergy_partners": [
+      "ナイアシンアミド",
+      "ビタミンC誘導体",
+      "トラネキサム酸",
+      "酸化亜鉛/酸化チタン"
+    ],
+    "synergy_summary": "透明感ケア成分を役割分担で組み合わせ、最後にUVケアを足すと色ムラ対策の設計がしやすい。",
+    "reference_url": "https://my.clevelandclinic.org/health/diseases/21885-hyperpigmentation | https://www.aad.org/public/diseases/acne/derm-treat/treat | https://www.aad.org/public/everyday-care/sun-protection/shade-clothing-sunscreen/how-to-apply-sunscreen",
+    "main_cat_key": "brightening",
+    "sub_cat_keys": []
+  },
+  {
+    "excel_id": 100,
+    "name": "イデベノン",
+    "main_category_ja": "抗酸化・年齢肌ケア",
+    "effect_summary": "年齢肌向けのつや・ハリケア文脈で使われる抗酸化成分。",
+    "suitable_for": "年齢肌",
+    "caution_note": "高配合製品は限られ、価格が上がりやすい。",
+    "combination_caution": "基本は併用しやすい。高活性成分を多く重ねるより、UVケアや保湿とセットで考えると使いやすい。",
+    "synergy_partners": [
+      "アスコルビン酸",
+      "トコフェロール",
+      "ナイアシンアミド",
+      "酸化亜鉛/酸化チタン"
+    ],
+    "synergy_summary": "抗酸化成分どうしや日中のUVケアと組むと、外的ストレス対策の層を厚くしやすい。",
+    "reference_url": "https://health.clevelandclinic.org/skin-care-ingredients-explained | https://health.clevelandclinic.org/ferulic-acid | https://www.aad.org/public/everyday-care/sun-protection/shade-clothing-sunscreen/how-to-apply-sunscreen",
+    "main_cat_key": "turnover",
+    "sub_cat_keys": [
+      "brightening"
+    ]
+  }
+]

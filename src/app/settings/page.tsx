@@ -21,10 +21,6 @@ export default function SettingsPage() {
   const [nickname, setNickname] = useState("");
   const [nicknameSaving, setNicknameSaving] = useState(false);
   const [nicknameError, setNicknameError] = useState("");
-  const [xLinked, setXLinked] = useState<boolean | null>(null);
-  const [xScreenName, setXScreenName] = useState<string | null>(null);
-  const [xUnlinking, setXUnlinking] = useState(false);
-  const [xLinkError, setXLinkError] = useState("");
   const [personalize, setPersonalize] = useState(true);
   const [showHistoryConfirm, setShowHistoryConfirm] = useState(false);
   const [deletingHistory, setDeletingHistory] = useState(false);
@@ -37,23 +33,6 @@ export default function SettingsPage() {
     setCurrentTheme(getStoredTheme());
   }, []);
 
-  const [xAvailable, setXAvailable] = useState(true);
-
-  useEffect(() => {
-    fetch("/api/x-auth/status")
-      .then((r) => {
-        if (!r.ok) throw new Error();
-        return r.json();
-      })
-      .then((d) => {
-        setXLinked(d.linked);
-        setXScreenName(d.screenName);
-      })
-      .catch(() => {
-        setXLinked(false);
-        setXAvailable(false);
-      });
-  }, []);
 
   useEffect(() => {
     const stored = localStorage.getItem("hadami-personalize-enabled");
@@ -83,29 +62,6 @@ export default function SettingsPage() {
     getProductCount(supabase, user.id).then(setProductCount);
   }, [user, supabase]);
 
-  const handleXLink = async () => {
-    setXLinkError("");
-    try {
-      const res = await fetch("/api/x-auth/request-token");
-      const data = await res.json();
-      if (data.authUrl) {
-        window.location.href = data.authUrl;
-      } else {
-        setXLinkError(data.error || "X連携に失敗しました");
-      }
-    } catch {
-      setXLinkError("通信エラーが発生しました");
-    }
-  };
-
-  const handleXUnlink = async () => {
-    if (!user) return;
-    setXUnlinking(true);
-    await supabase.from("x_auth_tokens").delete().eq("user_id", user.id);
-    setXLinked(false);
-    setXScreenName(null);
-    setXUnlinking(false);
-  };
 
   const handleNicknameSave = async () => {
     if (!user) return;
@@ -147,39 +103,16 @@ export default function SettingsPage() {
     setError("");
 
     try {
-      const { error: fnError } = await supabase.functions.invoke("delete-account", {
-        method: "POST",
+      const response = await fetch("/api/delete-account", {
+        method: "DELETE",
       });
 
-      if (fnError) {
+      if (!response.ok) {
         throw new Error("アカウント削除に失敗しました");
       }
 
-      try {
-        await supabase.from("deck_items").delete().eq("user_id", user.id);
-        await supabase.from("scan_ingredients").delete().in(
-          "scan_history_id",
-          (await supabase.from("scan_history").select("id").eq("user_id", user.id)).data?.map((r) => r.id) || []
-        );
-        await supabase.from("scan_history").delete().eq("user_id", user.id);
-        await supabase.from("scan_usage").delete().eq("user_id", user.id);
-        await supabase.from("products").delete().eq("user_id", user.id);
-        await supabase.from("zukan_discoveries").delete().eq("user_id", user.id);
-        await supabase.from("profiles").delete().eq("id", user.id);
-
-        const { data: files } = await supabase.storage
-          .from("product-images")
-          .list(user.id);
-        if (files && files.length > 0) {
-          const paths = files.map((f) => `${user.id}/${f.name}`);
-          await supabase.storage.from("product-images").remove(paths);
-        }
-      } catch {
-        // best-effort
-      }
-
       clearLocalData();
-      await supabase.auth.signOut();
+      await supabase.auth.signOut().catch(() => {});
       window.location.href = "/";
     } catch (e) {
       setError(e instanceof Error ? e.message : "削除に失敗しました");
@@ -276,55 +209,6 @@ export default function SettingsPage() {
             </div>
           </div>
 
-          {/* X Integration */}
-          {xAvailable && (
-            <div className="bg-white rounded-r2 shadow-bo1 p-5 mb-3">
-              <h2 className="text-[13px] font-bold text-bo-ink font-sans mb-3.5">X連携</h2>
-
-              {xLinked === null ? (
-                <p className="text-xs text-bo-ink-muted font-sans">読み込み中...</p>
-              ) : xLinked ? (
-                <div>
-                  <div className="flex items-center justify-between mb-2.5">
-                    <div className="flex items-center gap-2.5">
-                      <div className="w-2 h-2 rounded-full bg-bo-safe" />
-                      <div>
-                        <div className="text-[13px] font-bold text-bo-ink font-sans">連携済み</div>
-                        {xScreenName && (
-                          <div className="text-[11px] text-bo-ink-muted font-sans">@{xScreenName}</div>
-                        )}
-                      </div>
-                    </div>
-                    <button
-                      onClick={handleXUnlink}
-                      disabled={xUnlinking}
-                      className="px-3.5 py-1 rounded-full border-none bg-bo-danger/10 text-bo-danger text-[10px] font-bold font-sans cursor-pointer pressable"
-                    >
-                      {xUnlinking ? "解除中..." : "連携解除"}
-                    </button>
-                  </div>
-                  <div className="text-[10px] text-bo-ink-muted font-sans py-2 px-3 bg-bo-cream rounded-r1 leading-relaxed">
-                    シェア画面から画像付きでXに投稿できます（1日3件まで）
-                  </div>
-                </div>
-              ) : (
-                <div>
-                  <p className="text-[11px] text-bo-ink-muted font-sans leading-relaxed mb-3">
-                    Xアカウントを連携すると、成分図鑑やルーティンの情報を画像付きでXに投稿できます。
-                  </p>
-                  {xLinkError && (
-                    <p className="text-xs text-bo-danger font-sans mb-2">{xLinkError}</p>
-                  )}
-                  <button
-                    onClick={handleXLink}
-                    className="w-full py-3 rounded-r1 border-none bg-black text-white text-[13px] font-bold font-sans cursor-pointer pressable shadow-bo1"
-                  >
-                    Xに連携する
-                  </button>
-                </div>
-              )}
-            </div>
-          )}
 
           {/* Usage Stats */}
           <div className="bg-white rounded-r2 shadow-bo1 p-5 mb-3">

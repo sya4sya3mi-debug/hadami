@@ -35,7 +35,7 @@ async function preprocessImage(dataUrl: string): Promise<PreprocessResult> {
   return new Promise((resolve) => {
     const img = new Image();
     img.onload = () => {
-      const MAX_SIDE = 2400;
+      const MAX_SIDE = 1200;
       let { width, height } = img;
       if (width > MAX_SIDE || height > MAX_SIDE) {
         const scale = MAX_SIDE / Math.max(width, height);
@@ -50,7 +50,7 @@ async function preprocessImage(dataUrl: string): Promise<PreprocessResult> {
       const colorCtx = colorCanvas.getContext("2d")!;
       colorCtx.drawImage(img, 0, 0, width, height);
       applySharpen(colorCtx, width, height, 0.35);
-      const color = colorCanvas.toDataURL("image/jpeg", 0.95);
+      const color = colorCanvas.toDataURL("image/jpeg", 0.80);
 
       // Grayscale + contrast enhanced version for OCR fallback
       const canvas = document.createElement("canvas");
@@ -66,7 +66,7 @@ async function preprocessImage(dataUrl: string): Promise<PreprocessResult> {
         d[i] = d[i + 1] = d[i + 2] = contrast;
       }
       ctx.putImageData(imageData, 0, 0);
-      const processed = canvas.toDataURL("image/jpeg", 0.92);
+      const processed = canvas.toDataURL("image/jpeg", 0.80);
       resolve({ processed, color });
     };
     img.src = dataUrl;

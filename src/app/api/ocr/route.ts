@@ -93,7 +93,10 @@ OTHER: 成分名1, 成分名2, ...
           ],
         },
       ],
-      config: { maxOutputTokens: 1024 },
+      config: {
+        maxOutputTokens: 1024,
+        thinkingConfig: { thinkingBudget: 0 },
+      },
     });
 
     const rawText = response.text ?? "";

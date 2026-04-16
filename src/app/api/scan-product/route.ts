@@ -14,9 +14,11 @@ import {
 } from "@/lib/ingredientCache";
 import { MASTER_INGREDIENTS, getIngredientByName, getIngredientByInci } from "@/lib/ingredients";
 import { resolveActiveIngredient } from "@/lib/mhlwActiveIngredients";
+import { normalizeIngredientName } from "@/lib/normalize";
 
 const client = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 const IDENTIFY_MODEL = process.env.GEMINI_IDENTIFY_MODEL || "gemini-2.5-flash-lite";
+const SEARCH_MODEL = process.env.GEMINI_SEARCH_MODEL || "gemini-2.5-flash";
 
 // ── ユーティリティ ──
 
@@ -27,12 +29,6 @@ function withTimeout<T>(promise: Promise<T>, ms: number, message: string): Promi
       setTimeout(() => reject(new Error(message)), ms);
     }),
   ]);
-}
-
-/** 成分名リストを生成（Geminiプロンプト用） */
-function buildIngredientNameList(): string {
-  const names = MASTER_INGREDIENTS.map((i) => i.nameJa);
-  return names.join(", ");
 }
 
 /** Geminiが返した成分名をマスターDBのIDに解決 */
@@ -62,6 +58,54 @@ function resolveIngredientNames(names: string[]): {
   }
 
   return { ingredientIds: ids, ingredientNames: resolved };
+}
+
+/** 生の成分テキストからマスターDBにマッチする成分を抽出（ローカル照合） */
+function matchIngredientsLocally(rawText: string): {
+  ingredientIds: string[];
+  ingredientNames: string[];
+} {
+  const ids: string[] = [];
+  const names: string[] = [];
+  const seen = new Set<string>();
+  const normalizedText = normalizeIngredientName(rawText);
+
+  for (const ingredient of MASTER_INGREDIENTS) {
+    if (seen.has(ingredient.id)) continue;
+
+    // nameJa でマッチ
+    if (rawText.includes(ingredient.nameJa) ||
+        normalizedText.includes(normalizeIngredientName(ingredient.nameJa))) {
+      seen.add(ingredient.id);
+      ids.push(ingredient.id);
+      names.push(ingredient.nameJa);
+      continue;
+    }
+
+    // INCI名でマッチ (大文字小文字無視)
+    if (normalizedText.includes(normalizeIngredientName(ingredient.nameInci))) {
+      seen.add(ingredient.id);
+      ids.push(ingredient.id);
+      names.push(ingredient.nameJa);
+      continue;
+    }
+
+    // aliases でマッチ
+    if (ingredient.aliases) {
+      const aliasMatch = ingredient.aliases.some(
+        (alias) =>
+          rawText.includes(alias) ||
+          normalizedText.includes(normalizeIngredientName(alias))
+      );
+      if (aliasMatch) {
+        seen.add(ingredient.id);
+        ids.push(ingredient.id);
+        names.push(ingredient.nameJa);
+      }
+    }
+  }
+
+  return { ingredientIds: ids, ingredientNames: names };
 }
 
 // ── STEP 1: 商品識別 ──
@@ -164,7 +208,10 @@ async function identifyProducts(
     client.models.generateContent({
       model: IDENTIFY_MODEL,
       contents: [{ role: "user", parts: buildImageParts(base64Data, enhancedData) }],
-      config: { maxOutputTokens: 1024 },
+      config: {
+        maxOutputTokens: 1024,
+        thinkingConfig: { thinkingBudget: 0 },
+      },
     }),
     15000,
     "Timed out while identifying product",
@@ -190,7 +237,10 @@ async function identifyProducts(
           ],
         },
       ],
-      config: { maxOutputTokens: 512 },
+      config: {
+        maxOutputTokens: 512,
+        thinkingConfig: { thinkingBudget: 0 },
+      },
     }),
     15000,
     "Timed out while identifying product (retry)",
@@ -209,82 +259,111 @@ interface SearchResult {
   matchedIngredientIds: string[];
 }
 
-async function searchKeyIngredients(
-  product: string,
-  brand: string,
-): Promise<SearchResult> {
-  const query = [brand, product].filter(Boolean).join(" ").trim();
-  const ingredientList = buildIngredientNameList();
-
+/** STEP 2a: Gemini + Google Search で生の全成分テキストを取得 */
+async function fetchRawIngredients(
+  query: string,
+): Promise<{ rawText: string; isQuasiDrug: boolean; activeNames: string[] } | null> {
   const prompt = [
-    "あなたは化粧品成分の専門家です。Google検索を使って以下の製品の成分情報を調べてください。",
+    "あなたは化粧品成分の専門家です。Google検索を使って以下の製品の全成分リストを調べてください。",
     "",
     `製品: ${query}`,
     "",
-    "@cosme、メーカー公式サイト、美容メディアなどを参考にしてください。",
-    "",
-    "この製品に含まれる成分を、以下のリストの中から該当するものだけ選んでください：",
-    ingredientList,
+    "検索のヒント：",
+    `- 「${query} 全成分」「${query} 成分一覧」で検索してください`,
+    "- @cosme、メーカー公式サイト、美容メディア、LOHACO、Amazon等を参考に",
+    "- 製品名が正式名称と異なる場合は、類似する製品名でも検索してください",
     "",
     "JSON形式のみで回答（マークダウン不要）：",
     "{",
-    '  "matched_ingredients": ["成分名1", "成分名2", ...],',
+    '  "full_ingredients": "水、グリセリン、BG、ナイアシンアミド、...",',
     '  "is_quasi_drug": false,',
-    '  "active_ingredients": ["有効成分として明記されている成分のみ"]',
+    '  "active_ingredients": ["有効成分として明記されている成分名のみ"]',
     "}",
     "",
     "ルール：",
-    "- matched_ingredients: 上記リストに含まれる成分名のみ使用（リストにない名前は書かない）",
+    "- full_ingredients: 見つけた全成分を、カンマ区切りでそのまま転記（省略しないこと）",
     "- active_ingredients: 「有効成分」と明記されている成分のみ（一般化粧品の場合は空配列）",
     "- is_quasi_drug: 医薬部外品の場合はtrue",
-    "- 成分情報が見つからない場合は matched_ingredients を空配列で返す",
+    "- 成分情報が見つからない場合は full_ingredients を空文字で返す",
   ].join("\n");
 
   try {
     const response = await withTimeout(
       client.models.generateContent({
-        model: IDENTIFY_MODEL,
+        model: SEARCH_MODEL,
         contents: [{ role: "user", parts: [{ text: prompt }] }],
         config: {
           tools: [{ googleSearch: {} }],
           maxOutputTokens: 2048,
+          thinkingConfig: { thinkingBudget: 0 },
         },
       }),
-      20000,
+      30000,
       "Timed out while searching for ingredients",
     );
 
     const text = response.text ?? "";
-    console.log("[scan-product] search result:", text.slice(0, 800));
+    console.log("[scan-product] raw search result:", text.slice(0, 1000));
 
     const jsonMatch = text.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) {
-      return { found: false, ingredients: "", isQuasiDrug: false, activeIngredients: [], matchedIngredientIds: [] };
-    }
+    if (!jsonMatch) return null;
 
     const parsed = JSON.parse(jsonMatch[0]);
-    const matchedNames: string[] = Array.isArray(parsed.matched_ingredients)
-      ? parsed.matched_ingredients.filter((v: unknown) => typeof v === "string")
-      : [];
+    const rawText = typeof parsed.full_ingredients === "string" ? parsed.full_ingredients : "";
+    const isQuasiDrug = parsed.is_quasi_drug === true;
     const activeNames: string[] = Array.isArray(parsed.active_ingredients)
       ? parsed.active_ingredients.filter((v: unknown) => typeof v === "string")
       : [];
-    const isQuasiDrug = parsed.is_quasi_drug === true;
 
-    const { ingredientIds, ingredientNames } = resolveIngredientNames(matchedNames);
-    const { ingredientNames: resolvedActiveNames } = resolveIngredientNames(activeNames);
-
-    return {
-      found: ingredientIds.length > 0,
-      ingredients: ingredientNames.join(", "),
-      isQuasiDrug,
-      activeIngredients: resolvedActiveNames,
-      matchedIngredientIds: ingredientIds,
-    };
+    return rawText.trim() ? { rawText, isQuasiDrug, activeNames } : null;
   } catch (error) {
-    console.warn("[scan-product] searchKeyIngredients failed:", error);
-    return { found: false, ingredients: "", isQuasiDrug: false, activeIngredients: [], matchedIngredientIds: [] };
+    console.warn("[scan-product] fetchRawIngredients failed:", error);
+    return null;
   }
+}
+
+async function searchKeyIngredients(
+  product: string,
+  brand: string,
+): Promise<SearchResult> {
+  const emptyResult: SearchResult = {
+    found: false,
+    ingredients: "",
+    isQuasiDrug: false,
+    activeIngredients: [],
+    matchedIngredientIds: [],
+  };
+
+  // 1回目: ブランド＋商品名で検索
+  const query = [brand, product].filter(Boolean).join(" ").trim();
+  let raw = await fetchRawIngredients(query);
+
+  // 2回目: 商品名のみでリトライ
+  if (!raw) {
+    const retryQuery = product || brand;
+    if (retryQuery && retryQuery !== query) {
+      console.log("[scan-product] retrying search with:", retryQuery);
+      raw = await fetchRawIngredients(retryQuery);
+    }
+  }
+
+  if (!raw) return emptyResult;
+
+  // STEP 2b: ローカルでマスターDB照合（nameJa, INCI, aliases すべて使用）
+  const { ingredientIds, ingredientNames } = matchIngredientsLocally(raw.rawText);
+  console.log("[scan-product] local match: %d ingredients from raw text (%d chars)",
+    ingredientIds.length, raw.rawText.length);
+
+  // 有効成分も解決
+  const { ingredientNames: resolvedActiveNames } = resolveIngredientNames(raw.activeNames);
+
+  return {
+    found: ingredientIds.length > 0,
+    ingredients: ingredientNames.join(", "),
+    isQuasiDrug: raw.isQuasiDrug,
+    activeIngredients: resolvedActiveNames,
+    matchedIngredientIds: ingredientIds,
+  };
 }
 
 // ── メインハンドラ ──
