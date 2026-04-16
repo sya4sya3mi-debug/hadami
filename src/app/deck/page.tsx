@@ -235,14 +235,46 @@ export default function DeckPage() {
               >
                 <ChartIcon size={16} /> ルーティン分析
               </button>
+
+              {/* Share card link */}
+              <a
+                href="/routine"
+                onClick={(e) => {
+                  e.preventDefault();
+                  window.history.pushState({}, "", "/routine");
+                  window.dispatchEvent(new PopStateEvent("popstate"));
+                }}
+                className="w-full mt-3 py-3.5 rounded-r2 text-sm font-bold font-sans cursor-pointer
+                           flex items-center justify-center gap-2
+                           border-none text-white shadow-bo1 pressable no-underline"
+                style={{ background: "linear-gradient(135deg, #3A8F7A, #2D7A66)" }}
+              >
+                🌿 シェアカードを作成
+              </a>
             </>
           ) : (
-            <EmptyDeckState
-              routine={routine}
-              allProducts={allProducts}
-              onCreateRoutine={() => openPicker(null)}
-              onAutoRecommend={handleAutoRecommend}
-            />
+            <>
+              <EmptyDeckState
+                routine={routine}
+                allProducts={allProducts}
+                onCreateRoutine={() => openPicker(null)}
+                onAutoRecommend={handleAutoRecommend}
+              />
+              <a
+                href="/routine"
+                onClick={(e) => {
+                  e.preventDefault();
+                  window.history.pushState({}, "", "/routine");
+                  window.dispatchEvent(new PopStateEvent("popstate"));
+                }}
+                className="w-full mt-6 py-3.5 rounded-r2 text-sm font-bold font-sans cursor-pointer
+                           flex items-center justify-center gap-2
+                           border-none text-white shadow-bo1 pressable no-underline"
+                style={{ background: "linear-gradient(135deg, #3A8F7A, #2D7A66)" }}
+              >
+                🌿 シェアカードを作成
+              </a>
+            </>
           )}
 
           <Disclaimer />
