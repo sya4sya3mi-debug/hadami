@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
-// useRouter removed — share card uses server action redirect
+import { useRouter } from "next/navigation";
 import ScrollToTop from "@/components/ui/ScrollToTop";
 import { useDeckStore } from "@/stores/useDeckStore";
 import { useProductStore } from "@/stores/useProductStore";
@@ -21,7 +21,7 @@ import { useUser } from "@/lib/auth";
 import AuthGuard from "@/components/ui/AuthGuard";
 import { RoutineType, Product, ProductGenre, RecommendationResult, CategoryKey } from "@/types";
 import { SparkleIcon, ChartIcon, SunIcon, MoonIcon } from "@/components/ui/Icons";
-import { createRoutineAction } from "@/app/actions/routineActions";
+import { createRoutineWithDeckAction } from "@/app/actions/routineActions";
 
 const DECK_OPTIONS: { key: RoutineType; label: string }[] = [
   { key: "morning", label: "朝" },
@@ -36,6 +36,7 @@ export default function DeckPage() {
   const [showAutoRecommend, setShowAutoRecommend] = useState(false);
   const [autoResult, setAutoResult] = useState<RecommendationResult | null>(null);
   const { user, supabase, loading } = useUser();
+  const router = useRouter();
 
   const routine = DECK_OPTIONS[deckIndex].key;
 
@@ -189,10 +190,13 @@ export default function DeckPage() {
         });
     };
 
-    await createRoutineAction({
+    const result = await createRoutineWithDeckAction({
       amSteps: buildSteps("morning"),
       pmSteps: buildSteps("night"),
     });
+    if (result.routineId) {
+      router.push(`/routine/${result.routineId}/share`);
+    }
   };
 
   const openPicker = (genre: ProductGenre | null) => {

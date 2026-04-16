@@ -33,14 +33,14 @@ async function getUser() {
   return { supabase, user };
 }
 
-export async function createRoutineAction(
+export async function createRoutineWithDeckAction(
   prefill?: {
     amSteps?: { step_name: string; product_name?: string; product_id?: string; icon?: string }[];
     pmSteps?: { step_name: string; product_name?: string; product_id?: string; icon?: string }[];
   }
-) {
+): Promise<{ routineId: string | null; error: string | null }> {
   const { supabase, user } = await getUser();
-  if (!user) redirect("/auth/login");
+  if (!user) return { routineId: null, error: "認証が必要です" };
 
   const { data, error } = await supabase
     .from("routines")
@@ -53,9 +53,8 @@ export async function createRoutineAction(
     .select("id")
     .single();
 
-  if (error || !data) redirect("/routine");
+  if (error || !data) return { routineId: null, error: error?.message ?? "作成に失敗しました" };
 
-  // デッキからのprefillステップを挿入
   const routineId = data.id;
   const amSteps = prefill?.amSteps ?? [];
   const pmSteps = prefill?.pmSteps ?? [];
@@ -88,7 +87,7 @@ export async function createRoutineAction(
     );
   }
 
-  redirect(`/routine/${routineId}/share`);
+  return { routineId, error: null };
 }
 
 export async function saveRoutineAction(

@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useUser } from "@/lib/auth";
 import AuthGuard from "@/components/ui/AuthGuard";
 import { getUserRoutines, getAmSteps, getPmSteps, type Routine } from "@/lib/routines";
-import { createRoutineAction } from "@/app/actions/routineActions";
+import { createRoutineWithDeckAction } from "@/app/actions/routineActions";
 import ScrollToTop from "@/components/ui/ScrollToTop";
 
 export default function RoutineListPage() {
@@ -31,7 +31,10 @@ function RoutineListContent() {
   }, [user]);
 
   const handleCreate = async () => {
-    await createRoutineAction();
+    const result = await createRoutineWithDeckAction();
+    if (result.routineId) {
+      router.push(`/routine/${result.routineId}/share`);
+    }
   };
 
   if (loading) {
