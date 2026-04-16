@@ -121,7 +121,7 @@ const FEATURES = [
     Icon: ScanIcon,
     iconColor: "#3A8F7A",
     title: "AI成分検索",
-    desc: "80種の有効成分に対応。パッケージを撮影するだけでAIが商品を特定し、成分の特徴をお伝えします",
+    desc: "400種超の美容成分に対応。パッケージを撮影するだけでAIが商品を特定し、成分の特徴をお伝えします",
   },
   {
     Icon: BookIcon,
@@ -133,7 +133,7 @@ const FEATURES = [
     Icon: SparkleIcon,
     iconColor: "#9C27B0",
     title: "スキンケアルーティン",
-    desc: "お気に入り製品をルーティンに並べて朝・夜のルーティンを管理。カテゴリカバー率や成分の相乗効果も分析",
+    desc: "お気に入り製品をルーティンに並べて朝・夜のルーティンを管理。カテゴリカバー率や相乗効果の分析、ルーティンカードのシェアも",
   },
   {
     Icon: SunIcon,
@@ -151,7 +151,7 @@ const FEATURES = [
     Icon: PackageIcon,
     iconColor: "#6B4A8A",
     title: "Myコスメ写真管理",
-    desc: "スキャンした製品を写真グリッドで一覧管理。お気に入り・カテゴリで絞り込み",
+    desc: "スキャンした製品を写真グリッドで一覧管理。お気に入り・カテゴリで絞り込み。ダークモードにも対応",
   },
 ];
 
@@ -211,7 +211,7 @@ export default function LandingPage() {
             </span>
           </div>
           <Link
-            href="/auth/login"
+            href="/auth/invite"
             className="px-5 py-2 rounded-[10px] bg-bo-accent text-white text-xs font-bold font-sans shadow-bo-accent transition-transform hover:scale-105"
           >
             無料で始める
@@ -263,7 +263,7 @@ export default function LandingPage() {
           <Reveal delay={300}>
             <div className="flex gap-3 justify-center flex-wrap">
               <Link
-                href="/auth/login"
+                href="/auth/invite"
                 className="inline-flex items-center gap-2 px-8 py-3.5 rounded-[14px] bg-gradient-to-br from-bo-accent to-bo-accent-dark text-white text-[15px] font-bold font-sans shadow-bo-accent transition-transform hover:scale-105"
               >
                 <CameraIcon size={16} color="white" /> 無料で始める
@@ -327,7 +327,7 @@ export default function LandingPage() {
       <section className="py-[60px] px-6 bg-white border-t border-b border-bo-parchment">
         <div className="max-w-[700px] mx-auto grid grid-cols-3 gap-6 text-center">
           {[
-            { n: 80, suffix: "種", label: "有効成分" },
+            { n: 400, suffix: "種+", label: "美容成分" },
             { n: 12, suffix: "種", label: "コスメカテゴリ" },
             { n: 6, suffix: "軸", label: "効果カテゴリ" },
           ].map((s, i) => (
@@ -511,7 +511,7 @@ export default function LandingPage() {
               無料で使えます。まずは手元の化粧品をスキャンしてみてください。
             </p>
             <Link
-              href="/auth/login"
+              href="/auth/invite"
               className="inline-flex items-center gap-2 px-10 py-4 rounded-2xl bg-gradient-to-br from-bo-accent to-bo-accent-dark text-white text-base font-bold font-sans shadow-bo-accent transition-transform hover:scale-105"
             >
               <CameraIcon size={18} color="white" /> 無料で始める
