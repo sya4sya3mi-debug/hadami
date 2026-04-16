@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import { useRouter } from "next/navigation";
 import ScrollToTop from "@/components/ui/ScrollToTop";
 import { useDeckStore } from "@/stores/useDeckStore";
 import { useProductStore } from "@/stores/useProductStore";
@@ -34,6 +35,7 @@ export default function DeckPage() {
   const [showAutoRecommend, setShowAutoRecommend] = useState(false);
   const [autoResult, setAutoResult] = useState<RecommendationResult | null>(null);
   const { user, supabase, loading } = useUser();
+  const router = useRouter();
 
   const routine = DECK_OPTIONS[deckIndex].key;
 
@@ -241,8 +243,7 @@ export default function DeckPage() {
                 href="/routine"
                 onClick={(e) => {
                   e.preventDefault();
-                  window.history.pushState({}, "", "/routine");
-                  window.dispatchEvent(new PopStateEvent("popstate"));
+                  router.push("/routine");
                 }}
                 className="w-full mt-3 py-3.5 rounded-r2 text-sm font-bold font-sans cursor-pointer
                            flex items-center justify-center gap-2
@@ -264,8 +265,7 @@ export default function DeckPage() {
                 href="/routine"
                 onClick={(e) => {
                   e.preventDefault();
-                  window.history.pushState({}, "", "/routine");
-                  window.dispatchEvent(new PopStateEvent("popstate"));
+                  router.push("/routine");
                 }}
                 className="w-full mt-6 py-3.5 rounded-r2 text-sm font-bold font-sans cursor-pointer
                            flex items-center justify-center gap-2
