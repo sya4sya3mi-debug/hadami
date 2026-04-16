@@ -25,6 +25,9 @@ export default function BottomSheet({
   height,
 }: BottomSheetProps) {
   const contentRef = useRef<HTMLDivElement>(null);
+  const sheetRef = useRef<HTMLDivElement>(null);
+  const dragStartY = useRef<number | null>(null);
+  const dragCurrentY = useRef<number>(0);
 
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
@@ -45,27 +48,64 @@ export default function BottomSheet({
     };
   }, [open, handleKeyDown]);
 
+  // Swipe-to-close on the drag handle
+  const handleDragHandleTouchStart = useCallback((e: React.TouchEvent) => {
+    dragStartY.current = e.touches[0].clientY;
+    dragCurrentY.current = 0;
+    if (sheetRef.current) {
+      sheetRef.current.style.transition = "none";
+    }
+  }, []);
+
+  const handleDragHandleTouchMove = useCallback((e: React.TouchEvent) => {
+    if (dragStartY.current === null) return;
+    const delta = e.touches[0].clientY - dragStartY.current;
+    if (delta > 0) {
+      dragCurrentY.current = delta;
+      if (sheetRef.current) {
+        sheetRef.current.style.transform = `translateY(${delta}px)`;
+      }
+    }
+  }, []);
+
+  const handleDragHandleTouchEnd = useCallback(() => {
+    if (dragStartY.current === null) return;
+    dragStartY.current = null;
+    if (sheetRef.current) {
+      sheetRef.current.style.transition = "";
+      sheetRef.current.style.transform = "";
+    }
+    if (dragCurrentY.current > 80) {
+      onClose();
+    }
+    dragCurrentY.current = 0;
+  }, [onClose]);
+
   if (!open) return null;
 
   return (
     <div className="fixed inset-0 z-[300] flex justify-center" style={{ touchAction: "none" }}>
       {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-black/50 animate-fade-in"
+        className="absolute inset-0 bg-black/40 animate-fade-in"
         onClick={onClose}
       />
       {/* Sheet */}
       <div
+        ref={sheetRef}
         className="absolute bottom-0 w-full bg-white rounded-t-3xl animate-slide-up flex flex-col"
-        style={{ maxHeight, height, maxWidth: "var(--app-shell-max-width, 430px)" }}
+        style={{ maxHeight, height, maxWidth: "var(--app-shell-max-width, 430px)", transition: "transform 0.3s ease" }}
       >
         {/* Drag handle + header */}
         <div
-          className="shrink-0 px-6 pt-3 pb-4"
+          className="shrink-0 px-6 pt-3 pb-4 cursor-grab active:cursor-grabbing"
           style={{ borderBottom: title ? "1px solid #e0e0e0" : undefined }}
+          onTouchStart={handleDragHandleTouchStart}
+          onTouchMove={handleDragHandleTouchMove}
+          onTouchEnd={handleDragHandleTouchEnd}
         >
           <div className="flex justify-center mb-3">
-            <div className="w-10 h-1 rounded-full bg-bo-parchment" />
+            <div className="w-10 h-1.5 rounded-full bg-gray-200" />
           </div>
           {title && (
             <div className="flex justify-between items-center">

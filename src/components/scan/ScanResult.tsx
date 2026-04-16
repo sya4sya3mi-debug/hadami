@@ -135,7 +135,7 @@ export default function ScanResult({
           <div className="flex items-center justify-center gap-3 mt-4 pt-4 border-t border-bo-parchment dark:border-gray-700">
             <div className="flex-1 text-center">
               <div className="text-lg font-black text-bo-accent font-sans">{activeIngredients.length}</div>
-              <div className="text-[10px] text-bo-ink-muted dark:text-gray-400 font-sans mt-0.5">有効成分</div>
+              <div className="text-[10px] text-bo-ink-muted dark:text-gray-400 font-sans mt-0.5">美容成分</div>
             </div>
             {otherIngredients.length > 0 && (
               <div className="flex-1 text-center border-l border-bo-parchment dark:border-gray-700">
@@ -184,7 +184,7 @@ export default function ScanResult({
       <div>
         <h3 className="font-bold text-sm mb-3 flex items-center gap-2 text-bo-ink dark:text-white font-sans">
           <span className="w-1.5 h-5 rounded-full inline-block bg-bo-accent" />
-          有効成分（図鑑登録対象）
+          美容成分（図鑑登録対象）
         </h3>
 
         {activeIngredients.length > 8 ? (
@@ -259,7 +259,7 @@ export default function ScanResult({
         {activeIngredients.length === 0 && (
           <div className="text-center py-10 rounded-r2 bg-white shadow-bo1">
             <div className="text-3xl mb-3">🔍</div>
-            <p className="text-sm text-bo-ink-muted font-sans">有効成分が検出されませんでした</p>
+            <p className="text-sm text-bo-ink-muted font-sans">美容成分が検出されませんでした</p>
           </div>
         )}
       </div>
@@ -372,11 +372,23 @@ export default function ScanResult({
         <div className="fixed left-0 right-0 z-40 bottom-0 px-4 pt-3 pb-[calc(8px+env(safe-area-inset-bottom)+56px)]
                         bg-white/95 backdrop-blur-xl border-t border-bo-parchment/60 shadow-[0_-4px_20px_rgba(0,0,0,0.06)]">
           <div className="animate-fade-up flex gap-2">
+            <Link
+              href="/history"
+              className="flex-1 py-3.5 rounded-r2 font-bold text-sm font-sans text-center
+                         bg-bo-accent text-white shadow-bo-accent no-underline pressable
+                         flex items-center justify-center gap-1.5"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                <rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/>
+              </svg>
+              マイコスメ一覧
+            </Link>
             <button
               onClick={onScanAnother}
-              className="flex-1 py-3.5 rounded-r2 font-bold text-sm font-sans border-none cursor-pointer
-                         bg-bo-accent text-white shadow-bo-accent pressable
+              className="py-3.5 px-4 rounded-r2 font-bold text-sm font-sans border-none cursor-pointer
+                         bg-white shadow-bo1 pressable
                          flex items-center justify-center gap-1.5"
+              style={{ color: "#3A8F7A" }}
             >
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
                 <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
@@ -388,8 +400,7 @@ export default function ScanResult({
               onClick={handleShare}
               className="py-3.5 px-4 rounded-r2 font-bold text-sm font-sans border-none cursor-pointer
                          bg-white shadow-bo1 pressable
-                         flex items-center justify-center gap-1.5"
-              style={{ color: "#3A8F7A" }}
+                         flex items-center justify-center gap-1.5 text-bo-ink-muted"
             >
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/>
@@ -398,17 +409,6 @@ export default function ScanResult({
               </svg>
               シェア
             </button>
-            <Link
-              href="/history"
-              className="py-3.5 px-4 rounded-r2 font-bold text-sm font-sans text-center
-                         bg-white text-bo-ink-muted shadow-bo1 no-underline pressable
-                         flex items-center justify-center gap-1.5"
-            >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-                <rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/>
-              </svg>
-              <span style={{ color: "#9B9B9B" }}>一覧</span>
-            </Link>
           </div>
         </div>
       )}

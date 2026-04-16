@@ -57,6 +57,7 @@ export default function HistoryPage() {
   const captureRef = useRef<HTMLDivElement>(null);
   const [shareProduct, setShareProduct] = useState<Product | null>(null);
   const [shareImageBase64, setShareImageBase64] = useState<string | undefined>(undefined);
+  const [failedImageIds, setFailedImageIds] = useState<Set<string>>(new Set());
 
   const { favCount, filtered, activeGenres } = useMemo(() => {
     const displayGenres = ["toner", "serum", "emulsion", "cream", "sunscreen", "mask_pack"];
@@ -119,7 +120,6 @@ export default function HistoryPage() {
     reader.readAsDataURL(file);
   };
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const handleDeleteImage = async (productId: string) => {
     if (!user) return;
     if (!window.confirm("このコスメの写真を削除しますか？")) return;
@@ -373,12 +373,39 @@ export default function HistoryPage() {
                         )}
                         <div>
                           <div className="relative aspect-square overflow-hidden">
-                            {p.packageImage ? (
-                              <Image src={p.packageImageThumb ?? p.packageImage} alt={p.name} fill className="object-cover" sizes="(max-width:430px) 50vw, 200px" loading="lazy" />
+                            {p.packageImage && !failedImageIds.has(p.id) ? (
+                              <Image
+                                src={p.packageImageThumb ?? p.packageImage}
+                                alt={p.name}
+                                fill
+                                className="object-cover"
+                                sizes="(max-width:430px) 50vw, 200px"
+                                loading="lazy"
+                                onError={() => setFailedImageIds((prev) => new Set(prev).add(p.id))}
+                              />
                             ) : (
                               <div className="w-full h-full bg-gradient-to-br from-bo-accent-soft to-bo-parchment flex items-center justify-center">
                                 {genre ? <ProductGenreIcon genre={genre.key} size={36} /> : <span className="text-3xl">📦</span>}
                               </div>
+                            )}
+                            {editMode && p.packageImage && !failedImageIds.has(p.id) && (
+                              <button
+                                onClick={(e) => { e.stopPropagation(); handleDeleteImage(p.id); }}
+                                disabled={deletingImageId === p.id}
+                                className="absolute top-2 right-2 w-8 h-8 rounded-[10px] bg-red-500/90 backdrop-blur-lg
+                                           flex items-center justify-center border-none cursor-pointer p-0 pressable shadow-bo1"
+                                title="写真を削除"
+                              >
+                                {deletingImageId === p.id ? (
+                                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" className="animate-spin">
+                                    <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
+                                  </svg>
+                                ) : (
+                                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round">
+                                    <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+                                  </svg>
+                                )}
+                              </button>
                             )}
                             {!editMode && (
                               <div className="absolute top-2 right-2 flex flex-col gap-1.5">
