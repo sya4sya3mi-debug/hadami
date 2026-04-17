@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition, useCallback } from "react";
+import { useState, useTransition, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import RoutineShareCard from "./RoutineShareCard";
 import { saveRoutineAction, deleteRoutineAction } from "@/app/actions/routineActions";
@@ -60,9 +60,43 @@ export default function RoutineSharePageClient({ routine }: { routine: Routine }
     }))
   );
   const [activeTab, setActiveTab] = useState<"am" | "pm">("am");
+  // R2相対パス → 署名付きURL のキャッシュ
+  const [resolvedImages, setResolvedImages] = useState<Record<string, string>>({});
 
   const currentSteps = activeTab === "am" ? amSteps : pmSteps;
   const setCurrentSteps = activeTab === "am" ? setAmSteps : setPmSteps;
+
+  // R2パスを署名付きURLに解決
+  useEffect(() => {
+    const allSteps = [...amSteps, ...pmSteps];
+    const paths = allSteps
+      .map((s) => s.product_image_url)
+      .filter((p): p is string => !!p && !p.startsWith("http") && !p.startsWith("/"));
+
+    if (paths.length === 0) return;
+
+    fetch("/api/signed-url", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ keys: paths }),
+    })
+      .then((r) => r.ok ? r.json() : { urls: {} })
+      .then((data) => {
+        if (data.urls) setResolvedImages((prev) => ({ ...prev, ...data.urls }));
+      })
+      .catch(() => {});
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  /** ステップのproduct_image_urlを解決済みURLに置き換えて渡す */
+  function resolveSteps(steps: StepDraft[]) {
+    return steps.map((s) => ({
+      ...s,
+      product_image_url: s.product_image_url
+        ? (resolvedImages[s.product_image_url] ?? (s.product_image_url.startsWith("http") ? s.product_image_url : ""))
+        : "",
+    }));
+  }
 
   const updateConfig = useCallback(
     (patch: Partial<RoutineCardConfig>) => setConfig((c) => ({ ...c, ...patch })),
@@ -384,8 +418,8 @@ export default function RoutineSharePageClient({ routine }: { routine: Routine }
           <div className="flex justify-center">
             <RoutineShareCard
               config={config}
-              amSteps={amSteps.filter((s) => s.step_name.trim())}
-              pmSteps={pmSteps.filter((s) => s.step_name.trim())}
+              amSteps={resolveSteps(amSteps.filter((s) => s.step_name.trim()))}
+              pmSteps={resolveSteps(pmSteps.filter((s) => s.step_name.trim()))}
             />
           </div>
         </div>
