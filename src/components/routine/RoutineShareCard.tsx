@@ -6,6 +6,8 @@ type StepItem = {
   icon: string;
   step_name: string;
   product_name?: string | null;
+  brand?: string | null;
+  product_image_url?: string | null;
 };
 
 type Props = {
@@ -134,7 +136,6 @@ export default function RoutineShareCard({ config, amSteps, pmSteps }: Props) {
           textMain={textMain}
           textSub={textSub}
           borderColor={borderColor}
-
         />
         <StepColumn
           label="Night"
@@ -145,7 +146,6 @@ export default function RoutineShareCard({ config, amSteps, pmSteps }: Props) {
           textMain={textMain}
           textSub={textSub}
           borderColor={borderColor}
-
         />
       </div>
 
@@ -207,7 +207,7 @@ function StepColumn({
   borderColor: string;
 }) {
   return (
-    <div style={{ flex: 1 }}>
+    <div style={{ flex: 1, minWidth: 0 }}>
       <div
         style={{
           fontSize: 12,
@@ -221,22 +221,9 @@ function StepColumn({
       >
         {emoji} {label}
       </div>
-      <div
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          gap: 6,
-        }}
-      >
+      <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
         {steps.length === 0 ? (
-          <div
-            style={{
-              fontSize: 12,
-              color: textSub,
-              opacity: 0.5,
-              padding: "8px 0",
-            }}
-          >
+          <div style={{ fontSize: 12, color: textSub, opacity: 0.5, padding: "8px 0" }}>
             未設定
           </div>
         ) : (
@@ -246,41 +233,65 @@ function StepColumn({
               style={{
                 display: "flex",
                 alignItems: "center",
-                gap: 8,
+                gap: 7,
                 background: cardBg,
                 borderRadius: 10,
-                padding: "8px 10px",
+                padding: "7px 8px",
                 border: `1px solid ${borderColor}`,
+                minWidth: 0,
               }}
             >
-              <span style={{ fontSize: 16 }}>{s.icon}</span>
-              <div style={{ minWidth: 0 }}>
+              {/* アイコン */}
+              <span style={{ fontSize: 14, flexShrink: 0 }}>{s.icon}</span>
+
+              {/* テキスト部分 */}
+              <div style={{ flex: 1, minWidth: 0 }}>
                 <div
                   style={{
-                    fontSize: 12,
+                    fontSize: 11,
                     fontWeight: 600,
                     color: textMain,
-                    whiteSpace: "nowrap",
                     overflow: "hidden",
                     textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
                   }}
                 >
                   {s.step_name}
                 </div>
-                {s.product_name && (
+                {(s.brand || s.product_name) && (
                   <div
                     style={{
-                      fontSize: 10,
+                      fontSize: 9,
                       color: textSub,
-                      whiteSpace: "nowrap",
                       overflow: "hidden",
                       textOverflow: "ellipsis",
+                      whiteSpace: "nowrap",
+                      lineHeight: 1.4,
                     }}
                   >
+                    {s.brand && <span style={{ opacity: 0.8 }}>{s.brand} · </span>}
                     {s.product_name}
                   </div>
                 )}
               </div>
+
+              {/* 商品画像サムネイル */}
+              {s.product_image_url && (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={s.product_image_url}
+                  alt=""
+                  style={{
+                    width: 28,
+                    height: 28,
+                    objectFit: "contain",
+                    borderRadius: 6,
+                    flexShrink: 0,
+                    background: "rgba(255,255,255,0.5)",
+                    border: `1px solid ${borderColor}`,
+                  }}
+                />
+              )}
             </div>
           ))
         )}

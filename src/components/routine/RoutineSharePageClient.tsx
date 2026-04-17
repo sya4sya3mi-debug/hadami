@@ -26,7 +26,13 @@ const ACCENT_COLORS = [
 ];
 const STEP_ICONS = ["🌿", "💧", "✨", "🧴", "🌸", "🫧", "☁️", "🍃", "💎", "🌊"];
 
-type StepDraft = { icon: string; step_name: string; product_name: string };
+type StepDraft = {
+  icon: string;
+  step_name: string;
+  product_name: string;
+  brand: string;
+  product_image_url: string;
+};
 
 export default function RoutineSharePageClient({ routine }: { routine: Routine }) {
   const router = useRouter();
@@ -40,6 +46,8 @@ export default function RoutineSharePageClient({ routine }: { routine: Routine }
       icon: s.icon,
       step_name: s.step_name,
       product_name: s.product_name ?? "",
+      brand: s.product?.brand ?? "",
+      product_image_url: s.product?.package_image_url ?? "",
     }))
   );
   const [pmSteps, setPmSteps] = useState<StepDraft[]>(() =>
@@ -47,6 +55,8 @@ export default function RoutineSharePageClient({ routine }: { routine: Routine }
       icon: s.icon,
       step_name: s.step_name,
       product_name: s.product_name ?? "",
+      brand: s.product?.brand ?? "",
+      product_image_url: s.product?.package_image_url ?? "",
     }))
   );
   const [activeTab, setActiveTab] = useState<"am" | "pm">("am");
@@ -60,7 +70,10 @@ export default function RoutineSharePageClient({ routine }: { routine: Routine }
   );
 
   const addStep = () => {
-    setCurrentSteps((prev) => [...prev, { icon: "🌿", step_name: "", product_name: "" }]);
+    setCurrentSteps((prev) => [
+      ...prev,
+      { icon: "🌿", step_name: "", product_name: "", brand: "", product_image_url: "" },
+    ]);
   };
 
   const removeStep = (i: number) => {

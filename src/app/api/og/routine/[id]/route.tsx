@@ -10,6 +10,8 @@ type Step = {
   icon: string;
   step_name: string;
   product_name: string | null;
+  brand: string | null;
+  package_image_url: string | null;
   time_of_day: string;
   step_order: number;
 };
@@ -28,11 +30,16 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
 
     const { data: steps } = await supabase
       .from("routine_steps")
-      .select("icon, step_name, product_name, time_of_day, step_order")
+      .select("icon, step_name, product_name, time_of_day, step_order, product:products(brand, package_image_url)")
       .eq("routine_id", params.id)
       .order("step_order", { ascending: true });
 
-    const allSteps = (steps ?? []) as Step[];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const allSteps = (steps ?? []).map((s: any) => ({
+      ...s,
+      brand: s.product?.brand ?? null,
+      package_image_url: s.product?.package_image_url ?? null,
+    })) as Step[];
     const amSteps = allSteps.filter((s) => s.time_of_day === "am").slice(0, 5);
     const pmSteps = allSteps.filter((s) => s.time_of_day === "pm").slice(0, 5);
     const concerns = (routine.concerns as string[]) ?? [];
@@ -172,19 +179,37 @@ function StepCol({ label, steps }: { label: string; steps: Step[] }) {
                 gap: 12,
                 background: "rgba(255,255,255,0.85)",
                 borderRadius: 14,
-                padding: "10px 16px",
+                padding: "10px 14px",
                 border: "1px solid rgba(0,0,0,0.06)",
               }}
             >
-              <span style={{ fontSize: 24 }}>{s.icon}</span>
-              <div style={{ display: "flex", flexDirection: "column" }}>
-                <span style={{ fontSize: 16, fontWeight: 600, color: "#1a2e28" }}>
+              <span style={{ fontSize: 22, flexShrink: 0 }}>{s.icon}</span>
+              <div style={{ display: "flex", flexDirection: "column", flex: 1, minWidth: 0 }}>
+                <span style={{ fontSize: 15, fontWeight: 600, color: "#1a2e28" }}>
                   {s.step_name}
                 </span>
-                {s.product_name && (
-                  <span style={{ fontSize: 12, color: "#5a7a70" }}>{s.product_name}</span>
+                {(s.brand || s.product_name) && (
+                  <span style={{ fontSize: 11, color: "#5a7a70" }}>
+                    {s.brand ? `${s.brand}` : ""}{s.brand && s.product_name ? " · " : ""}{s.product_name ?? ""}
+                  </span>
                 )}
               </div>
+              {s.package_image_url && (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={s.package_image_url}
+                  alt=""
+                  width={36}
+                  height={36}
+                  style={{
+                    objectFit: "contain",
+                    borderRadius: 8,
+                    flexShrink: 0,
+                    background: "rgba(255,255,255,0.8)",
+                    border: "1px solid rgba(0,0,0,0.06)",
+                  }}
+                />
+              )}
             </div>
           ))
         )}
