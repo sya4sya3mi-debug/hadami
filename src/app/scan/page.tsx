@@ -47,6 +47,8 @@ interface ScannedProduct {
   ingredients: string;
   isQuasiDrug?: boolean;
   activeIngredients?: string[];
+  resolveToken?: string;
+  requiresResolve?: boolean;
 }
 
 export default function ScanPage() {
@@ -74,6 +76,7 @@ function ScanPageInner() {
   // Multi-product (Step 2)
   const [multiProducts, setMultiProducts] = useState<ScannedProduct[]>([]);
   const [multiSavedIndexes, setMultiSavedIndexes] = useState<Set<number>>(new Set());
+  const [multiResolvingIndexes, setMultiResolvingIndexes] = useState<Set<number>>(new Set());
   const [showMultiSheet, setShowMultiSheet] = useState(false);
 
   // Product info (Step 3)
@@ -295,6 +298,86 @@ function ScanPageInner() {
     return true;
   }, [user, supabase, monthlyScanLimit]);
 
+  const buildEvidenceMap = useCallback(
+    (products: ScannedProduct[]) =>
+      Object.fromEntries(
+        products.map((product) => [
+          buildScanEvidenceKey(product.productName || "", product.brand || ""),
+          {
+            isQuasiDrug: product.isQuasiDrug,
+            activeIngredients: product.activeIngredients,
+          },
+        ])
+      ),
+    [buildScanEvidenceKey]
+  );
+
+  const resolveSelectedProduct = useCallback(
+    async (product: ScannedProduct, index?: number) => {
+      if (!product.requiresResolve || product.ingredients) {
+        return product;
+      }
+
+      if (!product.resolveToken) {
+        throw new Error("Missing resolve token");
+      }
+
+      if (typeof index === "number") {
+        setMultiResolvingIndexes((prev) => new Set(prev).add(index));
+      }
+
+      try {
+        const res = await fetch("/api/scan-product", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            productName: product.productName,
+            brand: product.brand,
+            productType: product.productType,
+            resolveToken: product.resolveToken,
+          }),
+        });
+
+        if (!res.ok) {
+          throw new Error("Resolve API error");
+        }
+
+        const resolved = (await res.json()) as ScannedProduct;
+        const nextProduct: ScannedProduct = {
+          ...product,
+          ...resolved,
+          requiresResolve: false,
+        };
+
+        if (typeof index === "number") {
+          setMultiProducts((prev) =>
+            prev.map((item, itemIndex) =>
+              itemIndex === index ? nextProduct : item
+            )
+          );
+        }
+
+        const nextEvidenceMap = {
+          ...scanEvidenceRef.current,
+          ...buildEvidenceMap([nextProduct]),
+        };
+        scanEvidenceRef.current = nextEvidenceMap;
+        setScanEvidenceMap(nextEvidenceMap);
+
+        return nextProduct;
+      } finally {
+        if (typeof index === "number") {
+          setMultiResolvingIndexes((prev) => {
+            const next = new Set(prev);
+            next.delete(index);
+            return next;
+          });
+        }
+      }
+    },
+    [buildEvidenceMap]
+  );
+
   // Step 1 → Step 2: パッケージ撮影 → ネット検索
   const handlePackageCapture = useCallback(
     async (imageData: string, colorImage?: string) => {
@@ -335,17 +418,18 @@ function ScanPageInner() {
         if (!res.ok) throw new Error("API error");
         const data = await res.json();
         const products: ScannedProduct[] = data.products || [data];
-        const nextEvidenceMap = Object.fromEntries(
-          products.map((product) => [
-            buildScanEvidenceKey(product.productName || "", product.brand || ""),
-            {
-              isQuasiDrug: product.isQuasiDrug,
-              activeIngredients: product.activeIngredients,
-            },
-          ])
-        );
+        const nextEvidenceMap = buildEvidenceMap(products);
         scanEvidenceRef.current = nextEvidenceMap;
         setScanEvidenceMap(nextEvidenceMap);
+
+        if (data.needsSelection) {
+          setMultiProducts(products);
+          setProgress(100);
+          setProgressMsg("見つかったコスメを選んでください");
+          setTimeout(() => setShowMultiSheet(true), 300);
+          return;
+        }
+
         const foundProducts = products.filter((p: ScannedProduct) => p.found && p.ingredients);
 
         if (foundProducts.length > 1) {
@@ -385,7 +469,7 @@ function ScanPageInner() {
         setTimeout(() => setShowFallback(true), 1000);
       }
     },
-    [buildScanEvidenceKey, processIngredients, checkScanLimit, user, supabase, userLimit]
+    [buildEvidenceMap, processIngredients, checkScanLimit, user, supabase, userLimit]
   );
 
   // Step 2 fallback: 成分表直接撮影 → OCR
@@ -455,27 +539,41 @@ function ScanPageInner() {
 
   // 複数コスメから1つ選択
   const handleSelectProduct = useCallback(
-    async (product: ScannedProduct) => {
-      setShowMultiSheet(false);
-      setProgress(50);
-      setProgressMsg("成分を照合しています...");
-      setProductType(normalizeGenreFromScan(product.productType || ""));
+    async (product: ScannedProduct, index: number) => {
+      try {
+        setShowMultiSheet(false);
+        setProgress(50);
+        setProgressMsg("成分を照合しています...");
+        const resolvedProduct = await resolveSelectedProduct(product, index);
+        setProductType(normalizeGenreFromScan(resolvedProduct.productType || ""));
 
-      const discoveries = await processIngredients(
-        product.ingredients,
-        product.productName || "スキャンしたコスメ",
-        product.brand || "ブランド不明"
-      );
+        if (!resolvedProduct.ingredients?.trim()) {
+          setProductName(resolvedProduct.productName || "スキャンしたコスメ");
+          setBrand(resolvedProduct.brand || "ブランド不明");
+          setShowFallback(true);
+          return;
+        }
 
-      setProgress(100);
-      setProgressMsg("完了！");
+        const discoveries = await processIngredients(
+          resolvedProduct.ingredients,
+          resolvedProduct.productName || "スキャンしたコスメ",
+          resolvedProduct.brand || "ブランド不明"
+        );
 
-      setTimeout(() => {
-        setStep(3);
-        if (discoveries.length > 0) setShowDiscovery(true);
-      }, 300);
+        setProgress(100);
+        setProgressMsg("完了！");
+
+        setTimeout(() => {
+          setStep(3);
+          if (discoveries.length > 0) setShowDiscovery(true);
+        }, 300);
+      } catch (error) {
+        console.error("Multi-product resolve error:", error);
+        setProgressMsg("成分検索に失敗しました");
+        setTimeout(() => setShowMultiSheet(true), 500);
+      }
     },
-    [processIngredients]
+    [processIngredients, resolveSelectedProduct]
   );
 
   // 複数コスメを一括保存
@@ -483,9 +581,12 @@ function ScanPageInner() {
     async (product: ScannedProduct, index: number) => {
       if (!user || multiSavedIndexes.has(index)) return;
 
-      const result0 = await extractIngredients(product.ingredients, {
-        isQuasiDrug: product.isQuasiDrug,
-        ocrActiveNames: product.activeIngredients,
+      const resolvedProduct = await resolveSelectedProduct(product, index);
+      if (!resolvedProduct.ingredients?.trim()) return;
+
+      const result0 = await extractIngredients(resolvedProduct.ingredients, {
+        isQuasiDrug: resolvedProduct.isQuasiDrug,
+        ocrActiveNames: resolvedProduct.activeIngredients,
       });
       const foundIngs = result0.found
         .map((f) => {
@@ -493,16 +594,16 @@ function ScanPageInner() {
           return ingredient ? { ingredient, orderIndex: f.orderIndex } : null;
         })
         .filter((f): f is { ingredient: Ingredient; orderIndex: number } => f !== null);
-      const activeIngredientIds = resolveActiveIngredientIds(product.activeIngredients);
+      const activeIngredientIds = resolveActiveIngredientIds(resolvedProduct.activeIngredients);
 
       const result = await saveProductToDb(supabase, user.id, {
-        name: product.productName,
-        brand: product.brand,
-        productType: normalizeGenreFromScan(product.productType || ""),
+        name: resolvedProduct.productName,
+        brand: resolvedProduct.brand,
+        productType: normalizeGenreFromScan(resolvedProduct.productType || ""),
         ingredientIds: foundIngs.map((f) => f.ingredient.id),
         unknownIngredients: result0.unknown,
         packageImageBase64: packageImageColor || packageImage || undefined,
-        isQuasiDrug: product.isQuasiDrug,
+        isQuasiDrug: resolvedProduct.isQuasiDrug,
         activeIngredientIds,
       });
 
@@ -521,16 +622,16 @@ function ScanPageInner() {
       saveScanHistory(
         supabase,
         user.id,
-        product.productName,
-        product.brand,
+        resolvedProduct.productName,
+        resolvedProduct.brand,
         foundIngs.map((f) => f.ingredient.id)
       ).catch((e) => console.error("scan history save error:", e));
 
       addProduct({
         id: result.productId!,
-        name: product.productName,
-        brand: product.brand,
-        productType: normalizeGenreFromScan(product.productType || ""),
+        name: resolvedProduct.productName,
+        brand: resolvedProduct.brand,
+        productType: normalizeGenreFromScan(resolvedProduct.productType || ""),
         packageImagePath: savedImage.packageImagePath,
         packageImage: savedImage.packageImage,
         packageImageThumbPath: savedImage.packageImageThumbPath,
@@ -538,13 +639,13 @@ function ScanPageInner() {
         isFavorite: false,
         createdAt: new Date().toISOString(),
         ingredients: foundIngs.map((f) => ({ ingredientId: f.ingredient.id, orderIndex: f.orderIndex })),
-        isQuasiDrug: product.isQuasiDrug,
+        isQuasiDrug: resolvedProduct.isQuasiDrug,
         activeIngredientIds,
       });
 
       setMultiSavedIndexes((prev) => new Set(prev).add(index));
     },
-    [user, supabase, addProduct, discover, packageImage, packageImageColor, multiSavedIndexes, resolveActiveIngredientIds, resolveUploadedImage]
+    [user, supabase, addProduct, discover, packageImage, packageImageColor, multiSavedIndexes, resolveActiveIngredientIds, resolveSelectedProduct, resolveUploadedImage]
   );
 
   // Step 3 → Step 4
@@ -660,6 +761,7 @@ function ScanPageInner() {
     scanEvidenceRef.current = {};
     setMultiProducts([]);
     setMultiSavedIndexes(new Set());
+    setMultiResolvingIndexes(new Set());
     setShowFallback(false);
     setShowMultiSheet(false);
     setShowManualSheet(false);
@@ -782,6 +884,7 @@ function ScanPageInner() {
               onSelectProduct={handleSelectProduct}
               onSaveMulti={handleSaveMulti}
               multiSavedIndexes={multiSavedIndexes}
+              multiResolvingIndexes={multiResolvingIndexes}
               showMultiSheet={showMultiSheet}
               onCloseMultiSheet={() => setShowMultiSheet(false)}
             />

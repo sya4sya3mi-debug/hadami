@@ -8,7 +8,7 @@ import dynamic from "next/dynamic";
 const HomePage = dynamic(() => import("@/app/page"), { ssr: false });
 const ZukanPage = dynamic(() => import("@/app/zukan/page"), { ssr: false });
 const ScanPage = dynamic(() => import("@/app/scan/page"), { ssr: false });
-const RoutinePage = dynamic(() => import("@/app/routine/page"), { ssr: false });
+const DeckPage = dynamic(() => import("@/app/deck/page"), { ssr: false });
 const HistoryPage = dynamic(() => import("@/app/history/page"), { ssr: false });
 
 interface TabDef {
@@ -21,7 +21,7 @@ const TABS: TabDef[] = [
   { path: "/", match: (p) => p === "/", Component: HomePage },
   { path: "/zukan", match: (p) => p.startsWith("/zukan"), Component: ZukanPage },
   { path: "/scan", match: (p) => p.startsWith("/scan"), Component: ScanPage },
-  { path: "/routine", match: (p) => p.startsWith("/routine") || p.startsWith("/deck"), Component: RoutinePage },
+  { path: "/deck", match: (p) => p.startsWith("/deck"), Component: DeckPage },
   { path: "/history", match: (p) => p.startsWith("/history"), Component: HistoryPage },
 ];
 

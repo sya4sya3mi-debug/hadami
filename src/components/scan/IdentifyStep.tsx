@@ -9,6 +9,7 @@ interface ScannedProduct {
   productType: string;
   found: boolean;
   ingredients: string;
+  requiresResolve?: boolean;
 }
 
 interface IdentifyStepProps {
@@ -18,9 +19,10 @@ interface IdentifyStepProps {
   showFallback?: boolean;
   onFallbackCapture?: (imageData: string) => void;
   multiProducts?: ScannedProduct[];
-  onSelectProduct?: (product: ScannedProduct) => void;
+  onSelectProduct?: (product: ScannedProduct, index: number) => void;
   onSaveMulti?: (product: ScannedProduct, index: number) => void;
   multiSavedIndexes?: Set<number>;
+  multiResolvingIndexes?: Set<number>;
   showMultiSheet?: boolean;
   onCloseMultiSheet?: () => void;
 }
@@ -64,6 +66,7 @@ export default function IdentifyStep({
   onSelectProduct,
   onSaveMulti,
   multiSavedIndexes,
+  multiResolvingIndexes,
   showMultiSheet,
   onCloseMultiSheet,
 }: IdentifyStepProps) {
@@ -205,6 +208,7 @@ export default function IdentifyStep({
 
             {multiProducts.map((p, i) => {
               const isSaved = multiSavedIndexes?.has(i);
+              const isResolving = multiResolvingIndexes?.has(i);
               return (
                 <div
                   key={i}
@@ -215,22 +219,23 @@ export default function IdentifyStep({
                   <div className="text-xs mt-0.5 text-bo-ink-muted font-sans">{p.brand} · {p.productType}</div>
                   <div className="flex gap-2 mt-3">
                     <button
-                      onClick={() => onSelectProduct?.(p)}
+                      onClick={() => onSelectProduct?.(p, i)}
+                      disabled={isResolving}
                       className="flex-1 py-3 rounded-r1 text-xs font-bold text-white font-sans
                                  bg-bo-accent shadow-bo-accent pressable border-none cursor-pointer"
                     >
-                      詳細を見る
+                      {isResolving ? "検索中..." : "詳細を見る"}
                     </button>
                     <button
                       onClick={() => onSaveMulti?.(p, i)}
-                      disabled={isSaved}
+                      disabled={isSaved || isResolving}
                       className={`flex-1 py-3 rounded-r1 text-xs font-bold font-sans pressable border-none cursor-pointer ${
-                        isSaved
+                        isSaved || isResolving
                           ? "bg-bo-parchment text-bo-ink-muted"
                           : "bg-white text-bo-accent border border-bo-accent/30 shadow-bo1"
                       }`}
                     >
-                      {isSaved ? "✓ 保存済み" : "保存する"}
+                      {isSaved ? "✓ 保存済み" : isResolving ? "検索中..." : "保存する"}
                     </button>
                   </div>
                 </div>

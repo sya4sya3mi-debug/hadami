@@ -306,6 +306,15 @@ export default function DeckPage() {
               >
                 🌿 シェアカードを作成
               </button>
+              <button
+                type="button"
+                onClick={() => router.push("/routine")}
+                className="w-full mt-3 py-3.5 rounded-r2 text-sm font-bold font-sans cursor-pointer
+                           flex items-center justify-center gap-2
+                           border border-bo-parchment bg-white text-bo-ink-soft shadow-bo1 pressable"
+              >
+                📋 マイルーティン一覧
+              </button>
               {isCreatingShareCard && (
                 <p className="mt-2 text-center text-xs text-bo-ink-muted">シェアカードを作成しています...</p>
               )}

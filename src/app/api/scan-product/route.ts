@@ -1,5 +1,6 @@
 import { GoogleGenAI } from "@google/genai";
 import { NextRequest, NextResponse } from "next/server";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { authenticateRequest, validateImagePayload } from "@/lib/apiAuth";
 import {
   tryReserveScan,
@@ -15,6 +16,7 @@ import { MASTER_INGREDIENTS, getIngredientByName, getIngredientByInci } from "@/
 import { resolveActiveIngredient } from "@/lib/mhlwActiveIngredients";
 import { normalizeIngredientName } from "@/lib/normalize";
 import { ocrSpaceExtract } from "@/lib/ocrSpace";
+import { createScanResolveToken, verifyScanResolveToken } from "@/lib/scanResolveToken";
 
 const client = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 const IDENTIFY_MODEL = process.env.GEMINI_IDENTIFY_MODEL || "gemini-2.5-flash-lite";
@@ -230,6 +232,33 @@ interface SearchResult {
   matchedIngredientIds: string[];
 }
 
+interface ResolvedScanProduct extends SearchResult {
+  productName: string;
+  brand: string;
+  productType: string;
+}
+
+function extractJsonObject(text: string): string | null {
+  const candidates = [
+    text.match(/```json\s*([\s\S]*?)```/i)?.[1],
+    text.match(/```\s*([\s\S]*?)```/)?.[1],
+    text.match(/\{[\s\S]*\}/)?.[0],
+    text,
+  ];
+
+  for (const candidate of candidates) {
+    if (!candidate) continue;
+    try {
+      JSON.parse(candidate);
+      return candidate;
+    } catch {
+      // Try the next extraction strategy.
+    }
+  }
+
+  return null;
+}
+
 /** STEP 2a: Gemini + Google Search で生の全成分テキストを取得 */
 async function fetchRawIngredients(
   query: string,
@@ -276,10 +305,10 @@ async function fetchRawIngredients(
     const text = response.text ?? "";
     console.log("[scan-product] raw search result:", text.slice(0, 1000));
 
-    const jsonMatch = text.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) return null;
+    const jsonText = extractJsonObject(text);
+    if (!jsonText) return null;
 
-    const parsed = JSON.parse(jsonMatch[0]);
+    const parsed = JSON.parse(jsonText);
     const rawText = typeof parsed.full_ingredients === "string" ? parsed.full_ingredients : "";
     const isQuasiDrug = parsed.is_quasi_drug === true;
     const activeNames: string[] = Array.isArray(parsed.active_ingredients)
@@ -291,6 +320,62 @@ async function fetchRawIngredients(
     console.warn("[scan-product] fetchRawIngredients failed:", error);
     return null;
   }
+}
+
+async function resolveScannedProduct(
+  supabase: SupabaseClient,
+  identified: IdentifiedProduct,
+): Promise<ResolvedScanProduct> {
+  const cached = await lookupIngredientCacheFull(
+    supabase,
+    identified.product,
+    identified.brand,
+  );
+
+  if (cached?.ingredients) {
+    console.log("[scan-product] cache HIT:", identified.product);
+    const activeNames = (cached.activeIngredients || "")
+      .split(",")
+      .map((v) => v.trim())
+      .filter(Boolean);
+    const { ingredientIds } = matchIngredientsLocally(cached.ingredients);
+
+    return {
+      productName: identified.product,
+      brand: identified.brand,
+      productType: identified.type,
+      found: true,
+      ingredients: cached.ingredients,
+      isQuasiDrug: cached.isQuasiDrug ?? false,
+      activeIngredients: activeNames,
+      matchedIngredientIds: ingredientIds,
+    };
+  }
+
+  console.log("[scan-product] cache MISS, searching:", identified.product);
+  const searchResult = await searchKeyIngredients(identified.product, identified.brand);
+
+  if (searchResult.found) {
+    await saveIngredientCache(
+      supabase,
+      identified.product,
+      identified.brand,
+      searchResult.ingredients,
+      searchResult.isQuasiDrug,
+      searchResult.activeIngredients.join(", "),
+    );
+  }
+
+  return {
+    productName: identified.product,
+    brand: identified.brand,
+    productType: identified.type,
+    found: searchResult.found,
+    ingredients: searchResult.ingredients,
+    isQuasiDrug: searchResult.isQuasiDrug,
+    activeIngredients: searchResult.activeIngredients,
+    matchedIngredientIds: searchResult.matchedIngredientIds,
+  };
 }
 
 async function searchKeyIngredients(
@@ -362,11 +447,60 @@ export async function POST(req: NextRequest) {
   }
 
   // 4. ペイロード検証
-  let body: { imageBase64?: unknown; enhancedBase64?: unknown };
+  let body: {
+    imageBase64?: unknown;
+    enhancedBase64?: unknown;
+    productName?: unknown;
+    brand?: unknown;
+    productType?: unknown;
+    resolveToken?: unknown;
+  };
   try {
     body = await req.json();
   } catch {
     return NextResponse.json({ error: "不正なリクエストです。" }, { status: 400 });
+  }
+
+  if (
+    typeof body.resolveToken === "string" &&
+    typeof body.productName === "string" &&
+    typeof body.brand === "string" &&
+    typeof body.productType === "string"
+  ) {
+    const productName = body.productName.trim();
+    const brand = body.brand.trim();
+    const productType = body.productType.trim() || "other";
+
+    if (!productName && !brand) {
+      return NextResponse.json({ error: "Missing product to resolve" }, { status: 400 });
+    }
+
+    if (
+      !verifyScanResolveToken(body.resolveToken, {
+        userId: auth.user.id,
+        productName,
+        brand,
+        productType,
+      })
+    ) {
+      return NextResponse.json({ error: "Invalid resolve token" }, { status: 403 });
+    }
+
+    try {
+      const resolved = await resolveScannedProduct(auth.supabase, {
+        product: productName,
+        brand,
+        type: productType,
+        lang: "ja",
+      });
+      return NextResponse.json(resolved);
+    } catch (error) {
+      console.error(
+        "Resolve scan product error:",
+        error instanceof Error ? error.message : error,
+      );
+      return NextResponse.json({ error: "Failed to resolve product" }, { status: 500 });
+    }
   }
 
   const validation = validateImagePayload(body);
@@ -407,67 +541,46 @@ export async function POST(req: NextRequest) {
     }
 
     // ── STEP 2: 各製品の成分検索 ──
-    const results = await Promise.all(
-      identifiedProducts.map(async (identified) => {
-        // STEP 1.5: キャッシュ確認（無条件信頼）
-        const cached = await lookupIngredientCacheFull(
-          auth.supabase,
-          identified.product,
-          identified.brand,
-        );
-
-        if (cached?.ingredients) {
-          console.log("[scan-product] cache HIT:", identified.product);
-          const activeNames = (cached.activeIngredients || "")
-            .split(",")
-            .map((v) => v.trim())
-            .filter(Boolean);
-          const { ingredientIds } = resolveIngredientNames(
-            cached.ingredients.split(",").map((v) => v.trim()).filter(Boolean),
-          );
-
-          return {
-            productName: identified.product,
-            brand: identified.brand,
-            productType: identified.type,
-            found: true,
-            ingredients: cached.ingredients,
-            isQuasiDrug: cached.isQuasiDrug ?? false,
-            activeIngredients: activeNames,
-            matchedIngredientIds: ingredientIds,
-          };
-        }
-
-        // キャッシュMISS → Gemini + Google Search
-        console.log("[scan-product] cache MISS, searching:", identified.product);
-        const searchResult = await searchKeyIngredients(identified.product, identified.brand);
-
-        // 成分が見つかったらキャッシュ保存
-        if (searchResult.found) {
-          await saveIngredientCache(
-            auth.supabase,
-            identified.product,
-            identified.brand,
-            searchResult.ingredients,
-            searchResult.isQuasiDrug,
-            searchResult.activeIngredients.join(", "),
-          );
-        }
+    if (identifiedProducts.length > 1) {
+      const unresolvedProducts = identifiedProducts.map((identified) => {
+        const productName = identified.product.trim();
+        const brand = identified.brand.trim();
+        const productType = identified.type.trim() || "other";
 
         return {
-          productName: identified.product,
-          brand: identified.brand,
-          productType: identified.type,
-          found: searchResult.found,
-          ingredients: searchResult.ingredients,
-          isQuasiDrug: searchResult.isQuasiDrug,
-          activeIngredients: searchResult.activeIngredients,
-          matchedIngredientIds: searchResult.matchedIngredientIds,
+          productName,
+          brand,
+          productType,
+          found: false,
+          ingredients: "",
+          isQuasiDrug: false,
+          activeIngredients: [] as string[],
+          matchedIngredientIds: [] as string[],
+          requiresResolve: true,
+          resolveToken: createScanResolveToken({
+            userId: auth.user.id,
+            productName,
+            brand,
+            productType,
+          }),
         };
-      }),
-    );
+      });
 
-    const first = results[0];
+      const first = unresolvedProducts[0];
+      return NextResponse.json({
+        productName: first?.productName || "",
+        brand: first?.brand || "",
+        productType: first?.productType || "other",
+        found: false,
+        ingredients: "",
+        isQuasiDrug: false,
+        activeIngredients: [],
+        needsSelection: true,
+        products: unresolvedProducts,
+      });
+    }
+
+    const first = await resolveScannedProduct(auth.supabase, identifiedProducts[0]);
     return NextResponse.json({
       productName: first.productName,
       brand: first.brand,
@@ -476,7 +589,8 @@ export async function POST(req: NextRequest) {
       ingredients: first.ingredients,
       isQuasiDrug: first.isQuasiDrug,
       activeIngredients: first.activeIngredients,
-      products: results,
+      needsSelection: false,
+      products: [first],
     });
   } catch (error) {
     console.error("Scan product error:", error instanceof Error ? error.message : error);

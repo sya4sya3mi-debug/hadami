@@ -56,7 +56,7 @@ const TABS = [
     ),
   },
   {
-    href: "/routine",
+    href: "/deck",
     label: "ルーティン",
     ariaLabel: "スキンケアルーティンを編集",
     center: false,
@@ -139,8 +139,8 @@ export default function TabBar() {
           const isActive =
             tab.href === "/"
               ? pathname === "/"
-              : tab.href === "/routine"
-              ? pathname.startsWith("/routine") || pathname.startsWith("/deck")
+              : tab.href === "/deck"
+              ? pathname.startsWith("/deck") || pathname.startsWith("/routine")
               : pathname.startsWith(tab.href);
 
           // Center scan button — raised circle
