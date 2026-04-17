@@ -154,7 +154,7 @@ export default function ProductDetailPage() {
               <div className="flex items-center gap-2 mb-4">
                 <span className="w-1.5 h-5 rounded-full bg-bo-accent inline-block" />
                 <span className="text-base font-bold text-bo-ink font-sans">
-                  有効成分
+                  美容成分
                 </span>
                 <span className="text-xs text-bo-ink-muted font-sans">
                   {activeIngredients.length}種
@@ -172,18 +172,15 @@ export default function ProductDetailPage() {
                       className="flex items-center gap-3 py-3 px-3.5 bg-white rounded-r2 shadow-bo1 cursor-pointer text-left w-full
                                  border-none pressable"
                     >
-                      {catInfo ? (
-                        <div
-                          className="w-9 h-9 rounded-[10px] flex items-center justify-center shrink-0"
-                          style={{ background: catInfo.color + "15", color: catInfo.color }}
-                        >
-                          <ActiveCategoryIcon category={catInfo.key} size={16} />
-                        </div>
-                      ) : (
-                        <div className="w-9 h-9 rounded-[10px] flex items-center justify-center shrink-0 bg-bo-parchment">
-                          <span className="text-sm">🧪</span>
-                        </div>
-                      )}
+                      <div
+                        className="w-9 h-9 rounded-[10px] flex items-center justify-center shrink-0"
+                        style={{
+                          background: (catInfo?.color ?? "#9E9E9E") + "15",
+                          color: catInfo?.color ?? "#9E9E9E",
+                        }}
+                      >
+                        <ActiveCategoryIcon category={catInfo?.key ?? null} size={16} />
+                      </div>
                       <div className="flex-1 min-w-0">
                         <div className="text-sm font-bold text-bo-ink font-sans">
                           {ing.nameJa}
@@ -210,7 +207,7 @@ export default function ProductDetailPage() {
 
           {activeIngredients.length === 0 && (
             <div className="mb-6 py-8 text-center">
-              <p className="text-xs text-bo-ink-muted font-sans">有効成分は検出されませんでした</p>
+              <p className="text-xs text-bo-ink-muted font-sans">美容成分は検出されませんでした</p>
             </div>
           )}
 

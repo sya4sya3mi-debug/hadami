@@ -4,8 +4,12 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useUser } from "@/lib/auth";
 import AuthGuard from "@/components/ui/AuthGuard";
-import { getUserRoutines, getAmSteps, getPmSteps, type Routine } from "@/lib/routines";
-// Routine creation uses /api/routine/create
+import {
+  getUserRoutines,
+  getAmSteps,
+  getPmSteps,
+  type Routine,
+} from "@/lib/routines";
 import ScrollToTop from "@/components/ui/ScrollToTop";
 
 export default function RoutineListPage() {
@@ -21,28 +25,46 @@ function RoutineListContent() {
   const router = useRouter();
   const [routines, setRoutines] = useState<Routine[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isCreating, setIsCreating] = useState(false);
+  const [createError, setCreateError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!user) return;
-    getUserRoutines().then((data) => {
-      setRoutines(data);
-      setLoading(false);
-    });
+
+    getUserRoutines()
+      .then((data) => {
+        setRoutines(data);
+      })
+      .finally(() => {
+        setLoading(false);
+      });
   }, [user]);
 
   const handleCreate = async () => {
+    if (isCreating) return;
+
+    setIsCreating(true);
+    setCreateError(null);
+
     try {
-      const res = await fetch("/api/routine/create", {
+      const response = await fetch("/api/routine/create", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({}),
       });
-      const data = await res.json();
-      if (data.routineId) {
-        router.push(`/routine/${data.routineId}/share`);
+      const data = await response.json();
+
+      if (!response.ok || !data.routineId) {
+        setCreateError(data.error ?? "ルーティンの作成に失敗しました");
+        return;
       }
-    } catch (e) {
-      console.error("Failed to create routine:", e);
+
+      router.push(`/routine/${data.routineId}/share`);
+    } catch (error) {
+      console.error("Failed to create routine:", error);
+      setCreateError("ルーティンの作成に失敗しました");
+    } finally {
+      setIsCreating(false);
     }
   };
 
@@ -58,7 +80,6 @@ function RoutineListContent() {
     <div className="min-h-screen px-4 pt-6 pb-8 max-w-lg mx-auto">
       <ScrollToTop />
 
-      {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <h1
           className="text-xl font-bold"
@@ -66,22 +87,27 @@ function RoutineListContent() {
         >
           マイルーティン
         </h1>
-        <div>
-          <button
-            onClick={handleCreate}
-            type="button"
-            className="flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-semibold text-white transition-colors"
-            style={{ backgroundColor: "#3A8F7A" }}
-          >
-            <span>＋</span> 新規作成
-          </button>
-        </div>
+        <button
+          type="button"
+          onClick={() => {
+            void handleCreate();
+          }}
+          disabled={isCreating}
+          className="flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-semibold text-white transition-colors disabled:opacity-60"
+          style={{ backgroundColor: "#3A8F7A" }}
+        >
+          <span>＋</span>
+          <span>{isCreating ? "作成中..." : "新規作成"}</span>
+        </button>
       </div>
 
-      {/* Empty State */}
+      {createError && (
+        <p className="mb-4 text-sm text-red-500">{createError}</p>
+      )}
+
       {routines.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 text-center">
-          <div className="text-5xl mb-4">🌿</div>
+          <div className="text-5xl mb-4">🧴</div>
           <h2
             className="text-lg font-bold mb-2"
             style={{ fontFamily: "'Shippori Mincho', serif" }}
@@ -91,24 +117,26 @@ function RoutineListContent() {
           <p className="text-sm text-gray-500 dark:text-gray-400 mb-6 leading-relaxed">
             あなたのスキンケアルーティンを作成して
             <br />
-            シェアカードで共有しましょう
+            シェアカードで保存しましょう。
           </p>
-          <form action={handleCreate}>
-            <button
-              type="submit"
-              className="px-6 py-3 rounded-full text-white font-semibold transition-colors"
-              style={{ backgroundColor: "#3A8F7A" }}
-            >
-              最初のルーティンを作成
-            </button>
-          </form>
+          <button
+            type="button"
+            onClick={() => {
+              void handleCreate();
+            }}
+            disabled={isCreating}
+            className="px-6 py-3 rounded-full text-white font-semibold transition-colors disabled:opacity-60"
+            style={{ backgroundColor: "#3A8F7A" }}
+          >
+            {isCreating ? "作成中..." : "最初のルーティンを作成"}
+          </button>
         </div>
       ) : (
-        /* Routine Cards */
         <div className="flex flex-col gap-4">
           {routines.map((routine) => {
             const am = getAmSteps(routine);
             const pm = getPmSteps(routine);
+
             return (
               <div
                 key={routine.id}
@@ -133,7 +161,7 @@ function RoutineListContent() {
                         {routine.skin_type}
                       </span>
                       <span className="text-xs text-gray-400">
-                        ☀️ {am.length}ステップ / 🌙 {pm.length}ステップ
+                        AM {am.length}ステップ / PM {pm.length}ステップ
                       </span>
                     </div>
                   </div>
@@ -141,12 +169,12 @@ function RoutineListContent() {
 
                 {routine.concerns.length > 0 && (
                   <div className="flex flex-wrap gap-1.5 mb-3">
-                    {routine.concerns.map((c) => (
+                    {routine.concerns.map((concern) => (
                       <span
-                        key={c}
+                        key={concern}
                         className="text-[10px] px-2 py-0.5 rounded-full border border-black/5 dark:border-white/10 text-gray-500 dark:text-gray-400"
                       >
-                        {c}
+                        {concern}
                       </span>
                     ))}
                   </div>
@@ -154,11 +182,12 @@ function RoutineListContent() {
 
                 <div className="flex gap-2 mt-3">
                   <button
+                    type="button"
                     onClick={() => router.push(`/routine/${routine.id}/share`)}
                     className="flex-1 text-center text-sm font-semibold py-2.5 rounded-xl text-white transition-colors"
                     style={{ backgroundColor: "#3A8F7A" }}
                   >
-                    編集・シェア
+                    編集してシェア
                   </button>
                 </div>
               </div>

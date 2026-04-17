@@ -29,6 +29,24 @@ export async function GET(request: NextRequest) {
     const { data: sessionData } = await supabase.auth.exchangeCodeForSession(code);
 
     if (sessionData?.user) {
+      // 招待コード検証済みの新規ユーザーに beta_verified フラグを付与
+      const isAlreadyVerified = sessionData.user.user_metadata?.beta_verified === true;
+      const hasInviteCookie = request.cookies.get("hadami-invite-verified")?.value === "true";
+
+      if (!isAlreadyVerified && hasInviteCookie) {
+        await supabase.auth.updateUser({
+          data: { beta_verified: true },
+        });
+        // 招待コードCookieを消費（使い回し防止）
+        response.cookies.set("hadami-invite-verified", "", {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === "production",
+          sameSite: "lax",
+          path: "/",
+          maxAge: 0,
+        });
+      }
+
       const { data: profile } = await supabase
         .from("profiles")
         .select("display_name")
@@ -36,6 +54,13 @@ export async function GET(request: NextRequest) {
         .single();
 
       if (!profile?.display_name) {
+        // 新規ユーザーで招待コード未検証 → ブロック
+        if (!isAlreadyVerified && !hasInviteCookie) {
+          await supabase.auth.signOut();
+          response.headers.set("Location", `${origin}/auth/invite`);
+          return response;
+        }
+
         // getRegistrationAvailability が失敗しても 500 にしない
         let allowed = true;
         try {

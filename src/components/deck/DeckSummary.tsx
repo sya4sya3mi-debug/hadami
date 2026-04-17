@@ -62,7 +62,7 @@ export default function DeckSummary({
             {stepCount} ステップ
           </div>
           <div className="text-xs text-bo-ink-muted font-sans mt-0.5">
-            有効成分カバー率
+            美容成分カバー率
           </div>
 
           {/* Category badges */}

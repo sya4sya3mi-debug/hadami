@@ -1,6 +1,6 @@
 "use client";
 
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { getIngredientById, getIngredientCategoryInfo, getIngredientCategories } from "@/lib/ingredients";
 import { useProductStore } from "@/stores/useProductStore";
@@ -23,6 +23,7 @@ import {
 
 export default function IngredientDetailPage() {
   const { loading } = useUser();
+  const router = useRouter();
   const { name } = useParams<{ name: string }>();
   const ingredient = getIngredientById(name);
   const products = useProductStore((s) => s.products);
@@ -35,9 +36,9 @@ export default function IngredientDetailPage() {
     return (
       <div className="min-h-screen px-5 pt-10 text-center bg-bo-cream">
         <p className="text-bo-ink-muted">成分が見つかりません</p>
-        <Link href="/zukan" className="text-sm mt-2 inline-block font-medium text-bo-accent">
-          図鑑に戻る
-        </Link>
+        <button onClick={() => router.back()} className="text-sm mt-2 inline-block font-medium text-bo-accent bg-transparent border-none cursor-pointer">
+          ← 戻る
+        </button>
       </div>
     );
   }
@@ -46,9 +47,9 @@ export default function IngredientDetailPage() {
     return (
       <div className="min-h-screen bg-bo-cream">
         <div className="px-5 pt-8">
-          <Link href="/zukan" className="text-sm font-medium mb-4 inline-block text-bo-accent">
-            ← 図鑑
-          </Link>
+          <button onClick={() => router.back()} className="text-sm font-medium mb-4 inline-block text-bo-accent bg-transparent border-none cursor-pointer">
+            ← 戻る
+          </button>
           <div className="text-center py-14">
             <QuestionMarkCircleIcon size={64} color="#C0B8A8" className="mx-auto" />
             <h1 className="font-bold text-xl mt-4 text-bo-ink">未発見の成分</h1>
@@ -90,9 +91,9 @@ export default function IngredientDetailPage() {
   return (
     <div className="min-h-screen bg-bo-cream">
       <div className="px-5 pt-8 pb-6">
-        <Link href="/zukan" className="text-sm font-medium mb-4 inline-block text-bo-accent">
-          ← 図鑑
-        </Link>
+        <button onClick={() => router.back()} className="text-sm font-medium mb-4 inline-block text-bo-accent bg-transparent border-none cursor-pointer">
+          ← 戻る
+        </button>
 
         {/* Header */}
         <div className="text-center mb-5">

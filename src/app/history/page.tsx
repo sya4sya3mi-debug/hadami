@@ -14,7 +14,7 @@ import AuthGuard from "@/components/ui/AuthGuard";
 import { ProductGenreIcon, ActiveCategoryIcon } from "@/components/ui/CosmeticIcons";
 import { getIngredientById, ACTIVE_CATEGORIES } from "@/lib/ingredients";
 import { CategoryKey, Product } from "@/types";
-import { StarIcon } from "@/components/ui/Icons";
+import { StarIcon, CameraIcon } from "@/components/ui/Icons";
 import { deleteProductFromDb, updateProductImageInDb, deleteProductImageFromDb, updateProductTypeInDb, toggleFavoriteInDb, updateProductNameInDb } from "@/lib/db";
 import { PRODUCT_GENRES, getGenreByKey } from "@/lib/productGenres";
 import ShareModal from "@/components/ui/ShareModal";
@@ -316,10 +316,10 @@ export default function HistoryPage() {
 
           {products.length === 0 ? (
             <div className="text-center py-14 rounded-r2 bg-white shadow-bo1">
-              <div className="w-16 h-16 rounded-[20px] mx-auto mb-4 flex items-center justify-center text-3xl
+              <div className="w-16 h-16 rounded-[20px] mx-auto mb-4 flex items-center justify-center
                               bg-gradient-to-br from-bo-accent-soft to-[#D4F5EF]
                               shadow-[0_6px_20px_rgba(58,143,122,0.12)]">
-                📸
+                <CameraIcon size={28} color="#3A8F7A" />
               </div>
               <div className="text-sm font-bold text-bo-ink font-sans mb-1">まだ保存したコスメはありません</div>
               <div className="text-xs text-bo-ink-muted font-sans mb-5">コスメをスキャンして登録しましょう</div>
@@ -328,7 +328,7 @@ export default function HistoryPage() {
                 className="inline-flex items-center gap-2 px-6 py-3 rounded-r2 text-sm font-bold text-white bg-bo-accent
                            no-underline shadow-bo-accent pressable font-sans"
               >
-                📷 スキャンを始める
+                <CameraIcon size={16} color="white" /> スキャンを始める
               </Link>
             </div>
           ) : (

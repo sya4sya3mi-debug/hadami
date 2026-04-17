@@ -27,7 +27,7 @@ export async function middleware(request: NextRequest) {
   const isRscRequest = request.headers.get("rsc") !== null;
   const isAuthCallback = request.nextUrl.pathname.startsWith("/auth/callback");
 
-  const isPublicPath = ["/privacy", "/terms"].some((p) => request.nextUrl.pathname.startsWith(p));
+  const isPublicPath = ["/privacy", "/terms", "/auth/invite"].some((p) => request.nextUrl.pathname.startsWith(p));
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;

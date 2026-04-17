@@ -8,12 +8,13 @@ const NAV_ITEMS = [
   { href: "/admin/dashboard", label: "ダッシュボード", icon: "📊" },
   { href: "/admin/users", label: "ユーザー管理", icon: "👥" },
   { href: "/admin/invites", label: "招待コード", icon: "🔑" },
+  { href: "/admin/unknown-ingredients", label: "未識別成分", icon: "🔬" },
 ];
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 function AdminNav({ current, router }: { current: string; router: ReturnType<typeof useRouter> }) {
   return (
-    <div className="flex gap-2 mb-6">
+    <div className="flex gap-2 mb-6 flex-wrap">
       {NAV_ITEMS.map((item) => (
         <button
           key={item.href}

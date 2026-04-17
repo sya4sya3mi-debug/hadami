@@ -35,6 +35,8 @@ export default function DeckPage() {
   const [showAnalysis, setShowAnalysis] = useState(false);
   const [showAutoRecommend, setShowAutoRecommend] = useState(false);
   const [autoResult, setAutoResult] = useState<RecommendationResult | null>(null);
+  const [isCreatingShareCard, setIsCreatingShareCard] = useState(false);
+  const [shareCardError, setShareCardError] = useState<string | null>(null);
   const { user, supabase, loading } = useUser();
   const router = useRouter();
 
@@ -168,6 +170,7 @@ export default function DeckPage() {
 
   /** デッキの朝/夜アイテムからシェアカード用ステップを生成して新規作成 */
   const handleCreateShareCard = async () => {
+    if (isCreatingShareCard) return;
     const buildSteps = (routineKey: RoutineType) => {
       return allDeckItems
         .filter((i) => i.routine === routineKey)
@@ -190,8 +193,11 @@ export default function DeckPage() {
         });
     };
 
+    setIsCreatingShareCard(true);
+    setShareCardError(null);
+
     try {
-      const res = await fetch("/api/routine/create", {
+      const response = await fetch("/api/routine/create", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -199,12 +205,19 @@ export default function DeckPage() {
           pmSteps: buildSteps("night"),
         }),
       });
-      const data = await res.json();
-      if (data.routineId) {
-        router.push(`/routine/${data.routineId}/share`);
+      const data = await response.json();
+
+      if (!response.ok || !data.routineId) {
+        setShareCardError(data.error ?? "シェアカードの作成に失敗しました");
+        return;
       }
+
+      router.push(`/routine/${data.routineId}/share`);
     } catch (e) {
       console.error("Failed to create routine:", e);
+      setShareCardError("シェアカードの作成に失敗しました");
+    } finally {
+      setIsCreatingShareCard(false);
     }
   };
 
@@ -283,14 +296,22 @@ export default function DeckPage() {
 
               {/* Share card link */}
               <button
+                type="button"
                 onClick={() => { void handleCreateShareCard(); }}
+                disabled={isCreatingShareCard}
                 className="w-full mt-3 py-3.5 rounded-r2 text-sm font-bold font-sans cursor-pointer
                            flex items-center justify-center gap-2
-                           border-none text-white shadow-bo1 pressable"
+                           border-none text-white shadow-bo1 pressable disabled:opacity-60"
                 style={{ background: "linear-gradient(135deg, #3A8F7A, #2D7A66)" }}
               >
                 🌿 シェアカードを作成
               </button>
+              {isCreatingShareCard && (
+                <p className="mt-2 text-center text-xs text-bo-ink-muted">シェアカードを作成しています...</p>
+              )}
+              {shareCardError && (
+                <p className="mt-2 text-center text-xs text-red-500">{shareCardError}</p>
+              )}
             </>
           ) : (
             <>
@@ -301,14 +322,22 @@ export default function DeckPage() {
                 onAutoRecommend={handleAutoRecommend}
               />
               <button
+                type="button"
                 onClick={() => { void handleCreateShareCard(); }}
+                disabled={isCreatingShareCard}
                 className="w-full mt-6 py-3.5 rounded-r2 text-sm font-bold font-sans cursor-pointer
                            flex items-center justify-center gap-2
-                           border-none text-white shadow-bo1 pressable"
+                           border-none text-white shadow-bo1 pressable disabled:opacity-60"
                 style={{ background: "linear-gradient(135deg, #3A8F7A, #2D7A66)" }}
               >
                 🌿 シェアカードを作成
               </button>
+              {isCreatingShareCard && (
+                <p className="mt-2 text-center text-xs text-bo-ink-muted">シェアカードを作成しています...</p>
+              )}
+              {shareCardError && (
+                <p className="mt-2 text-center text-xs text-red-500">{shareCardError}</p>
+              )}
             </>
           )}
 

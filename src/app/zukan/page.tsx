@@ -601,7 +601,7 @@ export default function ZukanPage() {
   const discoveredIds = useZukanStore((s) => s.discoveredIds);
   const products = useProductStore((s) => s.products);
 
-  /* 有効成分のみでカウント */
+  /* 図鑑対象の美容成分のみでカウント */
   const activeSet = useMemo(() => new Set(getActiveIngredients().map((i) => i.id)), []);
   const totalDisc = discoveredIds.filter((id) => activeSet.has(id)).length;
   const totalAll = getActiveIngredientCount();
@@ -645,7 +645,7 @@ export default function ZukanPage() {
             {/* Text */}
             <div className="flex-1">
               <p className="text-xs text-bo-ink-muted font-sans m-0 mb-1">
-                有効成分コンプリート率
+                美容成分コンプリート率
               </p>
               <div className="flex items-baseline gap-1.5">
                 <span className="text-2xl font-black text-bo-ink font-serif">

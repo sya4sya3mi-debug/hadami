@@ -14,6 +14,7 @@ function LoginPageInner() {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [registrationClosed, setRegistrationClosed] = useState(false);
+  const [inviteVerified, setInviteVerified] = useState(false);
   const supabase = createClient();
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -22,6 +23,8 @@ function LoginPageInner() {
     if (searchParams.get("error") === "registration_limit_reached") {
       setRegistrationClosed(true);
     }
+    // 招待コード検証済みCookieの確認（Cookie名で簡易チェック）
+    setInviteVerified(document.cookie.includes("hadami-invite-verified"));
   }, [searchParams]);
 
   const handleEmailAuth = async (e: React.FormEvent) => {
@@ -30,6 +33,13 @@ function LoginPageInner() {
     setMessage("");
 
     if (isSignUp) {
+      // 招待コード未検証 → 招待コード入力ページへ
+      if (!inviteVerified) {
+        router.push("/auth/invite");
+        setLoading(false);
+        return;
+      }
+
       const res = await fetch("/api/check-registration");
       const { allowed } = await res.json();
       if (!allowed) {
@@ -72,6 +82,11 @@ function LoginPageInner() {
   };
 
   const handleGoogleLogin = async () => {
+    // 新規登録モードで招待コード未検証 → 招待コード入力へ
+    if (isSignUp && !inviteVerified) {
+      router.push("/auth/invite");
+      return;
+    }
     setLoading(true);
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
@@ -91,6 +106,8 @@ function LoginPageInner() {
           登録受付再開をお待ちください。
         </div>
       )}
+
+{/* 招待コード未検証で新規登録モードに入った場合は強制的にログインモードに戻す */}
 
       <div className="mb-8 text-center flex flex-col items-center">
         <Image src="/hadami-logo.png" alt="HADAMI" width={64} height={64} className="rounded-2xl mb-2" />
@@ -165,13 +182,35 @@ function LoginPageInner() {
         </form>
 
         <p className="text-center mt-4 text-[13px] text-bo-ink-muted">
-          {isSignUp ? "すでにアカウントをお持ちの方は" : "アカウントをお持ちでない方は"}
-          <button
-            onClick={() => { setIsSignUp(!isSignUp); setMessage(""); }}
-            className="bg-transparent border-none text-bo-accent font-bold cursor-pointer text-[13px] ml-1"
-          >
-            {isSignUp ? "ログイン" : "新規登録"}
-          </button>
+          {isSignUp ? (
+            <>
+              すでにアカウントをお持ちの方は
+              <button
+                onClick={() => { setIsSignUp(false); setMessage(""); }}
+                className="bg-transparent border-none text-bo-accent font-bold cursor-pointer text-[13px] ml-1"
+              >
+                ログイン
+              </button>
+            </>
+          ) : inviteVerified ? (
+            <>
+              アカウントをお持ちでない方は
+              <button
+                onClick={() => { setIsSignUp(true); setMessage(""); }}
+                className="bg-transparent border-none text-bo-accent font-bold cursor-pointer text-[13px] ml-1"
+              >
+                新規登録
+              </button>
+            </>
+          ) : (
+            <>
+              新規登録には
+              <Link href="/auth/invite" className="text-bo-accent font-bold ml-1 no-underline">
+                招待コード
+              </Link>
+              が必要です
+            </>
+          )}
         </p>
       </div>
 
