@@ -74,9 +74,15 @@ export default function ScanResult({
     });
   };
 
-  const handleSave = () => {
-    if (!onSave || saved) return;
-    onSave();
+  const [isSaving, setIsSaving] = useState(false);
+  const handleSave = async () => {
+    if (!onSave || saved || isSaving) return;
+    try {
+      setIsSaving(true);
+      await onSave();
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -155,16 +161,18 @@ export default function ScanResult({
           {!saved && onSave && (
             <button
               onClick={handleSave}
+              disabled={isSaving}
               className="w-full mt-4 py-3.5 rounded-r2 font-bold text-[15px] font-sans border-none cursor-pointer
                          bg-bo-accent text-white shadow-bo-accent pressable
-                         flex items-center justify-center gap-2"
+                         flex items-center justify-center gap-2
+                         disabled:opacity-60 disabled:cursor-wait"
             >
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
                 <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/>
                 <polyline points="17 21 17 13 7 13 7 21"/>
                 <polyline points="7 3 7 8 15 8"/>
               </svg>
-              マイコスメに保存する
+              {isSaving ? "保存中..." : "マイコスメに保存する"}
             </button>
           )}
           {saved && (

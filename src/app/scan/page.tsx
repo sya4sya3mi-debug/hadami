@@ -554,7 +554,19 @@ function ScanPageInner() {
 
   // Save
   const handleSave = useCallback(async () => {
-    if (!user || saved || isSavingRef.current) return;
+    if (saved) {
+      console.warn("[handleSave] already saved, ignoring click");
+      return;
+    }
+    if (isSavingRef.current) {
+      console.warn("[handleSave] save already in progress, ignoring click");
+      return;
+    }
+    if (!user) {
+      console.error("[handleSave] user is not loaded yet", { user });
+      setSaveError("ログイン状態の読み込み中です。数秒後に再度お試しください。");
+      return;
+    }
     isSavingRef.current = true;
     setSaveError("");
 
@@ -576,8 +588,9 @@ function ScanPageInner() {
         return;
       }
       if (result.error) {
+        console.error("[handleSave] saveProductToDb error:", result.error);
         isSavingRef.current = false;
-        setSaveError("保存に失敗しました。もう一度お試しください。");
+        setSaveError(`保存に失敗しました: ${result.error}`);
         return;
       }
 
