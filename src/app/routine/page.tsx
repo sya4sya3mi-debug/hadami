@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useUser } from "@/lib/auth";
 import AuthGuard from "@/components/ui/AuthGuard";
@@ -10,6 +10,7 @@ import {
   getPmSteps,
   type Routine,
 } from "@/lib/routines";
+import { deleteRoutineAction } from "@/app/actions/routineActions";
 import ScrollToTop from "@/components/ui/ScrollToTop";
 
 export default function RoutineListPage() {
@@ -27,6 +28,8 @@ function RoutineListContent() {
   const [loading, setLoading] = useState(true);
   const [isCreating, setIsCreating] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [, startTransition] = useTransition();
 
   useEffect(() => {
     if (!user) return;
@@ -39,6 +42,16 @@ function RoutineListContent() {
         setLoading(false);
       });
   }, [user]);
+
+  const handleDelete = (routineId: string, routineName: string) => {
+    if (!window.confirm(`「${routineName}」を削除しますか？\nこの操作は元に戻せません。`)) return;
+    setDeletingId(routineId);
+    startTransition(async () => {
+      await deleteRoutineAction(routineId);
+      setRoutines((prev) => prev.filter((r) => r.id !== routineId));
+      setDeletingId(null);
+    });
+  };
 
   const handleCreate = async () => {
     if (isCreating) return;
@@ -79,16 +92,6 @@ function RoutineListContent() {
   return (
     <div className="min-h-screen px-4 pt-6 pb-8 max-w-lg mx-auto">
       <ScrollToTop />
-
-      <div className="mb-4">
-        <button
-          onClick={() => router.push("/deck")}
-          className="flex items-center gap-1.5 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
-        >
-          <span className="text-lg leading-none">‹</span>
-          <span>デッキに戻る</span>
-        </button>
-      </div>
 
       <div className="flex items-center justify-between mb-6">
         <h1
@@ -197,7 +200,15 @@ function RoutineListContent() {
                     className="flex-1 text-center text-sm font-semibold py-2.5 rounded-xl text-white transition-colors"
                     style={{ backgroundColor: "#3A8F7A" }}
                   >
-                    編集してシェア
+                    編集
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleDelete(routine.id, routine.name)}
+                    disabled={deletingId === routine.id}
+                    className="px-3 py-2.5 rounded-xl text-sm font-semibold transition-colors disabled:opacity-40 border border-red-200 dark:border-red-900 text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
+                  >
+                    {deletingId === routine.id ? "..." : "削除"}
                   </button>
                 </div>
               </div>
