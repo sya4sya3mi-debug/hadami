@@ -2,12 +2,21 @@ import { NextResponse } from "next/server";
 import sharp from "sharp";
 import { authenticateRequest } from "@/lib/apiAuth";
 import {
+  PRODUCT_IMAGE_MAX_DIMENSION,
   PRODUCT_IMAGE_THUMB_SIZE,
+  getProductImagePath,
+  getProductImageThumbPath,
   getProductImageThumbPathFromStoredPath,
 } from "@/lib/productImages";
-import { r2Upload, r2Download } from "@/lib/r2";
+import { r2Upload, r2Download, r2Delete } from "@/lib/r2";
+
+const AVIF_FULL_QUALITY = 50;
+const AVIF_THUMB_QUALITY = 45;
+const AVIF_EFFORT = 3;
+const AVIF_CONTENT_TYPE = "image/avif";
 
 export const runtime = "nodejs";
+export const maxDuration = 60;
 
 export async function POST(request: Request) {
   const auth = await authenticateRequest();
@@ -52,29 +61,67 @@ export async function POST(request: Request) {
     rows.map(async (product) => {
       if (!product.package_image_url) return null;
 
-      const thumbPath = getProductImageThumbPathFromStoredPath(product.package_image_url);
+      const storedPath = product.package_image_url;
+      const isAvif = storedPath.endsWith(".avif");
+      const filePath = isAvif ? storedPath : getProductImagePath(auth.user.id, product.id);
+      const thumbPath = isAvif
+        ? getProductImageThumbPathFromStoredPath(storedPath)
+        : getProductImageThumbPath(auth.user.id, product.id);
 
-      if (!forceRegenerate) {
+      if (!forceRegenerate && isAvif) {
         const existing = await r2Download(thumbPath);
         if (existing) {
           return { productId: product.id, thumbPath };
         }
       }
 
-      const original = await r2Download(product.package_image_url);
+      const original = await r2Download(storedPath);
       if (!original) {
         throw new Error("original image missing");
       }
 
-      const thumbBytes = await sharp(original)
-        .resize(PRODUCT_IMAGE_THUMB_SIZE, PRODUCT_IMAGE_THUMB_SIZE, {
-          fit: "inside",
-          withoutEnlargement: true,
-        })
-        .webp({ quality: 80 })
-        .toBuffer();
+      const rotated = sharp(original).rotate();
+      const [fullBytes, thumbBytes] = await Promise.all([
+        rotated
+          .clone()
+          .resize(PRODUCT_IMAGE_MAX_DIMENSION, PRODUCT_IMAGE_MAX_DIMENSION, {
+            fit: "inside",
+            withoutEnlargement: true,
+          })
+          .avif({ quality: AVIF_FULL_QUALITY, effort: AVIF_EFFORT })
+          .toBuffer(),
+        rotated
+          .clone()
+          .resize(PRODUCT_IMAGE_THUMB_SIZE, PRODUCT_IMAGE_THUMB_SIZE, {
+            fit: "inside",
+            withoutEnlargement: true,
+          })
+          .avif({ quality: AVIF_THUMB_QUALITY, effort: AVIF_EFFORT })
+          .toBuffer(),
+      ]);
 
-      await r2Upload(thumbPath, thumbBytes, "image/webp");
+      await Promise.all([
+        r2Upload(filePath, fullBytes, AVIF_CONTENT_TYPE),
+        r2Upload(thumbPath, thumbBytes, AVIF_CONTENT_TYPE),
+      ]);
+
+      if (!isAvif) {
+        const { error: updateError } = await auth.supabase
+          .from("products")
+          .update({ package_image_url: filePath })
+          .eq("id", product.id)
+          .eq("user_id", auth.user.id);
+
+        if (updateError) {
+          await r2Delete([filePath, thumbPath]).catch(() => {});
+          throw updateError;
+        }
+
+        const staleThumb = getProductImageThumbPathFromStoredPath(storedPath);
+        await r2Delete([storedPath, staleThumb]).catch((err) => {
+          console.error("Failed to delete legacy webp image:", err);
+        });
+      }
 
       return { productId: product.id, thumbPath };
     })

@@ -6,9 +6,9 @@ import {
 import { r2Delete } from "@/lib/r2";
 
 const USER_LIMIT = 30;
-const MAX_PRODUCT_IMAGE_BYTES = 5 * 1024 * 1024;
-const UPLOAD_MAX_DIMENSION = 1200;
-const UPLOAD_WEBP_QUALITY = 0.82;
+const MAX_PRODUCT_IMAGE_BYTES = 8 * 1024 * 1024;
+const UPLOAD_MAX_DIMENSION = 1600;
+const UPLOAD_WEBP_QUALITY = 0.95;
 
 function validateImageSize(base64Data: string): boolean {
   const estimatedBytes = Math.ceil(base64Data.length * 0.75);

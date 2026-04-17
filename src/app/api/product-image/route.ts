@@ -2,13 +2,21 @@ import { NextResponse } from "next/server";
 import sharp from "sharp";
 import { authenticateRequest, validateImagePayload } from "@/lib/apiAuth";
 import {
+  PRODUCT_IMAGE_MAX_DIMENSION,
   PRODUCT_IMAGE_THUMB_SIZE,
   getProductImagePath,
   getProductImageThumbPath,
+  getProductImageThumbPathFromStoredPath,
 } from "@/lib/productImages";
 import { r2Upload, r2Delete } from "@/lib/r2";
 
 export const runtime = "nodejs";
+export const maxDuration = 30;
+
+const AVIF_FULL_QUALITY = 50;
+const AVIF_THUMB_QUALITY = 45;
+const AVIF_EFFORT = 3;
+const AVIF_CONTENT_TYPE = "image/avif";
 
 export async function POST(request: Request) {
   const auth = await authenticateRequest();
@@ -46,29 +54,44 @@ export async function POST(request: Request) {
 
   const filePath = getProductImagePath(auth.user.id, body.productId);
   const thumbPath = getProductImageThumbPath(auth.user.id, body.productId);
-  const bytes = Buffer.from(validation.base64Data, "base64");
+  const inputBytes = Buffer.from(validation.base64Data, "base64");
+  let fullBytes: Buffer;
   let thumbBytes: Buffer;
 
   try {
-    thumbBytes = await sharp(bytes)
-      .resize(PRODUCT_IMAGE_THUMB_SIZE, PRODUCT_IMAGE_THUMB_SIZE, {
-        fit: "inside",
-        withoutEnlargement: true,
-      })
-      .webp({ quality: 80 })
-      .toBuffer();
+    const rotated = sharp(inputBytes).rotate();
+    const [full, thumb] = await Promise.all([
+      rotated
+        .clone()
+        .resize(PRODUCT_IMAGE_MAX_DIMENSION, PRODUCT_IMAGE_MAX_DIMENSION, {
+          fit: "inside",
+          withoutEnlargement: true,
+        })
+        .avif({ quality: AVIF_FULL_QUALITY, effort: AVIF_EFFORT })
+        .toBuffer(),
+      rotated
+        .clone()
+        .resize(PRODUCT_IMAGE_THUMB_SIZE, PRODUCT_IMAGE_THUMB_SIZE, {
+          fit: "inside",
+          withoutEnlargement: true,
+        })
+        .avif({ quality: AVIF_THUMB_QUALITY, effort: AVIF_EFFORT })
+        .toBuffer(),
+    ]);
+    fullBytes = full;
+    thumbBytes = thumb;
   } catch (error) {
-    console.error("Failed to generate product thumbnail:", error);
+    console.error("Failed to encode product image:", error);
     return NextResponse.json(
-      { error: "画像サムネイルの生成に失敗しました" },
+      { error: "画像の変換に失敗しました" },
       { status: 500 }
     );
   }
 
   try {
     await Promise.all([
-      r2Upload(filePath, bytes, "image/webp"),
-      r2Upload(thumbPath, thumbBytes, "image/webp"),
+      r2Upload(filePath, fullBytes, AVIF_CONTENT_TYPE),
+      r2Upload(thumbPath, thumbBytes, AVIF_CONTENT_TYPE),
     ]);
   } catch (error) {
     console.error("R2 upload failed:", error);
@@ -87,6 +110,13 @@ export async function POST(request: Request) {
       await r2Delete([filePath, thumbPath]);
     }
     return NextResponse.json({ error: "画像情報の保存に失敗しました" }, { status: 500 });
+  }
+
+  if (product.package_image_url && product.package_image_url !== filePath) {
+    const staleThumb = getProductImageThumbPathFromStoredPath(product.package_image_url);
+    await r2Delete([product.package_image_url, staleThumb]).catch((error) => {
+      console.error("Failed to delete stale product image:", error);
+    });
   }
 
   return NextResponse.json({

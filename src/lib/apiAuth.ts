@@ -62,7 +62,7 @@ export async function checkScanQuota(
   return { allowed: true };
 }
 
-const MAX_IMAGE_BYTES = 5 * 1024 * 1024; // 5MB decoded
+const MAX_IMAGE_BYTES = 8 * 1024 * 1024; // 8MB decoded
 const ALLOWED_DATA_URL_MIMES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
 
 export function validateImagePayload(
