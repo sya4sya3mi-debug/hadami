@@ -15,7 +15,7 @@ export type RoutineStep = {
     id: string;
     name: string;
     brand: string | null;
-    image_url: string | null;
+    package_image_url: string | null;
   } | null;
 };
 
@@ -90,7 +90,7 @@ export async function getUserRoutines(): Promise<Routine[]> {
 
   const { data: steps } = await supabase
     .from("routine_steps")
-    .select("*, product:products(id, name, brand, image_url)")
+    .select("*, product:products(id, name, brand, package_image_url)")
     .in("routine_id", routineIds)
     .order("time_of_day", { ascending: true })
     .order("step_order", { ascending: true });
@@ -121,7 +121,7 @@ export async function getRoutineById(id: string): Promise<Routine | null> {
 
   const { data: steps } = await supabase
     .from("routine_steps")
-    .select("*, product:products(id, name, brand, image_url)")
+    .select("*, product:products(id, name, brand, package_image_url)")
     .eq("routine_id", id)
     .order("time_of_day", { ascending: true })
     .order("step_order", { ascending: true });

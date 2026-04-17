@@ -18,7 +18,7 @@ export async function POST(req: NextRequest) {
   try {
     body = await req.json();
   } catch {
-    // empty body is fine — create with no steps
+    // Empty body is fine.
   }
 
   const { data, error } = await supabase
@@ -26,7 +26,7 @@ export async function POST(req: NextRequest) {
     .insert({
       user_id: user.id,
       name: "私のスキンケアルーティン",
-      skin_type: "乾燥肌",
+      skin_type: "普通肌",
       concerns: [],
     })
     .select("id")
@@ -42,33 +42,37 @@ export async function POST(req: NextRequest) {
   const routineId = data.id;
   const amSteps = body.amSteps ?? [];
   const pmSteps = body.pmSteps ?? [];
+  const stepRows = [
+    ...amSteps.map((step, index) => ({
+      routine_id: routineId,
+      time_of_day: "am" as const,
+      step_order: index + 1,
+      step_name: step.step_name,
+      product_name: step.product_name ?? null,
+      product_id: step.product_id ?? null,
+      icon: step.icon ?? "🧴",
+    })),
+    ...pmSteps.map((step, index) => ({
+      routine_id: routineId,
+      time_of_day: "pm" as const,
+      step_order: index + 1,
+      step_name: step.step_name,
+      product_name: step.product_name ?? null,
+      product_id: step.product_id ?? null,
+      icon: step.icon ?? "🧴",
+    })),
+  ];
 
-  if (amSteps.length > 0) {
-    await supabase.from("routine_steps").insert(
-      amSteps.map((s, i) => ({
-        routine_id: routineId,
-        time_of_day: "am" as const,
-        step_order: i + 1,
-        step_name: s.step_name,
-        product_name: s.product_name ?? null,
-        product_id: s.product_id ?? null,
-        icon: s.icon ?? "🌿",
-      }))
-    );
-  }
+  if (stepRows.length > 0) {
+    const { error: stepsError } = await supabase.from("routine_steps").insert(stepRows);
 
-  if (pmSteps.length > 0) {
-    await supabase.from("routine_steps").insert(
-      pmSteps.map((s, i) => ({
-        routine_id: routineId,
-        time_of_day: "pm" as const,
-        step_order: i + 1,
-        step_name: s.step_name,
-        product_name: s.product_name ?? null,
-        product_id: s.product_id ?? null,
-        icon: s.icon ?? "🌿",
-      }))
-    );
+    if (stepsError) {
+      await supabase.from("routines").delete().eq("id", routineId).eq("user_id", user.id);
+      return NextResponse.json(
+        { error: stepsError.message ?? "ルーティンステップの保存に失敗しました" },
+        { status: 500 }
+      );
+    }
   }
 
   return NextResponse.json({ routineId });

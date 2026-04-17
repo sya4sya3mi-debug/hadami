@@ -36,7 +36,7 @@ async function getRoutine(id: string): Promise<Routine | null> {
 
   const { data: steps } = await supabase
     .from("routine_steps")
-    .select("*, product:products(id, name, brand, image_url)")
+    .select("*, product:products(id, name, brand, package_image_url)")
     .eq("routine_id", id)
     .order("time_of_day", { ascending: true })
     .order("step_order", { ascending: true });
