@@ -80,6 +80,16 @@ function RoutineListContent() {
     <div className="min-h-screen px-4 pt-6 pb-8 max-w-lg mx-auto">
       <ScrollToTop />
 
+      <div className="mb-4">
+        <button
+          onClick={() => router.push("/deck")}
+          className="flex items-center gap-1.5 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
+        >
+          <span className="text-lg leading-none">‹</span>
+          <span>デッキに戻る</span>
+        </button>
+      </div>
+
       <div className="flex items-center justify-between mb-6">
         <h1
           className="text-xl font-bold"

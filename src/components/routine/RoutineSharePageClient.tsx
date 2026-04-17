@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import RoutineShareCard from "./RoutineShareCard";
 import { saveRoutineAction, deleteRoutineAction } from "@/app/actions/routineActions";
 import {
@@ -28,6 +29,7 @@ const STEP_ICONS = ["🌿", "💧", "✨", "🧴", "🌸", "🫧", "☁️", "�
 type StepDraft = { icon: string; step_name: string; product_name: string };
 
 export default function RoutineSharePageClient({ routine }: { routine: Routine }) {
+  const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [saved, setSaved] = useState(false);
 
@@ -128,7 +130,20 @@ export default function RoutineSharePageClient({ routine }: { routine: Routine }
   };
 
   return (
-    <div className="min-h-screen px-4 pt-6 pb-8 max-w-5xl mx-auto">
+    <div className="min-h-screen px-4 pt-4 pb-8 max-w-5xl mx-auto">
+      {/* ヘッダー */}
+      <div className="flex items-center gap-3 mb-6">
+        <button
+          onClick={() => router.push("/routine")}
+          className="flex items-center gap-1.5 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
+        >
+          <span className="text-lg leading-none">‹</span>
+          <span>マイルーティン</span>
+        </button>
+        <span className="text-gray-300 dark:text-gray-600">/</span>
+        <span className="text-sm font-semibold truncate">{config.title}</span>
+      </div>
+
       <div className="flex flex-col lg:flex-row gap-8">
         {/* Left: Editor */}
         <div className="flex-1 space-y-6 order-2 lg:order-1">
