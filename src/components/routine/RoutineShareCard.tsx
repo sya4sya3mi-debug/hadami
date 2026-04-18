@@ -36,14 +36,6 @@ const hexToRgba = (hex: string, alpha: number) => {
   return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 };
 
-const SKIN_TYPE_EMOJI: Record<string, string> = {
-  乾燥肌: "🏜️",
-  脂性肌: "💧",
-  混合肌: "🌗",
-  敏感肌: "🌸",
-  普通肌: "✨",
-};
-
 export default function RoutineShareCard({ config, mode, steps }: Props) {
   const { skinType, concerns, note, username, theme, accentColor } = config;
   const isDark = theme === "dark";
