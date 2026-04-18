@@ -26,8 +26,6 @@ function RoutineListContent() {
   const router = useRouter();
   const [routines, setRoutines] = useState<Routine[]>([]);
   const [loading, setLoading] = useState(true);
-  const [isCreating, setIsCreating] = useState(false);
-  const [createError, setCreateError] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [, startTransition] = useTransition();
 
@@ -53,34 +51,6 @@ function RoutineListContent() {
     });
   };
 
-  const handleCreate = async () => {
-    if (isCreating) return;
-
-    setIsCreating(true);
-    setCreateError(null);
-
-    try {
-      const response = await fetch("/api/routine/create", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({}),
-      });
-      const data = await response.json();
-
-      if (!response.ok || !data.routineId) {
-        setCreateError(data.error ?? "ルーティンの作成に失敗しました");
-        return;
-      }
-
-      router.push(`/routine/${data.routineId}/share`);
-    } catch (error) {
-      console.error("Failed to create routine:", error);
-      setCreateError("ルーティンの作成に失敗しました");
-    } finally {
-      setIsCreating(false);
-    }
-  };
-
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -99,60 +69,27 @@ function RoutineListContent() {
           className="flex items-center gap-1.5 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
         >
           <span className="text-lg leading-none">‹</span>
-          <span>デッキに戻る</span>
+          <span>スキンケア管理に戻る</span>
         </button>
       </div>
 
-      <div className="flex items-center justify-between mb-6">
-        <h1
-          className="text-xl font-bold"
-          style={{ fontFamily: "'Shippori Mincho', serif" }}
-        >
-          マイルーティン
+      <div className="mb-6">
+        <h1 className="text-xl font-bold font-sans">
+          シェアカード一覧
         </h1>
-        <button
-          type="button"
-          onClick={() => {
-            void handleCreate();
-          }}
-          disabled={isCreating}
-          className="flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-semibold text-white transition-colors disabled:opacity-60"
-          style={{ backgroundColor: "#3A8F7A" }}
-        >
-          <span>＋</span>
-          <span>{isCreating ? "作成中..." : "新規作成"}</span>
-        </button>
       </div>
-
-      {createError && (
-        <p className="mb-4 text-sm text-red-500">{createError}</p>
-      )}
 
       {routines.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 text-center">
-          <div className="text-5xl mb-4">🧴</div>
-          <h2
-            className="text-lg font-bold mb-2"
-            style={{ fontFamily: "'Shippori Mincho', serif" }}
-          >
-            ルーティンがまだありません
+          <div className="text-5xl mb-4">📋</div>
+          <h2 className="text-lg font-bold font-sans mb-2">
+            シェアカードがまだありません
           </h2>
           <p className="text-sm text-gray-500 dark:text-gray-400 mb-6 leading-relaxed">
-            あなたのスキンケアルーティンを作成して
+            スキンケア管理でシェアカードを作成すると
             <br />
-            シェアカードで保存しましょう。
+            ここに一覧表示されます。
           </p>
-          <button
-            type="button"
-            onClick={() => {
-              void handleCreate();
-            }}
-            disabled={isCreating}
-            className="px-6 py-3 rounded-full text-white font-semibold transition-colors disabled:opacity-60"
-            style={{ backgroundColor: "#3A8F7A" }}
-          >
-            {isCreating ? "作成中..." : "最初のルーティンを作成"}
-          </button>
         </div>
       ) : (
         <div className="flex flex-col gap-4">
@@ -167,10 +104,7 @@ function RoutineListContent() {
               >
                 <div className="flex items-start justify-between mb-3">
                   <div>
-                    <h3
-                      className="font-bold text-base"
-                      style={{ fontFamily: "'Shippori Mincho', serif" }}
-                    >
+                    <h3 className="font-bold text-base font-sans">
                       {routine.name}
                     </h3>
                     <div className="flex items-center gap-2 mt-1">
