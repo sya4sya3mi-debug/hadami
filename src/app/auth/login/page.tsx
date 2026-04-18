@@ -18,10 +18,10 @@ function LoginPageInner() {
   const [isSignUp, setIsSignUp] = useState(hasInviteAccess);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
-  const [registrationClosed, setRegistrationClosed] = useState(
+  const [registrationClosed] = useState(
     searchParams.get("error") === "registration_limit_reached"
   );
-  const [inviteVerified, setInviteVerified] = useState(hasInviteAccess);
+  const [inviteVerified] = useState(hasInviteAccess);
 
   const handleEmailAuth = async (e: React.FormEvent) => {
     e.preventDefault();
