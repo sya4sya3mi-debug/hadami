@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
@@ -8,28 +8,20 @@ import { Suspense } from "react";
 import { createClient } from "@/lib/supabase";
 
 function LoginPageInner() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [isSignUp, setIsSignUp] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState("");
-  const [registrationClosed, setRegistrationClosed] = useState(false);
-  const [inviteVerified, setInviteVerified] = useState(false);
   const supabase = createClient();
   const searchParams = useSearchParams();
   const router = useRouter();
 
-  useEffect(() => {
-    if (searchParams.get("error") === "registration_limit_reached") {
-      setRegistrationClosed(true);
-    }
-    // 招待コード検証済みCookieの確認（Cookie名で簡易チェック）
-    const hasInviteAccess = searchParams.get("invite") === "1";
-    setInviteVerified(hasInviteAccess);
-    if (hasInviteAccess) {
-      setIsSignUp(true);
-    }
-  }, [searchParams]);
+  const hasInviteAccess = searchParams.get("invite") === "1";
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [isSignUp, setIsSignUp] = useState(hasInviteAccess);
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState("");
+  const [registrationClosed, setRegistrationClosed] = useState(
+    searchParams.get("error") === "registration_limit_reached"
+  );
+  const [inviteVerified, setInviteVerified] = useState(hasInviteAccess);
 
   const handleEmailAuth = async (e: React.FormEvent) => {
     e.preventDefault();
