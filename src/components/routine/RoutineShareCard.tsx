@@ -102,9 +102,8 @@ export default function RoutineShareCard({ config, mode, steps }: Props) {
           <span
             style={{
               display: "inline-block",
-              height: 24,
-              lineHeight: "24px",
-              padding: "0 12px",
+              padding: "2px 12px 6px",
+              lineHeight: 1,
               background: isDark ? "rgba(255,255,255,0.12)" : "rgba(255,255,255,0.72)",
               color: textMain,
               fontSize: 13,
@@ -120,9 +119,8 @@ export default function RoutineShareCard({ config, mode, steps }: Props) {
           <span
             style={{
               display: "inline-block",
-              height: 24,
-              lineHeight: "24px",
-              padding: "0 12px",
+              padding: "2px 12px 6px",
+              lineHeight: 1,
               background: isDark ? "rgba(255,255,255,0.08)" : hexToRgba(accentColor, 0.08),
               color: accentColor,
               fontSize: 13,
@@ -322,9 +320,8 @@ function StepList({
                     style={{
                       display: "inline-block",
                       alignSelf: "flex-start",
-                      height: 22,
-                      lineHeight: "22px",
-                      padding: "0 10px",
+                      padding: "2px 10px 6px",
+                      lineHeight: 1,
                       borderRadius: 999,
                       background: isDark ? "rgba(255,255,255,0.08)" : hexToRgba(accentColor, 0.07),
                       color: accentColor,
