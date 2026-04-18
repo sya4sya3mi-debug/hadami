@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
 import sharp from "sharp";
 import { authenticateRequest } from "@/lib/apiAuth";
+import { rateLimit } from "@/lib/rateLimit";
 import {
+  PRODUCT_IMAGE_BACKFILL_BATCH_SIZE,
   PRODUCT_IMAGE_MAX_DIMENSION,
   PRODUCT_IMAGE_THUMB_SIZE,
   getProductImagePath,
@@ -14,6 +16,8 @@ const AVIF_FULL_QUALITY = 50;
 const AVIF_THUMB_QUALITY = 45;
 const AVIF_EFFORT = 3;
 const AVIF_CONTENT_TYPE = "image/avif";
+const BACKFILL_WINDOW_MS = 10 * 60_000;
+const BACKFILL_MAX_REQUESTS = 12;
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -22,6 +26,24 @@ export async function POST(request: Request) {
   const auth = await authenticateRequest();
   if (!auth.authenticated) return auth.response;
 
+  const rl = await rateLimit(
+    auth.user.id,
+    BACKFILL_WINDOW_MS,
+    BACKFILL_MAX_REQUESTS,
+    "product-image-backfill",
+    { failOpen: false }
+  );
+
+  if (!rl.allowed) {
+    return NextResponse.json(
+      {
+        error: "rate_limited",
+        retryAfterMs: rl.retryAfterMs,
+      },
+      { status: 429 }
+    );
+  }
+
   let body: { productIds?: unknown; force?: unknown } | null = null;
   try {
     body = await request.json();
@@ -29,9 +51,27 @@ export async function POST(request: Request) {
     body = null;
   }
 
-  const requestedIds = Array.isArray(body?.productIds)
-    ? body?.productIds.filter((value): value is string => typeof value === "string")
+  const rawRequestedIds = Array.isArray(body?.productIds) ? body.productIds : null;
+  const requestedIds = rawRequestedIds
+    ? Array.from(
+        new Set(
+          rawRequestedIds.filter((value): value is string => typeof value === "string")
+        )
+      )
     : null;
+
+  if (
+    requestedIds &&
+    requestedIds.length > PRODUCT_IMAGE_BACKFILL_BATCH_SIZE
+  ) {
+    return NextResponse.json(
+      {
+        error: "too_many_products",
+        maxProducts: PRODUCT_IMAGE_BACKFILL_BATCH_SIZE,
+      },
+      { status: 400 }
+    );
+  }
 
   const forceRegenerate = body?.force === true;
 
@@ -43,6 +83,8 @@ export async function POST(request: Request) {
 
   if (requestedIds?.length) {
     query = query.in("id", requestedIds);
+  } else {
+    query = query.limit(PRODUCT_IMAGE_BACKFILL_BATCH_SIZE);
   }
 
   const { data: products, error } = await query;
@@ -129,7 +171,9 @@ export async function POST(request: Request) {
 
   const created = results
     .filter(
-      (result): result is PromiseFulfilledResult<{ productId: string; thumbPath: string } | null> =>
+      (
+        result
+      ): result is PromiseFulfilledResult<{ productId: string; thumbPath: string } | null> =>
         result.status === "fulfilled"
     )
     .map((result) => result.value)

@@ -22,8 +22,9 @@ type Props = {
   steps: StepItem[];
 };
 
-const BODY_FONT_STACK = "'Hiragino Sans', 'Yu Gothic', Meiryo, sans-serif";
-const DISPLAY_FONT_STACK = "'Hiragino Mincho ProN', 'Yu Mincho', 'MS PMincho', serif";
+const BODY_FONT_STACK =
+  "'YakuHanJPs', -apple-system, system-ui, 'Segoe UI', 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', Meiryo, sans-serif";
+const DISPLAY_FONT_STACK = BODY_FONT_STACK;
 
 const hexToRgba = (hex: string, alpha: number) => {
   const h = hex.replace("#", "");

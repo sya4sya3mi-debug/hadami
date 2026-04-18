@@ -33,6 +33,18 @@ function withTimeout<T>(promise: Promise<T>, ms: number, message: string): Promi
   ]);
 }
 
+function logScanInfo(
+  event: string,
+  details?: Record<string, string | number | boolean>,
+) {
+  if (details) {
+    console.info(`[scan-product] ${event}`, details);
+    return;
+  }
+
+  console.info(`[scan-product] ${event}`);
+}
+
 /** Geminiが返した成分名をマスターDBのIDに解決 */
 function resolveIngredientNames(names: string[]): {
   ingredientIds: string[];
@@ -191,16 +203,18 @@ async function identifyProducts(
 
   // 空ならカラー画像でリトライ
   if (!ocrText && enhancedData) {
-    console.log("[scan-product] OCR retry with color image");
+    logScanInfo("ocr_retry_with_color_image");
     ocrText = await ocrSpaceExtract(base64Data);
   }
 
   if (!ocrText) {
-    console.log("[scan-product] OCR returned empty text");
+    logScanInfo("ocr_returned_empty_text");
     return [];
   }
 
-  console.log("[scan-product] OCR text:", ocrText.slice(0, 300));
+  logScanInfo("ocr_text_extracted", {
+    textLength: ocrText.length,
+  });
 
   // Gemini（テキストのみ）で商品情報を解析
   const response = await withTimeout(
@@ -217,9 +231,13 @@ async function identifyProducts(
   ).catch(() => null);
 
   const text = response?.text ?? "";
-  console.log("[scan-product] identify:", text.slice(0, 500));
+  const identifiedProducts = parseIdentifiedProducts(text);
+  logScanInfo("identify_completed", {
+    outputLength: text.length,
+    productCount: identifiedProducts.length,
+  });
 
-  return parseIdentifiedProducts(text);
+  return identifiedProducts;
 }
 
 // ── STEP 2: 有効成分検索 (Gemini + Google Search) ──
@@ -303,9 +321,11 @@ async function fetchRawIngredients(
     );
 
     const text = response.text ?? "";
-    console.log("[scan-product] raw search result:", text.slice(0, 1000));
-
     const jsonText = extractJsonObject(text);
+    logScanInfo("ingredient_search_completed", {
+      outputLength: text.length,
+      hasJson: Boolean(jsonText),
+    });
     if (!jsonText) return null;
 
     const parsed = JSON.parse(jsonText);
@@ -317,7 +337,10 @@ async function fetchRawIngredients(
 
     return rawText.trim() ? { rawText, isQuasiDrug, activeNames } : null;
   } catch (error) {
-    console.warn("[scan-product] fetchRawIngredients failed:", error);
+    console.warn(
+      "[scan-product] fetchRawIngredients failed:",
+      error instanceof Error ? error.message : error,
+    );
     return null;
   }
 }
@@ -333,7 +356,7 @@ async function resolveScannedProduct(
   );
 
   if (cached?.ingredients) {
-    console.log("[scan-product] cache HIT:", identified.product);
+    logScanInfo("ingredient_cache_hit");
     const activeNames = (cached.activeIngredients || "")
       .split(",")
       .map((v) => v.trim())
@@ -352,7 +375,7 @@ async function resolveScannedProduct(
     };
   }
 
-  console.log("[scan-product] cache MISS, searching:", identified.product);
+  logScanInfo("ingredient_cache_miss");
   const searchResult = await searchKeyIngredients(identified.product, identified.brand);
 
   if (searchResult.found) {
@@ -398,7 +421,7 @@ async function searchKeyIngredients(
   if (!raw) {
     const retryQuery = product || brand;
     if (retryQuery && retryQuery !== query) {
-      console.log("[scan-product] retrying search with:", retryQuery);
+      logScanInfo("ingredient_search_retry_with_fallback_query");
       raw = await fetchRawIngredients(retryQuery);
     }
   }
@@ -407,8 +430,10 @@ async function searchKeyIngredients(
 
   // STEP 2b: ローカルでマスターDB照合（nameJa, INCI, aliases すべて使用）
   const { ingredientIds, ingredientNames } = matchIngredientsLocally(raw.rawText);
-  console.log("[scan-product] local match: %d ingredients from raw text (%d chars)",
-    ingredientIds.length, raw.rawText.length);
+  logScanInfo("local_match_completed", {
+    matchedIngredientCount: ingredientIds.length,
+    rawTextLength: raw.rawText.length,
+  });
 
   // 有効成分も解決
   const { ingredientNames: resolvedActiveNames } = resolveIngredientNames(raw.activeNames);

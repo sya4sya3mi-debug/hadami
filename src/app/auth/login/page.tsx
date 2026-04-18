@@ -24,7 +24,11 @@ function LoginPageInner() {
       setRegistrationClosed(true);
     }
     // 招待コード検証済みCookieの確認（Cookie名で簡易チェック）
-    setInviteVerified(document.cookie.includes("hadami-invite-verified"));
+    const hasInviteAccess = searchParams.get("invite") === "1";
+    setInviteVerified(hasInviteAccess);
+    if (hasInviteAccess) {
+      setIsSignUp(true);
+    }
   }, [searchParams]);
 
   const handleEmailAuth = async (e: React.FormEvent) => {

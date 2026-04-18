@@ -3,7 +3,10 @@ import type { DeckItem, Product, ProductGenre, RoutineType } from "@/types";
 import { useDeckStore } from "@/stores/useDeckStore";
 import { useProductStore } from "@/stores/useProductStore";
 import { useZukanStore } from "@/stores/useZukanStore";
-import { getProductImageThumbPathFromStoredPath } from "@/lib/productImages";
+import {
+  PRODUCT_IMAGE_BACKFILL_BATCH_SIZE,
+  getProductImageThumbPathFromStoredPath,
+} from "@/lib/productImages";
 import { clearImageUrlCache, getSignedImageUrls } from "./storage";
 
 const PRODUCT_STORAGE_KEY = "hadami-products";
@@ -143,6 +146,30 @@ function mapDeckItems(rows: DeckRow[]): DeckItem[] {
 
 const THUMB_VERSION = 2; // Bump when thumbnail size/quality changes
 const THUMB_VERSION_KEY = "hadami_thumb_version";
+const THUMB_BACKFILL_RETRY_AFTER_KEY = "hadami_thumb_backfill_retry_after";
+const THUMB_BACKFILL_RETRY_MS = 10 * 60 * 1000;
+let activeThumbnailBackfill: Promise<void> | null = null;
+
+function getThumbnailBackfillRetryAfter() {
+  if (typeof window === "undefined") return 0;
+
+  const rawValue = window.localStorage.getItem(THUMB_BACKFILL_RETRY_AFTER_KEY);
+  const retryAfter = Number(rawValue);
+  return Number.isFinite(retryAfter) ? retryAfter : 0;
+}
+
+function setThumbnailBackfillRetryAfter(nextRetryAfter: number) {
+  if (typeof window === "undefined") return;
+  window.localStorage.setItem(
+    THUMB_BACKFILL_RETRY_AFTER_KEY,
+    String(nextRetryAfter)
+  );
+}
+
+function clearThumbnailBackfillRetryAfter() {
+  if (typeof window === "undefined") return;
+  window.localStorage.removeItem(THUMB_BACKFILL_RETRY_AFTER_KEY);
+}
 
 async function backfillProductThumbnails(
   supabase: SupabaseClient,
@@ -168,50 +195,87 @@ async function backfillProductThumbnails(
       );
 
   if (targets.length === 0) {
+    clearThumbnailBackfillRetryAfter();
     if (needsForceRegenerate) localStorage.setItem(THUMB_VERSION_KEY, String(THUMB_VERSION));
     return;
   }
 
-  try {
-    const response = await fetch("/api/product-image/backfill", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        productIds: targets.map((product) => product.id),
-        ...(needsForceRegenerate && { force: true }),
-      }),
-    });
+  if (getThumbnailBackfillRetryAfter() > Date.now()) {
+    return;
+  }
 
-    if (!response.ok) {
-      return;
+  if (activeThumbnailBackfill) {
+    await activeThumbnailBackfill;
+    return;
+  }
+
+  activeThumbnailBackfill = (async () => {
+    try {
+      for (
+        let index = 0;
+        index < targets.length;
+        index += PRODUCT_IMAGE_BACKFILL_BATCH_SIZE
+      ) {
+        const response = await fetch("/api/product-image/backfill", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            productIds: targets
+              .slice(index, index + PRODUCT_IMAGE_BACKFILL_BATCH_SIZE)
+              .map((product) => product.id),
+            ...(needsForceRegenerate && { force: true }),
+          }),
+        });
+
+        if (!response.ok) {
+          setThumbnailBackfillRetryAfter(Date.now() + THUMB_BACKFILL_RETRY_MS);
+          return;
+        }
+      }
+
+      const thumbPaths = targets
+        .map((product) => product.packageImageThumbPath)
+        .filter((value): value is string => typeof value === "string");
+
+      if (thumbPaths.length === 0) {
+        clearThumbnailBackfillRetryAfter();
+        if (needsForceRegenerate) {
+          localStorage.setItem(THUMB_VERSION_KEY, String(THUMB_VERSION));
+        }
+        return;
+      }
+
+      const signedThumbs = await getSignedImageUrls(supabase, thumbPaths);
+      const currentProducts = useProductStore.getState().products;
+      const nextProducts = currentProducts.map((product) => {
+        const thumbPath = product.packageImageThumbPath;
+        if (!thumbPath) return product;
+
+        const thumbUrl = signedThumbs[thumbPath];
+        if (!thumbUrl) return product;
+
+        return {
+          ...product,
+          packageImageThumb: thumbUrl,
+        };
+      });
+
+      useProductStore.getState().replaceAll(nextProducts);
+      clearThumbnailBackfillRetryAfter();
+
+      if (needsForceRegenerate) {
+        localStorage.setItem(THUMB_VERSION_KEY, String(THUMB_VERSION));
+      }
+    } catch (error) {
+      setThumbnailBackfillRetryAfter(Date.now() + THUMB_BACKFILL_RETRY_MS);
+      console.warn("thumbnail backfill skipped:", error);
     }
+  })();
 
-    const thumbPaths = targets
-      .map((product) => product.packageImageThumbPath)
-      .filter((value): value is string => typeof value === "string");
-
-    if (thumbPaths.length === 0) return;
-
-    const signedThumbs = await getSignedImageUrls(supabase, thumbPaths);
-    const currentProducts = useProductStore.getState().products;
-    const nextProducts = currentProducts.map((product) => {
-      const thumbPath = product.packageImageThumbPath;
-      if (!thumbPath) return product;
-
-      const thumbUrl = signedThumbs[thumbPath];
-      if (!thumbUrl) return product;
-
-      return {
-        ...product,
-        packageImageThumb: thumbUrl,
-      };
-    });
-
-    useProductStore.getState().replaceAll(nextProducts);
-
-    if (needsForceRegenerate) localStorage.setItem(THUMB_VERSION_KEY, String(THUMB_VERSION));
-  } catch (error) {
-    console.warn("thumbnail backfill skipped:", error);
+  try {
+    await activeThumbnailBackfill;
+  } finally {
+    activeThumbnailBackfill = null;
   }
 }
 

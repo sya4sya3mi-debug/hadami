@@ -1,7 +1,16 @@
 import { ImageResponse } from "next/og";
 import { createClient } from "@supabase/supabase-js";
+import { r2GetSignedUrls } from "@/lib/r2";
+import { getProductImageThumbPathFromStoredPath } from "@/lib/productImages";
+import {
+  getRoutineCardEmoji,
+  getRoutineCardHeading,
+  getRoutineCardLabel,
+  parseRoutineCardMode,
+} from "@/lib/routineCards";
+import { attachFallbackProducts } from "@/lib/routineStepProducts";
 
-export const runtime = "edge";
+export const runtime = "nodejs";
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
@@ -16,8 +25,18 @@ type Step = {
   step_order: number;
 };
 
-export async function GET(_req: Request, { params }: { params: { id: string } }) {
+function isDirectImageUrl(value: string) {
+  return (
+    value.startsWith("http://") ||
+    value.startsWith("https://") ||
+    value.startsWith("/") ||
+    value.startsWith("data:")
+  );
+}
+
+export async function GET(request: Request, { params }: { params: { id: string } }) {
   try {
+    const cardMode = parseRoutineCardMode(new URL(request.url).searchParams.get("card"));
     const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     const { data: routine, error } = await supabase
@@ -34,16 +53,49 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
       .eq("routine_id", params.id)
       .order("step_order", { ascending: true });
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const allSteps = (steps ?? []).map((s: any) => ({
-      ...s,
-      brand: s.product?.brand ?? null,
-      package_image_url: s.product?.package_image_url ?? null,
-    })) as Step[];
-    const amSteps = allSteps.filter((s) => s.time_of_day === "am").slice(0, 5);
-    const pmSteps = allSteps.filter((s) => s.time_of_day === "pm").slice(0, 5);
+    const hydratedSteps = await attachFallbackProducts(
+      supabase,
+      routine.user_id,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (steps ?? []) as any[]
+    );
+
+    const imageKeys = Array.from(
+      new Set(
+        hydratedSteps.flatMap((step) => {
+          const imagePath = step.product?.package_image_url;
+          if (!imagePath || isDirectImageUrl(imagePath)) return [];
+          const thumbPath = getProductImageThumbPathFromStoredPath(imagePath);
+          return [thumbPath, imagePath];
+        })
+      )
+    );
+    const signedUrls = imageKeys.length > 0 ? await r2GetSignedUrls(imageKeys) : {};
+
+    const allSteps = hydratedSteps.map((step) => {
+      const imagePath = step.product?.package_image_url ?? null;
+      const resolvedImage =
+        imagePath && !isDirectImageUrl(imagePath)
+          ? signedUrls[getProductImageThumbPathFromStoredPath(imagePath)] ??
+            signedUrls[imagePath] ??
+            null
+          : imagePath;
+
+      return {
+        ...step,
+        brand: step.product?.brand ?? null,
+        package_image_url: resolvedImage ?? null,
+      };
+    }) as Step[];
+
+    const selectedSteps = allSteps
+      .filter((step) => step.time_of_day === cardMode)
+      .slice(0, 5);
     const concerns = (routine.concerns as string[]) ?? [];
     const skinType = routine.skin_type ?? "乾燥肌";
+    const cardLabel = getRoutineCardLabel(cardMode);
+    const cardEmoji = getRoutineCardEmoji(cardMode);
+    const heading = getRoutineCardHeading(cardMode);
 
     return new ImageResponse(
       (
@@ -53,7 +105,7 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
             height: 630,
             display: "flex",
             background: "linear-gradient(135deg, #f0faf7, #e8f5f1)",
-            padding: 60,
+            padding: 56,
             fontFamily: "sans-serif",
           }}
         >
@@ -65,8 +117,7 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
               height: "100%",
             }}
           >
-            {/* Header */}
-            <div style={{ display: "flex", flexDirection: "column", marginBottom: 24 }}>
+            <div style={{ display: "flex", flexDirection: "column", marginBottom: 18 }}>
               <div
                 style={{
                   fontSize: 18,
@@ -80,16 +131,32 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
               </div>
               <div
                 style={{
-                  fontSize: 36,
+                  fontSize: 34,
                   fontWeight: 700,
                   color: "#1a2e28",
                   lineHeight: 1.3,
                   marginBottom: 12,
                 }}
               >
-                {routine.name}
+                {cardEmoji} {heading}
               </div>
-              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 6,
+                    background: "rgba(255,255,255,0.8)",
+                    color: "#1a2e28",
+                    fontSize: 18,
+                    fontWeight: 700,
+                    padding: "5px 16px",
+                    borderRadius: 24,
+                    border: "1px solid rgba(0,0,0,0.08)",
+                  }}
+                >
+                  {cardEmoji} {cardLabel}カード
+                </div>
                 <div
                   style={{
                     display: "flex",
@@ -99,36 +166,31 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
                     color: "#3A8F7A",
                     fontSize: 18,
                     fontWeight: 600,
-                    padding: "4px 16px",
+                    padding: "5px 16px",
                     borderRadius: 24,
                   }}
                 >
                   {skinType}
                 </div>
-                {concerns.slice(0, 5).map((c: string) => (
+                {concerns.slice(0, 3).map((concern: string) => (
                   <div
-                    key={c}
+                    key={concern}
                     style={{
                       fontSize: 14,
-                      padding: "3px 12px",
+                      padding: "4px 12px",
                       borderRadius: 16,
                       border: "1px solid rgba(0,0,0,0.08)",
                       color: "#5a7a70",
                     }}
                   >
-                    {c}
+                    {concern}
                   </div>
                 ))}
               </div>
             </div>
 
-            {/* Steps */}
-            <div style={{ display: "flex", gap: 32, flex: 1 }}>
-              <StepCol label="☀️ Morning" steps={amSteps} />
-              <StepCol label="🌙 Night" steps={pmSteps} />
-            </div>
+            <StepList steps={selectedSteps} />
 
-            {/* Footer */}
             <div
               style={{
                 display: "flex",
@@ -153,67 +215,105 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
   }
 }
 
-function StepCol({ label, steps }: { label: string; steps: Step[] }) {
+function StepList({ steps }: { steps: Step[] }) {
   return (
-    <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
-      <div
-        style={{
-          fontSize: 18,
-          fontWeight: 700,
-          color: "#3A8F7A",
-          marginBottom: 12,
-        }}
-      >
-        {label}
-      </div>
-      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-        {steps.length === 0 ? (
-          <div style={{ fontSize: 16, color: "#5a7a70", opacity: 0.5 }}>未設定</div>
-        ) : (
-          steps.map((s, i) => (
+    <div style={{ display: "flex", flexDirection: "column", gap: 10, flex: 1 }}>
+      {steps.length === 0 ? (
+        <div style={{ fontSize: 18, color: "#5a7a70", opacity: 0.6 }}>
+          このカードにはまだステップがありません
+        </div>
+      ) : (
+        steps.map((step, index) => (
+          <div
+            key={index}
+            style={{
+              display: "flex",
+              alignItems: "stretch",
+              gap: 14,
+              background: "rgba(255,255,255,0.85)",
+              borderRadius: 18,
+              padding: "12px 14px",
+              border: "1px solid rgba(0,0,0,0.06)",
+              minHeight: 102,
+            }}
+          >
             <div
-              key={i}
               style={{
+                width: 76,
+                height: 104,
+                borderRadius: 16,
+                overflow: "hidden",
+                background: step.package_image_url ? "rgba(255,255,255,0.92)" : "#3A8F7A12",
+                border: "1px solid rgba(0,0,0,0.06)",
                 display: "flex",
                 alignItems: "center",
-                gap: 12,
-                background: "rgba(255,255,255,0.85)",
-                borderRadius: 14,
-                padding: "10px 14px",
-                border: "1px solid rgba(0,0,0,0.06)",
+                justifyContent: "center",
+                flexShrink: 0,
+                alignSelf: "center",
               }}
             >
-              <span style={{ fontSize: 22, flexShrink: 0 }}>{s.icon}</span>
-              <div style={{ display: "flex", flexDirection: "column", flex: 1, minWidth: 0 }}>
-                <span style={{ fontSize: 15, fontWeight: 600, color: "#1a2e28" }}>
-                  {s.step_name}
-                </span>
-                {(s.brand || s.product_name) && (
-                  <span style={{ fontSize: 11, color: "#5a7a70" }}>
-                    {s.brand ? `${s.brand}` : ""}{s.brand && s.product_name ? " · " : ""}{s.product_name ?? ""}
-                  </span>
-                )}
-              </div>
-              {s.package_image_url && (
+              {step.package_image_url ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
-                  src={s.package_image_url}
+                  src={step.package_image_url}
                   alt=""
-                  width={36}
-                  height={36}
                   style={{
+                    width: "100%",
+                    height: "100%",
                     objectFit: "contain",
-                    borderRadius: 8,
-                    flexShrink: 0,
-                    background: "rgba(255,255,255,0.8)",
-                    border: "1px solid rgba(0,0,0,0.06)",
+                    objectPosition: "center center",
                   }}
                 />
+              ) : (
+                <span style={{ fontSize: 34 }}>{step.icon}</span>
               )}
             </div>
-          ))
-        )}
-      </div>
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                justifyContent: "center",
+                flex: 1,
+                minWidth: 0,
+                gap: 4,
+              }}
+            >
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 6,
+                  alignSelf: "flex-start",
+                  padding: "5px 10px",
+                  borderRadius: 999,
+                  background: "#3A8F7A12",
+                  color: "#3A8F7A",
+                  fontSize: 13,
+                  fontWeight: 700,
+                }}
+              >
+                <span>{step.icon}</span>
+                <span>{step.step_name}</span>
+              </div>
+              {step.brand && (
+                <span style={{ fontSize: 12, color: "#5a7a70", lineHeight: 1.4 }}>
+                  {step.brand}
+                </span>
+              )}
+              <span
+                style={{
+                  fontSize: step.product_name ? 18 : 15,
+                  fontWeight: step.product_name ? 700 : 600,
+                  color: "#1a2e28",
+                  lineHeight: 1.45,
+                }}
+              >
+                {step.product_name ?? `${step.step_name}をセットしてください`}
+              </span>
+            </div>
+          </div>
+        ))
+      )}
     </div>
   );
 }

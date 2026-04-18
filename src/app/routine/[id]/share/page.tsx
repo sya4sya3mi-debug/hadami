@@ -2,8 +2,14 @@ import { notFound } from "next/navigation";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import type { Metadata } from "next";
+import {
+  getRoutineCardEmoji,
+  getRoutineCardLabel,
+  parseRoutineCardMode,
+} from "@/lib/routineCards";
 import RoutineSharePageClient from "@/components/routine/RoutineSharePageClient";
 import type { Routine } from "@/lib/routines";
+import { attachFallbackProducts } from "@/lib/routineStepProducts";
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://hadami.vercel.app";
 
@@ -41,34 +47,45 @@ async function getRoutine(id: string): Promise<Routine | null> {
     .order("time_of_day", { ascending: true })
     .order("step_order", { ascending: true });
 
-  return { ...routine, steps: steps ?? [] } as Routine;
+  const hydratedSteps = await attachFallbackProducts(
+    supabase,
+    routine.user_id,
+    (steps ?? []) as Routine["steps"]
+  );
+
+  return { ...routine, steps: hydratedSteps } as Routine;
 }
 
 export async function generateMetadata({
   params,
+  searchParams,
 }: {
   params: { id: string };
+  searchParams?: { card?: string | string[] };
 }): Promise<Metadata> {
   const routine = await getRoutine(params.id);
   if (!routine) return { title: "HADAMI" };
 
+  const cardMode = parseRoutineCardMode(searchParams?.card);
+  const cardLabel = getRoutineCardLabel(cardMode);
+  const cardEmoji = getRoutineCardEmoji(cardMode);
   const concerns = routine.concerns.join("・") || "スキンケア";
-  const amCount = routine.steps.filter((s) => s.time_of_day === "am").length;
-  const pmCount = routine.steps.filter((s) => s.time_of_day === "pm").length;
-  const ogImageUrl = `${APP_URL}/api/og/routine/${params.id}`;
+  const stepCount = routine.steps.filter((step) => step.time_of_day === cardMode).length;
+  const ogImageUrl = `${APP_URL}/api/og/routine/${params.id}?card=${cardMode}`;
+  const description = `${routine.skin_type} / ${concerns} · ${cardEmoji} ${cardLabel} ${stepCount}ステップ`;
 
   return {
-    title: `${routine.name} | HADAMI`,
-    description: `${routine.skin_type} / ${concerns} · AM ${amCount}ステップ / PM ${pmCount}ステップ`,
+    title: `${routine.name} ${cardLabel}カード | HADAMI`,
+    description,
     openGraph: {
-      title: routine.name,
-      description: `${routine.skin_type} / ${concerns} · AM ${amCount}ステップ / PM ${pmCount}ステップ`,
+      title: `${routine.name} ${cardLabel}カード`,
+      description,
       images: [{ url: ogImageUrl, width: 1200, height: 630 }],
     },
     twitter: {
       card: "summary_large_image",
-      title: routine.name,
-      description: `${routine.skin_type} / ${concerns} · AM ${amCount}ステップ / PM ${pmCount}ステップ`,
+      title: `${routine.name} ${cardLabel}カード`,
+      description,
       images: [ogImageUrl],
     },
   };
@@ -76,11 +93,18 @@ export async function generateMetadata({
 
 export default async function RoutineSharePage({
   params,
+  searchParams,
 }: {
   params: { id: string };
+  searchParams?: { card?: string | string[] };
 }) {
   const routine = await getRoutine(params.id);
   if (!routine) notFound();
 
-  return <RoutineSharePageClient routine={routine} />;
+  return (
+    <RoutineSharePageClient
+      routine={routine}
+      initialCardMode={parseRoutineCardMode(searchParams?.card)}
+    />
+  );
 }

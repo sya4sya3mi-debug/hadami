@@ -168,7 +168,7 @@ export default function DeckPage() {
     }
   };
 
-  /** デッキの朝/夜アイテムからシェアカード用ステップを生成して新規作成 */
+  /** スキンケア管理の朝/夜アイテムからシェアカード用ステップを生成する */
   const handleCreateShareCard = async () => {
     if (isCreatingShareCard) return;
     const buildSteps = (routineKey: RoutineType) => {
@@ -233,7 +233,7 @@ export default function DeckPage() {
           {/* Header */}
           <div className="flex items-center justify-between mb-5">
             <p className="text-xs text-bo-ink-muted font-sans m-0">
-              スキンケアルーティンを管理
+              スキンケア管理
             </p>
             {deckProducts.length > 0 && allProducts.length > 0 && (
               <button
@@ -313,7 +313,7 @@ export default function DeckPage() {
                            flex items-center justify-center gap-2
                            border border-bo-parchment bg-white text-bo-ink-soft shadow-bo1 pressable"
               >
-                📋 マイルーティン一覧
+                📋 シェアカード一覧
               </button>
               {isCreatingShareCard && (
                 <p className="mt-2 text-center text-xs text-bo-ink-muted">シェアカードを作成しています...</p>

@@ -57,8 +57,8 @@ const TABS = [
   },
   {
     href: "/deck",
-    label: "ルーティン",
-    ariaLabel: "スキンケアルーティンを編集",
+    label: "スキンケア管理",
+    ariaLabel: "スキンケア管理を開く",
     center: false,
     icon: (active: boolean) => (
       <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">

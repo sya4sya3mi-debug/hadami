@@ -732,6 +732,7 @@ function ScanPageInner() {
 
       setSaved(true);
       setRecentlyFound(foundIngredients.map((f) => f.ingredient.id));
+      isSavingRef.current = false;
     } catch (e) {
       console.error("Save error:", e);
       isSavingRef.current = false;
@@ -740,6 +741,7 @@ function ScanPageInner() {
   }, [user, supabase, addProduct, productName, brand, productType, packageImage, packageImageColor, foundIngredients, unknownIngredients, userLimit, saved, setRecentlyFound, isQuasiDrug, resolvedActiveIngredients, resolveUploadedImage]);
 
   const doReset = useCallback(() => {
+    isSavingRef.current = false;
     setStep(1);
     setPackageImage("");
     setPackageImageColor("");
