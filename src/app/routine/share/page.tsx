@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import RoutineSharePageClient, {
   type StepDraft,
@@ -19,7 +19,7 @@ type Draft = {
   pmSteps: StepDraft[];
 };
 
-export default function RoutineSharePage() {
+function RoutineSharePageInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [draft, setDraft] = useState<Draft | null>(null);
@@ -57,5 +57,13 @@ export default function RoutineSharePage() {
       initialPmSteps={draft.pmSteps}
       initialCardMode={initialCardMode}
     />
+  );
+}
+
+export default function RoutineSharePage() {
+  return (
+    <Suspense fallback={null}>
+      <RoutineSharePageInner />
+    </Suspense>
   );
 }
