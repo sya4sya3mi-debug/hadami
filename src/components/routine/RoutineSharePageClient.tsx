@@ -75,6 +75,7 @@ export default function RoutineSharePageClient({
   const [lastExportMode, setLastExportMode] = useState<"shared" | "downloaded" | null>(null);
   const [previewScale, setPreviewScale] = useState(1);
   const [previewHeight, setPreviewHeight] = useState<number | null>(null);
+  const [captureSteps, setCaptureSteps] = useState<StepDraft[] | null>(null);
   const captureRef = useRef<HTMLDivElement | null>(null);
   const previewViewportRef = useRef<HTMLDivElement | null>(null);
 
@@ -213,11 +214,38 @@ export default function RoutineSharePageClient({
         requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
       });
 
+      const inlinedSteps = await Promise.all(
+        currentSteps.map(async (step) => {
+          const raw = step.product_image_url;
+          if (!raw) return step;
+          if (raw.startsWith("data:")) return step;
+          const url = isDirectImageUrl(raw) ? raw : buildRoutineStepImageUrl(raw);
+          try {
+            const response = await fetch(url, { credentials: "same-origin" });
+            if (!response.ok) return { ...step, product_image_url: "" };
+            const blob = await response.blob();
+            const dataUrl = await new Promise<string>((resolve, reject) => {
+              const reader = new FileReader();
+              reader.onload = () => resolve(reader.result as string);
+              reader.onerror = () => reject(reader.error);
+              reader.readAsDataURL(blob);
+            });
+            return { ...step, product_image_url: dataUrl };
+          } catch {
+            return { ...step, product_image_url: "" };
+          }
+        })
+      );
+      setCaptureSteps(inlinedSteps);
+      await new Promise<void>((resolve) => {
+        requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
+      });
+
       const { toBlob } = await import("html-to-image");
       const blob = await Promise.race([
         toBlob(captureRef.current, {
           pixelRatio: 2,
-          cacheBust: true,
+          cacheBust: false,
           backgroundColor: undefined,
           skipFonts: true,
         }),
@@ -267,6 +295,7 @@ export default function RoutineSharePageClient({
       console.error("Failed to save routine share image:", error);
       alert("画像の保存に失敗しました。時間をおいてもう一度お試しください。");
     } finally {
+      setCaptureSteps(null);
       setIsDownloading(false);
     }
   };
@@ -547,7 +576,11 @@ export default function RoutineSharePageClient({
           <RoutineShareCard
             config={config}
             mode={activeTab}
-            steps={previewSteps}
+            steps={
+              captureSteps
+                ? resolveSteps(captureSteps.filter((step) => step.step_name.trim()))
+                : previewSteps
+            }
           />
         </div>
       </div>
