@@ -101,34 +101,38 @@ export default function RoutineShareCard({ config, mode, steps }: Props) {
         <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
           <span
             style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 5,
+              display: "inline-block",
+              height: 24,
+              lineHeight: "24px",
+              padding: "0 12px",
               background: isDark ? "rgba(255,255,255,0.12)" : "rgba(255,255,255,0.72)",
               color: textMain,
               fontSize: 13,
               fontWeight: 700,
-              padding: "6px 12px",
               borderRadius: 999,
               border: `1px solid ${borderColor}`,
+              whiteSpace: "nowrap",
+              verticalAlign: "middle",
             }}
           >
-            {modeEmoji} {modeLabel}カード
+            {modeLabel}カード
           </span>
           <span
             style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 4,
+              display: "inline-block",
+              height: 24,
+              lineHeight: "24px",
+              padding: "0 12px",
               background: isDark ? "rgba(255,255,255,0.08)" : hexToRgba(accentColor, 0.08),
               color: accentColor,
               fontSize: 13,
               fontWeight: 600,
-              padding: "5px 12px",
-              borderRadius: 20,
+              borderRadius: 999,
+              whiteSpace: "nowrap",
+              verticalAlign: "middle",
             }}
           >
-            {SKIN_TYPE_EMOJI[skinType] ?? "✨"} {skinType}
+            {skinType}
           </span>
           {username && (
             <span style={{ fontSize: 12, color: textSub }}>by @{username}</span>
