@@ -12,7 +12,6 @@ import {
   type RoutineCardConfig,
 } from "@/lib/routines";
 import { downloadShareImage } from "@/lib/downloadImage";
-import { getProductImageThumbPathFromStoredPath } from "@/lib/productImages";
 import {
   getRoutineCardEmoji,
   getRoutineCardLabel,
@@ -106,7 +105,6 @@ export default function RoutineSharePageClient({
     }))
   );
   const [activeTab, setActiveTab] = useState<RoutineCardMode>(initialCardMode);
-  const [resolvedImages, setResolvedImages] = useState<Record<string, string>>({});
 
   const currentSteps = activeTab === "am" ? amSteps : pmSteps;
   const setCurrentSteps = activeTab === "am" ? setAmSteps : setPmSteps;
@@ -122,34 +120,6 @@ export default function RoutineSharePageClient({
     params.set("card", activeTab);
     router.replace(`${pathname}?${params.toString()}`, { scroll: false });
   }, [activeTab, pathname, router, searchParams]);
-
-  useEffect(() => {
-    const allSteps = [...amSteps, ...pmSteps];
-    const paths = Array.from(
-      new Set(
-        allSteps.flatMap((step) => {
-          const imagePath = step.product_image_url;
-          if (!imagePath || isDirectImageUrl(imagePath)) return [];
-
-          const thumbPath = getProductImageThumbPathFromStoredPath(imagePath);
-          return [thumbPath, imagePath].filter((key) => !resolvedImages[key]);
-        })
-      )
-    );
-
-    if (paths.length === 0) return;
-
-    fetch("/api/signed-url", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ keys: paths }),
-    })
-      .then((response) => (response.ok ? response.json() : { urls: {} }))
-      .then((data) => {
-        if (data.urls) setResolvedImages((prev) => ({ ...prev, ...data.urls }));
-      })
-      .catch(() => {});
-  }, [amSteps, pmSteps, resolvedImages]);
 
   useEffect(() => {
     const node = previewViewportRef.current;
@@ -189,17 +159,18 @@ export default function RoutineSharePageClient({
     observer.observe(node);
 
     return () => observer.disconnect();
-  }, [config, activeTab, amSteps, pmSteps, resolvedImages]);
+  }, [config, activeTab, amSteps, pmSteps]);
+
+  function buildRoutineStepImageUrl(imagePath: string) {
+    if (isDirectImageUrl(imagePath)) return imagePath;
+    return `/api/product-image?key=${encodeURIComponent(imagePath)}`;
+  }
 
   function resolveSteps(steps: StepDraft[]) {
     return steps.map((step) => ({
       ...step,
       product_image_url: step.product_image_url
-        ? isDirectImageUrl(step.product_image_url)
-          ? step.product_image_url
-          : resolvedImages[getProductImageThumbPathFromStoredPath(step.product_image_url)] ??
-            resolvedImages[step.product_image_url] ??
-            ""
+        ? buildRoutineStepImageUrl(step.product_image_url)
         : "",
     }));
   }
@@ -300,9 +271,8 @@ export default function RoutineSharePageClient({
       });
 
       const { toBlob } = await import("html-to-image");
-      const pixelRatio = 2;
       const blob = await toBlob(captureRef.current, {
-        pixelRatio,
+        pixelRatio: 2,
         cacheBust: true,
         backgroundColor: undefined,
         skipFonts: true,
@@ -345,7 +315,8 @@ export default function RoutineSharePageClient({
       downloadShareImage(dataUrl, filename);
       setLastExportMode("downloaded");
       setTimeout(() => setLastExportMode(null), 2500);
-    } catch {
+    } catch (error) {
+      console.error("Failed to save routine share image:", error);
       alert("画像の保存に失敗しました。時間をおいてもう一度お試しください。");
     } finally {
       setIsDownloading(false);
@@ -366,11 +337,11 @@ export default function RoutineSharePageClient({
     <div className="min-h-screen px-4 pt-4 pb-8 max-w-5xl mx-auto">
       <div className="flex items-center gap-3 mb-6">
         <button
-          onClick={() => router.push("/routine")}
+          onClick={() => router.push("/deck")}
           className="flex items-center gap-1.5 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
         >
           <span className="text-lg leading-none">‹</span>
-          <span>シェアカード一覧</span>
+          <span>スキンケア管理</span>
         </button>
         <span className="text-gray-300 dark:text-gray-600">/</span>
         <span className="text-sm font-semibold truncate">{config.title}</span>

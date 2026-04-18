@@ -7,6 +7,10 @@ import {
   type RoutineCardMode,
 } from "@/lib/routineCards";
 import type { RoutineCardConfig } from "@/lib/routines";
+import {
+  SHARE_CARD_BODY_FONT_STACK,
+  SHARE_CARD_DISPLAY_FONT_STACK,
+} from "@/lib/shareCardFonts";
 
 type StepItem = {
   icon: string;
@@ -21,10 +25,6 @@ type Props = {
   mode: RoutineCardMode;
   steps: StepItem[];
 };
-
-const BODY_FONT_STACK =
-  "-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', 'Yu Gothic', Meiryo, sans-serif";
-const DISPLAY_FONT_STACK = BODY_FONT_STACK;
 
 const hexToRgba = (hex: string, alpha: number) => {
   const h = hex.replace("#", "");
@@ -58,7 +58,7 @@ export default function RoutineShareCard({ config, mode, steps }: Props) {
         background: bg,
         borderRadius: 28,
         padding: 30,
-        fontFamily: BODY_FONT_STACK,
+        fontFamily: SHARE_CARD_BODY_FONT_STACK,
         color: textMain,
         position: "relative",
         overflow: "hidden",
@@ -73,7 +73,7 @@ export default function RoutineShareCard({ config, mode, steps }: Props) {
             color: accentColor,
             textTransform: "uppercase",
             marginBottom: 6,
-            fontFamily: DISPLAY_FONT_STACK,
+            fontFamily: SHARE_CARD_DISPLAY_FONT_STACK,
             lineHeight: 1.2,
           }}
         >
@@ -85,7 +85,7 @@ export default function RoutineShareCard({ config, mode, steps }: Props) {
             fontWeight: 700,
             lineHeight: 1.25,
             marginBottom: 10,
-            fontFamily: DISPLAY_FONT_STACK,
+            fontFamily: SHARE_CARD_DISPLAY_FONT_STACK,
           }}
         >
           {modeEmoji} {heading}
@@ -193,7 +193,7 @@ export default function RoutineShareCard({ config, mode, steps }: Props) {
         <span>hadami.vercel.app</span>
         <span
           style={{
-            fontFamily: DISPLAY_FONT_STACK,
+            fontFamily: SHARE_CARD_DISPLAY_FONT_STACK,
             lineHeight: 1.2,
             fontWeight: 600,
             color: accentColor,
@@ -281,7 +281,6 @@ function StepList({
                     <img
                       src={step.product_image_url}
                       alt=""
-                      crossOrigin="anonymous"
                       style={{
                         width: "100%",
                         height: "100%",
