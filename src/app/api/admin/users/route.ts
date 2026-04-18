@@ -40,7 +40,7 @@ export async function GET(request: NextRequest) {
   const userIds = users.map((u) => u.id);
   const currentMonth = new Date().toISOString().substring(0, 7);
 
-  const [productsResult, scansResult, routinesResult, discoveriesResult] =
+  const [productsResult, scansResult, discoveriesResult] =
     await Promise.all([
       supabaseAdmin.from("products").select("user_id").in("user_id", userIds),
       supabaseAdmin
@@ -48,7 +48,6 @@ export async function GET(request: NextRequest) {
         .select("user_id, count")
         .eq("month", currentMonth)
         .in("user_id", userIds),
-      supabaseAdmin.from("routines").select("user_id").in("user_id", userIds),
       supabaseAdmin
         .from("zukan_discoveries")
         .select("user_id")
@@ -58,7 +57,6 @@ export async function GET(request: NextRequest) {
   // ユーザーごとに集計
   const productCount: Record<string, number> = {};
   const scanCount: Record<string, number> = {};
-  const routineCount: Record<string, number> = {};
   const discoveryCount: Record<string, number> = {};
 
   (productsResult.data ?? []).forEach((row: { user_id: string }) => {
@@ -66,9 +64,6 @@ export async function GET(request: NextRequest) {
   });
   (scansResult.data ?? []).forEach((row: { user_id: string; count: number }) => {
     scanCount[row.user_id] = (scanCount[row.user_id] ?? 0) + (row.count ?? 0);
-  });
-  (routinesResult.data ?? []).forEach((row: { user_id: string }) => {
-    routineCount[row.user_id] = (routineCount[row.user_id] ?? 0) + 1;
   });
   (discoveriesResult.data ?? []).forEach((row: { user_id: string }) => {
     discoveryCount[row.user_id] = (discoveryCount[row.user_id] ?? 0) + 1;
@@ -85,7 +80,6 @@ export async function GET(request: NextRequest) {
       : false,
     products: productCount[u.id] ?? 0,
     scansThisMonth: scanCount[u.id] ?? 0,
-    routines: routineCount[u.id] ?? 0,
     discoveries: discoveryCount[u.id] ?? 0,
   }));
 

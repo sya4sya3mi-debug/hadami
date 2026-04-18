@@ -11,7 +11,6 @@ interface Stats {
   totalScans: number;
   totalProducts: number;
   totalDiscoveries: number;
-  totalRoutines: number;
   activeInviteCodes: number;
   totalInviteUses: number;
   currentMonth: string;
@@ -188,10 +187,9 @@ export default function AdminDashboardPage() {
               <h2 className="text-xs font-bold text-bo-ink-muted font-sans uppercase tracking-wider mb-2">
                 コンテンツ
               </h2>
-              <div className="grid grid-cols-3 gap-2.5">
+              <div className="grid grid-cols-2 gap-2.5">
                 <StatCard label="登録商品数" value={stats.totalProducts} />
                 <StatCard label="成分発見数" value={stats.totalDiscoveries} />
-                <StatCard label="ルーティン数" value={stats.totalRoutines} />
               </div>
             </div>
 

@@ -392,3 +392,9 @@ a, button, label, [role="button"], .pressable {
 /* Hide scrollbar for genre chips */
 .hide-scrollbar::-webkit-scrollbar { display: none; }
 .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* Disable TabBar interaction while a modal sheet is open */
+body[data-modal-open] nav[aria-label="メインナビゲーション"] {
+  pointer-events: none;
+  opacity: 0.5;
+}

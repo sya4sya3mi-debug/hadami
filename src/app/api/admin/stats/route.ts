@@ -36,7 +36,6 @@ export async function GET(request: NextRequest) {
     totalScansResult,
     productsResult,
     discoveriesResult,
-    routinesResult,
     inviteCodesResult,
   ] = await Promise.all([
     supabaseAdmin.auth.admin.listUsers({ perPage: 1000 }),
@@ -44,7 +43,6 @@ export async function GET(request: NextRequest) {
     supabaseAdmin.from("scan_limit_by_email").select("total_count"),
     supabaseAdmin.from("products").select("*", { count: "exact", head: true }),
     supabaseAdmin.from("zukan_discoveries").select("*", { count: "exact", head: true }),
-    supabaseAdmin.from("routines").select("*", { count: "exact", head: true }),
     supabaseAdmin.from("invitation_codes").select("is_active, used_count"),
   ]);
 
@@ -60,7 +58,6 @@ export async function GET(request: NextRequest) {
   );
   const totalProducts = productsResult.count ?? 0;
   const totalDiscoveries = discoveriesResult.count ?? 0;
-  const totalRoutines = routinesResult.count ?? 0;
   const activeInviteCodes = (inviteCodesResult.data ?? []).filter((c) => c.is_active).length;
   const totalInviteUses = (inviteCodesResult.data ?? []).reduce(
     (sum: number, c: { used_count: number }) => sum + (c.used_count ?? 0),
@@ -74,7 +71,6 @@ export async function GET(request: NextRequest) {
     totalScans,
     totalProducts,
     totalDiscoveries,
-    totalRoutines,
     activeInviteCodes,
     totalInviteUses,
     currentMonth,

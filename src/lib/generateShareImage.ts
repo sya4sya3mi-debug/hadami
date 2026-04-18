@@ -3,6 +3,7 @@
 import { Product, Ingredient } from "@/types";
 import { getIngredientById, RARITY } from "./ingredients";
 import { getGenreByKey } from "./productGenres";
+import { buildCanvasFont } from "./shareCardFonts";
 
 /** 画像URLを読み込む（CORS回避のためfetch→ObjectURLを試みる） */
 async function loadImage(src: string): Promise<HTMLImageElement> {
@@ -53,7 +54,7 @@ function drawBadge(
   fg: string,
   fontSize: number
 ): number {
-  const font = `700 ${fontSize}px -apple-system, 'Helvetica Neue', Arial, sans-serif`;
+  const font = buildCanvasFont(700, fontSize);
   ctx.save();
   ctx.font = font;
   const tw = ctx.measureText(text).width;
@@ -83,7 +84,7 @@ function drawFooter(ctx: CanvasRenderingContext2D, W: number, footerTop: number)
 
   // HADAMI ロゴテキスト（左）
   ctx.save();
-  ctx.font = `800 28px -apple-system, 'Helvetica Neue', Arial, sans-serif`;
+  ctx.font = buildCanvasFont(800, 28);
   ctx.textBaseline = "top";
   ctx.textAlign = "left";
   ctx.fillStyle = "#3A8F7A";
@@ -92,7 +93,7 @@ function drawFooter(ctx: CanvasRenderingContext2D, W: number, footerTop: number)
 
   // キャッチコピー（ロゴ右）
   ctx.save();
-  ctx.font = `500 16px -apple-system, 'Helvetica Neue', Arial, sans-serif`;
+  ctx.font = buildCanvasFont(500, 16);
   ctx.textBaseline = "top";
   ctx.textAlign = "left";
   ctx.fillStyle = "#AAAAAA";
@@ -101,7 +102,7 @@ function drawFooter(ctx: CanvasRenderingContext2D, W: number, footerTop: number)
 
   // URL（右端）
   ctx.save();
-  ctx.font = `500 16px -apple-system, 'Helvetica Neue', Arial, sans-serif`;
+  ctx.font = buildCanvasFont(500, 16);
   ctx.textBaseline = "top";
   ctx.textAlign = "right";
   ctx.fillStyle = "#BDBDBD";
@@ -122,7 +123,7 @@ function drawIngredientTags(
 
   // 「注目成分」ラベル
   ctx.save();
-  ctx.font = `600 20px -apple-system, 'Helvetica Neue', Arial, sans-serif`;
+  ctx.font = buildCanvasFont(600, 20);
   ctx.textBaseline = "top";
   ctx.textAlign = "left";
   ctx.fillStyle = "#AAAAAA";
@@ -140,7 +141,7 @@ function drawIngredientTags(
     const label = stars + ing.nameJa;
 
     ctx.save();
-    ctx.font = `700 21px -apple-system, 'Helvetica Neue', Arial, sans-serif`;
+    ctx.font = buildCanvasFont(700, 21);
     const tw = ctx.measureText(label).width;
     const PX = 16;
     const tagW = tw + PX * 2;
@@ -226,7 +227,7 @@ function drawProductInfo(
 ) {
   // 製品名
   ctx.save();
-  ctx.font = `800 36px -apple-system, 'Helvetica Neue', Arial, sans-serif`;
+  ctx.font = buildCanvasFont(800, 36);
   ctx.textBaseline = "top";
   ctx.textAlign = "left";
   ctx.fillStyle = "#212121";
@@ -241,7 +242,7 @@ function drawProductInfo(
 
   // ブランド
   ctx.save();
-  ctx.font = `500 24px -apple-system, 'Helvetica Neue', Arial, sans-serif`;
+  ctx.font = buildCanvasFont(500, 24);
   ctx.textBaseline = "top";
   ctx.textAlign = "left";
   ctx.fillStyle = "#888888";
@@ -294,7 +295,7 @@ export async function generateProductShareImage(product: Product): Promise<strin
   {
     const text = "HADAMI";
     ctx.save();
-    ctx.font = `700 ${BADGE_FONT_SIZE}px -apple-system, 'Helvetica Neue', Arial, sans-serif`;
+    ctx.font = buildCanvasFont(700, BADGE_FONT_SIZE);
     const tw = ctx.measureText(text).width;
     const PX = 18;
     const bw = tw + PX * 2;
@@ -369,7 +370,7 @@ export async function generateScanResultShareImage(params: {
   {
     const text = "HADAMI";
     ctx.save();
-    ctx.font = `700 ${BADGE_FONT_SIZE}px -apple-system, 'Helvetica Neue', Arial, sans-serif`;
+    ctx.font = buildCanvasFont(700, BADGE_FONT_SIZE);
     const tw = ctx.measureText(text).width;
     const PX = 18;
     const bw = tw + PX * 2;

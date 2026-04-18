@@ -21,7 +21,7 @@ import { useUser } from "@/lib/auth";
 import AuthGuard from "@/components/ui/AuthGuard";
 import { RoutineType, Product, ProductGenre, RecommendationResult, CategoryKey } from "@/types";
 import { SparkleIcon, ChartIcon, SunIcon, MoonIcon } from "@/components/ui/Icons";
-// Routine creation uses /api/routine/create
+import { defaultRoutineCardConfig } from "@/lib/routines";
 
 const DECK_OPTIONS: { key: RoutineType; label: string }[] = [
   { key: "morning", label: "朝" },
@@ -168,8 +168,8 @@ export default function DeckPage() {
     }
   };
 
-  /** スキンケア管理の朝/夜アイテムからシェアカード用ステップを生成する */
-  const handleCreateShareCard = async () => {
+  /** スキンケア管理の朝/夜アイテムからシェアカード用ステップを生成し、sessionStorage経由で /routine/share に渡す */
+  const handleCreateShareCard = () => {
     if (isCreatingShareCard) return;
     const buildSteps = (routineKey: RoutineType) => {
       return allDeckItems
@@ -185,10 +185,12 @@ export default function DeckPage() {
           const product = getProduct(item.productId);
           const genre = getGenreByKey(product?.productType ?? "other");
           return {
-            step_name: genre?.label ?? "その他",
-            product_name: product ? `${product.brand ? product.brand + " " : ""}${product.name}` : undefined,
-            product_id: product?.id,
             icon: genre?.icon ?? "🌿",
+            step_name: genre?.label ?? "その他",
+            product_name: product?.name ?? "",
+            brand: product?.brand ?? "",
+            product_id: product?.id ?? "",
+            product_image_url: product?.packageImagePath ?? "",
           };
         });
     };
@@ -197,26 +199,16 @@ export default function DeckPage() {
     setShareCardError(null);
 
     try {
-      const response = await fetch("/api/routine/create", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          amSteps: buildSteps("morning"),
-          pmSteps: buildSteps("night"),
-        }),
-      });
-      const data = await response.json();
-
-      if (!response.ok || !data.routineId) {
-        setShareCardError(data.error ?? "シェアカードの作成に失敗しました");
-        return;
-      }
-
-      router.push(`/routine/${data.routineId}/share`);
+      const draft = {
+        config: defaultRoutineCardConfig(),
+        amSteps: buildSteps("morning"),
+        pmSteps: buildSteps("night"),
+      };
+      sessionStorage.setItem("hadami.shareCard.draft", JSON.stringify(draft));
+      router.push("/routine/share");
     } catch (e) {
-      console.error("Failed to create routine:", e);
+      console.error("Failed to prepare share card draft:", e);
       setShareCardError("シェアカードの作成に失敗しました");
-    } finally {
       setIsCreatingShareCard(false);
     }
   };
@@ -305,15 +297,6 @@ export default function DeckPage() {
                 style={{ background: "linear-gradient(135deg, #3A8F7A, #2D7A66)" }}
               >
                 🌿 シェアカードを作成
-              </button>
-              <button
-                type="button"
-                onClick={() => router.push("/routine")}
-                className="w-full mt-3 py-3.5 rounded-r2 text-sm font-bold font-sans cursor-pointer
-                           flex items-center justify-center gap-2
-                           border border-bo-parchment bg-white text-bo-ink-soft shadow-bo1 pressable"
-              >
-                📋 シェアカード一覧
               </button>
               {isCreatingShareCard && (
                 <p className="mt-2 text-center text-xs text-bo-ink-muted">シェアカードを作成しています...</p>

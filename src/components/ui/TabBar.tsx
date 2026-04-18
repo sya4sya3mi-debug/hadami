@@ -104,6 +104,11 @@ export default function TabBar() {
   const handleClick = (e: React.MouseEvent, href: string) => {
     e.preventDefault();
 
+    // Guard: block navigation while a modal sheet is open
+    if (typeof document !== "undefined" && document.body.dataset.modalOpen) {
+      return;
+    }
+
     // Guard: unsaved scan confirmation
     if (unsavedScan && pathname.startsWith("/scan")) {
       if (

@@ -12,7 +12,6 @@ interface AdminUser {
   isBanned: boolean;
   products: number;
   scansThisMonth: number;
-  routines: number;
   discoveries: number;
 }
 
@@ -242,8 +241,6 @@ export default function AdminUsersPage() {
                   <span>今月スキャン {u.scansThisMonth}</span>
                   <span>•</span>
                   <span>成分 {u.discoveries}</span>
-                  <span>•</span>
-                  <span>ルーティン {u.routines}</span>
                 </div>
               </div>
             ))}

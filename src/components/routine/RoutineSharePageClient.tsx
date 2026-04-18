@@ -1,16 +1,9 @@
 "use client";
 
-import { useState, useTransition, useCallback, useEffect, useRef } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import RoutineShareCard from "./RoutineShareCard";
-import { saveRoutineAction, deleteRoutineAction } from "@/app/actions/routineActions";
-import {
-  routineToCardConfig,
-  getAmSteps,
-  getPmSteps,
-  type Routine,
-  type RoutineCardConfig,
-} from "@/lib/routines";
+import type { RoutineCardConfig } from "@/lib/routines";
 import { downloadShareImage } from "@/lib/downloadImage";
 import {
   getRoutineCardEmoji,
@@ -32,7 +25,7 @@ const ACCENT_COLORS = [
 ];
 const STEP_ICONS = ["🌿", "💧", "✨", "🧴", "🌸", "🫧", "☁️", "🍃", "💎", "🌊"];
 
-type StepDraft = {
+export type StepDraft = {
   icon: string;
   step_name: string;
   product_name: string;
@@ -65,17 +58,19 @@ function isMobileShareDevice() {
 }
 
 export default function RoutineSharePageClient({
-  routine,
+  initialConfig,
+  initialAmSteps,
+  initialPmSteps,
   initialCardMode,
 }: {
-  routine: Routine;
+  initialConfig: RoutineCardConfig;
+  initialAmSteps: StepDraft[];
+  initialPmSteps: StepDraft[];
   initialCardMode: RoutineCardMode;
 }) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const [isPending, startTransition] = useTransition();
-  const [saved, setSaved] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
   const [lastExportMode, setLastExportMode] = useState<"shared" | "downloaded" | null>(null);
   const [previewScale, setPreviewScale] = useState(1);
@@ -83,27 +78,9 @@ export default function RoutineSharePageClient({
   const captureRef = useRef<HTMLDivElement | null>(null);
   const previewViewportRef = useRef<HTMLDivElement | null>(null);
 
-  const [config, setConfig] = useState<RoutineCardConfig>(() => routineToCardConfig(routine));
-  const [amSteps, setAmSteps] = useState<StepDraft[]>(() =>
-    getAmSteps(routine).map((step) => ({
-      icon: step.icon,
-      step_name: step.step_name,
-      product_name: step.product_name ?? "",
-      brand: step.product?.brand ?? "",
-      product_id: step.product_id ?? step.product?.id ?? "",
-      product_image_url: step.product?.package_image_url ?? "",
-    }))
-  );
-  const [pmSteps, setPmSteps] = useState<StepDraft[]>(() =>
-    getPmSteps(routine).map((step) => ({
-      icon: step.icon,
-      step_name: step.step_name,
-      product_name: step.product_name ?? "",
-      brand: step.product?.brand ?? "",
-      product_id: step.product_id ?? step.product?.id ?? "",
-      product_image_url: step.product?.package_image_url ?? "",
-    }))
-  );
+  const [config, setConfig] = useState<RoutineCardConfig>(initialConfig);
+  const [amSteps, setAmSteps] = useState<StepDraft[]>(initialAmSteps);
+  const [pmSteps, setPmSteps] = useState<StepDraft[]>(initialPmSteps);
   const [activeTab, setActiveTab] = useState<RoutineCardMode>(initialCardMode);
 
   const currentSteps = activeTab === "am" ? amSteps : pmSteps;
@@ -204,40 +181,6 @@ export default function RoutineSharePageClient({
     );
   };
 
-  const handleSave = () => {
-    startTransition(async () => {
-      await saveRoutineAction(
-        routine.id,
-        {
-          name: config.title,
-          skin_type: config.skinType,
-          concerns: config.concerns,
-          note: config.note,
-          is_public: true,
-        },
-        amSteps.filter((step) => step.step_name.trim()).map((step) => ({
-          step_name: step.step_name,
-          product_name: step.product_name || undefined,
-          product_id: step.product_id || undefined,
-          icon: step.icon,
-        })),
-        pmSteps.filter((step) => step.step_name.trim()).map((step) => ({
-          step_name: step.step_name,
-          product_name: step.product_name || undefined,
-          product_id: step.product_id || undefined,
-          icon: step.icon,
-        }))
-      );
-      setSaved(true);
-      setTimeout(() => setSaved(false), 2000);
-    });
-  };
-
-  const handleDelete = () => {
-    if (!confirm("このルーティンを削除しますか？")) return;
-    startTransition(() => deleteRoutineAction(routine.id));
-  };
-
   const copyShareText = () => {
     const stepCount = currentSteps.filter((step) => step.step_name.trim()).length;
 
@@ -271,12 +214,17 @@ export default function RoutineSharePageClient({
       });
 
       const { toBlob } = await import("html-to-image");
-      const blob = await toBlob(captureRef.current, {
-        pixelRatio: 2,
-        cacheBust: true,
-        backgroundColor: undefined,
-        skipFonts: true,
-      });
+      const blob = await Promise.race([
+        toBlob(captureRef.current, {
+          pixelRatio: 2,
+          cacheBust: true,
+          backgroundColor: undefined,
+          skipFonts: true,
+        }),
+        new Promise<Blob | null>((_, reject) => {
+          window.setTimeout(() => reject(new Error("Share image generation timed out")), 15000);
+        }),
+      ]);
 
       const filename = `hadami-routine-${activeTab}-${Date.now()}.png`;
       const shareNavigator = navigator as ShareCapableNavigator;
@@ -533,20 +481,12 @@ export default function RoutineSharePageClient({
           </Section>
 
           <div className="space-y-3">
-            <button
-              onClick={handleSave}
-              disabled={isPending}
-              className="w-full py-3 rounded-xl text-white font-semibold text-sm transition-colors disabled:opacity-50"
-              style={{ backgroundColor: config.accentColor }}
-            >
-              {saved ? "✓ 保存しました" : isPending ? "保存中..." : "保存する"}
-            </button>
-
             <div className="grid gap-3 sm:grid-cols-2">
               <button
                 onClick={handleDownloadImage}
                 disabled={isDownloading}
-                className="px-6 py-3 rounded-xl text-sm font-semibold border border-black/10 dark:border-white/10 transition-colors hover:bg-black/5 dark:hover:bg-white/5 disabled:opacity-60"
+                className="px-6 py-3 rounded-xl text-sm font-semibold text-white transition-colors disabled:opacity-60"
+                style={{ backgroundColor: config.accentColor }}
               >
                 {isDownloading
                   ? "画像を作成中..."
@@ -565,16 +505,9 @@ export default function RoutineSharePageClient({
             </div>
 
             <p className="text-xs text-gray-400">
-              iPhoneやAndroidでは保存メニューから「画像を保存」を選ぶと写真に入れやすくなります。
+              iPhoneやAndroidでは保存メニューから「画像を保存」を選ぶと写真に入れやすくなります。このカードはデバイス上でのみ保持され、ページを離れるとリセットされます。
             </p>
           </div>
-
-          <button
-            onClick={handleDelete}
-            className="w-full text-center text-xs text-red-400 hover:text-red-500 py-2"
-          >
-            このルーティンを削除
-          </button>
         </div>
 
         <div className="lg:sticky lg:top-6 lg:self-start order-1 lg:order-2">

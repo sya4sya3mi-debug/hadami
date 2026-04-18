@@ -43,8 +43,14 @@ export default function BottomSheet({
 
     document.addEventListener("keydown", handleKeyDown);
 
+    const prev = Number(document.body.dataset.modalOpen || "0");
+    document.body.dataset.modalOpen = String(prev + 1);
+
     return () => {
       document.removeEventListener("keydown", handleKeyDown);
+      const next = Number(document.body.dataset.modalOpen || "1") - 1;
+      if (next <= 0) delete document.body.dataset.modalOpen;
+      else document.body.dataset.modalOpen = String(next);
     };
   }, [open, handleKeyDown]);
 

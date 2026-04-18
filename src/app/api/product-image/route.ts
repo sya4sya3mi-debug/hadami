@@ -8,7 +8,7 @@ import {
   getProductImageThumbPath,
   getProductImageThumbPathFromStoredPath,
 } from "@/lib/productImages";
-import { r2Upload, r2Delete } from "@/lib/r2";
+import { r2Upload, r2Delete, r2Download } from "@/lib/r2";
 
 export const runtime = "nodejs";
 export const maxDuration = 30;
@@ -17,6 +17,43 @@ const AVIF_FULL_QUALITY = 50;
 const AVIF_THUMB_QUALITY = 45;
 const AVIF_EFFORT = 3;
 const AVIF_CONTENT_TYPE = "image/avif";
+
+function getContentTypeFromKey(key: string) {
+  if (key.endsWith(".avif")) return "image/avif";
+  if (key.endsWith(".webp")) return "image/webp";
+  if (key.endsWith(".png")) return "image/png";
+  if (key.endsWith(".jpg") || key.endsWith(".jpeg")) return "image/jpeg";
+  return "application/octet-stream";
+}
+
+export async function GET(request: Request) {
+  const auth = await authenticateRequest();
+  if (!auth.authenticated) return auth.response;
+
+  const key = new URL(request.url).searchParams.get("key");
+
+  if (!key) {
+    return NextResponse.json({ error: "key が必要です" }, { status: 400 });
+  }
+
+  if (!key.startsWith(`${auth.user.id}/`)) {
+    return NextResponse.json({ error: "アクセス権がありません" }, { status: 403 });
+  }
+
+  const image = await r2Download(key);
+  if (!image) {
+    return NextResponse.json({ error: "画像が見つかりません" }, { status: 404 });
+  }
+
+  return new NextResponse(new Uint8Array(image), {
+    headers: {
+      "Cache-Control": "private, max-age=3000, stale-while-revalidate=600",
+      "Content-Type": getContentTypeFromKey(key),
+      "Content-Disposition": "inline",
+      "X-Content-Type-Options": "nosniff",
+    },
+  });
+}
 
 export async function POST(request: Request) {
   const auth = await authenticateRequest();
