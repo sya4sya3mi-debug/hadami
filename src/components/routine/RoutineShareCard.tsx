@@ -98,10 +98,10 @@ export default function RoutineShareCard({ config, mode, steps }: Props) {
               color: textMain,
               fontSize: 13,
               fontWeight: 700,
-              padding: "5px 12px",
+              padding: "7px 12px 9px",
               borderRadius: 999,
               border: `1px solid ${borderColor}`,
-              lineHeight: 1.4,
+              lineHeight: 1,
             }}
           >
             {modeLabel}カード
@@ -113,9 +113,9 @@ export default function RoutineShareCard({ config, mode, steps }: Props) {
               color: accentColor,
               fontSize: 13,
               fontWeight: 600,
-              padding: "5px 12px",
+              padding: "8px 12px 10px",
               borderRadius: 999,
-              lineHeight: 1.4,
+              lineHeight: 1,
             }}
           >
             {skinType}
@@ -308,8 +308,8 @@ function StepList({
                     style={{
                       display: "inline-block",
                       alignSelf: "flex-start",
-                      padding: "5px 10px",
-                      lineHeight: 1.4,
+                      padding: "7px 10px 9px",
+                      lineHeight: 1,
                       borderRadius: 999,
                       background: isDark ? "rgba(255,255,255,0.08)" : hexToRgba(accentColor, 0.07),
                       color: accentColor,
