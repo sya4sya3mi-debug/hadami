@@ -1,10 +1,29 @@
 import { NextRequest, NextResponse } from "next/server";
+import {
+  createInviteProofToken,
+  INVITE_PROOF_COOKIE_NAME,
+} from "@/lib/inviteProof";
+import { getClientIp, rateLimit } from "@/lib/rateLimit";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 
 export const dynamic = "force-dynamic";
 
 export async function POST(request: NextRequest) {
   try {
+    const ip = getClientIp(request);
+    const rl = await rateLimit(ip, 10 * 60_000, 10, "verify-invite", {
+      failOpen: true,
+    });
+    if (!rl.allowed) {
+      return NextResponse.json(
+        {
+          valid: false,
+          error: "アクセスが集中しています。しばらくしてから再度お試しください。",
+        },
+        { status: 429 }
+      );
+    }
+
     const { code } = (await request.json()) as { code?: string };
 
     if (!code || typeof code !== "string") {
@@ -18,7 +37,7 @@ export async function POST(request: NextRequest) {
 
     const { data, error } = await supabaseAdmin
       .from("invitation_codes")
-      .select("id, code, max_uses, used_count, is_active, expires_at")
+      .select("id, max_uses, used_count, is_active, expires_at")
       .eq("code", trimmed)
       .single();
 
@@ -31,7 +50,7 @@ export async function POST(request: NextRequest) {
 
     if (!data.is_active) {
       return NextResponse.json(
-        { valid: false, error: "この招待コードは無効になっています。" },
+        { valid: false, error: "この招待コードは現在利用できません。" },
         { status: 403 }
       );
     }
@@ -45,30 +64,36 @@ export async function POST(request: NextRequest) {
 
     if (data.max_uses > 0 && data.used_count >= data.max_uses) {
       return NextResponse.json(
-        { valid: false, error: "この招待コードは使用上限に達しています。" },
+        { valid: false, error: "この招待コードは利用上限に達しています。" },
         { status: 403 }
       );
     }
 
-    // used_count をインクリメント
-    await supabaseAdmin
-      .from("invitation_codes")
-      .update({ used_count: data.used_count + 1 })
-      .eq("id", data.id);
-
-    // Cookie にフラグを設定（24時間有効 — サインアップ完了まで保持）
+    // Invite validation only issues a signed proof cookie. The code is redeemed
+    // atomically when profile creation succeeds.
     const response = NextResponse.json({ valid: true });
-    response.cookies.set("hadami-invite-verified", "true", {
+    response.cookies.set(
+      INVITE_PROOF_COOKIE_NAME,
+      createInviteProofToken(data.id),
+      {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        path: "/",
+        maxAge: 60 * 60 * 24,
+      }
+    );
+    response.cookies.set("hadami-invite-verified", "", {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
       path: "/",
-      maxAge: 60 * 60 * 24, // 24時間
+      maxAge: 0,
     });
 
     return response;
-  } catch (e) {
-    console.error("verify-invite error:", e);
+  } catch (error) {
+    console.error("verify-invite error:", error);
     return NextResponse.json(
       { valid: false, error: "サーバーエラーが発生しました。" },
       { status: 500 }
