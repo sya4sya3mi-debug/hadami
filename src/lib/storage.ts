@@ -9,6 +9,8 @@ function isDirectUrl(path: string): boolean {
   );
 }
 
+const SIGNED_URL_BATCH_SIZE = 50;
+
 /** 複数パスの署名付きURLを /api/signed-url 経由で取得 */
 export async function getSignedImageUrls(
   _supabase: SupabaseClient,
@@ -29,23 +31,32 @@ export async function getSignedImageUrls(
 
   if (keysToSign.length === 0) return result;
 
-  try {
-    const res = await fetch("/api/signed-url", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ keys: keysToSign }),
-    });
-
-    if (res.ok) {
-      const data = await res.json();
-      const urls: Record<string, string> = data.urls ?? {};
-      for (const [k, v] of Object.entries(urls)) {
-        result[k] = v;
-      }
-    }
-  } catch {
-    // ネットワークエラー時は null のまま
+  const batches: string[][] = [];
+  for (let i = 0; i < keysToSign.length; i += SIGNED_URL_BATCH_SIZE) {
+    batches.push(keysToSign.slice(i, i + SIGNED_URL_BATCH_SIZE));
   }
+
+  await Promise.all(
+    batches.map(async (batch) => {
+      try {
+        const res = await fetch("/api/signed-url", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ keys: batch }),
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          const urls: Record<string, string> = data.urls ?? {};
+          for (const [k, v] of Object.entries(urls)) {
+            result[k] = v;
+          }
+        }
+      } catch {
+        // ネットワークエラー時は null のまま
+      }
+    })
+  );
 
   return result;
 }
