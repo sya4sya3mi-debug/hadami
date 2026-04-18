@@ -101,36 +101,36 @@ export default function RoutineShareCard({ config, mode, steps }: Props) {
         <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
           <span
             style={{
-              display: "inline-block",
-              padding: "2px 12px 6px",
-              lineHeight: 1,
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 5,
               background: isDark ? "rgba(255,255,255,0.12)" : "rgba(255,255,255,0.72)",
               color: textMain,
               fontSize: 13,
               fontWeight: 700,
+              padding: "6px 12px",
               borderRadius: 999,
               border: `1px solid ${borderColor}`,
-              whiteSpace: "nowrap",
-              verticalAlign: "middle",
+              lineHeight: 1,
             }}
           >
-            {modeLabel}カード
+            {modeEmoji} {modeLabel}カード
           </span>
           <span
             style={{
-              display: "inline-block",
-              padding: "2px 12px 6px",
-              lineHeight: 1,
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 4,
               background: isDark ? "rgba(255,255,255,0.08)" : hexToRgba(accentColor, 0.08),
               color: accentColor,
               fontSize: 13,
               fontWeight: 600,
+              padding: "6px 12px",
               borderRadius: 999,
-              whiteSpace: "nowrap",
-              verticalAlign: "middle",
+              lineHeight: 1,
             }}
           >
-            {skinType}
+            {SKIN_TYPE_EMOJI[skinType] ?? "✨"} {skinType}
           </span>
           {username && (
             <span style={{ fontSize: 12, color: textSub }}>by @{username}</span>
@@ -318,9 +318,11 @@ function StepList({
                 >
                   <div
                     style={{
-                      display: "inline-block",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 6,
                       alignSelf: "flex-start",
-                      padding: "2px 10px 6px",
+                      padding: "6px 10px",
                       lineHeight: 1,
                       borderRadius: 999,
                       background: isDark ? "rgba(255,255,255,0.08)" : hexToRgba(accentColor, 0.07),
@@ -331,7 +333,8 @@ function StepList({
                       verticalAlign: "middle",
                     }}
                   >
-                    {step.step_name}
+                    <span>{step.icon}</span>
+                    <span>{step.step_name}</span>
                   </div>
                   {step.brand && (
                     <div

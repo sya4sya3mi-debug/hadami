@@ -299,18 +299,16 @@ export default function RoutineSharePageClient({
         requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
       });
 
-      const { default: html2canvas } = await import("html2canvas");
-      const canvas = await html2canvas(captureRef.current, {
-        scale: 2,
-        backgroundColor: null,
-        useCORS: true,
-        logging: false,
+      const { toBlob } = await import("html-to-image");
+      const pixelRatio = 2;
+      const blob = await toBlob(captureRef.current, {
+        pixelRatio,
+        cacheBust: true,
+        backgroundColor: undefined,
+        skipFonts: false,
       });
 
       const filename = `hadami-routine-${activeTab}-${Date.now()}.png`;
-      const blob = await new Promise<Blob | null>((resolve) => {
-        canvas.toBlob(resolve, "image/png");
-      });
       const shareNavigator = navigator as ShareCapableNavigator;
 
       if (
@@ -337,7 +335,14 @@ export default function RoutineSharePageClient({
         }
       }
 
-      downloadShareImage(canvas.toDataURL("image/png"), filename);
+      if (!blob) throw new Error("Failed to generate image");
+      const dataUrl = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = () => reject(reader.error);
+        reader.readAsDataURL(blob);
+      });
+      downloadShareImage(dataUrl, filename);
       setLastExportMode("downloaded");
       setTimeout(() => setLastExportMode(null), 2500);
     } catch {
