@@ -305,7 +305,7 @@ export default function RoutineSharePageClient({
         pixelRatio,
         cacheBust: true,
         backgroundColor: undefined,
-        skipFonts: false,
+        skipFonts: true,
       });
 
       const filename = `hadami-routine-${activeTab}-${Date.now()}.png`;

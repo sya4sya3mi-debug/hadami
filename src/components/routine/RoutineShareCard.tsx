@@ -23,7 +23,7 @@ type Props = {
 };
 
 const BODY_FONT_STACK =
-  "'YakuHanJPs', -apple-system, system-ui, 'Segoe UI', 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', Meiryo, sans-serif";
+  "-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', 'Yu Gothic', Meiryo, sans-serif";
 const DISPLAY_FONT_STACK = BODY_FONT_STACK;
 
 const hexToRgba = (hex: string, alpha: number) => {
