@@ -11,14 +11,23 @@
  */
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 
+type RateLimitOptions = {
+  failOpen?: boolean;
+};
+
 export async function rateLimit(
   ip: string,
   windowMs: number,
   maxRequests: number,
-  route: string = "default"
+  route: string = "default",
+  options: RateLimitOptions = {}
 ): Promise<{ allowed: boolean; remaining: number; retryAfterMs: number }> {
+  const failOpen = options.failOpen ?? true;
   const key = `ip:${ip}:${route}`;
   const windowSeconds = Math.max(1, Math.round(windowMs / 1000));
+  const failureResult = failOpen
+    ? { allowed: true, remaining: maxRequests, retryAfterMs: 0 }
+    : { allowed: false, remaining: 0, retryAfterMs: windowMs };
 
   try {
     const { data, error } = await supabaseAdmin.rpc("check_rate_limit", {
@@ -28,8 +37,8 @@ export async function rateLimit(
     });
 
     if (error) {
-      console.error("rate limit RPC error (allowing request):", error.message);
-      return { allowed: true, remaining: maxRequests, retryAfterMs: 0 };
+      console.error("rate limit RPC error:", error.message);
+      return failureResult;
     }
 
     const allowed = data === true;
@@ -39,8 +48,8 @@ export async function rateLimit(
       retryAfterMs: allowed ? 0 : windowMs,
     };
   } catch (err) {
-    console.error("rate limit unexpected error (allowing request):", err);
-    return { allowed: true, remaining: maxRequests, retryAfterMs: 0 };
+    console.error("rate limit unexpected error:", err);
+    return failureResult;
   }
 }
 

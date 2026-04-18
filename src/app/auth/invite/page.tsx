@@ -28,7 +28,7 @@ export default function InvitePage() {
       const data = await res.json();
 
       if (data.valid) {
-        router.push("/auth/login");
+        router.push("/auth/login?invite=1");
       } else {
         setError(data.error || "招待コードが無効です。");
       }
