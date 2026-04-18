@@ -101,36 +101,32 @@ export default function RoutineShareCard({ config, mode, steps }: Props) {
         <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
           <span
             style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 5,
+              display: "inline-block",
               background: isDark ? "rgba(255,255,255,0.12)" : "rgba(255,255,255,0.72)",
               color: textMain,
               fontSize: 13,
               fontWeight: 700,
-              padding: "6px 12px",
+              padding: "5px 12px",
               borderRadius: 999,
               border: `1px solid ${borderColor}`,
-              lineHeight: 1,
+              lineHeight: 1.4,
             }}
           >
-            {modeEmoji} {modeLabel}カード
+            {modeLabel}カード
           </span>
           <span
             style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 4,
+              display: "inline-block",
               background: isDark ? "rgba(255,255,255,0.08)" : hexToRgba(accentColor, 0.08),
               color: accentColor,
               fontSize: 13,
               fontWeight: 600,
-              padding: "6px 12px",
+              padding: "5px 12px",
               borderRadius: 999,
-              lineHeight: 1,
+              lineHeight: 1.4,
             }}
           >
-            {SKIN_TYPE_EMOJI[skinType] ?? "✨"} {skinType}
+            {skinType}
           </span>
           {username && (
             <span style={{ fontSize: 12, color: textSub }}>by @{username}</span>
@@ -318,23 +314,19 @@ function StepList({
                 >
                   <div
                     style={{
-                      display: "inline-flex",
-                      alignItems: "center",
-                      gap: 6,
+                      display: "inline-block",
                       alignSelf: "flex-start",
-                      padding: "6px 10px",
-                      lineHeight: 1,
+                      padding: "5px 10px",
+                      lineHeight: 1.4,
                       borderRadius: 999,
                       background: isDark ? "rgba(255,255,255,0.08)" : hexToRgba(accentColor, 0.07),
                       color: accentColor,
                       fontSize: 12,
                       fontWeight: 700,
                       whiteSpace: "nowrap",
-                      verticalAlign: "middle",
                     }}
                   >
-                    <span>{step.icon}</span>
-                    <span>{step.step_name}</span>
+                    {step.step_name}
                   </div>
                   {step.brand && (
                     <div
