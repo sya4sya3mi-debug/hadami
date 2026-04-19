@@ -55,14 +55,17 @@ function ProfileSetupPageInner() {
     setError("");
 
     try {
+      // claimはベストエフォート: 招待証明をDBに記録する試み。
+      // コールバックで既に記録済みの場合や失敗しても、RPCが最終判定する。
       const claimBody = inviteToken ? JSON.stringify({ invite_token: inviteToken }) : undefined;
       const claimResponse = await fetch("/api/invite/claim", {
         method: "POST",
         headers: claimBody ? { "Content-Type": "application/json" } : undefined,
         body: claimBody,
-      });
+      }).catch(() => null);
 
-      if (!claimResponse.ok) {
+      // 明示的な招待エラー（400/403）の場合のみ中断、500は続行する
+      if (claimResponse && !claimResponse.ok && claimResponse.status !== 500) {
         const claimData = (await claimResponse.json().catch(() => null)) as {
           error?: string;
         } | null;
