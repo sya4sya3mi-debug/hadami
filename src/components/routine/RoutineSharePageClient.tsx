@@ -5,6 +5,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import RoutineShareCard from "./RoutineShareCard";
 import type { RoutineCardConfig } from "@/lib/routines";
 import { downloadShareImage } from "@/lib/downloadImage";
+import { useProductStore } from "@/stores/useProductStore";
 import {
   getRoutineCardEmoji,
   getRoutineCardLabel,
@@ -78,6 +79,7 @@ export default function RoutineSharePageClient({
   const [captureSteps, setCaptureSteps] = useState<StepDraft[] | null>(null);
   const captureRef = useRef<HTMLDivElement | null>(null);
   const previewViewportRef = useRef<HTMLDivElement | null>(null);
+  const allProducts = useProductStore((state) => state.products);
 
   const [config, setConfig] = useState<RoutineCardConfig>(initialConfig);
   const [amSteps, setAmSteps] = useState<StepDraft[]>(initialAmSteps);
@@ -144,11 +146,25 @@ export default function RoutineSharePageClient({
     return `/api/product-image?key=${encodeURIComponent(imagePath)}`;
   }
 
+  function resolveStepImageSource(step: StepDraft) {
+    if (step.product_image_url) return step.product_image_url;
+    if (!step.product_id) return "";
+
+    const product = allProducts.find((item) => item.id === step.product_id);
+    return (
+      product?.packageImageThumbPath ??
+      product?.packageImagePath ??
+      product?.packageImageThumb ??
+      product?.packageImage ??
+      ""
+    );
+  }
+
   function resolveSteps(steps: StepDraft[]) {
     return steps.map((step) => ({
       ...step,
-      product_image_url: step.product_image_url
-        ? buildRoutineStepImageUrl(step.product_image_url)
+      product_image_url: resolveStepImageSource(step)
+        ? buildRoutineStepImageUrl(resolveStepImageSource(step))
         : "",
     }));
   }
@@ -222,7 +238,7 @@ export default function RoutineSharePageClient({
           const url = isDirectImageUrl(raw) ? raw : buildRoutineStepImageUrl(raw);
           try {
             const response = await fetch(url, { credentials: "same-origin" });
-            if (!response.ok) return { ...step, product_image_url: "" };
+            if (!response.ok) return { ...step, product_image_url: url };
             const blob = await response.blob();
             const dataUrl = await new Promise<string>((resolve, reject) => {
               const reader = new FileReader();
@@ -232,7 +248,7 @@ export default function RoutineSharePageClient({
             });
             return { ...step, product_image_url: dataUrl };
           } catch {
-            return { ...step, product_image_url: "" };
+            return { ...step, product_image_url: url };
           }
         })
       );

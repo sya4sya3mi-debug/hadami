@@ -3,6 +3,67 @@ import { NextRequest, NextResponse } from "next/server";
 import { claimInviteProofForUser, hasPendingInviteClaim } from "@/lib/inviteClaims";
 import { INVITE_PROOF_COOKIE_NAME } from "@/lib/inviteProof";
 import { getRegistrationAvailability } from "@/lib/registration";
+import { supabaseAdmin } from "@/lib/supabaseAdmin";
+
+const NEW_USER_GRACE_PERIOD_MS = 15 * 60 * 1000;
+
+type CallbackUser = {
+  id: string;
+  created_at?: string;
+  last_sign_in_at?: string | null;
+};
+
+function parseTimestamp(value?: string | null): number | null {
+  if (!value) return null;
+
+  const timestamp = Date.parse(value);
+  return Number.isFinite(timestamp) ? timestamp : null;
+}
+
+function wasJustCreated(user: CallbackUser): boolean {
+  const createdAt = parseTimestamp(user.created_at);
+  const lastSignInAt = parseTimestamp(user.last_sign_in_at);
+
+  if (createdAt === null || lastSignInAt === null) {
+    return false;
+  }
+
+  return (
+    Date.now() - createdAt <= NEW_USER_GRACE_PERIOD_MS &&
+    Math.abs(lastSignInAt - createdAt) <= NEW_USER_GRACE_PERIOD_MS
+  );
+}
+
+async function cleanupUnauthorizedUser(userId: string) {
+  const { error: profileDeleteError } = await supabaseAdmin
+    .from("profiles")
+    .delete()
+    .eq("id", userId);
+
+  if (profileDeleteError) {
+    console.error("Failed to delete unauthorized profile:", profileDeleteError);
+  }
+
+  const { error: claimDeleteError } = await supabaseAdmin
+    .from("pending_invite_claims")
+    .delete()
+    .eq("user_id", userId);
+
+  if (claimDeleteError) {
+    console.error(
+      "Failed to delete unauthorized pending invite claim:",
+      claimDeleteError
+    );
+  }
+
+  const { error: authDeleteError } = await supabaseAdmin.auth.admin.deleteUser(
+    userId
+  );
+
+  if (authDeleteError) {
+    console.error("Failed to delete unauthorized auth user:", authDeleteError);
+  }
+}
 
 function clearInviteCookies(response: NextResponse) {
   response.cookies.set(INVITE_PROOF_COOKIE_NAME, "", {
@@ -83,10 +144,17 @@ export async function GET(request: NextRequest) {
       console.error("Failed to load profile during auth callback:", profileError);
     }
 
-    if (!profile?.display_name) {
-      const hasInviteAccess =
-        claimResult.claimed || (await hasPendingInviteClaim(sessionData.user.id));
+    const hasInviteAccess =
+      claimResult.claimed || (await hasPendingInviteClaim(sessionData.user.id));
 
+    if (!hasInviteAccess && wasJustCreated(sessionData.user)) {
+      await supabase.auth.signOut();
+      await cleanupUnauthorizedUser(sessionData.user.id);
+      response.headers.set("Location", `${origin}/auth/invite`);
+      return response;
+    }
+
+    if (!profile?.display_name) {
       if (!hasInviteAccess) {
         await supabase.auth.signOut();
         response.headers.set("Location", `${origin}/auth/invite`);

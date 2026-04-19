@@ -171,6 +171,9 @@ export default function DeckPage() {
   /** スキンケア管理の朝/夜アイテムからシェアカード用ステップを生成し、sessionStorage経由で /routine/share に渡す */
   const handleCreateShareCard = () => {
     if (isCreatingShareCard) return;
+    const getShareCardImageSource = (product?: Product) =>
+      product?.packageImageThumbPath ?? product?.packageImagePath ?? "";
+
     const buildSteps = (routineKey: RoutineType) => {
       return allDeckItems
         .filter((i) => i.routine === routineKey)
@@ -190,7 +193,7 @@ export default function DeckPage() {
             product_name: product?.name ?? "",
             brand: product?.brand ?? "",
             product_id: product?.id ?? "",
-            product_image_url: product?.packageImagePath ?? "",
+            product_image_url: getShareCardImageSource(product),
           };
         });
     };
@@ -222,8 +225,15 @@ export default function DeckPage() {
     <AuthGuard>
       <div className="min-h-screen bg-bo-cream animate-fade-in">
         <div className="px-5 pt-4 pb-24">
+          <div
+            className="sticky z-30 -mx-5 mb-6 border-b border-white/70 bg-bo-cream/95 px-5 pb-4 pt-3 backdrop-blur-sm"
+            style={{
+              top: "env(safe-area-inset-top, 0px)",
+              boxShadow: "0 10px 24px rgba(34, 52, 48, 0.08)",
+            }}
+          >
           {/* Header */}
-          <div className="flex items-center justify-between mb-5">
+          <div className="flex items-center justify-between mb-4">
             <p className="text-xs text-bo-ink-muted font-sans m-0">
               スキンケア管理
             </p>
@@ -239,7 +249,7 @@ export default function DeckPage() {
           </div>
 
           {/* Routine tabs — Apple Segmented Control */}
-          <div className="relative flex bg-white rounded-r2 p-1 shadow-bo1 mb-6">
+          <div className="relative flex bg-white rounded-r2 p-1 shadow-bo1">
             {/* Sliding indicator */}
             <div
               className="absolute top-1 bottom-1 rounded-[12px] bg-bo-accent shadow-bo-accent transition-transform duration-300 ease-[cubic-bezier(0.25,0.1,0.25,1)]"
@@ -264,6 +274,7 @@ export default function DeckPage() {
                 </span>
               </button>
             ))}
+          </div>
           </div>
 
           {/* Main content */}

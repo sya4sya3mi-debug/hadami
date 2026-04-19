@@ -278,7 +278,14 @@ export default function HistoryPage() {
           )}
 
           {/* Filters */}
-          <div className="sticky top-0 z-20 flex items-center gap-2 py-3 -mx-5 px-5 mb-2 bg-bo-cream">
+          <div
+            className="sticky z-30 -mx-5 mb-3 border-b border-white/70 bg-bo-cream/95 px-5 pb-3 pt-3 backdrop-blur-sm"
+            style={{
+              top: "env(safe-area-inset-top, 0px)",
+              boxShadow: "0 10px 24px rgba(34, 52, 48, 0.08)",
+            }}
+          >
+            <div className="flex items-center gap-2">
             <button
               onClick={() => setFavOnly(!favOnly)}
               className={`flex items-center gap-1.5 py-2 px-3.5 rounded-r1 border-none text-xs font-semibold font-sans cursor-pointer shrink-0 pressable ${
@@ -311,6 +318,7 @@ export default function HistoryPage() {
                   </span>
                 </button>
               ))}
+            </div>
             </div>
           </div>
 

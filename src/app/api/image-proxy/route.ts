@@ -78,7 +78,7 @@ async function readUpstreamImage(
 export async function GET(request: NextRequest) {
   const ip = getClientIp(request);
   const rl = await rateLimit(ip, IMAGE_PROXY_WINDOW_MS, IMAGE_PROXY_MAX_REQUESTS, "image-proxy", {
-    failOpen: false,
+    failOpen: true,
   });
 
   if (!rl.allowed) {

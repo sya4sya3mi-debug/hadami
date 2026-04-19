@@ -660,7 +660,13 @@ export default function ZukanPage() {
         </div>
 
         {/* ── Tabs — Apple Segmented Control ── */}
-        <div className="px-5 mb-1">
+        <div
+          className="sticky z-30 mb-1 border-b border-white/70 bg-bo-cream/95 px-5 pb-3 pt-2 backdrop-blur-sm"
+          style={{
+            top: "env(safe-area-inset-top, 0px)",
+            boxShadow: "0 10px 24px rgba(34, 52, 48, 0.08)",
+          }}
+        >
           <div className="relative flex bg-white rounded-r2 p-1 shadow-bo1">
             {/* Sliding indicator */}
             <div
