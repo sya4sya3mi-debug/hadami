@@ -1,7 +1,7 @@
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
-import { useState } from "react";
+import { type ChangeEvent, useRef, useState } from "react";
 import Image from "next/image";
 
 import { useProductStore } from "@/stores/useProductStore";
@@ -12,17 +12,42 @@ import Disclaimer from "@/components/ui/Disclaimer";
 import { useUser } from "@/lib/auth";
 
 import AuthGuard from "@/components/ui/AuthGuard";
-import { toggleFavoriteInDb } from "@/lib/db";
+import { toggleFavoriteInDb, updateProductImageInDb } from "@/lib/db";
+import { getProductImagePath, getProductImageThumbPath } from "@/lib/productImages";
+import { getSignedImageUrls } from "@/lib/storage";
 import { ActiveCategoryIcon, ProductGenreIcon } from "@/components/ui/CosmeticIcons";
 import { StarIcon } from "@/components/ui/Icons";
+
+function readFileAsDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+
+    reader.onload = () => {
+      if (typeof reader.result !== "string") {
+        reject(new Error("Failed to read image file"));
+        return;
+      }
+
+      resolve(reader.result);
+    };
+
+    reader.onerror = () => reject(new Error("Failed to read image file"));
+    reader.readAsDataURL(file);
+  });
+}
 
 export default function ProductDetailPage() {
   const { user, supabase, loading } = useUser();
   const { id } = useParams<{ id: string }>();
   const product = useProductStore((s) => s.getProduct(id));
   const toggleFavorite = useProductStore((s) => s.toggleFavorite);
+  const updateProductImage = useProductStore((s) => s.updateProductImage);
   const updatePurchasedAt = useProductStore((s) => s.updatePurchasedAt);
   const [editingPurchasedAt, setEditingPurchasedAt] = useState(false);
+  const [isUpdatingPhoto, setIsUpdatingPhoto] = useState(false);
+  const [photoError, setPhotoError] = useState<string | null>(null);
+  const [photoMessage, setPhotoMessage] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
   const router = useRouter();
 
   if (loading) return null;
@@ -80,6 +105,70 @@ export default function ProductDetailPage() {
       if (error) {
         toggleFavorite(product.id); // ロールバック
       }
+    }
+  };
+
+  const openPhotoCapture = () => {
+    setPhotoError(null);
+    setPhotoMessage(null);
+    fileInputRef.current?.click();
+  };
+
+  const handlePhotoChange = async (
+    event: ChangeEvent<HTMLInputElement>
+  ) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+
+    if (!file || isUpdatingPhoto) return;
+
+    if (!user) {
+      setPhotoError("ログイン状態を確認してからもう一度お試しください");
+      return;
+    }
+
+    setIsUpdatingPhoto(true);
+    setPhotoError(null);
+    setPhotoMessage(null);
+
+    try {
+      const imageBase64 = await readFileAsDataUrl(file);
+      const result = await updateProductImageInDb(
+        supabase,
+        user.id,
+        product.id,
+        imageBase64
+      );
+
+      if (result.error) {
+        setPhotoError(result.error);
+        return;
+      }
+
+      const packageImagePath =
+        result.filePath ?? getProductImagePath(user.id, product.id);
+      const packageImageThumbPath = getProductImageThumbPath(user.id, product.id);
+      const signedImages = await getSignedImageUrls(supabase, [
+        packageImagePath,
+        packageImageThumbPath,
+      ]);
+      const packageImage = signedImages[packageImagePath] ?? undefined;
+      const packageImageThumb =
+        signedImages[packageImageThumbPath] ?? packageImage;
+
+      updateProductImage(
+        product.id,
+        packageImage,
+        packageImagePath,
+        packageImageThumb,
+        packageImageThumbPath
+      );
+      setPhotoMessage("写真を更新しました");
+    } catch (error) {
+      console.error("Failed to update product photo:", error);
+      setPhotoError("写真の更新に失敗しました。もう一度お試しください");
+    } finally {
+      setIsUpdatingPhoto(false);
     }
   };
 
@@ -148,6 +237,27 @@ export default function ProductDetailPage() {
 
         {/* Content */}
         <div className="px-5 pt-6 -mt-4 rounded-t-[20px] bg-bo-cream relative pb-8">
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            capture="environment"
+            onChange={handlePhotoChange}
+            className="sr-only"
+          />
+
+          {(photoMessage || photoError) && (
+            <div
+              className={`mb-4 rounded-r2 px-4 py-3 text-xs font-semibold font-sans shadow-bo1 ${
+                photoError
+                  ? "bg-red-50 text-red-600"
+                  : "bg-white text-bo-accent"
+              }`}
+            >
+              {photoError ?? photoMessage}
+            </div>
+          )}
+
           {/* Active ingredients section */}
           {activeIngredients.length > 0 && (
             <>
@@ -300,11 +410,27 @@ export default function ProductDetailPage() {
               ルーティンに追加
             </button>
             <button
-              onClick={() => router.push("/scan")}
+              type="button"
+              onClick={openPhotoCapture}
+              disabled={isUpdatingPhoto}
+              aria-label={
+                isUpdatingPhoto
+                  ? "写真を更新中"
+                  : product.packageImage
+                    ? "写真を変更"
+                    : "写真を追加"
+              }
               className="flex-1 py-3.5 rounded-r2 border-none bg-bo-accent text-white text-sm font-bold font-sans
-                         cursor-pointer shadow-bo-accent pressable flex items-center justify-center gap-1.5"
+                         cursor-pointer shadow-bo-accent pressable flex items-center justify-center gap-1.5 disabled:opacity-60"
             >
-              📷 写真を撮る
+              <span>📷</span>
+              <span>
+                {isUpdatingPhoto
+                  ? "写真を更新中..."
+                  : product.packageImage
+                    ? "写真を変更"
+                    : "写真を追加"}
+              </span>
             </button>
           </div>
 

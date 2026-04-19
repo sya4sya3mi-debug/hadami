@@ -1,7 +1,11 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextRequest, NextResponse } from "next/server";
 import { claimInviteProofForUser, hasPendingInviteClaim } from "@/lib/inviteClaims";
-import { INVITE_PROOF_COOKIE_NAME } from "@/lib/inviteProof";
+import {
+  INVITE_PROOF_COOKIE_NAME,
+  INVITE_TOKEN_QUERY_PARAM,
+  verifyInviteProofToken,
+} from "@/lib/inviteProof";
 import { getRegistrationAvailability } from "@/lib/registration";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 
@@ -119,75 +123,112 @@ export async function GET(request: NextRequest) {
     return response;
   }
 
-  const inviteProof = request.cookies.get(INVITE_PROOF_COOKIE_NAME)?.value;
+  const inviteProof =
+    request.cookies.get(INVITE_PROOF_COOKIE_NAME)?.value ??
+    searchParams.get(INVITE_TOKEN_QUERY_PARAM);
 
-  try {
-    const claimResult = await claimInviteProofForUser(
-      sessionData.user.id,
-      inviteProof
-    );
-    clearInviteCookies(response);
+  // --- Invite verification (DB障害に強化: throwを局所化) ---
+  let claimed = false;
+  let cookieCleared = false;
 
-    if (!claimResult.ok) {
-      await supabase.auth.signOut();
-      response.headers.set("Location", `${origin}/auth/invite`);
-      return response;
-    }
-
-    const { data: profile, error: profileError } = await supabase
-      .from("profiles")
-      .select("display_name")
-      .eq("id", sessionData.user.id)
-      .maybeSingle();
-
-    if (profileError) {
-      console.error("Failed to load profile during auth callback:", profileError);
-    }
-
-    const hasInviteAccess =
-      claimResult.claimed || (await hasPendingInviteClaim(sessionData.user.id));
-
-    if (!hasInviteAccess && wasJustCreated(sessionData.user)) {
-      await supabase.auth.signOut();
-      await cleanupUnauthorizedUser(sessionData.user.id);
-      response.headers.set("Location", `${origin}/auth/invite`);
-      return response;
-    }
-
-    if (!profile?.display_name) {
-      if (!hasInviteAccess) {
-        await supabase.auth.signOut();
+  if (inviteProof) {
+    let claimResult: Awaited<ReturnType<typeof claimInviteProofForUser>> | null = null;
+    try {
+      claimResult = await claimInviteProofForUser(sessionData.user.id, inviteProof);
+    } catch (claimErr) {
+      console.error("invite claim DB error (non-fatal):", claimErr);
+      // DB障害時: トークン署名でフォールバック検証
+      const tokenValid = verifyInviteProofToken(inviteProof) !== null;
+      if (!tokenValid) {
+        clearInviteCookies(response);
+        await supabase.auth.signOut().catch(() => {});
         response.headers.set("Location", `${origin}/auth/invite`);
         return response;
       }
-
-      let allowed = true;
-      try {
-        const result = await getRegistrationAvailability();
-        allowed = result.allowed;
-      } catch {
-        allowed = true;
-      }
-
-      if (!allowed) {
-        await supabase.auth.signOut();
-        response.headers.set(
-          "Location",
-          `${origin}/auth/login?error=registration_limit_reached`
-        );
-        return response;
-      }
-
-      response.headers.set("Location", `${origin}/auth/profile`);
-      return response;
+      // 署名が有効 → cookieを残してprofileステップで再クレーム
+      claimed = false;
     }
 
-    return response;
-  } catch (error) {
-    console.error("auth callback failed:", error);
+    if (claimResult !== null) {
+      if (!claimResult.ok) {
+        clearInviteCookies(response);
+        cookieCleared = true;
+        await supabase.auth.signOut().catch(() => {});
+        response.headers.set("Location", `${origin}/auth/invite`);
+        return response;
+      }
+      claimed = claimResult.claimed;
+      if (claimed) {
+        clearInviteCookies(response);
+        cookieCleared = true;
+      }
+    }
+  } else {
     clearInviteCookies(response);
-    await supabase.auth.signOut();
+    cookieCleared = true;
+  }
+
+  const { data: profile, error: profileError } = await supabase
+    .from("profiles")
+    .select("display_name")
+    .eq("id", sessionData.user.id)
+    .maybeSingle();
+
+  if (profileError) {
+    console.error("Failed to load profile during auth callback:", profileError);
+  }
+
+  let hasInviteAccess = claimed;
+  if (!hasInviteAccess) {
+    // 署名ベースのフォールバック
+    if (inviteProof && verifyInviteProofToken(inviteProof) !== null) {
+      hasInviteAccess = true;
+    } else {
+      try {
+        hasInviteAccess = await hasPendingInviteClaim(sessionData.user.id);
+      } catch (pendingErr) {
+        console.error("hasPendingInviteClaim error (non-fatal):", pendingErr);
+        hasInviteAccess = false;
+      }
+    }
+  }
+
+  if (!hasInviteAccess && wasJustCreated(sessionData.user)) {
+    if (!cookieCleared) clearInviteCookies(response);
+    await supabase.auth.signOut().catch(() => {});
+    await cleanupUnauthorizedUser(sessionData.user.id);
     response.headers.set("Location", `${origin}/auth/invite`);
     return response;
   }
+
+  if (!profile?.display_name) {
+    if (!hasInviteAccess) {
+      if (!cookieCleared) clearInviteCookies(response);
+      await supabase.auth.signOut().catch(() => {});
+      response.headers.set("Location", `${origin}/auth/invite`);
+      return response;
+    }
+
+    let allowed = true;
+    try {
+      const result = await getRegistrationAvailability();
+      allowed = result.allowed;
+    } catch {
+      allowed = true;
+    }
+
+    if (!allowed) {
+      await supabase.auth.signOut().catch(() => {});
+      response.headers.set(
+        "Location",
+        `${origin}/auth/login?error=registration_limit_reached`
+      );
+      return response;
+    }
+
+    response.headers.set("Location", `${origin}/auth/profile`);
+    return response;
+  }
+
+  return response;
 }

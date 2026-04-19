@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import {
+  createInviteOAuthToken,
   createInviteProofToken,
   INVITE_PROOF_COOKIE_NAME,
 } from "@/lib/inviteProof";
@@ -71,7 +72,10 @@ export async function POST(request: NextRequest) {
 
     // Invite validation only issues a signed proof cookie. The code is redeemed
     // atomically when profile creation succeeds.
-    const response = NextResponse.json({ valid: true });
+    const response = NextResponse.json({
+      valid: true,
+      inviteToken: createInviteOAuthToken(data.id),
+    });
     response.cookies.set(
       INVITE_PROOF_COOKIE_NAME,
       createInviteProofToken(data.id),

@@ -1,9 +1,11 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
 
 const INVITE_PROOF_TTL_SECONDS = 24 * 60 * 60;
+const INVITE_OAUTH_TOKEN_TTL_SECONDS = 15 * 60;
 const INVITE_PROOF_VERSION = 1;
 
 export const INVITE_PROOF_COOKIE_NAME = "hadami-invite-proof";
+export const INVITE_TOKEN_QUERY_PARAM = "invite_token";
 
 type InviteProofPayload = {
   v: number;
@@ -31,11 +33,14 @@ function sign(encodedPayload: string): string {
     .digest("base64url");
 }
 
-export function createInviteProofToken(invitationCodeId: string): string {
+function createSignedInviteToken(
+  invitationCodeId: string,
+  ttlSeconds: number
+): string {
   const payload: InviteProofPayload = {
     v: INVITE_PROOF_VERSION,
     invitationCodeId,
-    exp: Math.floor(Date.now() / 1000) + INVITE_PROOF_TTL_SECONDS,
+    exp: Math.floor(Date.now() / 1000) + ttlSeconds,
   };
 
   const encodedPayload = Buffer.from(JSON.stringify(payload), "utf8").toString(
@@ -43,6 +48,17 @@ export function createInviteProofToken(invitationCodeId: string): string {
   );
 
   return `${encodedPayload}.${sign(encodedPayload)}`;
+}
+
+export function createInviteProofToken(invitationCodeId: string): string {
+  return createSignedInviteToken(invitationCodeId, INVITE_PROOF_TTL_SECONDS);
+}
+
+export function createInviteOAuthToken(invitationCodeId: string): string {
+  return createSignedInviteToken(
+    invitationCodeId,
+    INVITE_OAUTH_TOKEN_TTL_SECONDS
+  );
 }
 
 export function verifyInviteProofToken(token: string): string | null {

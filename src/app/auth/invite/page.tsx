@@ -25,10 +25,19 @@ export default function InvitePage() {
         body: JSON.stringify({ code: code.trim() }),
       });
 
-      const data = await res.json();
+      const data = (await res.json()) as {
+        valid?: boolean;
+        error?: string;
+        inviteToken?: string;
+      };
 
       if (data.valid) {
-        router.push("/auth/login?invite=1");
+        const nextParams = new URLSearchParams({ invite: "1" });
+        if (data.inviteToken) {
+          nextParams.set("invite_token", data.inviteToken);
+        }
+
+        router.push(`/auth/login?${nextParams.toString()}`);
       } else {
         setError(data.error || "招待コードが無効です。");
       }

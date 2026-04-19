@@ -12,7 +12,9 @@ function LoginPageInner() {
   const searchParams = useSearchParams();
   const router = useRouter();
 
-  const hasInviteAccess = searchParams.get("invite") === "1";
+  const inviteToken = searchParams.get("invite_token");
+  const hasInviteAccess =
+    searchParams.get("invite") === "1" || Boolean(inviteToken);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isSignUp, setIsSignUp] = useState(hasInviteAccess);
@@ -84,10 +86,15 @@ function LoginPageInner() {
       return;
     }
     setLoading(true);
+    const callbackUrl = new URL(`${window.location.origin}/auth/callback`);
+    if (isSignUp && inviteToken) {
+      callbackUrl.searchParams.set("invite_token", inviteToken);
+    }
+
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
+        redirectTo: callbackUrl.toString(),
       },
     });
     if (error) setMessage(error.message);
