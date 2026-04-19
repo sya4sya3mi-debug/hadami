@@ -89,8 +89,11 @@ function clearInviteCookies(response: NextResponse) {
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get("code");
+  const token_hash = searchParams.get("token_hash");
+  const type = searchParams.get("type");
+  const inviteTokenParam = searchParams.get("invite_token");
 
-  if (!code) {
+  if (!code && !token_hash) {
     return NextResponse.redirect(`${origin}/`);
   }
 
@@ -113,14 +116,26 @@ export async function GET(request: NextRequest) {
     }
   );
 
-  const { data: sessionData, error: exchangeError } =
-    await supabase.auth.exchangeCodeForSession(code);
+  let sessionUser: { id: string; created_at?: string; last_sign_in_at?: string | null } | null = null;
+  let exchangeError: { message?: string } | null = null;
 
-  if (exchangeError || !sessionData?.user) {
+  if (token_hash && type) {
+    const { data, error } = await supabase.auth.verifyOtp({
+      token_hash,
+      type: type as "email" | "recovery" | "invite" | "email_change",
+    });
+    sessionUser = data?.user ?? null;
+    exchangeError = error;
+  } else if (code) {
+    const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+    sessionUser = data?.user ?? null;
+    exchangeError = error;
+  }
+
+  if (exchangeError || !sessionUser) {
     console.error("auth callback exchange failed:", exchangeError);
     clearInviteCookies(response);
     const loginUrl = new URL(`${origin}/auth/login`);
-    const inviteTokenParam = searchParams.get("invite_token");
     if (inviteTokenParam) {
       loginUrl.searchParams.set("invite", "1");
       loginUrl.searchParams.set("invite_token", inviteTokenParam);
@@ -140,7 +155,7 @@ export async function GET(request: NextRequest) {
   if (inviteProof) {
     let claimResult: Awaited<ReturnType<typeof claimInviteProofForUser>> | null = null;
     try {
-      claimResult = await claimInviteProofForUser(sessionData.user.id, inviteProof);
+      claimResult = await claimInviteProofForUser(sessionUser.id, inviteProof);
     } catch (claimErr) {
       console.error("invite claim DB error (non-fatal):", claimErr);
       // DB障害時: トークン署名でフォールバック検証
@@ -177,7 +192,7 @@ export async function GET(request: NextRequest) {
   const { data: profile, error: profileError } = await supabase
     .from("profiles")
     .select("display_name")
-    .eq("id", sessionData.user.id)
+    .eq("id", sessionUser.id)
     .maybeSingle();
 
   if (profileError) {
@@ -191,7 +206,7 @@ export async function GET(request: NextRequest) {
       hasInviteAccess = true;
     } else {
       try {
-        hasInviteAccess = await hasPendingInviteClaim(sessionData.user.id);
+        hasInviteAccess = await hasPendingInviteClaim(sessionUser.id);
       } catch (pendingErr) {
         console.error("hasPendingInviteClaim error (non-fatal):", pendingErr);
         hasInviteAccess = false;
@@ -199,10 +214,10 @@ export async function GET(request: NextRequest) {
     }
   }
 
-  if (!hasInviteAccess && wasJustCreated(sessionData.user)) {
+  if (!hasInviteAccess && wasJustCreated(sessionUser)) {
     if (!cookieCleared) clearInviteCookies(response);
     await supabase.auth.signOut().catch(() => {});
-    await cleanupUnauthorizedUser(sessionData.user.id);
+    await cleanupUnauthorizedUser(sessionUser.id);
     response.headers.set("Location", `${origin}/auth/invite`);
     return response;
   }
