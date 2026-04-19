@@ -118,7 +118,7 @@ export default function ProfileSetupPage() {
             </label>
             <input
               type="text"
-              placeholder="\u307f\u307b"
+              placeholder=""
               value={nickname}
               onChange={(e) => setNickname(e.target.value)}
               maxLength={20}
