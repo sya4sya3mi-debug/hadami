@@ -27,7 +27,15 @@ export async function POST(request: NextRequest) {
   }
 
   const response = NextResponse.json({ claimed: false });
-  const inviteProof = request.cookies.get(INVITE_PROOF_COOKIE_NAME)?.value;
+
+  // Cookie優先、なければリクエストボディのトークンを使う
+  let inviteProof = request.cookies.get(INVITE_PROOF_COOKIE_NAME)?.value;
+  if (!inviteProof) {
+    try {
+      const body = await request.json().catch(() => null);
+      if (body?.invite_token) inviteProof = body.invite_token;
+    } catch { /* ignore */ }
+  }
 
   if (!inviteProof) {
     return response;

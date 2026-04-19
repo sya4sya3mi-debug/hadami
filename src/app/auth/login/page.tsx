@@ -75,7 +75,11 @@ function LoginPageInner() {
           setMessage("ログインに失敗しました。しばらく待ってからもう一度お試しください。");
         }
       } else if (authData.user) {
-        router.push("/");
+        if (inviteToken) {
+          router.push(`/auth/profile?invite_token=${encodeURIComponent(inviteToken)}`);
+        } else {
+          router.push("/");
+        }
       }
     }
     setLoading(false);

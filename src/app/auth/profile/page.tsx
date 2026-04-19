@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { Suspense } from "react";
 import { useUser } from "@/lib/auth";
 import { BETA_USER_LIMIT } from "@/lib/limits";
 
@@ -26,8 +28,10 @@ function getProfileErrorMessage(reason?: string) {
   }
 }
 
-export default function ProfileSetupPage() {
+function ProfileSetupPageInner() {
   const { user, supabase } = useUser();
+  const searchParams = useSearchParams();
+  const inviteToken = searchParams.get("invite_token");
   const [nickname, setNickname] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -51,8 +55,11 @@ export default function ProfileSetupPage() {
     setError("");
 
     try {
+      const claimBody = inviteToken ? JSON.stringify({ invite_token: inviteToken }) : undefined;
       const claimResponse = await fetch("/api/invite/claim", {
         method: "POST",
+        headers: claimBody ? { "Content-Type": "application/json" } : undefined,
+        body: claimBody,
       });
 
       if (!claimResponse.ok) {
@@ -96,6 +103,7 @@ export default function ProfileSetupPage() {
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center px-6 bg-bo-cream">
+
       <div className="mb-8 text-center">
         <div className="text-4xl mb-2">H</div>
         <h1 className="text-[28px] font-black font-serif text-bo-accent m-0">
@@ -148,5 +156,13 @@ export default function ProfileSetupPage() {
         </form>
       </div>
     </div>
+  );
+}
+
+export default function ProfileSetupPage() {
+  return (
+    <Suspense fallback={null}>
+      <ProfileSetupPageInner />
+    </Suspense>
   );
 }

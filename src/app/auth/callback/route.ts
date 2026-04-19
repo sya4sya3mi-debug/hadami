@@ -119,7 +119,13 @@ export async function GET(request: NextRequest) {
   if (exchangeError || !sessionData?.user) {
     console.error("auth callback exchange failed:", exchangeError);
     clearInviteCookies(response);
-    response.headers.set("Location", `${origin}/auth/login`);
+    const loginUrl = new URL(`${origin}/auth/login`);
+    const inviteTokenParam = searchParams.get("invite_token");
+    if (inviteTokenParam) {
+      loginUrl.searchParams.set("invite", "1");
+      loginUrl.searchParams.set("invite_token", inviteTokenParam);
+    }
+    response.headers.set("Location", loginUrl.toString());
     return response;
   }
 
