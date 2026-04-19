@@ -5691,16 +5691,6 @@ export function getIngredientIndex(id: string): number {
   return (getIndexes()._indexById.get(id) ?? -1) + 1;
 }
 
-export const INGREDIENT_COUNT = MASTER_INGREDIENTS.length;
-
-export function getIngredientsByGenre(genre: string): Ingredient[] {
-  return getIndexes()._byGenre.get(genre) || [];
-}
-
-export function getGenreTotal(genre: string): number {
-  return (getIndexes()._byGenre.get(genre) || []).length;
-}
-
 // ── 有効成分 ──
 /** この成分が図鑑対象の有効成分かどうか */
 export function isActiveIngredient(id: string): boolean {
