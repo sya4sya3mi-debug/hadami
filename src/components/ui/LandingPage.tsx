@@ -275,6 +275,18 @@ export default function LandingPage() {
                 使い方を見る ↓
               </a>
             </div>
+            <p className="text-[12px] text-bo-ink-muted dark:text-gray-400 font-sans mt-4">
+              招待コードは{" "}
+              <a
+                href="https://x.com/miomio_beauty"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-bo-accent font-bold hover:underline"
+              >
+                X（@miomio_beauty）
+              </a>
+              {" "}にDMでお気軽にどうぞ 🌿
+            </p>
           </Reveal>
 
           {/* Phone mockup */}
@@ -518,6 +530,18 @@ export default function LandingPage() {
             </Link>
             <p className="text-[11px] text-bo-ink-faint dark:text-gray-500 mt-3.5 font-sans">
               月{scanLimit}回までスキャン無料
+            </p>
+            <p className="text-[12px] text-bo-ink-muted dark:text-gray-400 font-sans mt-2">
+              招待コードのご希望は{" "}
+              <a
+                href="https://x.com/miomio_beauty"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-bo-accent font-bold hover:underline"
+              >
+                X（@miomio_beauty）
+              </a>
+              {" "}にDMください
             </p>
           </div>
         </Reveal>
