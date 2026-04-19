@@ -79,27 +79,6 @@ function LoginPageInner() {
     setLoading(false);
   };
 
-  const handleGoogleLogin = async () => {
-    // 新規登録モードで招待コード未検証 → 招待コード入力へ
-    if (isSignUp && !inviteVerified) {
-      router.push("/auth/invite");
-      return;
-    }
-    setLoading(true);
-    const callbackUrl = new URL(`${window.location.origin}/auth/callback`);
-    if (isSignUp && inviteToken) {
-      callbackUrl.searchParams.set("invite_token", inviteToken);
-    }
-
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: {
-        redirectTo: callbackUrl.toString(),
-      },
-    });
-    if (error) setMessage(error.message);
-    setLoading(false);
-  };
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center px-6 bg-bo-cream">
