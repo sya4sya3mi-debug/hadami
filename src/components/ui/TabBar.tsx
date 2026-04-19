@@ -1,72 +1,115 @@
 "use client";
 
-import { useTransition } from "react";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { useUser } from "@/lib/auth";
 import { useZukanStore } from "@/stores/useZukanStore";
 
+// Tab definitions — scan is at index 2 (center)
 const TABS = [
   {
     href: "/",
     label: "ホーム",
     ariaLabel: "ホーム画面",
-    paths: [
-      "M3 9.5L12 3l9 6.5V20a1 1 0 01-1 1H4a1 1 0 01-1-1z",
-      "M9 21V12h6v9",
-    ],
-  },
-  {
-    href: "/scan",
-    label: "撮る",
-    ariaLabel: "コスメを撮影してスキャン",
-    paths: [
-      "M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z",
-      "M12 13a4 4 0 100-8 4 4 0 000 8z",
-    ],
+    center: false,
+    icon: (active: boolean) => (
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        {active ? (
+          <path d="M12 2L2 9l10 13L22 9z" fill="currentColor" />
+        ) : (
+          <path d="M12 2L2 9l10 13L22 9 12 2zm0 2.8L19.5 9.5 12 19.5 4.5 9.5 12 4.8z" fill="currentColor" />
+        )}
+      </svg>
+    ),
   },
   {
     href: "/zukan",
-    label: "集める",
+    label: "図鑑",
     ariaLabel: "成分図鑑を見る",
-    paths: [
-      "M4 19.5A2.5 2.5 0 016.5 17H20",
-      "M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z",
-    ],
+    center: false,
+    icon: (active: boolean) => (
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        {active ? (
+          <path d="M18 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V4a2 2 0 00-2-2zM6 4h5v8l-2.5-1.5L6 12V4z" fill="currentColor" />
+        ) : (
+          <path d="M18 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V4a2 2 0 00-2-2zm0 18H6V4h5v8l-2.5-1.5L6 12V4H4v16h14V4h2v16h-2zM6 4h5v8l-2.5-1.5L6 12V4z" fill="currentColor" />
+        )}
+      </svg>
+    ),
+  },
+  {
+    href: "/scan",
+    label: "スキャン",
+    ariaLabel: "コスメを撮影してスキャン",
+    center: true,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    icon: (_active: boolean) => (
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path
+          d="M12 15.2a3.2 3.2 0 100-6.4 3.2 3.2 0 000 6.4z"
+          fill="white"
+        />
+        <path
+          d="M9 2L7.17 4H4a2 2 0 00-2 2v12a2 2 0 002 2h16a2 2 0 002-2V6a2 2 0 00-2-2h-3.17L15 2H9zm3 15a5 5 0 110-10 5 5 0 010 10z"
+          fill="white"
+        />
+      </svg>
+    ),
   },
   {
     href: "/deck",
-    label: "組む",
-    ariaLabel: "スキンケアデッキを編集",
-    paths: [
-      "M12 3l1.5 3.5L17 8l-3.5 1.5L12 13l-1.5-3.5L7 8l3.5-1.5z",
-      "M19 12l1 2.5 2.5 1-2.5 1L19 19l-1-2.5-2.5-1 2.5-1z",
-    ],
+    label: "スキンケア管理",
+    ariaLabel: "スキンケア管理を開く",
+    center: false,
+    icon: (active: boolean) => (
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        {active ? (
+          <>
+            <path d="M4 3h16a1 1 0 011 1v16a1 1 0 01-1 1H4a1 1 0 01-1-1V4a1 1 0 011-1z" fill="currentColor" fillOpacity="0.15" />
+            <path d="M4 3h16a1 1 0 011 1v16a1 1 0 01-1 1H4a1 1 0 01-1-1V4a1 1 0 011-1z" stroke="currentColor" strokeWidth="2" />
+            <path d="M7 7h10v2H7V7zm0 4h10v2H7v-2zm0 4h7v2H7v-2z" fill="currentColor" />
+          </>
+        ) : (
+          <>
+            <path d="M4 3h16a1 1 0 011 1v16a1 1 0 01-1 1H4a1 1 0 01-1-1V4a1 1 0 011-1z" stroke="currentColor" strokeWidth="2" fill="none" />
+            <path d="M7 7h10M7 11h10M7 15h7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+          </>
+        )}
+      </svg>
+    ),
   },
   {
     href: "/history",
     label: "マイコスメ",
     ariaLabel: "保存したコスメ一覧",
-    paths: [
-      "M19 20v-2a4 4 0 00-4-4H9a4 4 0 00-4 4v2",
-      "M12 10a4 4 0 100-8 4 4 0 000 8z",
-    ],
+    center: false,
+    icon: (active: boolean) => (
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        {active ? (
+          <path d="M12 12a5 5 0 100-10 5 5 0 000 10zm0 2c-5.33 0-8 2.67-8 4v2h16v-2c0-1.33-2.67-4-8-4z" fill="currentColor" />
+        ) : (
+          <path d="M12 12a5 5 0 100-10 5 5 0 000 10zm0-8a3 3 0 110 6 3 3 0 010-6zm0 10c-5.33 0-8 2.67-8 4v2h16v-2c0-1.33-2.67-4-8-4zm6 4H6c0-.45 1.76-2 6-2s6 1.55 6 2z" fill="currentColor" />
+        )}
+      </svg>
+    ),
   },
 ] as const;
 
 export default function TabBar() {
   const pathname = usePathname();
-  const router = useRouter();
   const { user, loading } = useUser();
   const unsavedScan = useZukanStore((s) => s.unsavedScan);
-  const [, startTransition] = useTransition();
 
   if (!loading && !user) return null;
 
-  const handleTouchStart = (href: string) => {
-    router.prefetch(href);
-  };
+  const handleClick = (e: React.MouseEvent, href: string) => {
+    e.preventDefault();
 
-  const handleNavigation = (href: string) => {
+    // Guard: block navigation while a modal sheet is open
+    if (typeof document !== "undefined" && document.body.dataset.modalOpen) {
+      return;
+    }
+
+    // Guard: unsaved scan confirmation
     if (unsavedScan && pathname.startsWith("/scan")) {
       if (
         !window.confirm(
@@ -76,9 +119,17 @@ export default function TabBar() {
         return;
       useZukanStore.getState().setUnsavedScan(false);
     }
-    startTransition(() => {
-      router.push(href);
-    });
+
+    // Skip if already on target page
+    const onTarget = href === "/" ? pathname === "/" : pathname.startsWith(href);
+    if (onTarget) {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      return;
+    }
+
+    // Instant tab switch: push URL + notify TabShell
+    window.history.pushState({}, "", href);
+    window.dispatchEvent(new PopStateEvent("popstate"));
   };
 
   return (
@@ -86,50 +137,88 @@ export default function TabBar() {
       role="navigation"
       aria-label="メインナビゲーション"
       style={{ maxWidth: "var(--app-shell-max-width)" }}
-      className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full bg-bo-cream/[0.88] backdrop-blur-[28px] backdrop-saturate-[1.8] border-t border-bo-ink-faint/30 z-[200] pb-[env(safe-area-inset-bottom)]"
+      className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full bg-white/95 dark:bg-[#1a1a1a]/95 border-t border-gray-200/60 dark:border-[#333]/60 z-[200] pb-[env(safe-area-inset-bottom)]"
     >
-      <div className="flex h-[58px]">
+      <div className="flex h-[56px] items-end">
         {TABS.map((tab) => {
           const isActive =
-            tab.href === "/" ? pathname === "/" : pathname.startsWith(tab.href);
+            tab.href === "/"
+              ? pathname === "/"
+              : tab.href === "/deck"
+              ? pathname.startsWith("/deck") || pathname.startsWith("/routine")
+              : pathname.startsWith(tab.href);
+
+          // Center scan button — raised circle
+          if (tab.center) {
+            const scanContent = (
+              <>
+                <div
+                  className="w-[52px] h-[52px] rounded-full flex items-center justify-center shadow-lg"
+                  style={{
+                    background: isActive
+                      ? "linear-gradient(135deg, #3A8F7A, #2D7A66)"
+                      : "linear-gradient(135deg, #3A8F7A, #4BA68E)",
+                    boxShadow: "0 4px 12px rgba(58, 143, 122, 0.35)",
+                  }}
+                >
+                  {tab.icon(isActive)}
+                </div>
+                <span
+                  className="text-[10px] font-sans leading-none mt-1"
+                  style={{
+                    fontWeight: isActive ? 600 : 400,
+                    color: isActive ? "#3A8F7A" : "#8E8E93",
+                    letterSpacing: "0.01em",
+                  }}
+                >
+                  {tab.label}
+                </span>
+              </>
+            );
+
+            if (isActive) {
+              return (
+                <label
+                  key={tab.href}
+                  htmlFor="hadami-camera-input"
+                  aria-label={tab.ariaLabel}
+                  className="flex-1 flex flex-col items-center justify-center bg-transparent border-none cursor-pointer p-0"
+                  style={{ marginTop: "-18px" }}
+                >
+                  {scanContent}
+                </label>
+              );
+            }
+
+            return (
+              <button
+                key={tab.href}
+                onClick={(e) => handleClick(e, tab.href)}
+                aria-label={tab.ariaLabel}
+                className="flex-1 flex flex-col items-center justify-center bg-transparent border-none cursor-pointer p-0"
+                style={{ marginTop: "-18px" }}
+              >
+                {scanContent}
+              </button>
+            );
+          }
+
           return (
             <button
               key={tab.href}
-              onClick={() => handleNavigation(tab.href)}
-              onTouchStart={() => handleTouchStart(tab.href)}
+              onClick={(e) => handleClick(e, tab.href)}
               aria-label={tab.ariaLabel}
               aria-current={isActive ? "page" : undefined}
-              className="flex-1 flex flex-col items-center justify-center gap-0.5 bg-transparent border-none cursor-pointer p-0"
+              className="flex-1 flex flex-col items-center justify-center gap-[3px] bg-transparent border-none cursor-pointer p-0 h-full"
+              style={{ color: isActive ? "#3A8F7A" : "#8E8E93" }}
             >
-              <div
-                className={`w-8 h-6 flex items-center justify-center rounded-lg transition-all duration-300 ${
-                  isActive
-                    ? "bg-bo-accent-glow scale-[1.15] -translate-y-px"
-                    : "bg-transparent scale-100"
-                }`}
-              >
-                <svg
-                  width="20"
-                  height="22"
-                  viewBox="0 0 24 26"
-                  fill="none"
-                  stroke={isActive ? "#3A8F7A" : "#9E9E9E"}
-                  strokeWidth={isActive ? 2.2 : 1.6}
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  aria-hidden="true"
-                >
-                  {tab.paths.map((d, i) => (
-                    <path key={i} d={d} />
-                  ))}
-                </svg>
-              </div>
+              {tab.icon(isActive)}
               <span
-                className={`text-[9px] tracking-[0.02em] transition-all duration-200 font-sans ${
-                  isActive
-                    ? "font-bold text-bo-accent"
-                    : "font-normal text-bo-ink-muted"
-                }`}
+                className="text-[10px] font-sans leading-none"
+                style={{
+                  fontWeight: isActive ? 600 : 400,
+                  letterSpacing: "0.01em",
+                }}
               >
                 {tab.label}
               </span>

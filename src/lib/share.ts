@@ -1,5 +1,6 @@
 import { Ingredient, Product, RoutineType } from "@/types";
 import { RARITY } from "./ingredients";
+import { getGenreByKey } from "./productGenres";
 
 export function shareIngredientDiscovery(ingredient: Ingredient): string {
   const rarityInfo = RARITY[ingredient.rarity];
@@ -40,7 +41,7 @@ ${lines}
 📊 ${categoryCount}/6カテゴリカバー
 🧪 ${ingredientCount}種の成分
 
-#HADAMI #スキンケアデッキ`;
+#HADAMI #スキンケアルーティン`;
 }
 
 export function shareFavoriteCosmetics(favorites: { name: string; brand: string }[]): string {
@@ -49,6 +50,17 @@ export function shareFavoriteCosmetics(favorites: { name: string; brand: string 
 ${lines}
 
 #HADAMI #スキンケア #お気に入りコスメ`;
+}
+
+export function shareMyCosmetic(product: Product, ingredientNames: string[]): string {
+  const genre = getGenreByKey(product.productType || "other");
+  const genreLabel = genre ? `${genre.icon} ${genre.label}` : "";
+  const top5 = ingredientNames.slice(0, 5).join("・");
+  return `【愛用コスメ】${product.name}
+${product.brand}${genreLabel ? `（${genreLabel}）` : ""}
+${top5 ? `\n注目成分：${top5}` : ""}
+
+#HADAMI #スキンケア #愛用コスメ`;
 }
 
 export function shareZukanProgress(discovered: number, total: number): string {

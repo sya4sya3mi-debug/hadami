@@ -2,12 +2,14 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import TabBar from "@/components/ui/TabBar";
 import PwaRegister from "@/components/PwaRegister";
+import IngredientPreloader from "@/components/IngredientPreloader";
+import TabShell from "@/components/TabShell";
 import { AuthProvider } from "@/lib/auth";
 
 
 export const metadata: Metadata = {
   title: "HADAMI（ハダミ）- 成分図鑑",
-  description: "化粧品の成分表を撮影するだけで成分を解析し、図鑑として集め、マイスキンケアデッキを組めるアプリ",
+  description: "化粧品の成分表を撮影するだけで成分を解析し、図鑑として集め、スキンケアルーティンを組めるアプリ",
   manifest: "/manifest.json",
   icons: {
     icon: "/favicon.ico",
@@ -40,15 +42,28 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="ja">
-      <head />
+    <html lang="ja" suppressHydrationWarning>
+      <head>
+        <link rel="preload" href="/fonts/YakuHanJPs/YakuHanJPs-Regular.woff2" as="font" type="font/woff2" crossOrigin="anonymous" />
+        <link rel="preload" href="/fonts/YakuHanJPs/YakuHanJPs-Bold.woff2" as="font" type="font/woff2" crossOrigin="anonymous" />
+        {/* Prevent flash of wrong theme on load */}
+        <script dangerouslySetInnerHTML={{ __html: `
+          (function(){
+            try {
+              var t = localStorage.getItem('hadami-theme');
+              if (t === 'dark') document.documentElement.classList.add('dark');
+            } catch(e) {}
+          })();
+        `}} />
+      </head>
       <body>
         <AuthProvider>
           <PwaRegister />
+          <IngredientPreloader />
 
           <div id="app-container">
-            <main className="pb-[calc(72px+env(safe-area-inset-bottom))]">
-              {children}
+            <main className="pb-[calc(80px+env(safe-area-inset-bottom))]">
+              <TabShell>{children}</TabShell>
             </main>
             <TabBar />
           </div>

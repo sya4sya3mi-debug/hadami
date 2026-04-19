@@ -9,7 +9,7 @@ export async function POST(request: NextRequest) {
   if (!auth.authenticated) return auth.response;
 
   const ip = getClientIp(request);
-  const rl = rateLimit(ip, 60_000, 10);
+  const rl = await rateLimit(ip, 60_000, 10, "rakuten-search");
   if (!rl.allowed) {
     return NextResponse.json(
       { error: "リクエストが多すぎます。しばらくお待ちください。" },

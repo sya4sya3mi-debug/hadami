@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
@@ -8,21 +8,22 @@ import { Suspense } from "react";
 import { createClient } from "@/lib/supabase";
 
 function LoginPageInner() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [isSignUp, setIsSignUp] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState("");
-  const [registrationClosed, setRegistrationClosed] = useState(false);
   const supabase = createClient();
   const searchParams = useSearchParams();
   const router = useRouter();
 
-  useEffect(() => {
-    if (searchParams.get("error") === "registration_limit_reached") {
-      setRegistrationClosed(true);
-    }
-  }, [searchParams]);
+  const inviteToken = searchParams.get("invite_token");
+  const hasInviteAccess =
+    searchParams.get("invite") === "1" || Boolean(inviteToken);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [isSignUp, setIsSignUp] = useState(hasInviteAccess);
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState("");
+  const [registrationClosed] = useState(
+    searchParams.get("error") === "registration_limit_reached"
+  );
+  const [inviteVerified] = useState(hasInviteAccess);
 
   const handleEmailAuth = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -30,6 +31,13 @@ function LoginPageInner() {
     setMessage("");
 
     if (isSignUp) {
+      // 招待コード未検証 → 招待コード入力ページへ
+      if (!inviteVerified) {
+        router.push("/auth/invite");
+        setLoading(false);
+        return;
+      }
+
       const res = await fetch("/api/check-registration");
       const { allowed } = await res.json();
       if (!allowed) {
@@ -71,17 +79,6 @@ function LoginPageInner() {
     setLoading(false);
   };
 
-  const handleGoogleLogin = async () => {
-    setLoading(true);
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
-      },
-    });
-    if (error) setMessage(error.message);
-    setLoading(false);
-  };
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center px-6 bg-bo-cream">
@@ -92,13 +89,15 @@ function LoginPageInner() {
         </div>
       )}
 
+{/* 招待コード未検証で新規登録モードに入った場合は強制的にログインモードに戻す */}
+
       <div className="mb-8 text-center flex flex-col items-center">
         <Image src="/hadami-logo.png" alt="HADAMI" width={64} height={64} className="rounded-2xl mb-2" />
         <h1 className="text-[28px] font-black font-serif text-bo-accent m-0">
           HADAMI
         </h1>
         <p className="text-[13px] text-bo-ink-muted mt-1">
-          成分図鑑・マイスキンケアデッキ
+          成分図鑑・スキンケアルーティン
         </p>
       </div>
 
@@ -107,25 +106,6 @@ function LoginPageInner() {
           {isSignUp ? "新規登録" : "ログイン"}
         </h2>
 
-        <button
-          onClick={handleGoogleLogin}
-          disabled={loading}
-          className="w-full flex items-center justify-center gap-2.5 py-3 border-[1.5px] border-bo-parchment rounded-r1 bg-white text-[15px] font-semibold cursor-pointer mb-5 hover:bg-bo-cream/50 transition-colors disabled:opacity-70"
-        >
-          <svg width="18" height="18" viewBox="0 0 18 18">
-            <path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.615z"/>
-            <path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.184l-2.908-2.258c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332C2.438 15.983 5.482 18 9 18z"/>
-            <path fill="#FBBC05" d="M3.964 10.707c-.18-.54-.282-1.117-.282-1.707s.102-1.167.282-1.707V4.961H.957C.347 6.175 0 7.55 0 9s.348 2.825.957 4.039l3.007-2.332z"/>
-            <path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0 5.482 0 2.438 2.017.957 4.961L3.964 7.293C4.672 5.166 6.656 3.58 9 3.58z"/>
-          </svg>
-          Google{isSignUp ? "で登録" : "でログイン"}
-        </button>
-
-        <div className="flex items-center gap-3 mb-5">
-          <div className="flex-1 h-px bg-bo-parchment" />
-          <span className="text-xs text-bo-ink-muted">または</span>
-          <div className="flex-1 h-px bg-bo-parchment" />
-        </div>
 
         <form onSubmit={handleEmailAuth}>
           <div className="mb-3">
@@ -165,13 +145,35 @@ function LoginPageInner() {
         </form>
 
         <p className="text-center mt-4 text-[13px] text-bo-ink-muted">
-          {isSignUp ? "すでにアカウントをお持ちの方は" : "アカウントをお持ちでない方は"}
-          <button
-            onClick={() => { setIsSignUp(!isSignUp); setMessage(""); }}
-            className="bg-transparent border-none text-bo-accent font-bold cursor-pointer text-[13px] ml-1"
-          >
-            {isSignUp ? "ログイン" : "新規登録"}
-          </button>
+          {isSignUp ? (
+            <>
+              すでにアカウントをお持ちの方は
+              <button
+                onClick={() => { setIsSignUp(false); setMessage(""); }}
+                className="bg-transparent border-none text-bo-accent font-bold cursor-pointer text-[13px] ml-1"
+              >
+                ログイン
+              </button>
+            </>
+          ) : inviteVerified ? (
+            <>
+              アカウントをお持ちでない方は
+              <button
+                onClick={() => { setIsSignUp(true); setMessage(""); }}
+                className="bg-transparent border-none text-bo-accent font-bold cursor-pointer text-[13px] ml-1"
+              >
+                新規登録
+              </button>
+            </>
+          ) : (
+            <>
+              新規登録には
+              <Link href="/auth/invite" className="text-bo-accent font-bold ml-1 no-underline">
+                招待コード
+              </Link>
+              が必要です
+            </>
+          )}
         </p>
       </div>
 

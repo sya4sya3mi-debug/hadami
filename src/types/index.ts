@@ -52,6 +52,14 @@ export interface Ingredient {
   funFact?: string;
   caution?: string;
   activeIngredient?: boolean; // 医薬部外品の有効成分として承認されている場合 true
+  // ── 図鑑100成分の追加データ ──
+  effectSummary?: string;       // 効果サマリー
+  suitableFor?: string;         // 向いている悩み・肌質
+  combinationCaution?: string;  // 併用注意
+  synergyPartners?: string[];   // 相性のよい相手成分
+  synergySummary?: string;      // 相乗サマリー
+  referenceUrl?: string;        // 参考URL
+  subCategories?: CategoryKey[]; // 6分類_副カテゴリ
 }
 
 // ── 製品ジャンル ──
@@ -77,6 +85,8 @@ export interface Product {
   productType: ProductGenre;
   packageImage?: string;
   packageImagePath?: string;
+  packageImageThumb?: string;
+  packageImageThumbPath?: string;
   isFavorite: boolean;
   createdAt: string;
   lastUsedAt?: string;
@@ -92,7 +102,7 @@ export interface ProductIngredient {
   isActiveInProduct?: boolean;
 }
 
-// ── デッキ ──
+// ── ルーティン ──
 export type RoutineType = "morning" | "night" | "spring_summer" | "autumn_winter";
 
 export interface DeckItem {
@@ -112,7 +122,7 @@ export interface Combination {
   source: string;
 }
 
-// ── おすすめデッキ結果 ──
+// ── おすすめルーティン結果 ──
 export interface RecommendationResult {
   productIds: string[];
   score: number;

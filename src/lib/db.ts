@@ -1,9 +1,14 @@
 import { SupabaseClient } from "@supabase/supabase-js";
+import {
+  getProductImagePath,
+  getProductImageThumbPath,
+} from "@/lib/productImages";
+import { r2Delete } from "@/lib/r2";
 
 const USER_LIMIT = 30;
-const MAX_PRODUCT_IMAGE_BYTES = 5 * 1024 * 1024;
-const UPLOAD_MAX_DIMENSION = 600;
-const UPLOAD_WEBP_QUALITY = 0.82;
+const MAX_PRODUCT_IMAGE_BYTES = 8 * 1024 * 1024;
+const UPLOAD_MAX_DIMENSION = 1600;
+const UPLOAD_WEBP_QUALITY = 0.95;
 
 function validateImageSize(base64Data: string): boolean {
   const estimatedBytes = Math.ceil(base64Data.length * 0.75);
@@ -66,7 +71,7 @@ async function prepareProductImage(
 async function persistProductImage(
   productId: string,
   imageBase64: string
-): Promise<{ error: string | null; imageUrl: string | null }> {
+): Promise<{ error: string | null; filePath: string | null }> {
   const response = await fetch("/api/product-image", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -77,19 +82,19 @@ async function persistProductImage(
   });
 
   const payload = (await response.json().catch(() => null)) as
-    | { error?: string; imageUrl?: string }
+    | { error?: string; filePath?: string }
     | null;
 
   if (!response.ok) {
     return {
       error: payload?.error ?? "画像の保存に失敗しました",
-      imageUrl: null,
+      filePath: null,
     };
   }
 
   return {
     error: null,
-    imageUrl: payload?.imageUrl ?? null,
+    filePath: payload?.filePath ?? null,
   };
 }
 
@@ -113,7 +118,7 @@ export async function saveProductToDb(
     .eq("user_id", userId);
 
   if (count !== null && count >= USER_LIMIT) {
-    return { error: "limit_reached", productId: null, imageUrl: null };
+    return { error: "limit_reached", productId: null, filePath: null };
   }
 
   const insertData: Record<string, unknown> = {
@@ -140,10 +145,10 @@ export async function saveProductToDb(
     .single();
 
   if (error) {
-    return { error: error.message, productId: null, imageUrl: null };
+    return { error: error.message, productId: null, filePath: null };
   }
 
-  let imageUrl: string | null = null;
+  let filePath: string | null = null;
 
   if (product.packageImageBase64) {
     const preparedImage = await prepareProductImage(product.packageImageBase64);
@@ -157,7 +162,7 @@ export async function saveProductToDb(
       return {
         error: preparedImage.error ?? "画像の保存に失敗しました",
         productId: null,
-        imageUrl: null,
+        filePath: null,
       };
     }
 
@@ -172,14 +177,14 @@ export async function saveProductToDb(
       return {
         error: imageResult.error,
         productId: null,
-        imageUrl: null,
+        filePath: null,
       };
     }
 
-    imageUrl = imageResult.imageUrl;
+    filePath = imageResult.filePath;
   }
 
-  return { error: null, productId: data.id, imageUrl };
+  return { error: null, productId: data.id, filePath };
 }
 
 export async function updateProductImageInDb(
@@ -187,12 +192,12 @@ export async function updateProductImageInDb(
   _userId: string,
   productId: string,
   imageBase64: string
-): Promise<{ error: string | null; imageUrl: string | null }> {
+): Promise<{ error: string | null; filePath: string | null }> {
   const preparedImage = await prepareProductImage(imageBase64);
   if (preparedImage.error || !preparedImage.imageDataUrl) {
     return {
       error: preparedImage.error ?? "画像の保存に失敗しました",
-      imageUrl: null,
+      filePath: null,
     };
   }
 
@@ -204,8 +209,15 @@ export async function deleteProductImageFromDb(
   userId: string,
   productId: string
 ): Promise<{ error: string | null }> {
-  const filePath = `${userId}/${productId}.webp`;
-  await supabase.storage.from("product-images").remove([filePath]);
+  if (typeof window === "undefined") {
+    try {
+      const filePath = getProductImagePath(userId, productId);
+      const thumbPath = getProductImageThumbPath(userId, productId);
+      await r2Delete([filePath, thumbPath]);
+    } catch (e) {
+      console.error("R2 image delete failed (non-blocking):", e);
+    }
+  }
 
   const { error } = await supabase
     .from("products")
@@ -221,8 +233,16 @@ export async function deleteProductFromDb(
   userId: string,
   productId: string
 ) {
-  const filePath = `${userId}/${productId}.webp`;
-  await supabase.storage.from("product-images").remove([filePath]);
+  // R2画像削除はサーバーサイドでのみ実行（クライアントではクレデンシャルが無くフリーズする）
+  if (typeof window === "undefined") {
+    try {
+      const filePath = getProductImagePath(userId, productId);
+      const thumbPath = getProductImageThumbPath(userId, productId);
+      await r2Delete([filePath, thumbPath]);
+    } catch (e) {
+      console.error("R2 delete failed (non-blocking):", e);
+    }
+  }
 
   const { error } = await supabase
     .from("products")
@@ -400,6 +420,18 @@ export async function getScanCountByEmail(supabase: SupabaseClient, email: strin
   return data?.total_count ?? 0;
 }
 
+/** 当月のスキャン回数を取得（月次リセット対応） */
+export async function getMonthlyScanCount(supabase: SupabaseClient, userId: string): Promise<number> {
+  const month = getCurrentMonth();
+  const { data } = await supabase
+    .from("scan_usage")
+    .select("count")
+    .eq("user_id", userId)
+    .eq("month", month)
+    .single();
+  return data?.count ?? 0;
+}
+
 export async function tryReserveScan(
   supabase: SupabaseClient,
   userId: string,
@@ -416,20 +448,6 @@ export async function tryReserveScan(
     return false;
   }
   return data === true;
-}
-
-export async function rollbackScan(
-  supabase: SupabaseClient,
-  userId: string,
-  email: string
-): Promise<void> {
-  const { error } = await supabase.rpc("rollback_scan", {
-    p_email: email,
-    p_user_id: userId,
-  });
-  if (error) {
-    console.error("rollbackScan RPC error:", error);
-  }
 }
 
 export async function incrementScanCount(supabase: SupabaseClient, userId: string, email: string) {

@@ -4,11 +4,11 @@ import { NextResponse, type NextRequest } from "next/server";
 export async function middleware(request: NextRequest) {
   const cspHeader = [
     "default-src 'self'",
-    "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+    "script-src 'self' 'unsafe-inline'",
     "style-src 'self' 'unsafe-inline'",
-    "img-src 'self' data: blob: https://*.supabase.co https://thumbnail.image.rakuten.co.jp https://*.rakuten.co.jp",
+    "img-src 'self' data: blob: https://*.supabase.co https://*.r2.dev https://*.r2.cloudflarestorage.com https://thumbnail.image.rakuten.co.jp https://*.rakuten.co.jp",
     "font-src 'self'",
-    "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.twitter.com https://upload.twitter.com https://app.rakuten.co.jp",
+    "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://*.r2.dev https://*.r2.cloudflarestorage.com https://app.rakuten.co.jp",
     "frame-ancestors 'none'",
     "base-uri 'self'",
     "form-action 'self'",
@@ -27,7 +27,7 @@ export async function middleware(request: NextRequest) {
   const isRscRequest = request.headers.get("rsc") !== null;
   const isAuthCallback = request.nextUrl.pathname.startsWith("/auth/callback");
 
-  const isPublicPath = ["/privacy", "/terms"].some((p) => request.nextUrl.pathname.startsWith(p));
+  const isPublicPath = ["/privacy", "/terms", "/auth/invite"].some((p) => request.nextUrl.pathname.startsWith(p));
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;

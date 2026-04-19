@@ -39,7 +39,7 @@ export default function DiscoveryModal({ ingredients, onClose }: DiscoveryModalP
       )}
 
       <div
-        className="bg-white rounded-3xl p-6 w-full max-w-sm relative"
+        className="bg-white dark:bg-gray-900 rounded-3xl p-6 w-full max-w-sm relative"
         style={{ boxShadow: hasLegendary
           ? "0 8px 40px rgba(245,158,11,0.4)"
           : hasRare
@@ -67,7 +67,7 @@ export default function DiscoveryModal({ ingredients, onClose }: DiscoveryModalP
               <div className="text-5xl">🎉</div>
             )}
           </div>
-          <h3 className="font-bold text-xl" style={{ color: "#2D2D2D" }}>
+          <h3 className="font-bold text-xl text-bo-ink dark:text-white">
             {hasLegendary ? (
               <span className="animate-shimmer">伝説の成分を発見！</span>
             ) : hasRare ? (
@@ -76,7 +76,7 @@ export default function DiscoveryModal({ ingredients, onClose }: DiscoveryModalP
               "新しい成分を発見！"
             )}
           </h3>
-          <p className="text-sm mt-1" style={{ color: "#9B9B9B" }}>
+          <p className="text-sm mt-1 text-bo-ink-muted dark:text-gray-400">
             {ingredients.length}種類が図鑑に追加されました
           </p>
         </div>
@@ -101,8 +101,8 @@ export default function DiscoveryModal({ ingredients, onClose }: DiscoveryModalP
               >
                 <span className="text-2xl">{rarityInfo.icon}</span>
                 <div className="flex-1 min-w-0">
-                  <div className="font-bold text-sm" style={{ color: "#2D2D2D" }}>{ing.nameJa}</div>
-                  <div className="text-xs" style={{ color: "#9B9B9B" }}>{ing.nameInci}</div>
+                  <div className="font-bold text-sm text-bo-ink dark:text-white">{ing.nameJa}</div>
+                  <div className="text-xs text-bo-ink-muted dark:text-gray-400">{ing.nameInci}</div>
                   {(() => {
                     const c = getIngredientCategoryInfo(ing);
                     return c ? (
@@ -126,14 +126,14 @@ export default function DiscoveryModal({ ingredients, onClose }: DiscoveryModalP
 
         <button
           onClick={onClose}
-          className="w-full mt-5 py-3 text-white rounded-2xl font-bold"
+          className="w-full mt-5 py-3.5 text-white rounded-2xl font-bold text-sm border-none cursor-pointer pressable font-sans"
           style={{
             background: hasLegendary
               ? "linear-gradient(135deg, #F59E0B, #FBBF24)"
-              : "linear-gradient(135deg, #3A8F7A, #F9A8C0)",
+              : "#3A8F7A",
           }}
         >
-          {hasLegendary ? "すごい！💎" : "やったー！🌸"}
+          {hasLegendary ? "コレクションに追加" : "OK"}
         </button>
       </div>
     </div>

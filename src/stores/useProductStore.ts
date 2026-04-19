@@ -12,7 +12,13 @@ interface ProductState {
   getRecentProducts: (count: number) => Product[];
   replaceAll: (products: Product[]) => void;
   clearAll: () => void;
-  updateProductImage: (id: string, packageImage: string) => void;
+  updateProductImage: (
+    id: string,
+    packageImage?: string,
+    packageImagePath?: string,
+    packageImageThumb?: string,
+    packageImageThumbPath?: string
+  ) => void;
   updateProductType: (id: string, productType: ProductGenre) => void;
   toggleFavorite: (id: string) => void;
   updateLastUsedAt: (id: string, lastUsedAt: string) => void;
@@ -38,10 +44,25 @@ export const useProductStore = create<ProductState>()(
       getRecentProducts: (count) => get().products.slice(0, count),
       replaceAll: (products) => set({ products }),
       clearAll: () => set({ products: [] }),
-      updateProductImage: (id, packageImage) =>
+      updateProductImage: (
+        id,
+        packageImage,
+        packageImagePath,
+        packageImageThumb,
+        packageImageThumbPath
+      ) =>
         set((state) => ({
           products: state.products.map((p) =>
-            p.id === id ? { ...p, packageImage } : p
+            p.id === id
+              ? {
+                  ...p,
+                  packageImage,
+                  packageImagePath,
+                  packageImageThumb: packageImageThumb ?? packageImage,
+                  packageImageThumbPath:
+                    packageImageThumbPath ?? packageImagePath,
+                }
+              : p
           ),
         })),
       updateProductType: (id, productType) =>

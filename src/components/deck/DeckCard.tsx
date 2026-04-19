@@ -27,7 +27,7 @@ function DeckCard({ product, onRemove }: DeckCardProps) {
       {product.packageImage ? (
         <div className="w-11 h-11 rounded-xl overflow-hidden shrink-0 relative">
           <Image
-            src={product.packageImage}
+            src={product.packageImageThumb ?? product.packageImage}
             alt={product.name}
             fill
             className="object-cover"

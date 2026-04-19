@@ -17,22 +17,18 @@ export default function DeckTray({ productsByGenre, onAddSlot, onRemoveProduct }
     <div>
       {sections.map((section) => {
         const info = SECTION_INFO[section];
-        let slotsInSection = GENRE_SLOT_CONFIG.filter((s) => s.section === section);
-
-        // For special section, only show slots that have products or the first 2 slots
-        if (section === "special") {
-          const slotsWithProducts = slotsInSection.filter((s) => (productsByGenre[s.genre]?.length || 0) > 0);
-          const emptySlots = slotsInSection.filter((s) => (productsByGenre[s.genre]?.length || 0) === 0);
-          slotsInSection = [...slotsWithProducts, ...emptySlots.slice(0, Math.max(0, 2 - slotsWithProducts.length))];
-        }
+        const slotsInSection = GENRE_SLOT_CONFIG.filter((s) => s.section === section);
 
         return (
           <div key={section}>
-            {/* Section header */}
-            <div className="flex items-center gap-2 mb-2 pl-1 mt-1">
-              <span className="text-[10px] font-semibold text-bo-ink-faint font-serif">{info.step}</span>
-              <span className="text-[11px] font-bold tracking-wide text-bo-ink-muted font-sans">{info.label}</span>
-              <div className="flex-1 h-px bg-bo-parchment" />
+              {/* Section header */}
+            <div className="flex items-center gap-3 mb-3">
+              <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-bo-accent/[0.08]">
+                <span className="text-[11px] font-extrabold tracking-widest text-bo-accent uppercase font-sans">
+                  {info.step}
+                </span>
+              </div>
+              <span className="text-sm font-bold text-bo-ink font-sans">{info.label}</span>
             </div>
 
             {slotsInSection.map((slotConfig) => {
@@ -53,7 +49,7 @@ export default function DeckTray({ productsByGenre, onAddSlot, onRemoveProduct }
                     />
                   ))}
 
-                  {/* Render empty slot if no products, or add button if multi-slot */}
+                  {/* Render empty slot if no products */}
                   {products.length === 0 && (
                     <GenreSlot
                       genre={slotConfig.genre}
@@ -66,7 +62,9 @@ export default function DeckTray({ productsByGenre, onAddSlot, onRemoveProduct }
                   {slotConfig.maxSlots > 1 && products.length > 0 && products.length < slotConfig.maxSlots && (
                     <button
                       onClick={() => onAddSlot(slotConfig.genre)}
-                      className="flex items-center justify-center gap-1.5 w-full py-2 rounded-xl cursor-pointer text-xs font-medium mb-2 bg-transparent font-sans border-[1.5px] border-dashed border-bo-accent/30 text-bo-accent"
+                      className="flex items-center justify-center gap-1.5 w-full py-2.5 rounded-r1 cursor-pointer text-xs font-semibold mb-3
+                                 bg-white font-sans border border-dashed border-bo-accent/30 text-bo-accent
+                                 pressable"
                     >
                       + {genreInfo?.label}を追加（最大{slotConfig.maxSlots}）
                     </button>

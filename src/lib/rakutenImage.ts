@@ -9,15 +9,30 @@ const TOKEN_TO_HOST = {
 } as const;
 
 const ALLOWED_SEARCH_KEYS = new Set(["_ex", "fitin"]);
+const RAKUTEN_PROXY_EX_PARAM = "300x300";
 
-function sanitizeSearchParams(searchParams: URLSearchParams): string {
+function sanitizeSearchParams(
+  searchParams: URLSearchParams,
+  hostToken?: keyof typeof TOKEN_TO_HOST
+): string {
   const sanitized = new URLSearchParams();
 
   searchParams.forEach((value, key) => {
-    if (ALLOWED_SEARCH_KEYS.has(key) && value) {
-      sanitized.set(key, value);
+    if (!ALLOWED_SEARCH_KEYS.has(key) || !value) {
+      return;
     }
+
+    if (key === "_ex") {
+      sanitized.set("_ex", RAKUTEN_PROXY_EX_PARAM);
+      return;
+    }
+
+    sanitized.set(key, value);
   });
+
+  if (hostToken === "thumb" && !sanitized.has("_ex")) {
+    sanitized.set("_ex", RAKUTEN_PROXY_EX_PARAM);
+  }
 
   return sanitized.toString();
 }
@@ -65,7 +80,10 @@ export function buildRakutenImageProxyUrl(imageUrl: string | null | undefined): 
       p: url.pathname,
     });
 
-    const sanitizedSearch = sanitizeSearchParams(url.searchParams);
+    const sanitizedSearch = sanitizeSearchParams(
+      url.searchParams,
+      hostToken as keyof typeof TOKEN_TO_HOST
+    );
     if (sanitizedSearch) {
       params.set("s", sanitizedSearch);
     }
@@ -101,12 +119,22 @@ export function resolveRakutenImageProxyTarget(
         isValid = false;
         return;
       }
+
+      if (key === "_ex") {
+        target.searchParams.set("_ex", RAKUTEN_PROXY_EX_PARAM);
+        return;
+      }
+
       target.searchParams.set(key, value);
     });
 
     if (!isValid) {
       return null;
     }
+  }
+
+  if (hostToken === "thumb" && !target.searchParams.has("_ex")) {
+    target.searchParams.set("_ex", RAKUTEN_PROXY_EX_PARAM);
   }
 
   return target.toString();

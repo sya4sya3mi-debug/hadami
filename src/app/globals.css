@@ -2,6 +2,134 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ── Dark mode overrides ── */
+/* Background */
+.dark .bg-bo-cream { background-color: #121212 !important; }
+.dark .bg-white { background-color: #1E1E1E !important; }
+.dark .bg-bo-parchment { background-color: #2A2A2A !important; }
+.dark .bg-bo-accent-soft { background-color: #1a3a2a !important; }
+.dark .bg-bo-accent-pale { background-color: #152a22 !important; }
+.dark .bg-bo-cream\/90 { background-color: rgba(18,18,18,0.9) !important; }
+.dark .bg-bo-safe-bg { background-color: #1a2e22 !important; }
+.dark .bg-bo-caution-bg { background-color: #2a2010 !important; }
+.dark .bg-bo-danger-bg { background-color: #2a1515 !important; }
+
+/* Semi-transparent white → semi-transparent dark */
+.dark .bg-white\/95 { background-color: rgba(26,26,26,0.95) !important; }
+.dark .bg-white\/90 { background-color: rgba(26,26,26,0.9) !important; }
+.dark .bg-white\/80 { background-color: rgba(30,30,30,0.8) !important; }
+.dark .bg-white\/50 { background-color: rgba(30,30,30,0.5) !important; }
+.dark .bg-white\/40 { background-color: rgba(30,30,30,0.4) !important; }
+.dark .bg-white\/30 { background-color: rgba(30,30,30,0.3) !important; }
+.dark .bg-white\/20 { background-color: rgba(30,30,30,0.2) !important; }
+
+/* Custom Tailwind background colors used in components */
+.dark [class*="bg-\[#FFF"] { background-color: #1E1E1E !important; }
+.dark [class*="bg-\[#F0F"] { background-color: #1a2a22 !important; }
+.dark [class*="bg-\[#f0f"] { background-color: #1a2a22 !important; }
+.dark [class*="bg-\[#E3F"] { background-color: #1a2a22 !important; }
+.dark [class*="bg-\[#EDE"] { background-color: #221a2a !important; }
+.dark .bg-red-50 { background-color: #2a1515 !important; }
+
+/* Gradients — soften in dark */
+.dark [class*="from-\[#f0faeb\]"] { --tw-gradient-from: #1a2a1a !important; }
+.dark [class*="from-\[#E8FAF8\]"] { --tw-gradient-from: #1a2a28 !important; }
+.dark [class*="from-\[#F0FDFA\]"] { --tw-gradient-from: #1a2a28 !important; }
+.dark [class*="from-bo-accent-soft"] { --tw-gradient-from: #1a3a2a !important; }
+.dark .from-white { --tw-gradient-from: #1E1E1E !important; }
+.dark [class*="to-\[#D4F5EF\]"] { --tw-gradient-to: #152a22 !important; }
+.dark [class*="to-\[#C5E8D8\]"] { --tw-gradient-to: #152a22 !important; }
+.dark [class*="to-bo-cream"] { --tw-gradient-to: #121212 !important; }
+
+/* Text */
+.dark .text-bo-ink { color: #E0E0E0 !important; }
+.dark .text-bo-ink-soft { color: #AAAAAA !important; }
+.dark .text-bo-ink-muted { color: #888888 !important; }
+.dark .text-bo-ink-faint { color: #666666 !important; }
+.dark .text-black { color: #E0E0E0 !important; }
+.dark .text-gray-600 { color: #999999 !important; }
+.dark .text-gray-500 { color: #888888 !important; }
+.dark .text-gray-400 { color: #777777 !important; }
+.dark .text-red-500 { color: #EF5350 !important; }
+
+/* Border */
+.dark .border-bo-parchment { border-color: #333333 !important; }
+.dark .border-bo-parchment\/40 { border-color: rgba(51,51,51,0.4) !important; }
+.dark .border-gray-200 { border-color: #333333 !important; }
+.dark .border-gray-200\/60 { border-color: rgba(51,51,51,0.6) !important; }
+.dark .border-white\/20 { border-color: rgba(60,60,60,0.3) !important; }
+.dark .border-red-100 { border-color: #4a2020 !important; }
+
+/* Shadow */
+.dark .shadow-bo1 { box-shadow: 0 1px 4px rgba(0,0,0,0.3) !important; }
+.dark .shadow-bo2 { box-shadow: 0 2px 8px rgba(0,0,0,0.4) !important; }
+
+/* Inline hardcoded colors — global overrides */
+.dark [style*="color: #212121"],
+.dark [style*="color: #2D2D2D"],
+.dark [style*="color:#212121"],
+.dark [style*="color:#2D2D2D"] { color: #E0E0E0 !important; }
+
+.dark [style*="color: #4A4A4A"],
+.dark [style*="color:#4A4A4A"] { color: #BBBBBB !important; }
+
+.dark [style*="color: #6B6B6B"],
+.dark [style*="color:#6B6B6B"],
+.dark [style*="color: #666666"],
+.dark [style*="color:#666666"] { color: #999999 !important; }
+
+.dark [style*="color: #9B9B9B"],
+.dark [style*="color:#9B9B9B"],
+.dark [style*="color: #9E9E9E"],
+.dark [style*="color:#9E9E9E"],
+.dark [style*="color: #888888"],
+.dark [style*="color:#888888"] { color: #777777 !important; }
+
+.dark [style*="color: #8E8E93"],
+.dark [style*="color:#8E8E93"] { color: #777777 !important; }
+
+/* Inline background overrides */
+.dark [style*="background: white"],
+.dark [style*="background:white"],
+.dark [style*="background: #fff"],
+.dark [style*="background:#fff"],
+.dark [style*="background: #FFF"],
+.dark [style*="background:#FFF"],
+.dark [style*="background-color: white"] { background: #1E1E1E !important; }
+
+.dark [style*="background: #f5f5f5"],
+.dark [style*="background:#f5f5f5"],
+.dark [style*="background: #F5F5F5"],
+.dark [style*="background:#F8F8F8"],
+.dark [style*="background: #F8F8F8"],
+.dark [style*="background: #F9F9F9"] { background: #1a1a1a !important; }
+
+.dark [style*="background: #FDF6E3"],
+.dark [style*="background:#FDF6E3"] { background: #2a2510 !important; }
+
+/* Zukan ingredient cards */
+.dark [style*="rgba(232,240,236"] { background: rgba(30,40,35,0.5) !important; }
+.dark [style*="color: #B08D3A"],
+.dark [style*="color:#B08D3A"] { color: #D4A853 !important; }
+.dark [style*="color: #B5C7BE"],
+.dark [style*="color:#B5C7BE"] { color: #5a7a6a !important; }
+
+.dark [style*="background: #E0E0E0"],
+.dark [style*="background:#E0E0E0"],
+.dark [style*="background: #D0D0D0"],
+.dark [style*="background:#D0D0D0"] { background: #333333 !important; }
+
+/* Inline gradients — broader override for light gradient backgrounds */
+.dark [style*="linear-gradient(160deg, #F0FDFA"],
+.dark [style*="linear-gradient(135deg, #E8FAF8"] {
+  background: linear-gradient(160deg, #1a2a28 0%, #221a22 100%) !important;
+}
+
+/* SVG stroke overrides */
+.dark [stroke="#BDBDBD"] { stroke: #555555 !important; }
+.dark [stroke="#9E9E9E"] { stroke: #666666 !important; }
+.dark [stroke="#E8F5EE"] { stroke: #1a3a2a !important; }
+
 /* YakuHanJPs — self-hosted (約物半角化フォント) */
 @font-face { font-family: YakuHanJPs; font-style: normal; font-weight: 100; font-display: swap; src: url("/fonts/YakuHanJPs/YakuHanJPs-Thin.woff2") format("woff2"); unicode-range: U+3008-3011,U+3014,U+3015,U+300C-300F,U+300A,U+300B,U+FF08,U+FF09,U+FF3B,U+FF3D,U+FF5B,U+FF5D; }
 @font-face { font-family: YakuHanJPs; font-style: normal; font-weight: 200; font-display: swap; src: url("/fonts/YakuHanJPs/YakuHanJPs-ExtraLight.woff2") format("woff2"); unicode-range: U+3008-3011,U+3014,U+3015,U+300C-300F,U+300A,U+300B,U+FF08,U+FF09,U+FF3B,U+FF3D,U+FF5B,U+FF5D; }
@@ -29,6 +157,22 @@
   --app-shell-max-width: 430px;
 }
 
+/* ── Dark theme ── */
+.dark {
+  --background: #121212;
+  --foreground: #E0E0E0;
+  --primary: #4CAF8A;
+  --primary-light: #1a3a2a;
+  --accent: #4CAF8A;
+  --accent-light: #1a3a2a;
+  --warning: #FFB74D;
+  --warning-light: #2a2010;
+  --info: #7DB8E8;
+  --sub: #888888;
+  --border: #333333;
+  --card: #1E1E1E;
+}
+
 /* Reset */
 *, *::before, *::after {
   box-sizing: border-box;
@@ -43,8 +187,8 @@ html, body {
   margin: 0;
   padding: 0;
   width: 100%;
-  height: 100%;
-  background: #f5f6f6;
+  min-height: 100%;
+  background: var(--background);
 }
 
 body {
@@ -62,10 +206,8 @@ body {
   min-height: 100dvh;
   min-height: 100vh;
   position: relative;
-  overflow-x: hidden;
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
-  background: #f5f6f6;
+  overflow-x: clip;
+  background: var(--background);
 }
 
 @media (min-width: 768px) {
@@ -146,6 +288,13 @@ body {
   animation: shimmer 2s linear infinite;
 }
 
+/* Scan page — pulsing ring around camera icon */
+@keyframes scan-ring {
+  0% { transform: scale(0.85); opacity: 1; }
+  50% { transform: scale(1.1); opacity: 0.4; }
+  100% { transform: scale(0.85); opacity: 1; }
+}
+
 /* Scan wizard animations */
 @keyframes pulse-ring {
   0% { box-shadow: 0 0 0 0 rgba(91,191,173,0.4); }
@@ -193,27 +342,19 @@ body {
 .animate-pulse-ring { animation: pulse-ring 2s ease-out infinite; }
 .animate-slide-up { animation: slide-up 0.3s ease-out forwards; }
 .animate-slide-down { animation: slide-down 0.3s ease-in forwards; }
-.animate-fade-in { animation: fade-in 0.2s ease-out forwards; }
+.animate-fade-in { animation: fade-in 0.12s ease-out forwards; }
 .animate-fade-out { animation: fade-out 0.2s ease-in forwards; }
-.animate-stagger-in { animation: stagger-in 0.4s ease-out forwards; }
+.animate-stagger-in { animation: stagger-in 0.4s ease-out both; }
 .animate-check-pop { animation: check-pop 0.4s ease-out forwards; }
 
 /* Modal/BottomSheet open: 背景スクロール完全ロック */
-html.scroll-locked,
-html.scroll-locked body,
-html.scroll-locked body > div,
-html.scroll-locked #__next,
-html.scroll-locked #app-container,
-html.scroll-locked main {
+html.scroll-locked {
   overflow: hidden !important;
-  -webkit-overflow-scrolling: auto !important;
-  touch-action: none !important;
   overscroll-behavior: none !important;
-  height: 100% !important;
 }
-html.scroll-locked body,
-html.scroll-locked #__next,
-html.scroll-locked #app-container {
+html.scroll-locked body {
+  overflow: hidden !important;
+  overscroll-behavior: none !important;
   position: fixed !important;
   left: 0 !important;
   right: 0 !important;
@@ -233,6 +374,27 @@ html.scroll-locked #app-container {
 }
 .animate-deck-editor-up { animation: deck-editor-up 0.3s ease-out; }
 
+/* Eliminate 300ms tap delay on all interactive elements */
+a, button, label, [role="button"], .pressable {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Apple-like press feedback */
+.pressable {
+  transition: transform 0.1s cubic-bezier(0.25, 0.1, 0.25, 1),
+              box-shadow 0.1s ease;
+}
+.pressable:active {
+  transform: scale(0.97);
+}
+
 /* Hide scrollbar for genre chips */
 .hide-scrollbar::-webkit-scrollbar { display: none; }
 .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* Disable TabBar interaction while a modal sheet is open */
+body[data-modal-open] nav[aria-label="メインナビゲーション"] {
+  pointer-events: none;
+  opacity: 0.5;
+}

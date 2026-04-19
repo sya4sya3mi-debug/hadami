@@ -9,7 +9,7 @@ export default function PageLoading({
 }) {
   return (
     <div
-      className="min-h-screen flex items-center justify-center px-6 text-center"
+      className="fixed inset-0 flex items-center justify-center px-6 text-center z-50"
       style={{ background: "linear-gradient(160deg, #F0FDFA 0%, #FFF0F5 100%)" }}
     >
       <div

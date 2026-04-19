@@ -52,14 +52,24 @@ function readStoredUser(): User | null {
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const storedUser = useMemo(() => readStoredUser(), []);
-  const cacheMatchesUser =
-    typeof window !== "undefined" &&
-    storedUser !== null &&
-    localStorage.getItem("hadami-cache-owner") === storedUser.id;
+
+  let cacheMatchesUser = false;
+  try {
+    cacheMatchesUser =
+      typeof window !== "undefined" &&
+      storedUser !== null &&
+      localStorage.getItem("hadami-cache-owner") === storedUser.id;
+  } catch {
+    // localStorage アクセス失敗（プライベートブラウジング等）
+  }
 
   // If cache belongs to a different user, clear it before first render
-  if (typeof window !== "undefined" && !cacheMatchesUser && localStorage.getItem("hadami-cache-owner") !== null) {
-    clearCachedUserData();
+  try {
+    if (typeof window !== "undefined" && !cacheMatchesUser && localStorage.getItem("hadami-cache-owner") !== null) {
+      clearCachedUserData();
+    }
+  } catch {
+    // localStorage アクセス失敗時は無視
   }
 
   const [user, setUser] = useState<User | null>(storedUser);
@@ -134,12 +144,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       setProfile(profileData ?? null);
       setCacheOwner(nextUser.id);
-      setLoading(false);
 
-      // Sync remaining data in background (products, zukan, deck)
-      syncUserData(supabase, nextUser.id).catch((error) =>
-        console.error("Background sync failed:", error)
+      // Sync data before showing page (cache was cleared)
+      await syncUserData(supabase, nextUser.id).catch((error) =>
+        console.error("Sync failed:", error)
       );
+
+      if (syncId !== syncSequence.current) return;
+      setLoading(false);
     } catch (error) {
       if (syncId !== syncSequence.current) return;
       console.error("Failed to fetch profile:", error);

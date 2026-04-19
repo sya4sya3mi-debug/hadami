@@ -89,7 +89,7 @@ export default function AutoRecommendModal({
           <div className="w-10 h-1 rounded-full mx-auto mb-4 bg-bo-parchment" />
           <div className="flex justify-between items-center">
             <h3 className="font-bold text-base text-bo-ink font-sans">
-              おすすめスキンケアデッキ
+              おすすめスキンケアルーティン
             </h3>
             <button onClick={onClose} className="text-xl text-bo-ink-muted">
               ✕

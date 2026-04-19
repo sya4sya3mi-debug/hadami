@@ -1,61 +1,56 @@
 /**
- * In-memory rate limiter.
+ * Persistent rate limiter backed by Supabase RPC.
  *
- * LIMITATION: This Map is scoped to a single serverless function instance.
- * On Vercel, each cold start or new instance gets a fresh Map. This means:
- * - It catches rapid-fire bursts within one instance (still valuable)
- * - It does NOT persist across deploys, cold starts, or multiple instances
+ * Uses the `check_rate_limit` RPC (SECURITY DEFINER, service-role only)
+ * which atomically increments a counter per (key, window) and returns
+ * whether the request is within the allowed budget.
  *
- * For authenticated endpoints, the atomic scan quota (try_reserve_scan RPC)
- * provides the durable limit. This in-memory check is a first line of defense
- * against unauthenticated abuse and rapid bursts.
- *
- * For production DoS protection, deploy Vercel Firewall / WAF rules.
+ * Falls back to "allow" on RPC errors so a transient DB issue
+ * doesn't block all traffic — the durable scan quota (try_reserve_scan)
+ * remains the hard cap for authenticated endpoints.
  */
-const store = new Map<string, { count: number; resetAt: number }>();
-let callCount = 0;
+import { supabaseAdmin } from "@/lib/supabaseAdmin";
 
-export function rateLimit(
+type RateLimitOptions = {
+  failOpen?: boolean;
+};
+
+export async function rateLimit(
   ip: string,
   windowMs: number,
-  maxRequests: number
-): { allowed: boolean; remaining: number; retryAfterMs: number } {
-  const now = Date.now();
+  maxRequests: number,
+  route: string = "default",
+  options: RateLimitOptions = {}
+): Promise<{ allowed: boolean; remaining: number; retryAfterMs: number }> {
+  const failOpen = options.failOpen ?? true;
+  const key = `ip:${ip}:${route}`;
+  const windowSeconds = Math.max(1, Math.round(windowMs / 1000));
+  const failureResult = failOpen
+    ? { allowed: true, remaining: maxRequests, retryAfterMs: 0 }
+    : { allowed: false, remaining: 0, retryAfterMs: windowMs };
 
-  // Periodic cleanup every 100 calls
-  callCount++;
-  if (callCount % 100 === 0) {
-    store.forEach((entry, key) => {
-      if (entry.resetAt <= now) store.delete(key);
+  try {
+    const { data, error } = await supabaseAdmin.rpc("check_rate_limit", {
+      p_key: key,
+      p_window_seconds: windowSeconds,
+      p_max_requests: maxRequests,
     });
-  }
 
-  // Hard cap on map size to prevent memory exhaustion
-  if (store.size > 10_000) {
-    store.clear();
-  }
+    if (error) {
+      console.error("rate limit RPC error:", error.message);
+      return failureResult;
+    }
 
-  const entry = store.get(ip);
-
-  if (!entry || entry.resetAt <= now) {
-    store.set(ip, { count: 1, resetAt: now + windowMs });
-    return { allowed: true, remaining: maxRequests - 1, retryAfterMs: 0 };
-  }
-
-  if (entry.count >= maxRequests) {
+    const allowed = data === true;
     return {
-      allowed: false,
-      remaining: 0,
-      retryAfterMs: entry.resetAt - now,
+      allowed,
+      remaining: allowed ? 1 : 0, // exact remaining not available from RPC
+      retryAfterMs: allowed ? 0 : windowMs,
     };
+  } catch (err) {
+    console.error("rate limit unexpected error:", err);
+    return failureResult;
   }
-
-  entry.count++;
-  return {
-    allowed: true,
-    remaining: maxRequests - entry.count,
-    retryAfterMs: 0,
-  };
 }
 
 export function getClientIp(req: Request): string {

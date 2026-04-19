@@ -17,11 +17,11 @@ export async function GET() {
   const [{ count: scanHistoryCount }, { data: profile }] = await Promise.all([
     supabase
       .from("scan_history")
-      .select("*", { count: "exact", head: true })
+      .select("id", { count: "exact", head: true })
       .eq("user_id", user.id),
     supabase
       .from("user_ingredient_profile")
-      .select("*")
+      .select("ingredient_id, encounter_count")
       .eq("user_id", user.id)
       .order("encounter_count", { ascending: false }),
   ]);

@@ -1,6 +1,6 @@
 "use client";
 
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { getIngredientById, getIngredientCategoryInfo, getIngredientCategories } from "@/lib/ingredients";
 import { useProductStore } from "@/stores/useProductStore";
@@ -9,28 +9,36 @@ import Badge from "@/components/ui/Badge";
 import Disclaimer from "@/components/ui/Disclaimer";
 import TargetedRakutenSection from "@/components/recommendations/TargetedRakutenSection";
 import { useUser } from "@/lib/auth";
-import PageLoading from "@/components/ui/PageLoading";
+
 import { ActiveCategoryIcon } from "@/components/ui/CosmeticIcons";
+import {
+  QuestionMarkCircleIcon,
+  LightbulbIcon,
+  InfoIcon,
+  AlertIcon,
+  PackageIcon,
+  ChevronRightIcon,
+  CameraIcon,
+} from "@/components/ui/Icons";
 
 export default function IngredientDetailPage() {
   const { loading } = useUser();
+  const router = useRouter();
   const { name } = useParams<{ name: string }>();
   const ingredient = getIngredientById(name);
   const products = useProductStore((s) => s.products);
   const discoveredIds = useZukanStore((s) => s.discoveredIds);
 
-  if (loading) {
-    return <PageLoading message="成分情報を読み込んでいます..." />;
-  }
+  if (loading) return null;
   const isDiscovered = discoveredIds.includes(name);
 
   if (!ingredient) {
     return (
       <div className="min-h-screen px-5 pt-10 text-center bg-bo-cream">
         <p className="text-bo-ink-muted">成分が見つかりません</p>
-        <Link href="/zukan" className="text-sm mt-2 inline-block font-medium text-bo-accent">
-          図鑑に戻る
-        </Link>
+        <button onClick={() => router.back()} className="text-sm mt-2 inline-block font-medium text-bo-accent bg-transparent border-none cursor-pointer">
+          ← 戻る
+        </button>
       </div>
     );
   }
@@ -39,11 +47,11 @@ export default function IngredientDetailPage() {
     return (
       <div className="min-h-screen bg-bo-cream">
         <div className="px-5 pt-8">
-          <Link href="/zukan" className="text-sm font-medium mb-4 inline-block text-bo-accent">
-            ← 図鑑
-          </Link>
+          <button onClick={() => router.back()} className="text-sm font-medium mb-4 inline-block text-bo-accent bg-transparent border-none cursor-pointer">
+            ← 戻る
+          </button>
           <div className="text-center py-14">
-            <span className="text-7xl">❓</span>
+            <QuestionMarkCircleIcon size={64} color="#C0B8A8" className="mx-auto" />
             <h1 className="font-bold text-xl mt-4 text-bo-ink">未発見の成分</h1>
             <p className="text-sm mt-2 text-bo-ink-muted">
               この成分はまだ発見されていません。<br />
@@ -51,9 +59,10 @@ export default function IngredientDetailPage() {
             </p>
             <Link
               href="/scan"
-              className="inline-block mt-5 px-8 py-3 rounded-2xl text-sm font-bold text-white bg-gradient-to-br from-bo-accent to-bo-accent-light"
+              className="inline-flex items-center gap-2 mt-5 px-8 py-3 rounded-2xl text-sm font-bold text-white bg-gradient-to-br from-bo-accent to-bo-accent-light"
             >
-              スキャンする 📷
+              <CameraIcon size={16} color="white" />
+              スキャンする
             </Link>
             <div className="mt-5 text-left">
               <TargetedRakutenSection
@@ -82,9 +91,9 @@ export default function IngredientDetailPage() {
   return (
     <div className="min-h-screen bg-bo-cream">
       <div className="px-5 pt-8 pb-6">
-        <Link href="/zukan" className="text-sm font-medium mb-4 inline-block text-bo-accent">
-          ← 図鑑
-        </Link>
+        <button onClick={() => router.back()} className="text-sm font-medium mb-4 inline-block text-bo-accent bg-transparent border-none cursor-pointer">
+          ← 戻る
+        </button>
 
         {/* Header */}
         <div className="text-center mb-5">
@@ -120,14 +129,20 @@ export default function IngredientDetailPage() {
 
         {/* Description */}
         <div className="bg-white rounded-r2 p-3.5 mb-2.5 shadow-bo1 border border-bo-parchment">
-          <h2 className="font-bold text-xs mb-1.5 text-bo-ink font-sans">📌 一般的な分類の説明</h2>
+          <h2 className="font-bold text-xs mb-1.5 text-bo-ink font-sans flex items-center gap-1.5">
+            <InfoIcon size={13} color="currentColor" />
+            一般的な分類の説明
+          </h2>
           <p className="text-xs leading-relaxed text-bo-ink-soft font-sans">{ingredient.note}</p>
         </div>
 
         {/* Fun fact */}
         {ingredient.funFact && (
           <div className="rounded-r2 p-3.5 mb-2.5 bg-bo-accent-soft border border-bo-accent/20">
-            <h2 className="font-bold text-xs mb-1.5 text-bo-accent font-sans">💡 トリビア</h2>
+            <h2 className="font-bold text-xs mb-1.5 text-bo-accent font-sans flex items-center gap-1.5">
+              <LightbulbIcon size={13} color="currentColor" />
+              トリビア
+            </h2>
             <p className="text-xs leading-relaxed text-bo-ink-soft font-sans">{ingredient.funFact}</p>
           </div>
         )}
@@ -135,7 +150,10 @@ export default function IngredientDetailPage() {
         {/* Caution */}
         {ingredient.caution && (
           <div className="rounded-r2 p-3.5 mb-2.5 bg-bo-danger-bg border border-bo-danger/20">
-            <h2 className="font-bold text-xs mb-1.5 text-bo-danger font-sans">📋 一般的な注意事項</h2>
+            <h2 className="font-bold text-xs mb-1.5 text-bo-danger font-sans flex items-center gap-1.5">
+              <AlertIcon size={13} color="currentColor" />
+              一般的な注意事項
+            </h2>
             <p className="text-xs leading-relaxed text-bo-ink-soft font-sans">{ingredient.caution}</p>
           </div>
         )}
@@ -154,12 +172,12 @@ export default function IngredientDetailPage() {
                   href={`/product/${p.id}`}
                   className="flex items-center gap-2.5 bg-white rounded-r1 p-2.5 shadow-bo1 border border-bo-parchment"
                 >
-                  <span className="text-base">📦</span>
+                  <PackageIcon size={16} color="#9A8C7E" />
                   <div className="flex-1 min-w-0">
                     <div className="font-medium text-xs truncate text-bo-ink font-sans">{p.name}</div>
                     <div className="text-[10px] text-bo-ink-muted font-sans">{p.brand}</div>
                   </div>
-                  <span className="text-bo-accent text-xs">›</span>
+                  <ChevronRightIcon size={16} color="currentColor" className="text-bo-accent" />
                 </Link>
               ))}
             </div>

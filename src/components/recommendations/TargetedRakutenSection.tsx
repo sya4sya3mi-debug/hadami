@@ -1,11 +1,10 @@
 "use client";
 
-import { useMemo, useRef, useEffect } from "react";
+import { useMemo } from "react";
 import type { RakutenProduct } from "@/types";
 import { useRakutenKeywordSearch } from "@/hooks/useRakutenKeywordSearch";
-import RakutenProductCard from "./RakutenProductCard";
+import AdCarousel from "./AdCarousel";
 import SkeletonLoader from "./SkeletonLoader";
-import { RAKUTEN_CARD_SCROLL_STEP_PX } from "./cardLayout";
 
 interface Props {
   enabled: boolean;
@@ -32,9 +31,6 @@ export default function TargetedRakutenSection({
 }: Props) {
   const { data, loading, error, keywords: normalizedKeywords } =
     useRakutenKeywordSearch(enabled, keywords);
-
-  const scrollRef = useRef<HTMLDivElement>(null);
-  const indexRef = useRef(0);
 
   const normalizedHints = useMemo(
     () =>
@@ -69,22 +65,6 @@ export default function TargetedRakutenSection({
 
     return merged;
   }, [data, normalizedKeywords]);
-
-  // 自動スライド: 3秒ごとに次のカードへ
-  useEffect(() => {
-    if (products.length <= 1) return;
-    const interval = setInterval(() => {
-      const el = scrollRef.current;
-      if (!el) return;
-      const maxIndex = products.length - 1;
-      indexRef.current = indexRef.current >= maxIndex ? 0 : indexRef.current + 1;
-      el.scrollTo({
-        left: indexRef.current * RAKUTEN_CARD_SCROLL_STEP_PX,
-        behavior: "smooth",
-      });
-    }, 3000);
-    return () => clearInterval(interval);
-  }, [products]);
 
   if (!enabled) return null;
   if (error) return null;
@@ -121,24 +101,7 @@ export default function TargetedRakutenSection({
       {loading ? (
         <SkeletonLoader />
       ) : products.length > 0 ? (
-        <div
-          ref={scrollRef}
-          className="flex gap-2 overflow-x-auto pb-2 -mx-1 px-1 scroll-smooth"
-          style={{ scrollbarWidth: "none" }}
-          onMouseEnter={() => {
-            indexRef.current = Math.round(
-              (scrollRef.current?.scrollLeft ?? 0) /
-                RAKUTEN_CARD_SCROLL_STEP_PX
-            );
-          }}
-        >
-          {products.map((product, index) => (
-            <RakutenProductCard
-              key={`${product.affiliateUrl}-${index}`}
-              product={product}
-            />
-          ))}
-        </div>
+        <AdCarousel products={products} />
       ) : (
         <p className="text-xs text-bo-ink-muted font-sans py-3 text-center">
           {emptyMessage}

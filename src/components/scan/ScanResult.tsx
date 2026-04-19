@@ -1,15 +1,19 @@
 "use client";
 
-import { useState } from "react";
-import Link from "next/link";
+import { useState, useCallback } from "react";
+import { createPortal } from "react-dom";
 import { Ingredient, Combination, ProductGenre } from "@/types";
-import { RARITY, ACTIVE_CATEGORIES, getIngredientCategoryInfo } from "@/lib/ingredients";
+import { RARITY, ACTIVE_CATEGORIES, getIngredientCategoryInfo, getIngredientCategories, isActiveIngredient } from "@/lib/ingredients";
 import { getGenreByKey } from "@/lib/productGenres";
 import Badge, { StarIcon } from "@/components/ui/Badge";
 import Disclaimer from "@/components/ui/Disclaimer";
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import RecommendSection from "@/components/recommendations/RecommendSection";
 import { ActiveCategoryIcon, ProductGenreIcon } from "@/components/ui/CosmeticIcons";
+import BottomSheet from "@/components/scan/BottomSheet";
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+import ShareModal from "@/components/ui/ShareModal";
+import { generateScanResultShareImage } from "@/lib/generateShareImage";
 
 interface ScanResultProps {
   productName: string;
@@ -38,12 +42,21 @@ export default function ScanResult({
 }: ScanResultProps) {
   const [showUnknown, setShowUnknown] = useState(false);
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set(["_all"]));
+  const [selectedIngredient, setSelectedIngredient] = useState<Ingredient | null>(null);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [shareModalOpen, setShareModalOpen] = useState(false);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [shareImageBase64, setShareImageBase64] = useState<string | null>(null);
 
   const genre = getGenreByKey(productType);
 
-  // Group ingredients by effect category
+  // 有効成分とその他を分離
+  const activeIngredients = foundIngredients.filter((f) => isActiveIngredient(f.ingredient.id));
+  const otherIngredients = foundIngredients.filter((f) => !isActiveIngredient(f.ingredient.id));
+
+  // Group active ingredients by effect category
   const grouped = new Map<string, { ingredient: Ingredient; orderIndex: number }[]>();
-  for (const item of foundIngredients) {
+  for (const item of activeIngredients) {
     const catKey = item.ingredient.categories[0] || "_other";
     if (!grouped.has(catKey)) grouped.set(catKey, []);
     grouped.get(catKey)!.push(item);
@@ -58,38 +71,61 @@ export default function ScanResult({
     });
   };
 
-  const handleSave = () => {
-    if (!onSave || saved) return;
-    onSave();
+  const [isSaving, setIsSaving] = useState(false);
+  const handleSave = async () => {
+    if (!onSave || saved || isSaving) return;
+    try {
+      setIsSaving(true);
+      await onSave();
+    } finally {
+      setIsSaving(false);
+    }
   };
 
-  const showGrouped = foundIngredients.length > 8;
-  const contentPaddingClass = saved ? "pb-40" : "pb-24";
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const handleShare = useCallback(async () => {
+    const activeIngs = foundIngredients
+      .filter((f) => isActiveIngredient(f.ingredient.id))
+      .sort((a, b) => a.orderIndex - b.orderIndex)
+      .map((f) => f.ingredient);
+    const img = await generateScanResultShareImage({
+      productName,
+      brand,
+      productType,
+      imagePreview,
+      activeIngredients: activeIngs,
+    });
+    setShareImageBase64(img);
+    setShareModalOpen(true);
+  }, [productName, brand, productType, imagePreview, foundIngredients]);
+
+  const contentPaddingClass = saved ? "pb-36" : "pb-24";
 
   return (
-    <div className={`space-y-4 animate-fade-up ${contentPaddingClass}`}>
+    <div className={`space-y-5 animate-fade-up ${contentPaddingClass}`}>
       {/* Product header card */}
-      <div className="bg-white rounded-r3 overflow-hidden border border-bo-parchment shadow-bo2">
-        <div className="h-[3px] bg-gradient-to-r from-bo-accent via-bo-safe to-[#6BC4A0]" />
-        <div className="p-5 px-[18px]">
-          <div className="flex items-center gap-3">
+      <div className="bg-white dark:bg-gray-800 rounded-r3 overflow-hidden shadow-bo2">
+        <div className="h-1 bg-gradient-to-r from-bo-accent via-bo-safe to-[#6BC4A0]" />
+        <div className="p-5">
+          <div className="flex items-center gap-3.5">
             {imagePreview ? (
-              <div className="w-14 h-14 rounded-xl overflow-hidden shrink-0">
+              <div className="w-16 h-16 rounded-r1 overflow-hidden shrink-0 shadow-bo1">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={imagePreview} alt="" className="w-full h-full object-cover" />
               </div>
             ) : (
-              <div className="w-14 h-14 rounded-xl shrink-0 flex items-center justify-center text-2xl bg-gradient-to-br from-bo-accent-soft to-bo-parchment">
+              <div className="w-16 h-16 rounded-r1 shrink-0 flex items-center justify-center text-2xl
+                              bg-gradient-to-br from-bo-accent-soft to-bo-parchment">
                 {genre?.icon || "📦"}
               </div>
             )}
             <div className="flex-1 min-w-0">
-              <div className="font-extrabold text-base font-serif truncate text-bo-ink">{productName}</div>
-              <div className="text-[11px] truncate text-bo-ink-muted font-sans tracking-[0.08em] uppercase">{brand}</div>
+              <div className="font-extrabold text-base font-serif truncate text-bo-ink dark:text-white">{productName}</div>
+              <div className="text-xs mt-0.5 truncate text-bo-ink-muted dark:text-gray-400 font-sans tracking-wide">{brand}</div>
             </div>
             {genre && (
               <span
-                className="inline-flex items-center gap-1 text-[10px] px-2.5 py-1 rounded-md font-semibold shrink-0 font-sans"
+                className="inline-flex items-center gap-1 text-[10px] px-2.5 py-1.5 rounded-r1 font-semibold shrink-0 font-sans"
                 style={{ background: genre.color + "18", color: genre.color }}
               >
                 <ProductGenreIcon genre={genre.key} size={12} />
@@ -99,27 +135,68 @@ export default function ScanResult({
           </div>
 
           {/* Stats row */}
-          <div className="flex items-center justify-center gap-4 mt-3 pt-3 text-xs font-medium font-sans border-t border-bo-parchment text-bo-ink-muted">
-            <span className="text-bo-accent font-bold">検出 {foundIngredients.length}種</span>
-            {unknownIngredients.length > 0 && (
-              <span>未登録 {unknownIngredients.length}種</span>
+          <div className="flex items-center justify-center gap-3 mt-4 pt-4 border-t border-bo-parchment dark:border-gray-700">
+            <div className="flex-1 text-center">
+              <div className="text-lg font-black text-bo-accent font-sans">{activeIngredients.length}</div>
+              <div className="text-[10px] text-bo-ink-muted dark:text-gray-400 font-sans mt-0.5">美容成分</div>
+            </div>
+            {otherIngredients.length > 0 && (
+              <div className="flex-1 text-center border-l border-bo-parchment dark:border-gray-700">
+                <div className="text-lg font-black text-bo-ink-muted dark:text-gray-300 font-sans">{otherIngredients.length}</div>
+                <div className="text-[10px] text-bo-ink-muted dark:text-gray-400 font-sans mt-0.5">その他の成分</div>
+              </div>
             )}
             {combinations.length > 0 && (
-              <span className="text-bo-accent">組み合わせ {combinations.length}件</span>
+              <div className="flex-1 text-center border-l border-bo-parchment dark:border-gray-700">
+                <div className="text-lg font-black text-bo-accent font-sans">{combinations.length}</div>
+                <div className="text-[10px] text-bo-ink-muted dark:text-gray-400 font-sans mt-0.5">組み合わせ</div>
+              </div>
             )}
           </div>
+
+          {/* Save button — inline in header card */}
+          {!saved && onSave && (
+            <button
+              onClick={handleSave}
+              disabled={isSaving}
+              className="w-full mt-4 py-3.5 rounded-r2 font-bold text-[15px] font-sans border-none cursor-pointer
+                         bg-bo-accent text-white shadow-bo-accent pressable
+                         flex items-center justify-center gap-2
+                         disabled:opacity-60 disabled:cursor-wait"
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/>
+                <polyline points="17 21 17 13 7 13 7 21"/>
+                <polyline points="7 3 7 8 15 8"/>
+              </svg>
+              {isSaving ? "保存中..." : "マイコスメに保存する"}
+            </button>
+          )}
+          {saved && (
+            <div className="flex items-center gap-2 mt-4 px-3 py-2.5 rounded-r2 bg-bo-accent-soft/60">
+              <div className="w-5 h-5 rounded-full bg-bo-accent flex items-center justify-center shrink-0">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3.5" strokeLinecap="round">
+                  <path d="M20 6L9 17l-5-5"/>
+                </svg>
+              </div>
+              <span className="text-xs font-bold text-bo-accent font-sans">保存しました</span>
+            </div>
+          )}
         </div>
       </div>
 
-      {/* Ingredients */}
+      {/* レコメンドセクション（保存後に表示） */}
+      {saved && <RecommendSection enabled={saved} />}
+
+      {/* 検出成分セクション */}
       <div>
-        <h3 className="font-bold text-sm mb-3 flex items-center gap-2 text-bo-ink font-sans">
-          <span className="w-1 h-4 rounded-full inline-block bg-bo-accent" />
+        <h3 className="font-bold text-sm mb-3 flex items-center gap-2 text-bo-ink dark:text-white font-sans">
+          <span className="w-1.5 h-5 rounded-full inline-block bg-bo-accent" />
           検出成分
         </h3>
 
-        {showGrouped ? (
-          <div className="space-y-2">
+        {activeIngredients.length > 8 ? (
+          <div className="space-y-2.5">
             {Array.from(grouped.entries()).map(([catKey, items]) => {
               const catInfo = ACTIVE_CATEGORIES.find((c) => c.key === catKey);
               const isOpen = expandedCategories.has(catKey);
@@ -127,19 +204,35 @@ export default function ScanResult({
                 <div key={catKey}>
                   <button
                     onClick={() => toggleCategory(catKey)}
-                    className="w-full flex items-center justify-between rounded-xl px-3 py-2.5 text-sm"
-                    style={{ background: catInfo ? catInfo.color + "10" : "#f5f6f6" }}
+                    className="w-full flex items-center justify-between rounded-r2 px-4 py-3 text-sm
+                               bg-white dark:bg-gray-800 shadow-bo1 border-none cursor-pointer pressable"
                   >
-                    <div className="flex items-center gap-2">
-                      <span>{catInfo?.icon || "📋"}</span>
-                      <span className="font-bold text-xs font-sans" style={{ color: catInfo?.color || "#212121" }}>
-                        {catInfo?.label || "その他"} ({items.length})
+                    <div className="flex items-center gap-2.5">
+                      {catInfo ? (
+                        <div
+                          className="w-8 h-8 rounded-[10px] flex items-center justify-center"
+                          style={{ background: catInfo.color + "15" }}
+                        >
+                          <ActiveCategoryIcon category={catInfo.key} size={16} />
+                        </div>
+                      ) : (
+                        <span className="text-base">📋</span>
+                      )}
+                      <span className="font-bold text-sm font-sans dark:brightness-125" style={{ color: catInfo?.color || "#212121" }}>
+                        {catInfo?.label || "その他"}
                       </span>
+                      <span className="text-xs text-bo-ink-faint font-sans">({items.length})</span>
                     </div>
-                    <span className="text-xs text-bo-ink-faint">{isOpen ? "▲" : "▼"}</span>
+                    <svg
+                      width="16" height="16" viewBox="0 0 24 24" fill="none"
+                      stroke="#9E9E9E" strokeWidth="2" strokeLinecap="round"
+                      className={`transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}
+                    >
+                      <path d="M6 9l6 6 6-6"/>
+                    </svg>
                   </button>
                   {isOpen && (
-                    <div className="space-y-1.5 mt-1.5">
+                    <div className="space-y-2 mt-2">
                       {items.map(({ ingredient, orderIndex }, idx) => (
                         <IngredientRow
                           key={ingredient.id}
@@ -147,6 +240,7 @@ export default function ScanResult({
                           orderIndex={orderIndex}
                           delay={Math.min(idx, 10) * 50}
                           isNew={newDiscoveryIds?.has(ingredient.id)}
+                          onSelect={setSelectedIngredient}
                         />
                       ))}
                     </div>
@@ -156,69 +250,99 @@ export default function ScanResult({
             })}
           </div>
         ) : (
-          <div className="space-y-1.5">
-            {foundIngredients.map(({ ingredient, orderIndex }, idx) => (
+          <div className="space-y-2">
+            {activeIngredients.map(({ ingredient, orderIndex }, idx) => (
               <IngredientRow
                 key={ingredient.id}
                 ingredient={ingredient}
                 orderIndex={orderIndex}
                 delay={Math.min(idx, 10) * 50}
                 isNew={newDiscoveryIds?.has(ingredient.id)}
+                onSelect={setSelectedIngredient}
               />
             ))}
           </div>
         )}
 
-        {foundIngredients.length === 0 && (
-          <div className="text-center py-8 rounded-r2 bg-white/70">
-            <div className="text-3xl mb-2">🔍</div>
-            <p className="text-sm text-bo-ink-muted font-sans">成分が検出されませんでした</p>
+        {activeIngredients.length === 0 && (
+          <div className="text-center py-10 rounded-r2 bg-white shadow-bo1">
+            <div className="text-3xl mb-3">🔍</div>
+            <p className="text-sm text-bo-ink-muted font-sans">美容成分が検出されませんでした</p>
           </div>
         )}
       </div>
 
-      {/* Unknown ingredients */}
-      {unknownIngredients.length > 0 && (
+      {/* その他の成分（折りたたみ） */}
+      {otherIngredients.length > 0 && (
         <div>
           <button
             onClick={() => setShowUnknown(!showUnknown)}
-            className="flex items-center gap-1.5 text-sm text-bo-ink-muted font-sans"
+            className="flex items-center gap-2 text-sm text-bo-ink-muted dark:text-gray-400 font-sans bg-transparent border-none cursor-pointer pressable"
           >
-            <span>未登録成分（{unknownIngredients.length}種）</span>
-            <span>{showUnknown ? "▲" : "▼"}</span>
+            <span>その他の成分（{otherIngredients.length}種）</span>
+            <svg
+              width="14" height="14" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" strokeWidth="2" strokeLinecap="round"
+              className={`transition-transform duration-200 ${showUnknown ? "rotate-180" : ""}`}
+            >
+              <path d="M6 9l6 6 6-6"/>
+            </svg>
           </button>
           {showUnknown && (
-            <div className="mt-2 rounded-xl p-3 text-xs bg-bo-cream text-bo-ink-muted font-sans">
-              {unknownIngredients.join("、")}
+            <div className="mt-2 space-y-2">
+              {otherIngredients.map(({ ingredient, orderIndex }, idx) => (
+                <IngredientRow
+                  key={ingredient.id}
+                  ingredient={ingredient}
+                  orderIndex={orderIndex}
+                  delay={Math.min(idx, 10) * 30}
+                  onSelect={setSelectedIngredient}
+                />
+              ))}
             </div>
           )}
+        </div>
+      )}
+
+      {/* 未登録成分 */}
+      {unknownIngredients.length > 0 && (
+        <div>
+          <div className="text-xs text-bo-ink-faint dark:text-gray-500 font-sans">
+            未登録成分（{unknownIngredients.length}種）：{unknownIngredients.join("、")}
+          </div>
         </div>
       )}
 
       {/* Combinations */}
       {combinations.length > 0 && (
         <div>
-          <h3 className="font-bold text-sm mb-3 flex items-center gap-2 text-bo-ink font-sans">
-            <span className="w-1 h-4 rounded-full inline-block bg-bo-accent" />
+          <h3 className="font-bold text-sm mb-3 flex items-center gap-2 text-bo-ink dark:text-white font-sans">
+            <span className="w-1.5 h-5 rounded-full inline-block bg-bo-accent" />
             組み合わせ情報
           </h3>
-          <div className="space-y-2">
+          <div className="space-y-2.5">
             {combinations.map((combo, i) => {
               const isGood = combo.type === "recommended";
               return (
                 <div
                   key={i}
-                  className={`rounded-r2 p-3.5 flex gap-3 bg-white border ${
-                    isGood
-                      ? "border-bo-safe/20 border-l-[4px] border-l-bo-safe"
-                      : "border-bo-danger/20 border-l-[4px] border-l-bo-danger"
-                  }`}
+                  className="rounded-r2 overflow-hidden bg-white dark:bg-gray-800 shadow-bo1"
                 >
-                  <span className="text-lg shrink-0">{isGood ? "📚" : "📋"}</span>
-                  <div className="flex-1 min-w-0">
-                    <div className="font-bold text-sm text-bo-ink font-sans">{combo.label}</div>
-                    <p className="text-xs mt-1 text-bo-ink-muted font-sans">{combo.desc}</p>
-                    <p className="text-[10px] mt-1 text-bo-ink-faint font-sans">出典: {combo.source}</p>
+                  {/* Left color accent via top bar */}
+                  <div className={`h-0.5 ${isGood ? "bg-bo-safe" : "bg-bo-danger"}`} />
+                  <div className="p-4 flex gap-3">
+                    <div
+                      className={`w-10 h-10 rounded-[12px] flex items-center justify-center text-lg shrink-0 ${
+                        isGood ? "bg-[#E8F5EE]" : "bg-red-50"
+                      }`}
+                    >
+                      {isGood ? "✨" : "⚠️"}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="font-bold text-sm text-bo-ink dark:text-white font-sans">{combo.label}</div>
+                      <p className="text-xs mt-1 text-bo-ink-muted dark:text-gray-400 font-sans leading-relaxed">{combo.desc}</p>
+                      <p className="text-[10px] mt-1.5 text-bo-ink-faint dark:text-gray-500 font-sans">出典: {combo.source}</p>
+                    </div>
                   </div>
                 </div>
               );
@@ -227,58 +351,53 @@ export default function ScanResult({
         </div>
       )}
 
-      {/* レコメンドセクション（保存後に表示） */}
-      {saved && <RecommendSection enabled={saved} />}
-
       <Disclaimer />
 
-      {/* Sticky bottom bar */}
-      <div className="fixed left-0 right-0 z-40 bottom-0 px-5 pt-4 pb-[calc(16px+env(safe-area-inset-bottom)+56px)] bg-gradient-to-t from-white via-white/90 to-transparent">
-        {saved ? (
-          /* 保存完了 → 遷移先を選ぶボタン */
-          <div className="space-y-2 animate-fade-up">
-            <p className="text-center text-xs font-medium text-bo-ink-muted font-sans mb-1">
-              <span className="text-bo-accent font-bold">✓ 保存しました</span>　次はどこへ？
-            </p>
-            <div className="flex gap-2">
-              <Link
-                href="/history"
-                className="flex-1 py-3.5 rounded-r2 font-bold text-sm font-sans text-center bg-gradient-to-br from-bo-accent to-bo-accent-dark text-white shadow-bo-accent no-underline"
-              >
-                📦 マイコスメを見る
-              </Link>
-              <Link
-                href="/zukan"
-                className="flex-1 py-3.5 rounded-r2 font-bold text-sm font-sans text-center bg-white border border-bo-accent text-bo-accent no-underline"
-              >
-                🌿 成分図鑑へ
-              </Link>
-            </div>
-          </div>
-        ) : onSave ? (
-          /* 未保存 → 保存ボタン */
-          <button
-            onClick={handleSave}
-            className="w-full py-4 rounded-r2 font-bold text-sm font-sans bg-gradient-to-br from-bo-accent to-bo-accent-dark text-white shadow-bo-accent"
-          >
-            ✨ マイコスメに保存する
-          </button>
-        ) : null}
-      </div>
+      {/* 成分詳細シート（Portal経由で最前面に表示） */}
+      {selectedIngredient && typeof document !== "undefined" && createPortal(
+        <IngredientDetailSheet
+          ingredient={selectedIngredient}
+          onClose={() => setSelectedIngredient(null)}
+        />,
+        document.body,
+      )}
+
+      {/* Share modal */}
+      {shareModalOpen && typeof document !== "undefined" && createPortal(
+        <ShareModal
+          text={`【コスメチェック】${productName}（${brand}）\n注目成分：${activeIngredients.slice(0, 3).map((f) => f.ingredient.nameJa).join(" / ")}\n\n#HADAMI #成分チェック`}
+          onClose={() => setShareModalOpen(false)}
+          imageBase64={shareImageBase64 ?? undefined}
+        />,
+        document.body,
+      )}
+
     </div>
   );
 }
 
-function IngredientRow({ ingredient, orderIndex, delay, isNew }: { ingredient: Ingredient; orderIndex: number; delay: number; isNew?: boolean }) {
+function IngredientRow({
+  ingredient,
+  orderIndex,
+  delay,
+  isNew,
+  onSelect,
+}: {
+  ingredient: Ingredient;
+  orderIndex: number;
+  delay: number;
+  isNew?: boolean;
+  onSelect: (ingredient: Ingredient) => void;
+}) {
   return (
-    <Link
-      href={`/ingredient/${ingredient.id}`}
-      className={`flex items-center gap-3 rounded-r1 p-3 animate-stagger-in ${
+    <button
+      onClick={() => onSelect(ingredient)}
+      className={`w-full text-left flex items-center gap-3 rounded-r2 p-3.5 animate-stagger-in pressable border-none cursor-pointer ${
         isNew
-          ? "border-2 border-bo-accent shadow-[0_2px_12px_rgba(58,143,122,0.18)] bg-bo-accent-soft/30"
-          : "border border-bo-parchment shadow-bo1 bg-white"
+          ? "border-2 border-bo-accent shadow-[0_2px_12px_rgba(58,143,122,0.18)] bg-bo-accent-soft/30 dark:bg-bo-accent/10"
+          : "bg-white dark:bg-gray-800 shadow-bo1"
       }`}
-      style={{ animationDelay: `${delay}ms`, opacity: 0 }}
+      style={{ animationDelay: `${delay}ms` }}
     >
       <span className="inline-flex items-center gap-px">
         {Array.from({ length: RARITY[ingredient.rarity].star }).map((_, i) => (
@@ -287,21 +406,21 @@ function IngredientRow({ ingredient, orderIndex, delay, isNew }: { ingredient: I
       </span>
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 flex-wrap">
-          <span className="font-bold text-sm text-bo-ink font-sans">{ingredient.nameJa}</span>
+          <span className="font-bold text-sm text-bo-ink dark:text-white font-sans">{ingredient.nameJa}</span>
           <Badge rarity={ingredient.rarity} size="sm" />
           {isNew && (
-            <span className="text-[9px] px-1.5 py-0.5 rounded-full font-bold bg-bo-accent text-white">
+            <span className="text-[9px] px-2 py-0.5 rounded-full font-bold bg-bo-accent text-white shadow-bo-accent">
               NEW
             </span>
           )}
         </div>
-        <div className="text-[11px] mt-0.5 text-bo-ink-muted font-sans">{ingredient.nameInci}</div>
+        <div className="text-[11px] mt-0.5 text-bo-ink-muted dark:text-gray-400 font-sans">{ingredient.nameInci}</div>
         {(() => {
           const c = getIngredientCategoryInfo(ingredient);
           return c ? (
-            <div className="flex gap-1 mt-1">
+            <div className="flex gap-1 mt-1.5">
               <span
-                className="inline-flex items-center gap-1 text-[9px] px-1.5 py-0.5 rounded-full font-medium font-sans"
+                className="inline-flex items-center gap-1 text-[9px] px-2 py-0.5 rounded-full font-medium font-sans"
                 style={{ background: c.color + "18", color: c.color }}
               >
                 <ActiveCategoryIcon category={c.key} size={11} />
@@ -311,7 +430,79 @@ function IngredientRow({ ingredient, orderIndex, delay, isNew }: { ingredient: I
           ) : null;
         })()}
       </div>
-      <span className="text-[10px] font-medium shrink-0 text-bo-ink-faint font-sans">#{orderIndex + 1}</span>
-    </Link>
+      {/* Order number + chevron */}
+      <div className="flex items-center gap-1.5 shrink-0">
+        <span className="text-[10px] font-medium text-bo-ink-faint font-sans">#{orderIndex + 1}</span>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#BDBDBD" strokeWidth="2" strokeLinecap="round">
+          <path d="M9 18l6-6-6-6"/>
+        </svg>
+      </div>
+    </button>
+  );
+}
+
+function IngredientDetailSheet({
+  ingredient,
+  onClose,
+}: {
+  ingredient: Ingredient | null;
+  onClose: () => void;
+}) {
+  if (!ingredient) return null;
+
+  const catInfo = getIngredientCategoryInfo(ingredient);
+  const allCats = getIngredientCategories(ingredient);
+
+  return (
+    <BottomSheet open={true} onClose={onClose} title={ingredient.nameJa}>
+      <div className="pb-6 space-y-3">
+        {/* Header */}
+        <div className="flex flex-col items-center gap-2 py-3">
+          <div
+            className="w-14 h-14 rounded-full flex items-center justify-center"
+            style={{ background: `linear-gradient(135deg, ${catInfo?.color || ingredient.color}20, ${catInfo?.color || ingredient.color}08)` }}
+          >
+            <ActiveCategoryIcon category={catInfo?.key} size={24} />
+          </div>
+          <p className="text-xs text-bo-ink-muted font-sans">{ingredient.nameInci}</p>
+          <div className="flex items-center gap-2 flex-wrap justify-center">
+            <Badge rarity={ingredient.rarity} size="sm" />
+            {allCats.map((c) => (
+              <span
+                key={c.key}
+                className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full font-medium font-sans"
+                style={{ background: c.color + "18", color: c.color }}
+              >
+                <ActiveCategoryIcon category={c.key} size={12} />
+                {c.label}
+              </span>
+            ))}
+          </div>
+        </div>
+
+        {/* Note */}
+        <div className="bg-white rounded-r2 p-3.5 shadow-bo1 border border-bo-parchment">
+          <h2 className="font-bold text-xs mb-1.5 text-bo-ink font-sans">📌 一般的な分類の説明</h2>
+          <p className="text-xs leading-relaxed text-bo-ink-soft font-sans">{ingredient.note}</p>
+        </div>
+
+        {/* Fun fact */}
+        {ingredient.funFact && (
+          <div className="rounded-r2 p-3.5 bg-bo-accent-soft border border-bo-accent/20">
+            <h2 className="font-bold text-xs mb-1.5 text-bo-accent font-sans">💡 トリビア</h2>
+            <p className="text-xs leading-relaxed text-bo-ink-soft font-sans">{ingredient.funFact}</p>
+          </div>
+        )}
+
+        {/* Caution */}
+        {ingredient.caution && (
+          <div className="rounded-r2 p-3.5 bg-bo-danger-bg border border-bo-danger/20">
+            <h2 className="font-bold text-xs mb-1.5 text-bo-danger font-sans">📋 一般的な注意事項</h2>
+            <p className="text-xs leading-relaxed text-bo-ink-soft font-sans">{ingredient.caution}</p>
+          </div>
+        )}
+
+      </div>
+    </BottomSheet>
   );
 }

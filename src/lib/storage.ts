@@ -1,125 +1,82 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-const BUCKET = "product-images";
-const CACHE_KEY = "hadami-img-cache";
-const CACHE_TTL_MS = 55 * 60 * 1000; // 55分（signed URLの有効期限1時間より短く）
-
-type UrlCache = Record<string, { url: string; expiresAt: number }>;
-
-/** インメモリキャッシュ — localStorage I/O を最小化 */
-let memCache: UrlCache | null = null;
-
-function loadCache(): UrlCache {
-  if (memCache) return memCache;
-  if (typeof window === "undefined") return {};
-  try {
-    memCache = JSON.parse(window.localStorage.getItem(CACHE_KEY) ?? "{}");
-    return memCache!;
-  } catch {
-    memCache = {};
-    return memCache;
-  }
+function isDirectUrl(path: string): boolean {
+  return (
+    path.startsWith("http://") ||
+    path.startsWith("https://") ||
+    path.startsWith("/") ||
+    path.startsWith("data:")
+  );
 }
 
-function saveCache(cache: UrlCache) {
-  memCache = cache;
-  if (typeof window === "undefined") return;
-  window.localStorage.setItem(CACHE_KEY, JSON.stringify(cache));
-}
+const SIGNED_URL_BATCH_SIZE = 50;
 
-/** 複数パスの signed URL を一括取得（バッチAPI使用） */
+/** 複数パスの署名付きURLを /api/signed-url 経由で取得 */
 export async function getSignedImageUrls(
-  supabase: SupabaseClient,
+  _supabase: SupabaseClient,
   filePaths: string[],
-  expiresIn: number = 3600
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  _expiresIn?: number
 ): Promise<Record<string, string | null>> {
   const result: Record<string, string | null> = {};
-  const cache = loadCache();
-  const needFetch: string[] = [];
+  const keysToSign: string[] = [];
 
   for (const fp of filePaths) {
-    if (
-      fp.startsWith("http://") ||
-      fp.startsWith("https://") ||
-      fp.startsWith("/") ||
-      fp.startsWith("data:")
-    ) {
+    if (isDirectUrl(fp)) {
       result[fp] = fp;
     } else {
-      const cached = cache[fp];
-      if (cached && cached.expiresAt > Date.now()) {
-        result[fp] = cached.url;
-      } else {
-        needFetch.push(fp);
-      }
+      keysToSign.push(fp);
     }
   }
 
-  if (needFetch.length > 0) {
-    const { data, error } = await supabase.storage
-      .from(BUCKET)
-      .createSignedUrls(needFetch, expiresIn);
+  if (keysToSign.length === 0) return result;
 
-    if (!error && data) {
-      const now = Date.now();
-      for (const item of data) {
-        if (item.signedUrl && item.path) {
-          cache[item.path] = { url: item.signedUrl, expiresAt: now + CACHE_TTL_MS };
-          result[item.path] = item.signedUrl;
+  const batches: string[][] = [];
+  for (let i = 0; i < keysToSign.length; i += SIGNED_URL_BATCH_SIZE) {
+    batches.push(keysToSign.slice(i, i + SIGNED_URL_BATCH_SIZE));
+  }
+
+  await Promise.all(
+    batches.map(async (batch) => {
+      try {
+        const res = await fetch("/api/signed-url", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ keys: batch }),
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          const urls: Record<string, string> = data.urls ?? {};
+          for (const [k, v] of Object.entries(urls)) {
+            result[k] = v;
+          }
         }
+      } catch {
+        // ネットワークエラー時は null のまま
       }
-      saveCache(cache);
-    } else {
-      for (const fp of needFetch) {
-        result[fp] = null;
-      }
-    }
-  }
+    })
+  );
 
   return result;
 }
 
 /**
- * ストレージパスから signed URL を生成する。
- * キャッシュがあれば再利用し、ない/期限切れのときだけ Supabase にリクエスト。
+ * ストレージパスから署名付きURLを生成する。
  * フル URL（既存データの後方互換）が渡された場合はそのまま返す。
  */
 export async function getSignedImageUrl(
   supabase: SupabaseClient,
   filePath: string,
-  expiresIn: number = 3600
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  _expiresIn?: number
 ): Promise<string | null> {
-  // Already a full URL (legacy data) — return as-is
-  if (
-    filePath.startsWith("http://") ||
-    filePath.startsWith("https://") ||
-    filePath.startsWith("/") ||
-    filePath.startsWith("data:")
-  ) {
-    return filePath;
-  }
-
-  const cache = loadCache();
-  const cached = cache[filePath];
-  if (cached && cached.expiresAt > Date.now()) {
-    return cached.url;
-  }
-
-  const { data, error } = await supabase.storage
-    .from(BUCKET)
-    .createSignedUrl(filePath, expiresIn);
-
-  if (error || !data?.signedUrl) return null;
-
-  cache[filePath] = { url: data.signedUrl, expiresAt: Date.now() + CACHE_TTL_MS };
-  saveCache(cache);
-
-  return data.signedUrl;
+  if (isDirectUrl(filePath)) return filePath;
+  const urls = await getSignedImageUrls(supabase, [filePath]);
+  return urls[filePath] ?? null;
 }
 
-/** キャッシュをクリア（ログアウト時などに使用） */
+/** キャッシュクリア */
 export function clearImageUrlCache() {
-  memCache = null;
-  if (typeof window === "undefined") return;
-  window.localStorage.removeItem(CACHE_KEY);
+  // no-op: client-side cache is managed in useSignedImageUrl hook
 }

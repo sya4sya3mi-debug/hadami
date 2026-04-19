@@ -11,9 +11,10 @@ import ScanDiscoveryAd from "@/components/recommendations/ScanDiscoveryAd";
 import ManualInputSheet from "@/components/scan/ManualInputSheet";
 import DiscoveryModal from "@/components/ui/DiscoveryModal";
 import AuthGuard from "@/components/ui/AuthGuard";
+import Disclaimer from "@/components/ui/Disclaimer";
 import { extractIngredients } from "@/lib/ocr";
 import { findCombinations } from "@/lib/combinations";
-import { getIngredientById, getIngredientByInci, getIngredientByName } from "@/lib/ingredients";
+import { getIngredientById, getIngredientByInci, getIngredientByName, isActiveIngredient } from "@/lib/ingredients";
 import { resolveActiveIngredient } from "@/lib/mhlwActiveIngredients";
 import { resolveActiveIngredients, type ResolvedActiveIngredient } from "@/lib/activeIngredientResolver";
 import { useProductStore } from "@/stores/useProductStore";
@@ -25,9 +26,14 @@ import {
   saveScanHistory,
   getUserLimit,
   getMonthlyScanLimit,
-  getScanCountByEmail,
+  getMonthlyScanCount,
   getProductCount,
 } from "@/lib/db";
+import { getSignedImageUrls } from "@/lib/storage";
+import {
+  getProductImagePath,
+  getProductImageThumbPath,
+} from "@/lib/productImages";
 import { Ingredient, Combination, ProductGenre } from "@/types";
 import { normalizeGenreFromScan } from "@/lib/productGenres";
 
@@ -41,11 +47,8 @@ interface ScannedProduct {
   ingredients: string;
   isQuasiDrug?: boolean;
   activeIngredients?: string[];
-  activeEvidenceText?: string;
-  salesName?: string;
-  sourceUrls?: string[];
-  decision?: "accepted" | "needs_more_image" | "rejected";
-  confidenceScore?: number;
+  resolveToken?: string;
+  requiresResolve?: boolean;
 }
 
 export default function ScanPage() {
@@ -73,6 +76,7 @@ function ScanPageInner() {
   // Multi-product (Step 2)
   const [multiProducts, setMultiProducts] = useState<ScannedProduct[]>([]);
   const [multiSavedIndexes, setMultiSavedIndexes] = useState<Set<number>>(new Set());
+  const [multiResolvingIndexes, setMultiResolvingIndexes] = useState<Set<number>>(new Set());
   const [showMultiSheet, setShowMultiSheet] = useState(false);
 
   // Product info (Step 3)
@@ -137,7 +141,7 @@ function ScanPageInner() {
 
   useEffect(() => {
     if (!user?.email) return;
-    getScanCountByEmail(supabase, user.email).then((count) => {
+    getMonthlyScanCount(supabase, user.id).then((count) => {
       if (count >= monthlyScanLimit) setScanLimitReached(true);
     });
   }, [user, supabase, monthlyScanLimit]);
@@ -159,6 +163,36 @@ function ScanPageInner() {
       )
     );
   }, []);
+
+  const resolveUploadedImage = useCallback(
+    async (productId: string, savedFilePath: string | null) => {
+      if (!user || !savedFilePath) {
+        return {
+          packageImage: undefined,
+          packageImagePath: undefined,
+          packageImageThumb: undefined,
+          packageImageThumbPath: undefined,
+        };
+      }
+
+      const packageImagePath = getProductImagePath(user.id, productId);
+      const packageImageThumbPath = getProductImageThumbPath(user.id, productId);
+      const signedImages = await getSignedImageUrls(supabase, [
+        packageImagePath,
+        packageImageThumbPath,
+      ]);
+      const signedImageUrl = signedImages[packageImagePath];
+      const signedThumbUrl = signedImages[packageImageThumbPath];
+
+      return {
+        packageImage: signedImageUrl ?? undefined,
+        packageImagePath,
+        packageImageThumb: signedThumbUrl ?? signedImageUrl ?? undefined,
+        packageImageThumbPath,
+      };
+    },
+    [supabase, user]
+  );
 
   const buildScanEvidenceKey = useCallback(
     (name: string, brandName: string) =>
@@ -200,7 +234,11 @@ function ScanPageInner() {
 
       const ingredientNames = foundIngs.map((f) => f.ingredient.nameJa);
       const combos = findCombinations(ingredientNames);
-      const newIds = discover(foundIngs.map((f) => f.ingredient.id));
+      // 図鑑登録は有効成分のみ
+      const activeFoundIds = foundIngs
+        .filter((f) => isActiveIngredient(f.ingredient.id))
+        .map((f) => f.ingredient.id);
+      const newIds = discover(activeFoundIds);
       const discoveries = newIds
         .map((id) => getIngredientById(id))
         .filter((i): i is Ingredient => i !== null);
@@ -252,13 +290,93 @@ function ScanPageInner() {
 
   const checkScanLimit = useCallback(async (): Promise<boolean> => {
     if (!user?.email) return false;
-    const count = await getScanCountByEmail(supabase, user.email);
+    const count = await getMonthlyScanCount(supabase, user.id);
     if (count >= monthlyScanLimit) {
       setScanLimitReached(true);
       return false;
     }
     return true;
   }, [user, supabase, monthlyScanLimit]);
+
+  const buildEvidenceMap = useCallback(
+    (products: ScannedProduct[]) =>
+      Object.fromEntries(
+        products.map((product) => [
+          buildScanEvidenceKey(product.productName || "", product.brand || ""),
+          {
+            isQuasiDrug: product.isQuasiDrug,
+            activeIngredients: product.activeIngredients,
+          },
+        ])
+      ),
+    [buildScanEvidenceKey]
+  );
+
+  const resolveSelectedProduct = useCallback(
+    async (product: ScannedProduct, index?: number) => {
+      if (!product.requiresResolve || product.ingredients) {
+        return product;
+      }
+
+      if (!product.resolveToken) {
+        throw new Error("Missing resolve token");
+      }
+
+      if (typeof index === "number") {
+        setMultiResolvingIndexes((prev) => new Set(prev).add(index));
+      }
+
+      try {
+        const res = await fetch("/api/scan-product", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            productName: product.productName,
+            brand: product.brand,
+            productType: product.productType,
+            resolveToken: product.resolveToken,
+          }),
+        });
+
+        if (!res.ok) {
+          throw new Error("Resolve API error");
+        }
+
+        const resolved = (await res.json()) as ScannedProduct;
+        const nextProduct: ScannedProduct = {
+          ...product,
+          ...resolved,
+          requiresResolve: false,
+        };
+
+        if (typeof index === "number") {
+          setMultiProducts((prev) =>
+            prev.map((item, itemIndex) =>
+              itemIndex === index ? nextProduct : item
+            )
+          );
+        }
+
+        const nextEvidenceMap = {
+          ...scanEvidenceRef.current,
+          ...buildEvidenceMap([nextProduct]),
+        };
+        scanEvidenceRef.current = nextEvidenceMap;
+        setScanEvidenceMap(nextEvidenceMap);
+
+        return nextProduct;
+      } finally {
+        if (typeof index === "number") {
+          setMultiResolvingIndexes((prev) => {
+            const next = new Set(prev);
+            next.delete(index);
+            return next;
+          });
+        }
+      }
+    },
+    [buildEvidenceMap]
+  );
 
   // Step 1 → Step 2: パッケージ撮影 → ネット検索
   const handlePackageCapture = useCallback(
@@ -291,23 +409,27 @@ function ScanPageInner() {
         const res = await fetch("/api/scan-product", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ imageBase64: imageData }),
+          body: JSON.stringify({
+            imageBase64: colorImage || imageData,
+            enhancedBase64: imageData,
+          }),
         });
 
         if (!res.ok) throw new Error("API error");
         const data = await res.json();
         const products: ScannedProduct[] = data.products || [data];
-        const nextEvidenceMap = Object.fromEntries(
-          products.map((product) => [
-            buildScanEvidenceKey(product.productName || "", product.brand || ""),
-            {
-              isQuasiDrug: product.isQuasiDrug,
-              activeIngredients: product.activeIngredients,
-            },
-          ])
-        );
+        const nextEvidenceMap = buildEvidenceMap(products);
         scanEvidenceRef.current = nextEvidenceMap;
         setScanEvidenceMap(nextEvidenceMap);
+
+        if (data.needsSelection) {
+          setMultiProducts(products);
+          setProgress(100);
+          setProgressMsg("見つかったコスメを選んでください");
+          setTimeout(() => setShowMultiSheet(true), 300);
+          return;
+        }
+
         const foundProducts = products.filter((p: ScannedProduct) => p.found && p.ingredients);
 
         if (foundProducts.length > 1) {
@@ -343,13 +465,11 @@ function ScanPageInner() {
         }
       } catch (error) {
         console.error("Product search error:", error);
-        // フロント側エラー時もスキャン枠を返却
-        fetch("/api/rollback-scan", { method: "POST" }).catch(() => {});
         setProgressMsg("検索に失敗しました");
         setTimeout(() => setShowFallback(true), 1000);
       }
     },
-    [buildScanEvidenceKey, processIngredients, checkScanLimit, user, supabase, userLimit]
+    [buildEvidenceMap, processIngredients, checkScanLimit, user, supabase, userLimit]
   );
 
   // Step 2 fallback: 成分表直接撮影 → OCR
@@ -410,8 +530,6 @@ function ScanPageInner() {
         }, 500);
       } catch (error) {
         console.error("OCR error:", error);
-        // エラー時もスキャン枠を返却
-        fetch("/api/rollback-scan", { method: "POST" }).catch(() => {});
         setProgressMsg("エラーが発生しました。もう一度お試しください。");
         setTimeout(() => setShowFallback(true), 2000);
       }
@@ -421,27 +539,41 @@ function ScanPageInner() {
 
   // 複数コスメから1つ選択
   const handleSelectProduct = useCallback(
-    async (product: ScannedProduct) => {
-      setShowMultiSheet(false);
-      setProgress(50);
-      setProgressMsg("成分を照合しています...");
-      setProductType(normalizeGenreFromScan(product.productType || ""));
+    async (product: ScannedProduct, index: number) => {
+      try {
+        setShowMultiSheet(false);
+        setProgress(50);
+        setProgressMsg("成分を照合しています...");
+        const resolvedProduct = await resolveSelectedProduct(product, index);
+        setProductType(normalizeGenreFromScan(resolvedProduct.productType || ""));
 
-      const discoveries = await processIngredients(
-        product.ingredients,
-        product.productName || "スキャンしたコスメ",
-        product.brand || "ブランド不明"
-      );
+        if (!resolvedProduct.ingredients?.trim()) {
+          setProductName(resolvedProduct.productName || "スキャンしたコスメ");
+          setBrand(resolvedProduct.brand || "ブランド不明");
+          setShowFallback(true);
+          return;
+        }
 
-      setProgress(100);
-      setProgressMsg("完了！");
+        const discoveries = await processIngredients(
+          resolvedProduct.ingredients,
+          resolvedProduct.productName || "スキャンしたコスメ",
+          resolvedProduct.brand || "ブランド不明"
+        );
 
-      setTimeout(() => {
-        setStep(3);
-        if (discoveries.length > 0) setShowDiscovery(true);
-      }, 300);
+        setProgress(100);
+        setProgressMsg("完了！");
+
+        setTimeout(() => {
+          setStep(3);
+          if (discoveries.length > 0) setShowDiscovery(true);
+        }, 300);
+      } catch (error) {
+        console.error("Multi-product resolve error:", error);
+        setProgressMsg("成分検索に失敗しました");
+        setTimeout(() => setShowMultiSheet(true), 500);
+      }
     },
-    [processIngredients]
+    [processIngredients, resolveSelectedProduct]
   );
 
   // 複数コスメを一括保存
@@ -449,9 +581,12 @@ function ScanPageInner() {
     async (product: ScannedProduct, index: number) => {
       if (!user || multiSavedIndexes.has(index)) return;
 
-      const result0 = await extractIngredients(product.ingredients, {
-        isQuasiDrug: product.isQuasiDrug,
-        ocrActiveNames: product.activeIngredients,
+      const resolvedProduct = await resolveSelectedProduct(product, index);
+      if (!resolvedProduct.ingredients?.trim()) return;
+
+      const result0 = await extractIngredients(resolvedProduct.ingredients, {
+        isQuasiDrug: resolvedProduct.isQuasiDrug,
+        ocrActiveNames: resolvedProduct.activeIngredients,
       });
       const foundIngs = result0.found
         .map((f) => {
@@ -459,49 +594,58 @@ function ScanPageInner() {
           return ingredient ? { ingredient, orderIndex: f.orderIndex } : null;
         })
         .filter((f): f is { ingredient: Ingredient; orderIndex: number } => f !== null);
-      const activeIngredientIds = resolveActiveIngredientIds(product.activeIngredients);
+      const activeIngredientIds = resolveActiveIngredientIds(resolvedProduct.activeIngredients);
 
       const result = await saveProductToDb(supabase, user.id, {
-        name: product.productName,
-        brand: product.brand,
-        productType: normalizeGenreFromScan(product.productType || ""),
+        name: resolvedProduct.productName,
+        brand: resolvedProduct.brand,
+        productType: normalizeGenreFromScan(resolvedProduct.productType || ""),
         ingredientIds: foundIngs.map((f) => f.ingredient.id),
         unknownIngredients: result0.unknown,
         packageImageBase64: packageImageColor || packageImage || undefined,
-        isQuasiDrug: product.isQuasiDrug,
+        isQuasiDrug: resolvedProduct.isQuasiDrug,
         activeIngredientIds,
       });
 
       if (result.error) return;
 
-      discover(foundIngs.map((f) => f.ingredient.id));
-      await saveDiscoveriesToDb(supabase, user.id, foundIngs.map((f) => f.ingredient.id));
+      const savedImage = await resolveUploadedImage(
+        result.productId!,
+        result.filePath
+      );
+
+      const activeIds = foundIngs.filter((f) => isActiveIngredient(f.ingredient.id)).map((f) => f.ingredient.id);
+      discover(activeIds);
+      await saveDiscoveriesToDb(supabase, user.id, activeIds);
 
       // スキャン履歴保存（レコメンド用）
       saveScanHistory(
         supabase,
         user.id,
-        product.productName,
-        product.brand,
+        resolvedProduct.productName,
+        resolvedProduct.brand,
         foundIngs.map((f) => f.ingredient.id)
       ).catch((e) => console.error("scan history save error:", e));
 
       addProduct({
         id: result.productId!,
-        name: product.productName,
-        brand: product.brand,
-        productType: normalizeGenreFromScan(product.productType || ""),
-        packageImage: result.imageUrl ?? undefined,
+        name: resolvedProduct.productName,
+        brand: resolvedProduct.brand,
+        productType: normalizeGenreFromScan(resolvedProduct.productType || ""),
+        packageImagePath: savedImage.packageImagePath,
+        packageImage: savedImage.packageImage,
+        packageImageThumbPath: savedImage.packageImageThumbPath,
+        packageImageThumb: savedImage.packageImageThumb,
         isFavorite: false,
         createdAt: new Date().toISOString(),
         ingredients: foundIngs.map((f) => ({ ingredientId: f.ingredient.id, orderIndex: f.orderIndex })),
-        isQuasiDrug: product.isQuasiDrug,
+        isQuasiDrug: resolvedProduct.isQuasiDrug,
         activeIngredientIds,
       });
 
       setMultiSavedIndexes((prev) => new Set(prev).add(index));
     },
-    [user, supabase, addProduct, discover, packageImage, packageImageColor, multiSavedIndexes, resolveActiveIngredientIds]
+    [user, supabase, addProduct, discover, packageImage, packageImageColor, multiSavedIndexes, resolveActiveIngredientIds, resolveSelectedProduct, resolveUploadedImage]
   );
 
   // Step 3 → Step 4
@@ -511,66 +655,93 @@ function ScanPageInner() {
 
   // Save
   const handleSave = useCallback(async () => {
-    if (!user || saved || isSavingRef.current) return;
+    if (saved) {
+      console.warn("[handleSave] already saved, ignoring click");
+      return;
+    }
+    if (isSavingRef.current) {
+      console.warn("[handleSave] save already in progress, ignoring click");
+      return;
+    }
+    if (!user) {
+      console.error("[handleSave] user is not loaded yet", { user });
+      setSaveError("ログイン状態の読み込み中です。数秒後に再度お試しください。");
+      return;
+    }
     isSavingRef.current = true;
     setSaveError("");
 
-    const result = await saveProductToDb(supabase, user.id, {
-      name: productName,
-      brand,
-      productType,
-      ingredientIds: foundIngredients.map((f) => f.ingredient.id),
-      unknownIngredients,
-      packageImageBase64: packageImageColor || packageImage || undefined,
-      isQuasiDrug,
-      activeIngredientIds: resolvedActiveIngredients.map((ingredient) => ingredient.ingredientId),
-    });
+    try {
+      const result = await saveProductToDb(supabase, user.id, {
+        name: productName,
+        brand,
+        productType,
+        ingredientIds: foundIngredients.map((f) => f.ingredient.id),
+        unknownIngredients,
+        packageImageBase64: packageImageColor || packageImage || undefined,
+        isQuasiDrug,
+        activeIngredientIds: resolvedActiveIngredients.map((ingredient) => ingredient.ingredientId),
+      });
 
-    if (result.error === "limit_reached") {
+      if (result.error === "limit_reached") {
+        isSavingRef.current = false;
+        setSaveError(`保存上限（${userLimit}件）に達しています。古いコスメを削除してください。`);
+        return;
+      }
+      if (result.error) {
+        console.error("[handleSave] saveProductToDb error:", result.error);
+        isSavingRef.current = false;
+        setSaveError(`保存に失敗しました: ${result.error}`);
+        return;
+      }
+
+      const savedImage = await resolveUploadedImage(
+        result.productId!,
+        result.filePath
+      );
+
+      const activeDiscoveryIds = foundIngredients
+        .filter((f) => isActiveIngredient(f.ingredient.id))
+        .map((f) => f.ingredient.id);
+      await saveDiscoveriesToDb(supabase, user.id, activeDiscoveryIds);
+
+      // スキャン履歴保存（レコメンド用）
+      saveScanHistory(
+        supabase,
+        user.id,
+        productName,
+        brand,
+        foundIngredients.map((f) => f.ingredient.id)
+      ).catch((e) => console.error("scan history save error:", e));
+
+      addProduct({
+        id: result.productId!,
+        name: productName,
+        brand,
+        productType,
+        packageImagePath: savedImage.packageImagePath,
+        packageImage: savedImage.packageImage,
+        packageImageThumbPath: savedImage.packageImageThumbPath,
+        packageImageThumb: savedImage.packageImageThumb,
+        isFavorite: false,
+        createdAt: new Date().toISOString(),
+        ingredients: foundIngredients.map((f) => ({ ingredientId: f.ingredient.id, orderIndex: f.orderIndex })),
+        isQuasiDrug,
+        activeIngredientIds: resolvedActiveIngredients.map((ingredient) => ingredient.ingredientId),
+      });
+
+      setSaved(true);
+      setRecentlyFound(foundIngredients.map((f) => f.ingredient.id));
       isSavingRef.current = false;
-      setSaveError(`保存上限（${userLimit}件）に達しています。古いコスメを削除してください。`);
-      fetch("/api/rollback-scan", { method: "POST" }).catch(() => {});
-      return;
-    }
-    if (result.error) {
+    } catch (e) {
+      console.error("Save error:", e);
       isSavingRef.current = false;
       setSaveError("保存に失敗しました。もう一度お試しください。");
-      fetch("/api/rollback-scan", { method: "POST" }).catch(() => {});
-      return;
     }
+  }, [user, supabase, addProduct, productName, brand, productType, packageImage, packageImageColor, foundIngredients, unknownIngredients, userLimit, saved, setRecentlyFound, isQuasiDrug, resolvedActiveIngredients, resolveUploadedImage]);
 
-    await saveDiscoveriesToDb(supabase, user.id, foundIngredients.map((f) => f.ingredient.id));
-
-    // スキャン履歴保存（レコメンド用）
-    saveScanHistory(
-      supabase,
-      user.id,
-      productName,
-      brand,
-      foundIngredients.map((f) => f.ingredient.id)
-    ).catch((e) => console.error("scan history save error:", e));
-
-    addProduct({
-      id: result.productId!,
-      name: productName,
-      brand,
-      productType,
-      packageImage: result.imageUrl ?? undefined,
-      isFavorite: false,
-      createdAt: new Date().toISOString(),
-      ingredients: foundIngredients.map((f) => ({ ingredientId: f.ingredient.id, orderIndex: f.orderIndex })),
-      isQuasiDrug,
-      activeIngredientIds: resolvedActiveIngredients.map((ingredient) => ingredient.ingredientId),
-    });
-
-    setSaved(true);
-    setRecentlyFound(foundIngredients.map((f) => f.ingredient.id));
-  }, [user, supabase, addProduct, productName, brand, productType, packageImage, packageImageColor, foundIngredients, unknownIngredients, userLimit, saved, setRecentlyFound, isQuasiDrug, resolvedActiveIngredients]);
-
-  const handleReset = useCallback(() => {
-    if (step >= 2 && !saved) {
-      if (!window.confirm("スキャン結果がまだ保存されていません。破棄しますか？")) return;
-    }
+  const doReset = useCallback(() => {
+    isSavingRef.current = false;
     setStep(1);
     setPackageImage("");
     setPackageImageColor("");
@@ -592,62 +763,114 @@ function ScanPageInner() {
     scanEvidenceRef.current = {};
     setMultiProducts([]);
     setMultiSavedIndexes(new Set());
+    setMultiResolvingIndexes(new Set());
     setShowFallback(false);
     setShowMultiSheet(false);
     setShowManualSheet(false);
-  }, [step, saved]);
+  }, []);
+
+  const handleReset = useCallback(() => {
+    if (step >= 2 && !saved) {
+      if (!window.confirm("スキャン結果がまだ保存されていません。破棄しますか？")) return;
+    }
+    doReset();
+  }, [step, saved, doReset]);
+
+  // No event listener needed — TabBar directly calls triggerCameraOpen() via global ref
 
   return (
     <AuthGuard>
-      <div className="min-h-screen bg-bo-cream">
-        <div className="px-5 pt-4 pb-6">
-          {/* Header */}
-          {step > 1 && (
-            <div className="flex items-center justify-between mb-5">
-              <button
-                onClick={handleReset}
-                className="px-3 py-1.5 rounded-full text-xs font-medium bg-bo-accent-soft text-bo-accent"
-              >
-                最初から
-              </button>
-            </div>
-          )}
+      <div className="min-h-screen bg-bo-cream animate-fade-in">
+        {/* Sticky header — only show when step > 1 */}
+        {step > 1 && (
+          <div className="sticky top-0 z-50 flex items-center px-4 py-2.5
+                          bg-bo-cream/90 backdrop-blur-xl border-b border-bo-parchment/40">
+            <button
+              onClick={handleReset}
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-r1 bg-white text-sm font-semibold text-bo-ink-muted
+                         cursor-pointer font-sans pressable border-none shadow-bo1"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" aria-hidden="true">
+                <path d="M15 18l-6-6 6-6" />
+              </svg>
+              最初から
+            </button>
+          </div>
+        )}
 
+        <div className="px-5 pt-4 pb-6">
           {/* Step indicator */}
           <StepIndicator currentStep={step} />
 
           {/* Scan limit warning */}
           {scanLimitReached && step === 1 && (
-            <div className="rounded-r2 p-4 mb-4 text-center bg-red-50 border border-red-200">
-              <div className="text-2xl mb-2">🚫</div>
-              <div className="font-bold text-sm mb-1 text-red-400">
-                無料スキャン上限（{monthlyScanLimit}回）に達しました
+            <div className="rounded-r2 p-5 mb-5 text-center bg-white shadow-bo2">
+              <div className="w-14 h-14 rounded-[18px] mx-auto mb-3 flex items-center justify-center
+                              bg-red-50">
+                <span className="text-2xl">🚫</span>
               </div>
-              <div className="text-xs text-bo-ink-muted mb-3">
-                ベータ版では1アカウントにつき{monthlyScanLimit}回まで無料です
+              <div className="font-bold text-sm mb-1 text-bo-ink font-sans">
+                今月のスキャン上限（{monthlyScanLimit}回）に達しました
+              </div>
+              <div className="text-xs text-bo-ink-muted mb-4 font-sans">
+                ベータ版では月{monthlyScanLimit}回まで無料です。翌月1日にリセットされます
               </div>
               <button
                 onClick={() => setShowManualSheet(true)}
-                className="px-5 py-2.5 rounded-full text-sm font-bold text-white bg-bo-accent shadow-bo-accent"
+                className="px-6 py-3 rounded-r2 text-sm font-bold text-white bg-bo-accent shadow-bo-accent
+                           border-none cursor-pointer pressable font-sans"
               >
                 成分を手動入力する
               </button>
-              <div className="text-[10px] text-bo-ink-faint mt-2">
+              <div className="text-[10px] text-bo-ink-faint mt-2.5 font-sans">
                 手動入力はスキャン回数にカウントされません
               </div>
             </div>
           )}
 
-          {/* Step 1: Capture */}
+          {/* Step 1: Capture — hidden file input + guide to bottom scan button */}
           {step === 1 && (
             <>
-              <div className="mb-5">
-                <ScanDiscoveryAd />
-              </div>
               <CaptureStep
                 onCapture={handlePackageCapture}
                 disabled={scanLimitReached}
+                hidden
               />
+              <div className="flex flex-col items-center pt-10 pb-6 animate-fade-in">
+                {/* Pulsing ring around camera icon */}
+                <div className="relative w-24 h-24 flex items-center justify-center mb-6">
+                  <div className="absolute inset-0 rounded-full bg-bo-accent/10 animate-[scan-ring_2s_ease-in-out_infinite]" />
+                  <div className="absolute inset-2 rounded-full bg-bo-accent/15 animate-[scan-ring_2s_ease-in-out_infinite_0.4s]" />
+                  <div className="absolute inset-4 rounded-full bg-bo-accent/10 animate-[scan-ring_2s_ease-in-out_infinite_0.8s]" />
+                  <div className="relative w-14 h-14 rounded-full bg-gradient-to-br from-bo-accent to-[#2D7A66] flex items-center justify-center shadow-lg">
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                      <path d="M12 15.2a3.2 3.2 0 100-6.4 3.2 3.2 0 000 6.4z" fill="white"/>
+                      <path d="M9 2L7.17 4H4a2 2 0 00-2 2v12a2 2 0 002 2h16a2 2 0 002-2V6a2 2 0 00-2-2h-3.17L15 2H9zm3 15a5 5 0 110-10 5 5 0 010 10z" fill="white"/>
+                    </svg>
+                  </div>
+                </div>
+
+                <h2 className="text-base font-bold text-bo-ink font-sans mb-2">
+                  パッケージを撮影してスキャン
+                </h2>
+                <p className="text-xs text-bo-ink-muted font-sans leading-relaxed text-center mb-6">
+                  下のスキャンボタンを押して<br/>化粧品のパッケージを撮影してください
+                </p>
+
+                {/* Bouncing arrow pointing to bottom tab */}
+                <div className="animate-bounce text-bo-accent">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                    <path d="M12 5v14M5 12l7 7 7-7"/>
+                  </svg>
+                </div>
+              </div>
+
+              <div className="mt-2">
+                <ScanDiscoveryAd />
+              </div>
+              <div className="mt-4">
+                <Disclaimer />
+              </div>
             </>
           )}
 
@@ -663,6 +886,7 @@ function ScanPageInner() {
               onSelectProduct={handleSelectProduct}
               onSaveMulti={handleSaveMulti}
               multiSavedIndexes={multiSavedIndexes}
+              multiResolvingIndexes={multiResolvingIndexes}
               showMultiSheet={showMultiSheet}
               onCloseMultiSheet={() => setShowMultiSheet(false)}
             />
@@ -679,15 +903,29 @@ function ScanPageInner() {
               onBrandChange={setBrand}
               onProductTypeChange={setProductType}
               onContinue={handleClassifyContinue}
+              onBack={() => setStep(2)}
             />
           )}
 
           {/* Step 4: Results */}
           {step === 4 && (
             <>
+              {!saved && (
+                <button
+                  onClick={() => setStep(3)}
+                  className="flex items-center gap-1.5 text-sm text-bo-ink-muted font-sans font-bold mb-3
+                             bg-white rounded-r2 px-3 py-2 shadow-bo1 border-none cursor-pointer pressable"
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                    <path d="M15 18l-6-6 6-6"/>
+                  </svg>
+                  分類に戻る
+                </button>
+              )}
               {saveError && (
-                <div className="bg-red-50 border border-red-200 rounded-r1 py-3 px-4 mb-3 text-[13px] text-red-400">
-                  {saveError}
+                <div className="flex items-start gap-3 bg-white rounded-r2 py-3.5 px-4 mb-4 shadow-bo1 border border-red-100">
+                  <span className="text-base shrink-0">⚠️</span>
+                  <span className="text-sm text-red-500 font-sans">{saveError}</span>
                 </div>
               )}
               <ScanResult
