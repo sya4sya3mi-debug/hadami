@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useState, useCallback } from "react";
 import { createPortal } from "react-dom";
 import { Ingredient, Combination, ProductGenre } from "@/types";
@@ -24,7 +23,6 @@ interface ScanResultProps {
   unknownIngredients: string[];
   combinations: Combination[];
   onSave?: () => void;
-  onScanAnother?: () => void;
   saved: boolean;
   imagePreview?: string;
   newDiscoveryIds?: Set<string>;
@@ -38,7 +36,6 @@ export default function ScanResult({
   unknownIngredients,
   combinations,
   onSave,
-  onScanAnother,
   saved,
   imagePreview,
   newDiscoveryIds,
