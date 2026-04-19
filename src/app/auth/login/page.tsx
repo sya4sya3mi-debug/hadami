@@ -46,11 +46,13 @@ function LoginPageInner() {
         return;
       }
 
+      const callbackUrl = new URL(`${window.location.origin}/auth/callback`);
+      if (inviteToken) callbackUrl.searchParams.set("invite_token", inviteToken);
       const { data: signUpData, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
-          emailRedirectTo: `${window.location.origin}/auth/callback`,
+          emailRedirectTo: callbackUrl.toString(),
         },
       });
       if (error) {
