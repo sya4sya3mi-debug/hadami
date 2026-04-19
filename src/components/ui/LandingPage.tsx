@@ -275,7 +275,7 @@ export default function LandingPage() {
                 使い方を見る ↓
               </a>
             </div>
-            <p className="text-[12px] text-bo-ink-muted dark:text-gray-400 font-sans mt-4">
+            <p className="text-[15px] text-bo-ink-muted dark:text-gray-400 font-sans mt-4">
               招待コードは{" "}
               <a
                 href="https://x.com/miomio_beauty"
