@@ -379,44 +379,46 @@ export default function ScanResult({
       {saved && (
         <div className="fixed left-0 right-0 z-40 bottom-0 px-4 pt-3 pb-[calc(env(safe-area-inset-bottom)+56px)]
                         bg-white/95 backdrop-blur-xl border-t border-bo-parchment/60 shadow-[0_-4px_20px_rgba(0,0,0,0.06)]">
-          <div className="animate-fade-up flex gap-2">
+          <div className="animate-fade-up flex flex-col gap-2">
             <Link
               href="/history"
-              className="flex-1 py-3.5 rounded-r2 font-bold text-sm font-sans text-center
+              className="w-full py-3.5 rounded-r2 font-bold text-sm font-sans text-center
                          bg-bo-accent text-white shadow-bo-accent no-underline pressable
-                         flex items-center justify-center gap-1.5"
+                         flex items-center justify-center gap-1.5 whitespace-nowrap"
             >
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
                 <rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/>
               </svg>
-              マイコスメ一覧
+              マイコスメ一覧を見る
             </Link>
-            <button
-              onClick={onScanAnother}
-              className="py-3.5 px-4 rounded-r2 font-bold text-sm font-sans border-none cursor-pointer
-                         bg-white shadow-bo1 pressable
-                         flex items-center justify-center gap-1.5"
-              style={{ color: "#3A8F7A" }}
-            >
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-                <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
-                <circle cx="12" cy="13" r="4"/>
-              </svg>
-              続けてスキャン
-            </button>
-            <button
-              onClick={handleShare}
-              className="py-3.5 px-4 rounded-r2 font-bold text-sm font-sans border-none cursor-pointer
-                         bg-white shadow-bo1 pressable
-                         flex items-center justify-center gap-1.5 text-bo-ink-muted"
-            >
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/>
-                <polyline points="16 6 12 2 8 6"/>
-                <line x1="12" y1="2" x2="12" y2="15"/>
-              </svg>
-              シェア
-            </button>
+            <div className="flex gap-2">
+              <button
+                onClick={onScanAnother}
+                className="flex-1 min-w-0 py-3 rounded-r2 font-bold text-sm font-sans border-none cursor-pointer
+                           bg-white shadow-bo1 pressable
+                           flex items-center justify-center gap-1.5 whitespace-nowrap"
+                style={{ color: "#3A8F7A" }}
+              >
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                  <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+                  <circle cx="12" cy="13" r="4"/>
+                </svg>
+                続けてスキャン
+              </button>
+              <button
+                onClick={handleShare}
+                className="flex-1 min-w-0 py-3 rounded-r2 font-bold text-sm font-sans border-none cursor-pointer
+                           bg-white shadow-bo1 pressable
+                           flex items-center justify-center gap-1.5 text-bo-ink-muted whitespace-nowrap"
+              >
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/>
+                  <polyline points="16 6 12 2 8 6"/>
+                  <line x1="12" y1="2" x2="12" y2="15"/>
+                </svg>
+                シェア
+              </button>
+            </div>
           </div>
         </div>
       )}
