@@ -400,8 +400,8 @@ export default function HistoryPage() {
                               <button
                                 onClick={(e) => { e.stopPropagation(); handleDeleteImage(p.id); }}
                                 disabled={deletingImageId === p.id}
-                                className="absolute top-2 right-2 w-8 h-8 rounded-[10px] bg-red-500/90 backdrop-blur-lg
-                                           flex items-center justify-center border-none cursor-pointer p-0 pressable shadow-bo1"
+                                className="absolute top-2 right-2 rounded-[10px] bg-red-500/90 backdrop-blur-lg
+                                           flex items-center justify-center gap-1 px-2 py-1 border-none cursor-pointer pressable shadow-bo1"
                                 title="写真を削除"
                               >
                                 {deletingImageId === p.id ? (
@@ -409,9 +409,12 @@ export default function HistoryPage() {
                                     <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
                                   </svg>
                                 ) : (
-                                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round">
-                                    <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
-                                  </svg>
+                                  <>
+                                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round">
+                                      <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+                                    </svg>
+                                    <span className="text-white text-[10px] font-bold font-sans leading-none">写真削除</span>
+                                  </>
                                 )}
                               </button>
                             )}
