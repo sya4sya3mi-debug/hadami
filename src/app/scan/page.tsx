@@ -936,7 +936,6 @@ function ScanPageInner() {
                 unknownIngredients={unknownIngredients}
                 combinations={combinations}
                 onSave={handleSave}
-                onScanAnother={handleReset}
                 saved={saved}
                 imagePreview={packageImageColor || packageImage}
                 newDiscoveryIds={new Set(newDiscoveries.map((i) => i.id))}
