@@ -1,7 +1,7 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
 
 const INVITE_PROOF_TTL_SECONDS = 24 * 60 * 60;
-const INVITE_OAUTH_TOKEN_TTL_SECONDS = 15 * 60;
+const INVITE_OAUTH_TOKEN_TTL_SECONDS = 24 * 60 * 60;
 const INVITE_PROOF_VERSION = 1;
 
 export const INVITE_PROOF_COOKIE_NAME = "hadami-invite-proof";
