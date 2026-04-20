@@ -54,6 +54,7 @@ function LoginPageInner() {
         password,
         options: {
           emailRedirectTo: callbackUrl.toString(),
+          data: inviteToken ? { invite_token: inviteToken } : undefined,
         },
       });
       if (error) {

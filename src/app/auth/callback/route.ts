@@ -116,7 +116,12 @@ export async function GET(request: NextRequest) {
     }
   );
 
-  let sessionUser: { id: string; created_at?: string; last_sign_in_at?: string | null } | null = null;
+  let sessionUser: {
+    id: string;
+    created_at?: string;
+    last_sign_in_at?: string | null;
+    user_metadata?: Record<string, unknown> | null;
+  } | null = null;
   let exchangeError: { message?: string } | null = null;
 
   if (token_hash && type) {
@@ -144,9 +149,15 @@ export async function GET(request: NextRequest) {
     return response;
   }
 
+  const metadataInviteToken =
+    typeof sessionUser.user_metadata?.invite_token === "string"
+      ? (sessionUser.user_metadata.invite_token as string)
+      : null;
+
   const inviteProof =
     request.cookies.get(INVITE_PROOF_COOKIE_NAME)?.value ??
-    searchParams.get(INVITE_TOKEN_QUERY_PARAM);
+    searchParams.get(INVITE_TOKEN_QUERY_PARAM) ??
+    metadataInviteToken;
 
   // --- Invite verification (DB障害に強化: throwを局所化) ---
   let claimed = false;
