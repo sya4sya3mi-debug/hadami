@@ -46,7 +46,8 @@ function LoginPageInner() {
         return;
       }
 
-      const callbackUrl = new URL(`${window.location.origin}/auth/callback`);
+      const siteUrl = process.env.NEXT_PUBLIC_APP_URL || window.location.origin;
+      const callbackUrl = new URL(`${siteUrl}/auth/callback`);
       if (inviteToken) callbackUrl.searchParams.set("invite_token", inviteToken);
       const { data: signUpData, error } = await supabase.auth.signUp({
         email,
