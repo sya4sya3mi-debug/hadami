@@ -214,6 +214,18 @@
 .hd-root .hd-softa .hd-softa-thumb-sm {
   border-radius: 12px !important;
 }
+/* CTA — black ink rectangle with mono caps subscript, matching apothecary A */
+.hd-root .hd-softa .hd-cta {
+  background: var(--hd-ink) !important;
+  color: var(--hd-bg) !important;
+  border: none !important;
+  border-radius: 0 !important;
+  padding: 13px 22px !important;
+  box-shadow: none !important;
+  font-family: var(--hd-sans) !important;
+  font-weight: 500 !important;
+  letter-spacing: 0.01em !important;
+}
 
 /* Respect reduced-motion preference */
 @media (prefers-reduced-motion: reduce) {
