@@ -1,0 +1,230 @@
+/* HADAMI — Design Tokens (Apothecary) */
+.hd-root {
+  /* Palette — Apothecary (default) */
+  --hd-bg: oklch(0.97 0.008 85);
+  --hd-surface: oklch(0.99 0.005 85);
+  --hd-surface-2: oklch(0.94 0.012 85);
+  --hd-ink: oklch(0.22 0.01 95);
+  --hd-ink-60: oklch(0.40 0.012 95);
+  --hd-ink-40: oklch(0.60 0.012 95);
+  --hd-ink-20: oklch(0.82 0.008 90);
+  --hd-line: oklch(0.86 0.008 90);
+  --hd-hair: oklch(0.90 0.006 90);
+
+  /* Brand greens */
+  --hd-moss: oklch(0.38 0.05 155);
+  --hd-moss-deep: oklch(0.30 0.045 155);
+  --hd-sage: oklch(0.72 0.04 150);
+  --hd-mint-bg: oklch(0.94 0.03 155);
+
+  /* Sub accents */
+  --hd-terra: oklch(0.62 0.08 45);
+  --hd-lavender: oklch(0.70 0.06 290);
+  --hd-dune: oklch(0.82 0.035 80);
+
+  /* Effect pill backgrounds */
+  --hd-eff-white: oklch(0.93 0.03 310);
+  --hd-eff-barrier: oklch(0.93 0.03 150);
+  --hd-eff-wrinkle: oklch(0.93 0.03 65);
+  --hd-eff-uv: oklch(0.93 0.03 240);
+  --hd-eff-moist: oklch(0.93 0.03 210);
+  --hd-eff-keratin: oklch(0.93 0.03 30);
+
+  /* Type */
+  --hd-serif: "Shippori Mincho", "Instrument Serif", "Hiragino Mincho ProN", serif;
+  --hd-sans: "Inter Tight", "Noto Sans JP", -apple-system, system-ui, sans-serif;
+  --hd-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+
+  /* Spacing scale */
+  --hd-s1: 4px; --hd-s2: 8px; --hd-s3: 12px; --hd-s4: 16px;
+  --hd-s5: 24px; --hd-s6: 32px; --hd-s7: 48px;
+
+  --hd-radius-s: 2px;
+  --hd-radius-m: 4px;
+  --hd-radius-l: 16px;
+
+  --hd-density-scale: 0.82;
+  --hd-pad-screen: calc(22px * var(--hd-density-scale));
+  --hd-pad-card: calc(18px * var(--hd-density-scale));
+  --hd-gap-list: calc(10px * var(--hd-density-scale));
+  --hd-gap-section: calc(28px * var(--hd-density-scale));
+  --hd-row-h: calc(64px * var(--hd-density-scale));
+
+  --hd-card-bg: var(--hd-surface);
+  --hd-card-border: 1px solid var(--hd-hair);
+  --hd-card-shadow: none;
+  --hd-card-radius: var(--hd-radius-m);
+}
+
+.hd-root[data-density="compact"] { --hd-density-scale: 0.82; }
+.hd-root[data-density="airy"] { --hd-density-scale: 1.18; }
+
+.hd-root * { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+
+.hd-root .hd button { font-family: inherit; color: inherit; }
+.hd-root .hd { font-family: var(--hd-sans); color: var(--hd-ink); font-feature-settings: "ss01","cv11"; }
+.hd-root .hd-serif { font-family: var(--hd-serif); font-weight: 400; letter-spacing: -0.01em; }
+.hd-root .hd-mono { font-family: var(--hd-mono); letter-spacing: 0.02em; }
+.hd-root .hd-caps { text-transform: uppercase; letter-spacing: 0.18em; font-size: 10px; }
+
+.hd-root .hd-placeholder {
+  background:
+    repeating-linear-gradient(135deg,
+      oklch(0.92 0.01 85) 0 10px,
+      oklch(0.94 0.008 85) 10px 20px);
+  display: flex; align-items: center; justify-content: center;
+  color: oklch(0.55 0.01 90); font-family: var(--hd-mono); font-size: 10px;
+  text-transform: uppercase; letter-spacing: 0.14em;
+}
+
+.hd-root[data-density="compact"] .hd {
+  font-size: 13.2px; line-height: 1.4; letter-spacing: -0.003em;
+}
+.hd-root[data-density="airy"] .hd {
+  font-size: 15.4px; line-height: 1.72; letter-spacing: 0.003em;
+}
+.hd-root[data-density="compact"] .hd p,
+.hd-root[data-density="compact"] .hd .hd-body { line-height: 1.45; }
+.hd-root[data-density="airy"] .hd p,
+.hd-root[data-density="airy"] .hd .hd-body { line-height: 1.8; }
+
+/* ── Animations ── soft, editorial "fuwatto" motion */
+@keyframes hd-fade-up {
+  from { opacity: 0; transform: translateY(10px); filter: blur(2px); }
+  to   { opacity: 1; transform: translateY(0);    filter: blur(0); }
+}
+@keyframes hd-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes hd-pop {
+  0%   { transform: scale(0.6); opacity: 0; }
+  60%  { transform: scale(1.08); opacity: 1; }
+  100% { transform: scale(1); }
+}
+
+/* Page-level entrance — applied via redesign/template.tsx */
+.hd-root .hd-page {
+  animation: hd-fade-up 540ms cubic-bezier(0.22, 0.61, 0.36, 1) both;
+}
+
+/* Stagger children: each direct child fades up with a small offset */
+.hd-root .hd-stagger > * {
+  animation: hd-fade-up 520ms cubic-bezier(0.22, 0.61, 0.36, 1) both;
+}
+.hd-root .hd-stagger > *:nth-child(1) { animation-delay: 40ms; }
+.hd-root .hd-stagger > *:nth-child(2) { animation-delay: 110ms; }
+.hd-root .hd-stagger > *:nth-child(3) { animation-delay: 180ms; }
+.hd-root .hd-stagger > *:nth-child(4) { animation-delay: 250ms; }
+.hd-root .hd-stagger > *:nth-child(5) { animation-delay: 320ms; }
+.hd-root .hd-stagger > *:nth-child(6) { animation-delay: 390ms; }
+.hd-root .hd-stagger > *:nth-child(n+7) { animation-delay: 440ms; }
+
+/* Soft press feedback on buttons / clickable rows */
+.hd-root .hd button,
+.hd-root .hd a[role="button"],
+.hd-root .hd .hd-press {
+  transition: transform 220ms cubic-bezier(0.22, 0.61, 0.36, 1),
+              opacity 220ms ease,
+              background-color 220ms ease,
+              color 220ms ease,
+              border-color 220ms ease;
+}
+.hd-root .hd button:active,
+.hd-root .hd a[role="button"]:active,
+.hd-root .hd .hd-press:active {
+  transform: scale(0.97);
+}
+
+/* Checkbox / pill pop-in when newly toggled on */
+.hd-root .hd-pop-in {
+  animation: hd-pop 360ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+/* ── Apothecary SOFT variant ── warmer, friendlier, larger touch targets */
+.hd-root .hd-soft .hd-serif {
+  /* Reserve serif for large headlines only — body inherits sans naturally */
+  font-family: var(--hd-serif);
+}
+.hd-root .hd-soft .hd-mono {
+  /* Slightly down-tone the monospace caps so they read as accent, not label */
+  opacity: 0.75;
+  letter-spacing: 0.14em;
+}
+.hd-root .hd-soft .hd-caps {
+  font-size: 9.5px;
+}
+/* Bigger card radius, softer borders */
+.hd-root .hd-soft .hd-card,
+.hd-root .hd-soft [data-soft-card] {
+  border-radius: 12px !important;
+}
+/* Soften any element using radius:2 inline (the prototype's default) by
+   overriding via a utility class .hd-soft-radius */
+.hd-root .hd-soft .hd-soft-radius {
+  border-radius: 12px !important;
+}
+.hd-root .hd-soft .hd-soft-radius-lg {
+  border-radius: 18px !important;
+}
+/* Primary CTA — moss green pill with slight shadow */
+.hd-root .hd-soft .hd-cta {
+  background: var(--hd-moss) !important;
+  color: #fff !important;
+  border: none !important;
+  border-radius: 999px !important;
+  padding: 14px 22px !important;
+  box-shadow: 0 6px 18px oklch(0.38 0.05 155 / 0.28) !important;
+  font-family: var(--hd-sans) !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.02em !important;
+}
+/* Selected chip — moss-tinted instead of stark black */
+.hd-root .hd-soft .hd-chip-on {
+  background: var(--hd-moss) !important;
+  color: #fff !important;
+  border: none !important;
+  border-radius: 999px !important;
+}
+.hd-root .hd-soft .hd-chip-off {
+  border-radius: 999px !important;
+  border: 1px solid var(--hd-line) !important;
+}
+/* Larger tap targets for tab bar */
+.hd-root .hd-soft .hd-tabbar {
+  height: 78px !important;
+}
+.hd-root .hd-soft .hd-tabbar a {
+  font-family: var(--hd-sans) !important;
+}
+
+/* ── Soft A variant ── A's apothecary spine + B's rounded cards.
+   Inherits all hd-root tokens; only overrides card radii. Cards / tiles /
+   thumbs get 14–20px rounding while typography (Mincho + Mono caps),
+   English captions, hairline rules, and monochrome accents stay pure A. */
+.hd-root .hd-softa .hd-softa-card {
+  border-radius: 18px !important;
+}
+.hd-root .hd-softa .hd-softa-card-lg {
+  border-radius: 20px !important;
+}
+.hd-root .hd-softa .hd-softa-thumb {
+  border-radius: 14px !important;
+}
+.hd-root .hd-softa .hd-softa-thumb-sm {
+  border-radius: 12px !important;
+}
+
+/* Respect reduced-motion preference */
+@media (prefers-reduced-motion: reduce) {
+  .hd-root .hd-page,
+  .hd-root .hd-stagger > *,
+  .hd-root .hd-pop-in {
+    animation: none !important;
+  }
+  .hd-root .hd button,
+  .hd-root .hd a[role="button"],
+  .hd-root .hd .hd-press {
+    transition: none !important;
+  }
+}
