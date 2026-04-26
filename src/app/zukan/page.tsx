@@ -115,49 +115,71 @@ function CategoryExplorer({ discoveredIds }: { discoveredIds: string[] }) {
           {/* Category header */}
           <div
             style={{
-              display: "flex", alignItems: "center",
-              justifyContent: "space-between", marginBottom: 16,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              padding: "10px 0 14px",
+              borderBottom: "1px solid var(--hd-ink)",
+              marginBottom: 16,
             }}
           >
             <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
               <span
                 style={{
-                  width: 38, height: 38, borderRadius: 12,
-                  background: `${currentCat.color}15`, color: currentCat.color,
-                  display: "inline-flex", alignItems: "center", justifyContent: "center",
+                  width: 28,
+                  height: 28,
+                  color: currentCat.color,
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  flexShrink: 0,
                 }}
               >
-                <ActiveCategoryIcon category={currentCat.key} size={18} />
+                <ActiveCategoryIcon category={currentCat.key} size={20} />
               </span>
               <div>
-                <div className="hd-serif" style={{ fontSize: 20, lineHeight: 1.1 }}>
-                  {currentCat.label}
+                <div
+                  className="hd-mono hd-caps"
+                  style={{ color: "var(--hd-ink-40)" }}
+                >
+                  {currentCat.disc} / {currentCat.total} 発見済み
                 </div>
-                <div style={{ fontSize: 11, color: "var(--hd-ink-60)", marginTop: 2, fontFamily: "var(--hd-sans)" }}>
-                  {currentCat.disc}/{currentCat.total} 発見済み
+                <div
+                  className="hd-serif"
+                  style={{ fontSize: 18, lineHeight: 1.1, marginTop: 3, letterSpacing: "-0.01em" }}
+                >
+                  {currentCat.label}
                 </div>
               </div>
             </div>
-            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
               <div
                 style={{
-                  width: 64, height: 6, borderRadius: 999,
-                  background: "var(--hd-hair)", overflow: "hidden",
+                  width: 56,
+                  height: 1,
+                  background: "var(--hd-hair)",
+                  overflow: "hidden",
                 }}
               >
                 <div
                   style={{
-                    height: "100%", width: `${currentCat.pct}%`,
-                    background: currentCat.color,
+                    height: "100%",
+                    width: `${currentCat.pct}%`,
+                    background: "var(--hd-ink)",
                     transition: "width 600ms ease-out",
                   }}
                 />
               </div>
               <span
-                className="hd-serif"
-                style={{ fontSize: 13, color: currentCat.color, fontWeight: 600 }}
+                className="hd-mono"
+                style={{
+                  fontSize: 13,
+                  color: "var(--hd-ink)",
+                  letterSpacing: "0.02em",
+                }}
               >
-                {currentCat.pct}%
+                {currentCat.pct}
+                <span style={{ fontSize: 9, opacity: 0.55, marginLeft: 1 }}>%</span>
               </span>
             </div>
           </div>
@@ -312,6 +334,8 @@ function ConcernView({ discoveredIds, products }: { discoveredIds: string[]; pro
         {SKIN_CONCERNS.map((c, i) => {
           const covered = c.keyIngredients.filter((k) => getProductsWithIngredient(k.id).length > 0).length;
           const coverPct = Math.round((covered / c.keyIngredients.length) * 100);
+          const isFirst = i === 0;
+          const isLast = i === SKIN_CONCERNS.length - 1;
           return (
             <button
               key={c.label}
@@ -320,21 +344,17 @@ function ConcernView({ discoveredIds, products }: { discoveredIds: string[]; pro
                 display: "flex",
                 alignItems: "center",
                 gap: 14,
-                padding: "14px 0",
-                borderTop: i === 0 ? "1px solid var(--hd-ink)" : "1px solid var(--hd-hair)",
-                borderBottom: i === SKIN_CONCERNS.length - 1 ? "1px solid var(--hd-ink)" : "none",
+                padding: "16px 0",
                 background: "transparent",
-                border: "none",
-                borderTopStyle: "solid",
-                borderTopWidth: 1,
-                borderTopColor: i === 0 ? "var(--hd-ink)" : "var(--hd-hair)",
-                borderBottomStyle: i === SKIN_CONCERNS.length - 1 ? "solid" : "none",
-                borderBottomWidth: i === SKIN_CONCERNS.length - 1 ? 1 : 0,
-                borderBottomColor: "var(--hd-ink)",
+                borderLeft: "none",
+                borderRight: "none",
+                borderTop: isFirst ? "1px solid var(--hd-ink)" : "1px solid var(--hd-hair)",
+                borderBottom: isLast ? "1px solid var(--hd-ink)" : "none",
                 cursor: "pointer",
                 textAlign: "left",
                 width: "100%",
                 color: "inherit",
+                borderRadius: 0,
               }}
             >
               <div
@@ -344,24 +364,23 @@ function ConcernView({ discoveredIds, products }: { discoveredIds: string[]; pro
                   fontSize: 9,
                   color: "var(--hd-ink-40)",
                   flexShrink: 0,
+                  letterSpacing: "0.05em",
                 }}
               >
                 {String(i + 1).padStart(2, "0")}
               </div>
               <div
                 style={{
-                  width: 36,
-                  height: 36,
-                  borderRadius: 999,
+                  width: 28,
+                  height: 28,
                   flexShrink: 0,
-                  background: `${c.color}1F`,
                   color: c.color,
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
                 }}
               >
-                <SkinConcernIcon concern={c.label} size={16} />
+                <SkinConcernIcon concern={c.label} size={20} strokeWidth={1.4} />
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div
@@ -377,14 +396,14 @@ function ConcernView({ discoveredIds, products }: { discoveredIds: string[]; pro
                   style={{
                     display: "flex",
                     alignItems: "center",
-                    gap: 8,
-                    marginTop: 6,
+                    gap: 10,
+                    marginTop: 8,
                   }}
                 >
                   <div
                     style={{
                       flex: 1,
-                      height: 2,
+                      height: 1,
                       background: "var(--hd-hair)",
                       overflow: "hidden",
                     }}
@@ -393,7 +412,7 @@ function ConcernView({ discoveredIds, products }: { discoveredIds: string[]; pro
                       style={{
                         height: "100%",
                         width: `${coverPct}%`,
-                        background: c.color,
+                        background: "var(--hd-ink)",
                         transition: "width 500ms ease-out",
                       }}
                     />
@@ -407,7 +426,7 @@ function ConcernView({ discoveredIds, products }: { discoveredIds: string[]; pro
                       letterSpacing: "0.05em",
                     }}
                   >
-                    {covered}/{c.keyIngredients.length}
+                    {covered} / {c.keyIngredients.length}
                   </span>
                 </div>
               </div>
@@ -415,14 +434,23 @@ function ConcernView({ discoveredIds, products }: { discoveredIds: string[]; pro
                 className="hd-mono"
                 style={{
                   flexShrink: 0,
-                  fontSize: 14,
-                  color: c.color,
+                  fontSize: 13,
+                  color: "var(--hd-ink)",
                   letterSpacing: "0.02em",
-                  width: 44,
+                  width: 48,
                   textAlign: "right",
                 }}
               >
-                {coverPct}<span style={{ fontSize: 10, opacity: 0.7 }}>%</span>
+                {coverPct}
+                <span
+                  style={{
+                    fontSize: 9,
+                    opacity: 0.55,
+                    marginLeft: 1,
+                  }}
+                >
+                  %
+                </span>
               </div>
             </button>
           );
