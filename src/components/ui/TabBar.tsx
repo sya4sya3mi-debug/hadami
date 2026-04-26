@@ -1,115 +1,57 @@
 "use client";
 
+import "@/styles/hadami-tokens.css";
 import { usePathname } from "next/navigation";
 import { useUser } from "@/lib/auth";
 import { useZukanStore } from "@/stores/useZukanStore";
+import { Ico } from "@/components/redesign/apothecary/Icons";
 
-// Tab definitions — scan is at index 2 (center)
-const TABS = [
-  {
-    href: "/",
-    label: "ホーム",
-    ariaLabel: "ホーム画面",
-    center: false,
-    icon: (active: boolean) => (
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-        {active ? (
-          <path d="M12 2L2 9l10 13L22 9z" fill="currentColor" />
-        ) : (
-          <path d="M12 2L2 9l10 13L22 9 12 2zm0 2.8L19.5 9.5 12 19.5 4.5 9.5 12 4.8z" fill="currentColor" />
-        )}
-      </svg>
-    ),
-  },
-  {
-    href: "/zukan",
-    label: "図鑑",
-    ariaLabel: "成分図鑑を見る",
-    center: false,
-    icon: (active: boolean) => (
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-        {active ? (
-          <path d="M18 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V4a2 2 0 00-2-2zM6 4h5v8l-2.5-1.5L6 12V4z" fill="currentColor" />
-        ) : (
-          <path d="M18 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V4a2 2 0 00-2-2zm0 18H6V4h5v8l-2.5-1.5L6 12V4H4v16h14V4h2v16h-2zM6 4h5v8l-2.5-1.5L6 12V4z" fill="currentColor" />
-        )}
-      </svg>
-    ),
-  },
-  {
-    href: "/scan",
-    label: "スキャン",
-    ariaLabel: "コスメを撮影してスキャン",
-    center: true,
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    icon: (_active: boolean) => (
-      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-        <path
-          d="M12 15.2a3.2 3.2 0 100-6.4 3.2 3.2 0 000 6.4z"
-          fill="white"
-        />
-        <path
-          d="M9 2L7.17 4H4a2 2 0 00-2 2v12a2 2 0 002 2h16a2 2 0 002-2V6a2 2 0 00-2-2h-3.17L15 2H9zm3 15a5 5 0 110-10 5 5 0 010 10z"
-          fill="white"
-        />
-      </svg>
-    ),
-  },
-  {
-    href: "/deck",
-    label: "スキンケア管理",
-    ariaLabel: "スキンケア管理を開く",
-    center: false,
-    icon: (active: boolean) => (
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-        {active ? (
-          <>
-            <path d="M4 3h16a1 1 0 011 1v16a1 1 0 01-1 1H4a1 1 0 01-1-1V4a1 1 0 011-1z" fill="currentColor" fillOpacity="0.15" />
-            <path d="M4 3h16a1 1 0 011 1v16a1 1 0 01-1 1H4a1 1 0 01-1-1V4a1 1 0 011-1z" stroke="currentColor" strokeWidth="2" />
-            <path d="M7 7h10v2H7V7zm0 4h10v2H7v-2zm0 4h7v2H7v-2z" fill="currentColor" />
-          </>
-        ) : (
-          <>
-            <path d="M4 3h16a1 1 0 011 1v16a1 1 0 01-1 1H4a1 1 0 01-1-1V4a1 1 0 011-1z" stroke="currentColor" strokeWidth="2" fill="none" />
-            <path d="M7 7h10M7 11h10M7 15h7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-          </>
-        )}
-      </svg>
-    ),
-  },
-  {
-    href: "/history",
-    label: "マイコスメ",
-    ariaLabel: "保存したコスメ一覧",
-    center: false,
-    icon: (active: boolean) => (
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-        {active ? (
-          <path d="M12 12a5 5 0 100-10 5 5 0 000 10zm0 2c-5.33 0-8 2.67-8 4v2h16v-2c0-1.33-2.67-4-8-4z" fill="currentColor" />
-        ) : (
-          <path d="M12 12a5 5 0 100-10 5 5 0 000 10zm0-8a3 3 0 110 6 3 3 0 010-6zm0 10c-5.33 0-8 2.67-8 4v2h16v-2c0-1.33-2.67-4-8-4zm6 4H6c0-.45 1.76-2 6-2s6 1.55 6 2z" fill="currentColor" />
-        )}
-      </svg>
-    ),
-  },
-] as const;
+type TabId = "home" | "book" | "scan" | "notes" | "my";
+
+const TABS: {
+  id: TabId;
+  href: string;
+  label: string;
+  jp: string;
+  ariaLabel: string;
+  icon?: keyof typeof Ico;
+  center?: boolean;
+}[] = [
+  { id: "home",  href: "/",        label: "HOME",  jp: "ホーム",       ariaLabel: "ホーム画面",                 icon: "home"  },
+  { id: "book",  href: "/zukan",   label: "INDEX", jp: "図鑑",         ariaLabel: "成分図鑑を見る",             icon: "book"  },
+  { id: "scan",  href: "/scan",    label: "SCAN",  jp: "スキャン",     ariaLabel: "コスメを撮影してスキャン",   center: true  },
+  { id: "notes", href: "/deck",    label: "CARE",  jp: "スキンケア管理", ariaLabel: "スキンケア管理を開く",       icon: "notes" },
+  { id: "my",    href: "/history", label: "MINE",  jp: "マイコスメ",   ariaLabel: "保存したコスメ一覧",         icon: "user"  },
+];
 
 export default function TabBar() {
   const pathname = usePathname();
   const { user, loading } = useUser();
   const unsavedScan = useZukanStore((s) => s.unsavedScan);
 
+  const isAuthPath =
+    pathname.startsWith("/auth/") ||
+    pathname.startsWith("/privacy") ||
+    pathname.startsWith("/terms");
+
+  if (isAuthPath) return null;
+  if (pathname.startsWith("/redesign")) return null;
   if (!loading && !user) return null;
+
+  const isActive = (href: string) =>
+    href === "/"
+      ? pathname === "/"
+      : href === "/deck"
+      ? pathname.startsWith("/deck") || pathname.startsWith("/routine")
+      : pathname.startsWith(href);
 
   const handleClick = (e: React.MouseEvent, href: string) => {
     e.preventDefault();
 
-    // Guard: block navigation while a modal sheet is open
     if (typeof document !== "undefined" && document.body.dataset.modalOpen) {
       return;
     }
 
-    // Guard: unsaved scan confirmation
     if (unsavedScan && pathname.startsWith("/scan")) {
       if (
         !window.confirm(
@@ -120,14 +62,16 @@ export default function TabBar() {
       useZukanStore.getState().setUnsavedScan(false);
     }
 
-    // Skip if already on target page
     const onTarget = href === "/" ? pathname === "/" : pathname.startsWith(href);
     if (onTarget) {
+      if (href === "/scan") {
+        window.dispatchEvent(new CustomEvent("hadami:scan-tab-pressed"));
+        return;
+      }
       window.scrollTo({ top: 0, behavior: "smooth" });
       return;
     }
 
-    // Instant tab switch: push URL + notify TabShell
     window.history.pushState({}, "", href);
     window.dispatchEvent(new PopStateEvent("popstate"));
   };
@@ -136,96 +80,136 @@ export default function TabBar() {
     <nav
       role="navigation"
       aria-label="メインナビゲーション"
-      style={{ maxWidth: "var(--app-shell-max-width)" }}
-      className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full bg-white/95 dark:bg-[#1a1a1a]/95 border-t border-gray-200/60 dark:border-[#333]/60 z-[200] pb-[env(safe-area-inset-bottom)]"
+      className="hd-root hd-softa hd-tabbar"
+      data-density="compact"
+      style={{
+        position: "fixed",
+        bottom: 0,
+        left: "50%",
+        transform: "translateX(-50%)",
+        width: "100%",
+        maxWidth: "var(--app-shell-max-width)",
+        background: "var(--hd-surface)",
+        borderTop: "1px solid var(--hd-hair)",
+        zIndex: 200,
+        paddingBottom: "calc(8px + env(safe-area-inset-bottom))",
+        height: "calc(74px + env(safe-area-inset-bottom))",
+        display: "grid",
+        gridTemplateColumns: "repeat(5, 1fr)",
+      }}
     >
-      <div className="flex h-[56px] items-end">
-        {TABS.map((tab) => {
-          const isActive =
-            tab.href === "/"
-              ? pathname === "/"
-              : tab.href === "/deck"
-              ? pathname.startsWith("/deck") || pathname.startsWith("/routine")
-              : pathname.startsWith(tab.href);
+      {TABS.map((tab) => {
+        const active = isActive(tab.href);
 
-          // Center scan button — raised circle
-          if (tab.center) {
-            const scanContent = (
-              <>
-                <div
-                  className="w-[52px] h-[52px] rounded-full flex items-center justify-center shadow-lg"
-                  style={{
-                    background: isActive
-                      ? "linear-gradient(135deg, #3A8F7A, #2D7A66)"
-                      : "linear-gradient(135deg, #3A8F7A, #4BA68E)",
-                    boxShadow: "0 4px 12px rgba(58, 143, 122, 0.35)",
-                  }}
-                >
-                  {tab.icon(isActive)}
-                </div>
-                <span
-                  className="text-[10px] font-sans leading-none mt-1"
-                  style={{
-                    fontWeight: isActive ? 600 : 400,
-                    color: isActive ? "#3A8F7A" : "#8E8E93",
-                    letterSpacing: "0.01em",
-                  }}
-                >
-                  {tab.label}
-                </span>
-              </>
-            );
+        if (tab.center) {
+          const scanContent = (
+            <div
+              style={{
+                width: 58,
+                height: 58,
+                borderRadius: 999,
+                background: "var(--hd-ink)",
+                color: "var(--hd-bg)",
+                border: "none",
+                transform: "translateY(-14px)",
+                boxShadow: "0 8px 24px oklch(0.38 0.05 155 / 0.28)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                cursor: "pointer",
+              }}
+            >
+              {Ico.camera({ width: 22, height: 22 })}
+            </div>
+          );
 
-            if (isActive) {
-              return (
-                <label
-                  key={tab.href}
-                  htmlFor="hadami-camera-input"
-                  aria-label={tab.ariaLabel}
-                  className="flex-1 flex flex-col items-center justify-center bg-transparent border-none cursor-pointer p-0"
-                  style={{ marginTop: "-18px" }}
-                >
-                  {scanContent}
-                </label>
-              );
-            }
-
+          if (active) {
             return (
-              <button
-                key={tab.href}
-                onClick={(e) => handleClick(e, tab.href)}
+              <label
+                key={tab.id}
+                htmlFor="hadami-camera-input"
                 aria-label={tab.ariaLabel}
-                className="flex-1 flex flex-col items-center justify-center bg-transparent border-none cursor-pointer p-0"
-                style={{ marginTop: "-18px" }}
+                onClick={() => {
+                  window.dispatchEvent(new CustomEvent("hadami:scan-tab-pressed"));
+                }}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  cursor: "pointer",
+                }}
               >
                 {scanContent}
-              </button>
+              </label>
             );
           }
 
           return (
             <button
-              key={tab.href}
+              key={tab.id}
               onClick={(e) => handleClick(e, tab.href)}
               aria-label={tab.ariaLabel}
-              aria-current={isActive ? "page" : undefined}
-              className="flex-1 flex flex-col items-center justify-center gap-[3px] bg-transparent border-none cursor-pointer p-0 h-full"
-              style={{ color: isActive ? "#3A8F7A" : "#8E8E93" }}
+              style={{
+                background: "none",
+                border: "none",
+                padding: 0,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                cursor: "pointer",
+              }}
             >
-              {tab.icon(isActive)}
-              <span
-                className="text-[10px] font-sans leading-none"
-                style={{
-                  fontWeight: isActive ? 600 : 400,
-                  letterSpacing: "0.01em",
-                }}
-              >
-                {tab.label}
-              </span>
+              {scanContent}
             </button>
           );
-        })}
-      </div>
+        }
+
+        return (
+          <button
+            key={tab.id}
+            onClick={(e) => handleClick(e, tab.href)}
+            aria-label={tab.ariaLabel}
+            aria-current={active ? "page" : undefined}
+            style={{
+              position: "relative",
+              background: "none",
+              border: "none",
+              padding: 0,
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 5,
+              cursor: "pointer",
+              color: active ? "var(--hd-moss)" : "var(--hd-ink-40)",
+            }}
+          >
+            {tab.icon && Ico[tab.icon]({ width: 19, height: 19 })}
+            <span
+              style={{
+                fontFamily: "var(--hd-mono)",
+                fontSize: 9,
+                letterSpacing: "0.22em",
+              }}
+            >
+              {tab.label}
+            </span>
+            {active && (
+              <span
+                aria-hidden="true"
+                style={{
+                  position: "absolute",
+                  bottom: 4,
+                  width: 3,
+                  height: 3,
+                  borderRadius: 999,
+                  background: "var(--hd-moss)",
+                }}
+              />
+            )}
+          </button>
+        );
+      })}
     </nav>
   );
 }
