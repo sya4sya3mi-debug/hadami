@@ -23,6 +23,7 @@ export interface Profile {
   id: string;
   display_name: string | null;
   avatar_url: string | null;
+  invite_activated_at?: string | null;
 }
 
 interface AuthContextValue {
@@ -88,7 +89,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const fetchProfile = useCallback(async (userId: string) => {
     const { data, error } = await supabase
       .from("profiles")
-      .select("id, display_name, avatar_url")
+      .select("id, display_name, avatar_url, invite_activated_at")
       .eq("id", userId)
       .single();
     if (error) throw error;
@@ -166,8 +167,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // onAuthStateChange fires INITIAL_SESSION from localStorage (no network round-trip)
     // This makes PWA startup instant. Token revalidation happens automatically
     // when Supabase detects expiry and fires TOKEN_REFRESHED / SIGNED_OUT.
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
       if (!mounted) return;
+      if (event === "PASSWORD_RECOVERY") {
+        if (
+          typeof window !== "undefined" &&
+          window.location.pathname !== "/auth/reset-password"
+        ) {
+          window.location.replace("/auth/reset-password?mode=update");
+          return;
+        }
+
+        setUser(session?.user ?? null);
+        setLoading(false);
+        return;
+      }
+
+      if (
+        typeof window !== "undefined" &&
+        window.location.pathname === "/auth/reset-password" &&
+        (event === "SIGNED_IN" || event === "TOKEN_REFRESHED")
+      ) {
+        setUser(session?.user ?? null);
+        setLoading(false);
+        return;
+      }
       void syncAuthState(session?.user ?? null);
     });
 

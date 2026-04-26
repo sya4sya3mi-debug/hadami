@@ -1,5 +1,6 @@
 "use client";
 
+import "@/styles/hadami-tokens.css";
 import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import ScrollToTop from "@/components/ui/ScrollToTop";
@@ -10,23 +11,28 @@ import { findCombinations } from "@/lib/combinations";
 import { recommendDeck } from "@/lib/deckRecommender";
 import { getGenreByKey, GENRE_SLOT_CONFIG } from "@/lib/productGenres";
 import DeckTray from "@/components/deck/DeckTray";
-// import DeckSummary from "@/components/deck/DeckSummary";
 import DeckAnalysis from "@/components/deck/DeckAnalysis";
 import EmptyDeckState from "@/components/deck/EmptyDeckState";
 import ProductPicker from "@/components/deck/ProductPicker";
 import AutoRecommendModal from "@/components/deck/AutoRecommendModal";
 import Disclaimer from "@/components/ui/Disclaimer";
+import { Ico } from "@/components/redesign/apothecary/Icons";
 
 import { useUser } from "@/lib/auth";
 import AuthGuard from "@/components/ui/AuthGuard";
 import { RoutineType, Product, ProductGenre, RecommendationResult, CategoryKey } from "@/types";
-import { SparkleIcon, ChartIcon, SunIcon, MoonIcon } from "@/components/ui/Icons";
 import { defaultRoutineCardConfig } from "@/lib/routines";
 
 const DECK_OPTIONS: { key: RoutineType; label: string }[] = [
   { key: "morning", label: "朝" },
   { key: "night", label: "夜" },
 ];
+
+const moonIco = (p: React.SVGProps<SVGSVGElement> = {}) => (
+  <svg viewBox="0 0 20 20" width={15} height={15} fill="none" stroke="currentColor" strokeWidth={1.6} {...p}>
+    <path d="M16 11.5a6.5 6.5 0 1 1-8-8 5 5 0 0 0 8 8z" strokeLinejoin="round" />
+  </svg>
+);
 
 export default function DeckPage() {
   const [deckIndex, setDeckIndex] = useState(() => new Date().getHours() < 15 ? 0 : 1);
@@ -64,7 +70,6 @@ export default function DeckPage() {
     .map((item) => getProduct(item.productId))
     .filter((p): p is Product => p !== undefined);
 
-  // Item counts per routine for tab badges
   const morningCount = allDeckItems.filter((i) => i.routine === "morning").length;
   const nightCount = allDeckItems.filter((i) => i.routine === "night").length;
   const routineCounts = [morningCount, nightCount];
@@ -122,7 +127,6 @@ export default function DeckPage() {
     productsByGenre[genre].push(p);
   });
 
-  // Handlers
   const handleAddItem = async (productId: string) => {
     const nextOrderIndex = allDeckItems.filter((item) => item.routine === routine).length;
     addItem(productId, routine);
@@ -168,7 +172,6 @@ export default function DeckPage() {
     }
   };
 
-  /** スキンケア管理の朝/夜アイテムからシェアカード用ステップを生成し、sessionStorage経由で /routine/share に渡す */
   const handleCreateShareCard = () => {
     if (isCreatingShareCard) return;
     const getShareCardImageSource = (product?: Product) =>
@@ -223,131 +226,204 @@ export default function DeckPage() {
 
   return (
     <AuthGuard>
-      <div className="min-h-screen bg-bo-cream animate-fade-in">
-        <div className="px-5 pt-4 pb-24">
-          <div
-            className="sticky z-30 -mx-5 mb-6 border-b border-white/70 bg-bo-cream/95 px-5 pb-4 pt-3 backdrop-blur-sm"
-            style={{
-              top: "env(safe-area-inset-top, 0px)",
-              boxShadow: "0 10px 24px rgba(34, 52, 48, 0.08)",
-            }}
-          >
-          {/* Header */}
-          <div className="flex items-center justify-between mb-4">
-            <p className="text-xs text-bo-ink-muted font-sans m-0">
-              スキンケア管理
-            </p>
-            {deckProducts.length > 0 && allProducts.length > 0 && (
-              <button
-                onClick={handleAutoRecommend}
-                className="px-3.5 py-1.5 rounded-full text-[11px] font-bold border-none cursor-pointer font-sans
-                           bg-bo-accent text-white shadow-bo-accent pressable"
-              >
-                <SparkleIcon size={14} /> 自動編成
-              </button>
-            )}
-          </div>
-
-          {/* Routine tabs — Apple Segmented Control */}
-          <div className="relative flex bg-white rounded-r2 p-1 shadow-bo1">
-            {/* Sliding indicator */}
+      <div className="hd-root hd-softa" data-density="compact" data-card="default">
+        <div
+          className="hd hd-page"
+          style={{ minHeight: "100vh", background: "var(--hd-bg)" }}
+        >
+          <div style={{ padding: "16px 20px 96px" }}>
+            {/* Sticky Header */}
             <div
-              className="absolute top-1 bottom-1 rounded-[12px] bg-bo-accent shadow-bo-accent transition-transform duration-300 ease-[cubic-bezier(0.25,0.1,0.25,1)]"
               style={{
-                width: `calc(50% - 4px)`,
-                transform: `translateX(${deckIndex * 100}%)`,
-                left: "4px",
+                position: "sticky",
+                top: "env(safe-area-inset-top, 0px)",
+                zIndex: 30,
+                background: "var(--hd-bg)",
+                margin: "0 -20px 20px",
+                padding: "8px 20px 16px",
+                borderBottom: "1px solid var(--hd-hair)",
               }}
-            />
-            {DECK_OPTIONS.map((opt, i) => (
-              <button
-                key={opt.key}
-                onClick={() => setDeckIndex(i)}
-                className={`relative z-10 flex-1 py-2.5 rounded-[12px] border-none text-sm font-bold font-sans cursor-pointer transition-colors duration-200 ${
-                  deckIndex === i ? "text-white" : "text-bo-ink-muted"
-                }`}
+            >
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "flex-start",
+                  marginBottom: 14,
+                }}
               >
-                <span className="inline-flex items-center gap-1.5">
-                  {opt.key === "morning" ? <SunIcon size={15} /> : <MoonIcon size={15} />}
-                  {opt.label}
-                  <span className="text-xs opacity-70">({routineCounts[i]})</span>
-                </span>
-              </button>
-            ))}
+                <div>
+                  <div className="hd-mono hd-caps" style={{ color: "var(--hd-ink-40)" }}>Regimen · 01</div>
+                  <div className="hd-serif" style={{ marginTop: 4, fontSize: 24, letterSpacing: "-0.02em", lineHeight: 1.05 }}>
+                    スキンケア<span style={{ fontStyle: "italic" }}>管理.</span>
+                  </div>
+                </div>
+                {deckProducts.length > 0 && allProducts.length > 0 && (
+                  <button
+                    onClick={handleAutoRecommend}
+                    style={{
+                      background: "transparent",
+                      border: "1px solid var(--hd-ink)",
+                      color: "var(--hd-ink)",
+                      padding: "8px 14px",
+                      borderRadius: 0,
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 6,
+                      cursor: "pointer",
+                      height: 34,
+                    }}
+                  >
+                    {Ico.sparkleSm({ width: 11, height: 11 })}
+                    <span className="hd-mono" style={{ fontSize: 9, letterSpacing: "0.18em" }}>
+                      AUTO-COMPOSE
+                    </span>
+                  </button>
+                )}
+              </div>
+
+              {/* AM/PM segmented — A pure (sharp inverted) */}
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "1fr 1fr",
+                  border: "1px solid var(--hd-ink)",
+                }}
+              >
+                {DECK_OPTIONS.map((opt, i) => {
+                  const on = deckIndex === i;
+                  return (
+                    <button
+                      key={opt.key}
+                      onClick={() => setDeckIndex(i)}
+                      style={{
+                        padding: "14px 0",
+                        cursor: "pointer",
+                        background: on ? "var(--hd-ink)" : "transparent",
+                        color: on ? "var(--hd-bg)" : "var(--hd-ink)",
+                        border: "none",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        gap: 10,
+                      }}
+                    >
+                      {opt.key === "morning" ? Ico.sun({ width: 14, height: 14 }) : moonIco({ width: 14, height: 14 })}
+                      <span className="hd-serif" style={{ fontSize: 15 }}>{opt.label}</span>
+                      <span className="hd-mono" style={{ fontSize: 9, letterSpacing: "0.15em", opacity: 0.7 }}>
+                        {opt.key === "morning" ? "AM" : "PM"} · {String(routineCounts[i]).padStart(2, "0")}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Main content */}
+            {deckProducts.length > 0 ? (
+              <>
+                <DeckTray
+                  productsByGenre={productsByGenre}
+                  onAddSlot={(genre) => openPicker(genre)}
+                  onRemoveProduct={(id) => { void handleRemoveItem(id); }}
+                />
+
+                <button
+                  onClick={() => setShowAnalysis(true)}
+                  style={{
+                    width: "100%",
+                    marginTop: 28,
+                    padding: "16px 0",
+                    background: "transparent",
+                    border: "1px solid var(--hd-ink)",
+                    cursor: "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: 10,
+                  }}
+                >
+                  <span className="hd-serif" style={{ fontSize: 14 }}>ルーティン分析</span>
+                  <span
+                    className="hd-mono"
+                    style={{ fontSize: 9, letterSpacing: "0.2em", color: "var(--hd-ink-60)" }}
+                  >ANALYZE →</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => { void handleCreateShareCard(); }}
+                  disabled={isCreatingShareCard}
+                  className="hd-cta"
+                  style={{
+                    width: "100%",
+                    marginTop: 12,
+                    cursor: isCreatingShareCard ? "default" : "pointer",
+                    fontSize: 14,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: 8,
+                    opacity: isCreatingShareCard ? 0.6 : 1,
+                  }}
+                >
+                  🌿 シェアカードを作成
+                </button>
+                {isCreatingShareCard && (
+                  <p style={{ marginTop: 8, textAlign: "center", fontSize: 12, color: "var(--hd-ink-60)", fontFamily: "var(--hd-sans)" }}>
+                    シェアカードを作成しています...
+                  </p>
+                )}
+                {shareCardError && (
+                  <p style={{ marginTop: 8, textAlign: "center", fontSize: 12, color: "var(--hd-terra)", fontFamily: "var(--hd-sans)" }}>
+                    {shareCardError}
+                  </p>
+                )}
+              </>
+            ) : (
+              <>
+                <EmptyDeckState
+                  routine={routine}
+                  allProducts={allProducts}
+                  onCreateRoutine={() => openPicker(null)}
+                  onAutoRecommend={handleAutoRecommend}
+                />
+                <button
+                  type="button"
+                  onClick={() => { void handleCreateShareCard(); }}
+                  disabled={isCreatingShareCard}
+                  className="hd-cta"
+                  style={{
+                    width: "100%",
+                    marginTop: 24,
+                    cursor: isCreatingShareCard ? "default" : "pointer",
+                    fontSize: 14,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: 8,
+                    opacity: isCreatingShareCard ? 0.6 : 1,
+                  }}
+                >
+                  🌿 シェアカードを作成
+                </button>
+                {isCreatingShareCard && (
+                  <p style={{ marginTop: 8, textAlign: "center", fontSize: 12, color: "var(--hd-ink-60)", fontFamily: "var(--hd-sans)" }}>
+                    シェアカードを作成しています...
+                  </p>
+                )}
+                {shareCardError && (
+                  <p style={{ marginTop: 8, textAlign: "center", fontSize: 12, color: "var(--hd-terra)", fontFamily: "var(--hd-sans)" }}>
+                    {shareCardError}
+                  </p>
+                )}
+              </>
+            )}
+
+            <Disclaimer />
           </div>
-          </div>
-
-          {/* Main content */}
-          {deckProducts.length > 0 ? (
-            <>
-              {/* Deck slots — direct editing */}
-              <DeckTray
-                productsByGenre={productsByGenre}
-                onAddSlot={(genre) => openPicker(genre)}
-                onRemoveProduct={(id) => { void handleRemoveItem(id); }}
-              />
-
-              {/* Analysis button */}
-              <button
-                onClick={() => setShowAnalysis(true)}
-                className="w-full mt-6 py-3.5 rounded-r2 text-sm font-bold font-sans cursor-pointer
-                           flex items-center justify-center gap-2
-                           border border-bo-parchment bg-white text-bo-ink-soft shadow-bo1 pressable"
-              >
-                <ChartIcon size={16} /> ルーティン分析
-              </button>
-
-              {/* Share card link */}
-              <button
-                type="button"
-                onClick={() => { void handleCreateShareCard(); }}
-                disabled={isCreatingShareCard}
-                className="w-full mt-3 py-3.5 rounded-r2 text-sm font-bold font-sans cursor-pointer
-                           flex items-center justify-center gap-2
-                           border-none text-white shadow-bo1 pressable disabled:opacity-60"
-                style={{ background: "linear-gradient(135deg, #3A8F7A, #2D7A66)" }}
-              >
-                🌿 シェアカードを作成
-              </button>
-              {isCreatingShareCard && (
-                <p className="mt-2 text-center text-xs text-bo-ink-muted">シェアカードを作成しています...</p>
-              )}
-              {shareCardError && (
-                <p className="mt-2 text-center text-xs text-red-500">{shareCardError}</p>
-              )}
-            </>
-          ) : (
-            <>
-              <EmptyDeckState
-                routine={routine}
-                allProducts={allProducts}
-                onCreateRoutine={() => openPicker(null)}
-                onAutoRecommend={handleAutoRecommend}
-              />
-              <button
-                type="button"
-                onClick={() => { void handleCreateShareCard(); }}
-                disabled={isCreatingShareCard}
-                className="w-full mt-6 py-3.5 rounded-r2 text-sm font-bold font-sans cursor-pointer
-                           flex items-center justify-center gap-2
-                           border-none text-white shadow-bo1 pressable disabled:opacity-60"
-                style={{ background: "linear-gradient(135deg, #3A8F7A, #2D7A66)" }}
-              >
-                🌿 シェアカードを作成
-              </button>
-              {isCreatingShareCard && (
-                <p className="mt-2 text-center text-xs text-bo-ink-muted">シェアカードを作成しています...</p>
-              )}
-              {shareCardError && (
-                <p className="mt-2 text-center text-xs text-red-500">{shareCardError}</p>
-              )}
-            </>
-          )}
-
-          <Disclaimer />
         </div>
 
-        {/* Product Picker */}
         <ProductPicker
           open={showPicker}
           onClose={() => setShowPicker(false)}
@@ -358,7 +434,6 @@ export default function DeckPage() {
           onAdd={(productId) => { void handleAddItem(productId); }}
         />
 
-        {/* Analysis Sheet */}
         <DeckAnalysis
           open={showAnalysis}
           onClose={() => setShowAnalysis(false)}
@@ -372,7 +447,6 @@ export default function DeckPage() {
           cautionCombos={cautionCombos}
         />
 
-        {/* Auto Recommend Modal */}
         {showAutoRecommend && autoResult && (
           <AutoRecommendModal
             result={autoResult}

@@ -1,65 +1,66 @@
 import { GoogleGenAI } from "@google/genai";
 import { NextRequest, NextResponse } from "next/server";
 import { authenticateRequest, validateImagePayload } from "@/lib/apiAuth";
-import { tryReserveScan, getMonthlyScanCount, getAccountScanLimit } from "@/lib/db";
+import {
+  tryReserveScan,
+  tryReserveScanFallback,
+  getMonthlyScanCount,
+  getUserMonthlyScanLimit,
+  rollbackScan,
+} from "@/lib/db";
 import { rateLimit, getClientIp } from "@/lib/rateLimit";
 import { ocrSpaceExtract } from "@/lib/ocrSpace";
+import {
+  SCAN_RESERVATION_COOKIE_NAME,
+  clearScanReservationCookie,
+  verifyScanReservationToken,
+} from "@/lib/scanReservationToken";
+import { supabaseAdmin } from "@/lib/supabaseAdmin";
 
 const client = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+const RESERVATION_COMPAT_LIMIT_OVERRIDE = 1_000_000;
 
 function buildOcrParsePrompt(ocrText: string): string {
-  return `以下のOCRテキストは化粧品の成分表ラベルから読み取ったものです。
-成分情報を抽出してください。
+  return `The following OCR text was extracted from a cosmetic ingredient label.
+Extract the ingredient list and return only the format below.
 
-OCRテキスト:
-${ocrText}
+QUASI_DRUG: true|false
+ACTIVE: ingredient 1, ingredient 2
+OTHER: ingredient 1, ingredient 2, ingredient 3
 
-■ 医薬部外品（薬用化粧品）の場合：
-「有効成分」「薬用成分」等のラベルがある場合、または
-「医薬部外品」「薬用」の記載がある場合は医薬部外品と判断してください。
+Rules:
+- Set QUASI_DRUG to true only when the text explicitly indicates quasi-drug / 医薬部外品.
+- ACTIVE must include only explicitly labeled active ingredients / 有効成分.
+- OTHER must include all remaining ingredients.
+- If there are no active ingredients, leave ACTIVE blank.
+- If the ingredient list cannot be identified, return QUASI_DRUG: false, ACTIVE:, OTHER:.
 
-以下のフォーマットで回答してください：
-QUASI_DRUG: true
-ACTIVE: 有効成分名1, 有効成分名2
-OTHER: その他の成分名1, その他の成分名2, ...
-
-■ 一般化粧品の場合（セクション分けがない）：
-QUASI_DRUG: false
-ACTIVE:
-OTHER: 成分名1, 成分名2, ...
-
-重要な注意：
-- 成分名のみを記載（ブランド名・説明文・住所・注意書きは除外）
-- 成分表が見当たらない場合は QUASI_DRUG: false と空の OTHER: のみ返す
-- 余計な説明は不要、上記フォーマットだけ回答してください`;
+OCR TEXT:
+${ocrText}`;
 }
 
 export async function POST(req: NextRequest) {
-  // 1. IP rate limit
   const ip = getClientIp(req);
   const rl = await rateLimit(ip, 60_000, 10, "ocr");
   if (!rl.allowed) {
     return NextResponse.json(
-      { error: "リクエストが多すぎます。しばらくしてからお試しください" },
-      { status: 429, headers: { "Retry-After": String(Math.ceil(rl.retryAfterMs / 1000)) } }
+      { error: "リクエストが多すぎます。しばらくしてからお試しください。" },
+      { status: 429, headers: { "Retry-After": String(Math.ceil(rl.retryAfterMs / 1000)) } },
     );
   }
 
-  // 2. Auth check
   const auth = await authenticateRequest();
   if (!auth.authenticated) return auth.response;
 
-  // 3. Early body size check
-  const MAX_BODY_BYTES = 8 * 1024 * 1024;
+  const maxBodyBytes = 8 * 1024 * 1024;
   const contentLength = parseInt(req.headers.get("content-length") || "0", 10);
-  if (contentLength > MAX_BODY_BYTES) {
+  if (contentLength > maxBodyBytes) {
     return NextResponse.json(
-      { error: "リクエストサイズが大きすぎます" },
-      { status: 413 }
+      { error: "リクエストサイズが大きすぎます。" },
+      { status: 413 },
     );
   }
 
-  // 4. Payload validation
   let body: { imageBase64?: unknown };
   try {
     body = await req.json();
@@ -70,22 +71,68 @@ export async function POST(req: NextRequest) {
   const validation = validateImagePayload(body);
   if (!validation.valid) return validation.response;
 
-  // 5. Atomic scan quota check + reserve
-  const reserved = await tryReserveScan(auth.supabase, auth.user.id, auth.user.email!);
-  if (!reserved) {
-    const count = await getMonthlyScanCount(auth.supabase, auth.user.id);
-    const limit = getAccountScanLimit();
-    return NextResponse.json(
-      { error: "スキャン回数の上限に達しました", count, limit },
-      { status: 429 }
+  const reservationToken = req.cookies.get(SCAN_RESERVATION_COOKIE_NAME)?.value;
+  const hasExistingReservation =
+    typeof reservationToken === "string" &&
+    verifyScanReservationToken(reservationToken, { userId: auth.user.id });
+
+  let reservedForThisRequest = false;
+
+  if (!hasExistingReservation) {
+    const userMonthlyLimit = await getUserMonthlyScanLimit(supabaseAdmin, auth.user.id);
+    const reserved = await tryReserveScan(
+      auth.supabase,
+      auth.user.id,
+      auth.user.email!,
+      userMonthlyLimit,
     );
+    if (!reserved) {
+      const count = await getMonthlyScanCount(auth.supabase, auth.user.id);
+      if (count >= userMonthlyLimit) {
+        return NextResponse.json(
+          { error: "スキャン回数の上限に達しました", count, limit: userMonthlyLimit },
+          { status: 429 },
+        );
+      }
+
+      const compatibilityReserved = await tryReserveScan(
+        auth.supabase,
+        auth.user.id,
+        auth.user.email!,
+        RESERVATION_COMPAT_LIMIT_OVERRIDE,
+      );
+      const fallbackReserved = compatibilityReserved
+        ? true
+        : await tryReserveScanFallback(
+            supabaseAdmin,
+            auth.user.id,
+            auth.user.email!,
+            userMonthlyLimit
+          );
+
+      if (!fallbackReserved) {
+        return NextResponse.json(
+          {
+            error: "スキャン枠の確認に失敗しました。少し待ってから再度お試しください。",
+            count,
+            limit: userMonthlyLimit,
+          },
+          { status: 503 },
+        );
+      }
+    }
+
+    reservedForThisRequest = true;
   }
 
   try {
-    // OCR.space でテキスト抽出
     const ocrText = await ocrSpaceExtract(validation.base64Data);
 
     if (!ocrText) {
+      if (reservedForThisRequest) {
+        await rollbackScan(auth.supabase, auth.user.id, auth.user.email!);
+      }
+
       return NextResponse.json({
         text: "",
         isQuasiDrug: false,
@@ -94,7 +141,6 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // Gemini（テキストのみ）で成分情報を解析
     const response = await client.models.generateContent({
       model: process.env.GEMINI_IDENTIFY_MODEL || "gemini-2.5-flash-lite",
       contents: [
@@ -110,44 +156,48 @@ export async function POST(req: NextRequest) {
     });
 
     const rawText = response.text ?? "";
-
-    // パース: QUASI_DRUG / ACTIVE / OTHER
     const isQuasiDrug = /QUASI_DRUG:\s*true/i.test(rawText);
 
-    let activeIngredients: string[] = [];
-    let otherIngredients: string[] = [];
+    const activeIngredients =
+      rawText.match(/ACTIVE:\s*(.*)/i)?.[1]
+        ?.split(/[,、]/)
+        .map((value) => value.trim())
+        .filter(Boolean) ?? [];
 
-    const activeMatch = rawText.match(/ACTIVE:\s*(.*)/i);
-    if (activeMatch?.[1]) {
-      activeIngredients = activeMatch[1]
+    const otherIngredients =
+      rawText.match(/OTHER:\s*([\s\S]*?)(?:\n\n|$)/i)?.[1]
+        ?.replace(/\n/g, ",")
         .split(/[,、]/)
-        .map((s) => s.trim())
-        .filter(Boolean);
-    }
+        .map((value) => value.trim())
+        .filter(Boolean) ?? [];
 
-    const otherMatch = rawText.match(/OTHER:\s*([\s\S]*?)(?:\n\n|$)/i);
-    if (otherMatch?.[1]) {
-      otherIngredients = otherMatch[1]
-        .replace(/\n/g, ",")
-        .split(/[,、]/)
-        .map((s) => s.trim())
-        .filter(Boolean);
-    }
-
-    const allIngredients = [...activeIngredients, ...otherIngredients];
-    const text = allIngredients.join(", ");
-
-    return NextResponse.json({
+    const text = [...activeIngredients, ...otherIngredients].join(", ");
+    const result = NextResponse.json({
       text,
       isQuasiDrug,
       activeIngredients,
       otherIngredients,
     });
+
+    if (!text.trim() && reservedForThisRequest) {
+      await rollbackScan(auth.supabase, auth.user.id, auth.user.email!);
+    }
+
+    if (text.trim() && hasExistingReservation) {
+      return clearScanReservationCookie(result);
+    }
+
+    return result;
   } catch (error) {
     console.error("OCR API error:", error);
+
+    if (reservedForThisRequest) {
+      await rollbackScan(auth.supabase, auth.user.id, auth.user.email!);
+    }
+
     return NextResponse.json(
       { error: "OCR処理に失敗しました" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

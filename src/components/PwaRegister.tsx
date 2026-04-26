@@ -3,7 +3,8 @@
 import { useEffect } from "react";
 
 // Increment this when you need to force all users to get fresh content
-const APP_VERSION = "15";
+const APP_VERSION = "18";
+const SW_URL = `/sw.js?v=${APP_VERSION}`;
 
 export default function PwaRegister() {
   useEffect(() => {
@@ -32,7 +33,7 @@ export default function PwaRegister() {
               // localStorage が使えない場合はリロードしない（ループ防止）
               return;
             }
-            await navigator.serviceWorker.register("/sw.js");
+            await navigator.serviceWorker.register(SW_URL);
             window.location.reload();
           } catch (e) {
             console.warn("SW version refresh failed:", e);
@@ -45,7 +46,7 @@ export default function PwaRegister() {
     }
 
     // Normal registration + check for updates
-    navigator.serviceWorker.register("/sw.js").then((reg) => {
+    navigator.serviceWorker.register(SW_URL).then((reg) => {
       reg.update().catch(() => {});
     }).catch(() => {});
   }, []);

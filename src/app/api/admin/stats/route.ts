@@ -18,7 +18,9 @@ async function getAuthUserId(request: NextRequest): Promise<string | null> {
       },
     }
   );
-  const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
   return user?.id ?? null;
 }
 
@@ -29,24 +31,59 @@ export async function GET(request: NextRequest) {
   }
 
   const currentMonth = new Date().toISOString().substring(0, 7);
+  const { data: activatedProfiles, error: activatedProfilesError } =
+    await supabaseAdmin
+      .from("profiles")
+      .select("id")
+      .not("invite_activated_at", "is", null);
+
+  if (activatedProfilesError) {
+    return NextResponse.json({ error: activatedProfilesError.message }, { status: 500 });
+  }
+
+  const activatedUserIds = (activatedProfiles ?? []).map(
+    (row: { id: string }) => row.id
+  );
+
+  const scansThisMonthPromise = activatedUserIds.length
+    ? supabaseAdmin
+        .from("scan_usage")
+        .select("user_id, count")
+        .eq("month", currentMonth)
+        .in("user_id", activatedUserIds)
+    : Promise.resolve({ data: [] as { user_id: string; count: number }[], error: null });
 
   const [
-    usersResult,
     scansThisMonthResult,
     totalScansResult,
     productsResult,
     discoveriesResult,
     inviteCodesResult,
   ] = await Promise.all([
-    supabaseAdmin.auth.admin.listUsers({ perPage: 1000 }),
-    supabaseAdmin.from("scan_usage").select("user_id, count").eq("month", currentMonth),
+    scansThisMonthPromise,
     supabaseAdmin.from("scan_limit_by_email").select("total_count"),
     supabaseAdmin.from("products").select("*", { count: "exact", head: true }),
     supabaseAdmin.from("zukan_discoveries").select("*", { count: "exact", head: true }),
     supabaseAdmin.from("invitation_codes").select("is_active, used_count"),
   ]);
 
-  const totalUsers = usersResult.data?.users?.length ?? 0;
+  if (
+    scansThisMonthResult.error ||
+    totalScansResult.error ||
+    productsResult.error ||
+    discoveriesResult.error ||
+    inviteCodesResult.error
+  ) {
+    const error =
+      scansThisMonthResult.error ||
+      totalScansResult.error ||
+      productsResult.error ||
+      discoveriesResult.error ||
+      inviteCodesResult.error;
+    return NextResponse.json({ error: error?.message ?? "予期しないエラーが発生しました" }, { status: 500 });
+  }
+
+  const totalUsers = activatedUserIds.length;
   const scansThisMonth = (scansThisMonthResult.data ?? []).reduce(
     (sum: number, row: { count: number }) => sum + (row.count ?? 0),
     0

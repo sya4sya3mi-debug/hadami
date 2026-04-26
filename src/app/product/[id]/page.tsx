@@ -1,5 +1,6 @@
 "use client";
 
+import "@/styles/hadami-tokens.css";
 import { useParams, useRouter } from "next/navigation";
 import { type ChangeEvent, useRef, useState } from "react";
 import Image from "next/image";
@@ -21,20 +22,25 @@ import { StarIcon } from "@/components/ui/Icons";
 function readFileAsDataUrl(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
-
     reader.onload = () => {
       if (typeof reader.result !== "string") {
         reject(new Error("Failed to read image file"));
         return;
       }
-
       resolve(reader.result);
     };
-
     reader.onerror = () => reject(new Error("Failed to read image file"));
     reader.readAsDataURL(file);
   });
 }
+
+const backBtnStyle: React.CSSProperties = {
+  display: "flex", alignItems: "center", gap: 6,
+  padding: "8px 14px", borderRadius: 999,
+  background: "transparent", border: "1px solid var(--hd-line)",
+  color: "var(--hd-ink-60)", fontSize: 12, fontWeight: 600,
+  cursor: "pointer", fontFamily: "var(--hd-sans)",
+};
 
 export default function ProductDetailPage() {
   const { user, supabase, loading } = useUser();
@@ -54,30 +60,33 @@ export default function ProductDetailPage() {
 
   if (!product) {
     return (
-      <div className="min-h-screen bg-bo-cream">
-        <div className="px-5 pt-4">
-          <div className="flex items-center gap-3 mb-8">
-            <button
-              onClick={() => router.back()}
-              className="flex items-center gap-1.5 px-3.5 py-2 rounded-r1 bg-white text-sm font-semibold text-bo-ink-muted
-                         cursor-pointer font-sans pressable border-none shadow-bo1"
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" aria-hidden="true">
-                <path d="M15 18l-6-6 6-6" />
-              </svg>
-              戻る
-            </button>
-            <h1 className="text-lg font-extrabold font-serif text-bo-ink m-0">コスメ詳細</h1>
-          </div>
-          <div className="text-center py-10">
-            <div className="w-14 h-14 rounded-2xl bg-bo-parchment mx-auto mb-3 flex items-center justify-center text-2xl">📦</div>
-            <p className="text-[13px] font-semibold text-bo-ink-muted font-sans mb-1">コスメが見つかりません</p>
-            <button
-              onClick={() => router.back()}
-              className="inline-block mt-3 px-5 py-2.5 rounded-full text-xs font-bold text-white bg-bo-accent border-none cursor-pointer pressable"
-            >
-              戻る
-            </button>
+      <div className="hd-root hd-softa" data-density="compact">
+        <div className="hd hd-page" style={{ minHeight: "100vh", background: "var(--hd-bg)" }}>
+          <div style={{ padding: "16px 20px" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 32 }}>
+              <button onClick={() => router.back()} style={backBtnStyle}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                  <path d="M15 18l-6-6 6-6" />
+                </svg>
+                戻る
+              </button>
+              <div className="hd-serif" style={{ fontSize: 18 }}>コスメ詳細</div>
+            </div>
+            <div style={{ textAlign: "center", padding: "44px 20px" }}>
+              <div
+                style={{
+                  width: 60, height: 60, borderRadius: 999, background: "var(--hd-mint-bg)",
+                  margin: "0 auto 14px",
+                  display: "flex", alignItems: "center", justifyContent: "center", fontSize: 28,
+                }}
+              >📦</div>
+              <p style={{ fontSize: 13, fontWeight: 600, color: "var(--hd-ink-60)", marginBottom: 12, fontFamily: "var(--hd-sans)" }}>
+                コスメが見つかりません
+              </p>
+              <button onClick={() => router.back()} className="hd-cta" style={{ padding: "10px 20px", fontSize: 13, cursor: "pointer" }}>
+                戻る
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -86,25 +95,21 @@ export default function ProductDetailPage() {
 
   const genre = getGenreByKey(product.productType || "other");
 
-  // 有効成分のみフィルタ
   const allIngredients = [...product.ingredients]
     .sort((a, b) => a.orderIndex - b.orderIndex)
     .map((pi) => getIngredientById(pi.ingredientId))
     .filter((i) => i !== undefined);
 
   const activeIngredients = allIngredients.filter((i) => i.activeIngredient);
-
   const ingredientNames = allIngredients.map((i) => i.nameJa);
   const combinations = findCombinations(ingredientNames);
 
   const handleToggleFavorite = async () => {
     const prevFav = product.isFavorite;
-    toggleFavorite(product.id); // 楽観更新
+    toggleFavorite(product.id);
     if (user) {
       const { error } = await toggleFavoriteInDb(supabase, user.id, product.id, !prevFav);
-      if (error) {
-        toggleFavorite(product.id); // ロールバック
-      }
+      if (error) toggleFavorite(product.id);
     }
   };
 
@@ -114,55 +119,27 @@ export default function ProductDetailPage() {
     fileInputRef.current?.click();
   };
 
-  const handlePhotoChange = async (
-    event: ChangeEvent<HTMLInputElement>
-  ) => {
+  const handlePhotoChange = async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     event.target.value = "";
-
     if (!file || isUpdatingPhoto) return;
-
     if (!user) {
       setPhotoError("ログイン状態を確認してからもう一度お試しください");
       return;
     }
-
     setIsUpdatingPhoto(true);
     setPhotoError(null);
     setPhotoMessage(null);
-
     try {
       const imageBase64 = await readFileAsDataUrl(file);
-      const result = await updateProductImageInDb(
-        supabase,
-        user.id,
-        product.id,
-        imageBase64
-      );
-
-      if (result.error) {
-        setPhotoError(result.error);
-        return;
-      }
-
-      const packageImagePath =
-        result.filePath ?? getProductImagePath(user.id, product.id);
+      const result = await updateProductImageInDb(supabase, user.id, product.id, imageBase64);
+      if (result.error) { setPhotoError(result.error); return; }
+      const packageImagePath = result.filePath ?? getProductImagePath(user.id, product.id);
       const packageImageThumbPath = getProductImageThumbPath(user.id, product.id);
-      const signedImages = await getSignedImageUrls(supabase, [
-        packageImagePath,
-        packageImageThumbPath,
-      ]);
+      const signedImages = await getSignedImageUrls(supabase, [packageImagePath, packageImageThumbPath]);
       const packageImage = signedImages[packageImagePath] ?? undefined;
-      const packageImageThumb =
-        signedImages[packageImageThumbPath] ?? packageImage;
-
-      updateProductImage(
-        product.id,
-        packageImage,
-        packageImagePath,
-        packageImageThumb,
-        packageImageThumbPath
-      );
+      const packageImageThumb = signedImages[packageImageThumbPath] ?? packageImage;
+      updateProductImage(product.id, packageImage, packageImagePath, packageImageThumb, packageImageThumbPath);
       setPhotoMessage("写真を更新しました");
     } catch (error) {
       console.error("Failed to update product photo:", error);
@@ -174,211 +151,302 @@ export default function ProductDetailPage() {
 
   return (
     <AuthGuard>
-      <div className="min-h-screen bg-bo-cream">
-        {/* Sticky header */}
-        <div className="sticky top-0 z-[310] flex items-center justify-between px-4 py-2.5
-                        bg-bo-cream/90 backdrop-blur-xl border-b border-bo-parchment/40">
-          <button
-            onClick={() => router.back()}
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-r1 bg-white text-sm font-semibold text-bo-ink-muted
-                       cursor-pointer font-sans pressable border-none shadow-bo1"
+      <div className="hd-root hd-softa" data-density="compact">
+        <div className="hd hd-page" style={{ minHeight: "100vh", background: "var(--hd-bg)" }}>
+          {/* Sticky header */}
+          <div
+            style={{
+              position: "sticky", top: 0, zIndex: 310,
+              display: "flex", alignItems: "center", justifyContent: "space-between",
+              padding: "10px 16px",
+              background: "var(--hd-bg)",
+              borderBottom: "1px solid var(--hd-hair)",
+            }}
           >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" aria-hidden="true">
-              <path d="M15 18l-6-6 6-6" />
-            </svg>
-            戻る
-          </button>
-          <button
-            onClick={handleToggleFavorite}
-            className="w-10 h-10 rounded-r1 bg-white border-none flex items-center justify-center cursor-pointer text-lg
-                       shadow-bo1 pressable"
-          >
-            {product.isFavorite ? <StarIcon size={18} color="#F59E0B" filled /> : <StarIcon size={18} color="#BDBDBD" />}
-          </button>
-        </div>
+            <button onClick={() => router.back()} style={backBtnStyle}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                <path d="M15 18l-6-6 6-6" />
+              </svg>
+              戻る
+            </button>
+            <button
+              onClick={handleToggleFavorite}
+              style={{
+                width: 38, height: 38, borderRadius: 999,
+                background: product.isFavorite ? "var(--hd-moss)" : "var(--hd-surface)",
+                color: product.isFavorite ? "#fff" : "var(--hd-ink-40)",
+                border: product.isFavorite ? "none" : "1px solid var(--hd-line)",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                cursor: "pointer",
+              }}
+            >
+              {product.isFavorite ? <StarIcon size={16} color="#fff" filled /> : <StarIcon size={16} color="#BDBDBD" />}
+            </button>
+          </div>
 
-        {/* Hero image */}
-        <div className="relative h-[260px] overflow-hidden">
-          {product.packageImage ? (
-            <Image
-              src={product.packageImage}
-              alt={product.name}
-              fill
-              className="object-cover"
-              sizes="(max-width: 430px) 100vw, 430px"
-              priority
-            />
-          ) : (
-            <div className="w-full h-full bg-gradient-to-br from-bo-accent-soft to-bo-parchment flex items-center justify-center">
-              {genre ? <ProductGenreIcon genre={genre.key} size={64} /> : <span className="text-5xl">📦</span>}
-            </div>
-          )}
-          <div className="absolute inset-0 bg-gradient-to-t from-[rgba(27,38,32,0.75)] via-transparent to-transparent pointer-events-none" />
-
-          {/* Product info overlay */}
-          <div className="absolute bottom-6 left-5 right-5">
-            <div className="text-xs text-white/70 font-sans tracking-wide uppercase font-semibold">
-              {product.brand}
-            </div>
-            <div className="text-xl font-extrabold text-white font-serif leading-tight mt-1.5">
-              {product.name}
-            </div>
-            {genre && (
-              <div className="flex gap-1.5 mt-2.5">
-                <span className="text-[10px] font-bold text-white bg-white/20 backdrop-blur-lg py-1 px-3 rounded-r1 font-sans
-                                 inline-flex items-center gap-1.5">
-                  <ProductGenreIcon genre={genre.key} size={12} />
-                  {genre.label}
-                </span>
+          {/* Hero image */}
+          <div style={{ position: "relative", height: 280, overflow: "hidden" }}>
+            {product.packageImage ? (
+              <Image
+                src={product.packageImage}
+                alt={product.name}
+                fill
+                style={{ objectFit: "cover" }}
+                sizes="(max-width: 430px) 100vw, 430px"
+                priority
+              />
+            ) : (
+              <div
+                style={{
+                  width: "100%", height: "100%",
+                  background: "var(--hd-mint-bg)",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                }}
+              >
+                {genre ? <ProductGenreIcon genre={genre.key} size={64} /> : <span style={{ fontSize: 48 }}>📦</span>}
               </div>
             )}
-          </div>
-        </div>
-
-        {/* Content */}
-        <div className="px-5 pt-6 -mt-4 rounded-t-[20px] bg-bo-cream relative pb-8">
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/*"
-            capture="environment"
-            onChange={handlePhotoChange}
-            className="sr-only"
-          />
-
-          {(photoMessage || photoError) && (
             <div
-              className={`mb-4 rounded-r2 px-4 py-3 text-xs font-semibold font-sans shadow-bo1 ${
-                photoError
-                  ? "bg-red-50 text-red-600"
-                  : "bg-white text-bo-accent"
-              }`}
-            >
-              {photoError ?? photoMessage}
-            </div>
-          )}
+              style={{
+                position: "absolute", inset: 0,
+                background: "linear-gradient(to top, rgba(27,38,32,0.78), transparent 60%)",
+                pointerEvents: "none",
+              }}
+            />
 
-          {/* Active ingredients section */}
-          {activeIngredients.length > 0 && (
-            <>
-              <div className="flex items-center gap-2 mb-4">
-                <span className="w-1.5 h-5 rounded-full bg-bo-accent inline-block" />
-                <span className="text-base font-bold text-bo-ink font-sans">
-                  美容成分
-                </span>
-                <span className="text-xs text-bo-ink-muted font-sans">
-                  {activeIngredients.length}種
-                </span>
+            <div style={{ position: "absolute", bottom: 24, left: 20, right: 20 }}>
+              <div
+                style={{
+                  fontSize: 11, color: "rgba(255,255,255,0.8)",
+                  fontFamily: "var(--hd-sans)",
+                  letterSpacing: "0.04em", fontWeight: 600,
+                }}
+              >
+                {product.brand}
               </div>
+              <div
+                className="hd-serif"
+                style={{
+                  fontSize: 22, color: "#fff",
+                  lineHeight: 1.2, marginTop: 6, letterSpacing: "-0.01em",
+                }}
+              >
+                {product.name}
+              </div>
+              {genre && (
+                <div style={{ display: "flex", gap: 6, marginTop: 10 }}>
+                  <span
+                    style={{
+                      fontSize: 11, fontWeight: 600, color: "#fff",
+                      background: "rgba(255,255,255,0.2)",
+                      padding: "4px 10px", borderRadius: 999,
+                      fontFamily: "var(--hd-sans)",
+                      display: "inline-flex", alignItems: "center", gap: 6,
+                    }}
+                  >
+                    <ProductGenreIcon genre={genre.key} size={12} />
+                    {genre.label}
+                  </span>
+                </div>
+              )}
+            </div>
+          </div>
 
-              <div className="flex flex-col gap-2 mb-6">
-                {activeIngredients.map((ing) => {
-                  const catInfo = getIngredientCategoryInfo(ing);
-                  const rarity = ing.rarity === "legendary" ? 4 : ing.rarity === "rare" ? 3 : ing.rarity === "uncommon" ? 2 : 1;
-                  return (
-                    <button
-                      key={ing.id}
-                      onClick={() => router.push(`/ingredient/${encodeURIComponent(ing.id)}`)}
-                      className="flex items-center gap-3 py-3 px-3.5 bg-white rounded-r2 shadow-bo1 cursor-pointer text-left w-full
-                                 border-none pressable"
-                    >
-                      <div
-                        className="w-9 h-9 rounded-[10px] flex items-center justify-center shrink-0"
+          {/* Content */}
+          <div
+            style={{
+              padding: "20px 20px 32px",
+              marginTop: -16,
+              borderTopLeftRadius: 24, borderTopRightRadius: 24,
+              background: "var(--hd-bg)", position: "relative",
+            }}
+          >
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              capture="environment"
+              onChange={handlePhotoChange}
+              style={{ position: "absolute", left: -9999 }}
+            />
+
+            {(photoMessage || photoError) && (
+              <div
+                style={{
+                  marginBottom: 14, padding: "10px 14px", borderRadius: 12,
+                  fontSize: 12, fontWeight: 600, fontFamily: "var(--hd-sans)",
+                  background: photoError ? "var(--hd-surface)" : "var(--hd-mint-bg)",
+                  border: photoError ? "1px solid var(--hd-terra)" : "none",
+                  color: photoError ? "var(--hd-terra)" : "var(--hd-moss-deep)",
+                }}
+              >
+                {photoError ?? photoMessage}
+              </div>
+            )}
+
+            {/* Active ingredients */}
+            {activeIngredients.length > 0 && (
+              <>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
+                  <span style={{ width: 4, height: 18, borderRadius: 999, background: "var(--hd-moss)" }} />
+                  <div className="hd-serif" style={{ fontSize: 18 }}>美容成分</div>
+                  <span style={{ fontSize: 12, color: "var(--hd-ink-60)", fontFamily: "var(--hd-sans)" }}>
+                    {activeIngredients.length}種
+                  </span>
+                </div>
+
+                <div className="hd-stagger" style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 24 }}>
+                  {activeIngredients.map((ing) => {
+                    const catInfo = getIngredientCategoryInfo(ing);
+                    const rarity = ing.rarity === "legendary" ? 4 : ing.rarity === "rare" ? 3 : ing.rarity === "uncommon" ? 2 : 1;
+                    return (
+                      <button
+                        key={ing.id}
+                        onClick={() => router.push(`/ingredient/${encodeURIComponent(ing.id)}`)}
                         style={{
-                          background: (catInfo?.color ?? "#9E9E9E") + "15",
-                          color: catInfo?.color ?? "#9E9E9E",
+                          display: "flex", alignItems: "center", gap: 12,
+                          padding: "12px 14px",
+                          background: "var(--hd-surface)",
+                          border: "1px solid var(--hd-hair)",
+                          borderRadius: 12, cursor: "pointer",
+                          textAlign: "left", width: "100%",
                         }}
                       >
-                        <ActiveCategoryIcon category={catInfo?.key ?? null} size={16} />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="text-sm font-bold text-bo-ink font-sans">
-                          {ing.nameJa}
+                        <div
+                          style={{
+                            width: 36, height: 36, borderRadius: 10, flexShrink: 0,
+                            background: (catInfo?.color ?? "#9E9E9E") + "15",
+                            color: catInfo?.color ?? "#9E9E9E",
+                            display: "flex", alignItems: "center", justifyContent: "center",
+                          }}
+                        >
+                          <ActiveCategoryIcon category={catInfo?.key ?? null} size={16} />
                         </div>
-                        {catInfo && (
-                          <div className="text-[10px] mt-0.5 font-sans" style={{ color: catInfo.color }}>
-                            {catInfo.label}
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontSize: 14, fontWeight: 600, fontFamily: "var(--hd-sans)" }}>
+                            {ing.nameJa}
                           </div>
-                        )}
+                          {catInfo && (
+                            <div style={{ fontSize: 10, marginTop: 2, fontFamily: "var(--hd-sans)", color: catInfo.color }}>
+                              {catInfo.label}
+                            </div>
+                          )}
+                        </div>
+                        <span style={{ fontSize: 10, color: "#D4A853", flexShrink: 0 }}>
+                          {"★".repeat(rarity)}
+                          <span style={{ opacity: 0.3 }}>{"★".repeat(5 - rarity)}</span>
+                        </span>
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--hd-ink-40)" strokeWidth="2" strokeLinecap="round">
+                          <path d="M9 18l6-6-6-6" />
+                        </svg>
+                      </button>
+                    );
+                  })}
+                </div>
+              </>
+            )}
+
+            {activeIngredients.length === 0 && (
+              <div style={{ marginBottom: 24, padding: "32px 0", textAlign: "center" }}>
+                <p style={{ fontSize: 12, color: "var(--hd-ink-60)", fontFamily: "var(--hd-sans)" }}>
+                  美容成分は検出されませんでした
+                </p>
+              </div>
+            )}
+
+            <p style={{ fontSize: 10, color: "var(--hd-ink-40)", lineHeight: 1.6, fontFamily: "var(--hd-sans)" }}>
+              成分をタップすると図鑑で詳細を確認できます
+            </p>
+
+            {/* Combinations */}
+            {combinations.length > 0 && (
+              <div style={{ marginTop: 24, marginBottom: 24 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
+                  <span style={{ width: 4, height: 18, borderRadius: 999, background: "var(--hd-moss)" }} />
+                  <div className="hd-serif" style={{ fontSize: 18 }}>組み合わせ情報</div>
+                </div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                  {combinations.map((combo, i) => {
+                    const isGood = combo.type === "recommended";
+                    const accent = isGood ? "var(--hd-moss)" : "var(--hd-terra)";
+                    return (
+                      <div
+                        key={i}
+                        style={{
+                          borderRadius: 12, padding: 14,
+                          display: "flex", gap: 10,
+                          background: "var(--hd-surface)",
+                          border: "1px solid var(--hd-hair)",
+                          borderLeft: `3px solid ${accent}`,
+                        }}
+                      >
+                        <span style={{ fontSize: 16, flexShrink: 0 }}>{isGood ? "📚" : "📋"}</span>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontWeight: 600, fontSize: 12, fontFamily: "var(--hd-sans)" }}>
+                            {combo.label}
+                          </div>
+                          <p
+                            style={{
+                              fontSize: 11, marginTop: 2, marginBottom: 0,
+                              color: "var(--hd-ink-60)", fontFamily: "var(--hd-sans)",
+                            }}
+                          >{combo.desc}</p>
+                          <p
+                            style={{
+                              fontSize: 10, marginTop: 2, marginBottom: 0,
+                              color: "var(--hd-ink-40)", fontFamily: "var(--hd-sans)",
+                            }}
+                          >出典: {combo.source}</p>
+                        </div>
                       </div>
-                      <span className="text-[10px] text-[#D4A853] tracking-wide shrink-0">
-                        {"★".repeat(rarity)}
-                        {"☆".repeat(5 - rarity)}
-                      </span>
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#BDBDBD" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
-                        <path d="M9 18l6-6-6-6" />
-                      </svg>
-                    </button>
-                  );
-                })}
+                    );
+                  })}
+                </div>
               </div>
-            </>
-          )}
+            )}
 
-          {activeIngredients.length === 0 && (
-            <div className="mb-6 py-8 text-center">
-              <p className="text-xs text-bo-ink-muted font-sans">美容成分は検出されませんでした</p>
-            </div>
-          )}
-
-          <p className="text-[10px] text-bo-ink-faint font-sans leading-relaxed">
-            成分をタップすると図鑑で詳細を確認できます
-          </p>
-
-          {/* Combinations */}
-          {combinations.length > 0 && (
-            <div className="mt-6 mb-6">
-              <div className="flex items-center gap-2 mb-4">
-                <span className="w-1.5 h-5 rounded-full bg-bo-accent inline-block" />
-                <span className="text-base font-bold text-bo-ink font-sans">
-                  組み合わせ情報
-                </span>
-              </div>
-              <div className="space-y-2">
-                {combinations.map((combo, i) => {
-                  const isGood = combo.type === "recommended";
-                  return (
-                    <div
-                      key={i}
-                      className={`rounded-r2 p-3.5 flex gap-2.5 bg-white border shadow-bo1 ${
-                        isGood
-                          ? "border-bo-safe/20 border-l-[3px] border-l-bo-safe"
-                          : "border-bo-danger/20 border-l-[3px] border-l-bo-danger"
-                      }`}
-                    >
-                      <span className="text-base shrink-0">{isGood ? "📚" : "📋"}</span>
-                      <div className="flex-1 min-w-0">
-                        <div className="font-bold text-xs text-bo-ink font-sans">{combo.label}</div>
-                        <p className="text-[11px] mt-0.5 text-bo-ink-muted font-sans">{combo.desc}</p>
-                        <p className="text-[10px] mt-0.5 text-bo-ink-faint font-sans">出典: {combo.source}</p>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-          {/* Dates */}
-          {(product.lastUsedAt || product.purchasedAt !== undefined || true) && (
-            <div className="mt-6 mb-6 bg-white rounded-r2 shadow-bo1 overflow-hidden">
-              {/* Last used */}
+            {/* Dates */}
+            <div
+              style={{
+                marginTop: 24, marginBottom: 24,
+                background: "var(--hd-surface)", borderRadius: 14,
+                border: "1px solid var(--hd-hair)", overflow: "hidden",
+              }}
+            >
               {product.lastUsedAt && (
-                <div className="flex items-center justify-between px-4 py-3 border-b border-bo-parchment/40">
-                  <span className="text-xs font-semibold text-bo-ink-muted font-sans">最終使用日</span>
-                  <span className="text-xs font-bold text-bo-ink font-sans">
+                <div
+                  style={{
+                    display: "flex", justifyContent: "space-between", alignItems: "center",
+                    padding: "12px 16px", borderBottom: "1px solid var(--hd-hair)",
+                  }}
+                >
+                  <span style={{ fontSize: 12, fontWeight: 600, color: "var(--hd-ink-60)", fontFamily: "var(--hd-sans)" }}>
+                    最終使用日
+                  </span>
+                  <span style={{ fontSize: 12, fontWeight: 600, fontFamily: "var(--hd-sans)" }}>
                     {new Date(product.lastUsedAt).toLocaleDateString("ja-JP", { year: "numeric", month: "long", day: "numeric" })}
                   </span>
                 </div>
               )}
-              {/* Purchase date */}
-              <div className="flex items-center justify-between px-4 py-3">
-                <span className="text-xs font-semibold text-bo-ink-muted font-sans">購入日</span>
+              <div
+                style={{
+                  display: "flex", justifyContent: "space-between", alignItems: "center",
+                  padding: "12px 16px",
+                }}
+              >
+                <span style={{ fontSize: 12, fontWeight: 600, color: "var(--hd-ink-60)", fontFamily: "var(--hd-sans)" }}>
+                  購入日
+                </span>
                 {editingPurchasedAt ? (
                   <input
                     type="date"
                     defaultValue={product.purchasedAt ? product.purchasedAt.slice(0, 10) : ""}
-                    className="text-xs font-bold text-bo-ink font-sans border border-bo-accent/40 rounded-md px-2 py-1 outline-none"
+                    style={{
+                      fontSize: 12, fontWeight: 600,
+                      border: "1px solid var(--hd-moss)", borderRadius: 8,
+                      padding: "4px 8px", outline: "none",
+                      fontFamily: "var(--hd-sans)",
+                    }}
                     onBlur={(e) => {
                       updatePurchasedAt(product.id, e.target.value || undefined);
                       setEditingPurchasedAt(false);
@@ -388,8 +456,13 @@ export default function ProductDetailPage() {
                 ) : (
                   <button
                     onClick={() => setEditingPurchasedAt(true)}
-                    className="text-xs font-bold font-sans border-none bg-transparent cursor-pointer pressable
-                               text-bo-ink-muted underline decoration-dotted"
+                    style={{
+                      fontSize: 12, fontWeight: 600,
+                      border: "none", background: "transparent",
+                      cursor: "pointer", color: "var(--hd-moss)",
+                      textDecorationLine: "underline", textDecorationStyle: "dotted",
+                      fontFamily: "var(--hd-sans)",
+                    }}
                   >
                     {product.purchasedAt
                       ? new Date(product.purchasedAt).toLocaleDateString("ja-JP", { year: "numeric", month: "long", day: "numeric" })
@@ -398,44 +471,47 @@ export default function ProductDetailPage() {
                 )}
               </div>
             </div>
-          )}
 
-          {/* Actions */}
-          <div className="flex gap-2.5 mt-6">
-            <button
-              onClick={() => router.push("/deck")}
-              className="flex-1 py-3.5 rounded-r2 bg-white border border-bo-accent/30 text-bo-accent text-sm font-bold font-sans
-                         cursor-pointer shadow-bo1 pressable"
-            >
-              ルーティンに追加
-            </button>
-            <button
-              type="button"
-              onClick={openPhotoCapture}
-              disabled={isUpdatingPhoto}
-              aria-label={
-                isUpdatingPhoto
-                  ? "写真を更新中"
-                  : product.packageImage
-                    ? "写真を変更"
-                    : "写真を追加"
-              }
-              className="flex-1 py-3.5 rounded-r2 border-none bg-bo-accent text-white text-sm font-bold font-sans
-                         cursor-pointer shadow-bo-accent pressable flex items-center justify-center gap-1.5 disabled:opacity-60"
-            >
-              <span>📷</span>
-              <span>
-                {isUpdatingPhoto
-                  ? "写真を更新中..."
-                  : product.packageImage
-                    ? "写真を変更"
-                    : "写真を追加"}
-              </span>
-            </button>
-          </div>
+            {/* Actions */}
+            <div style={{ display: "flex", gap: 10, marginTop: 24 }}>
+              <button
+                onClick={() => router.push("/deck")}
+                style={{
+                  flex: 1, padding: "13px 0",
+                  borderRadius: 999,
+                  background: "transparent",
+                  border: "1px solid var(--hd-moss)",
+                  color: "var(--hd-moss)",
+                  fontSize: 13, fontWeight: 600, fontFamily: "var(--hd-sans)",
+                  cursor: "pointer",
+                }}
+              >
+                ルーティンに追加
+              </button>
+              <button
+                type="button"
+                onClick={openPhotoCapture}
+                disabled={isUpdatingPhoto}
+                aria-label={isUpdatingPhoto ? "写真を更新中" : product.packageImage ? "写真を変更" : "写真を追加"}
+                className="hd-cta"
+                style={{
+                  flex: 1, fontSize: 13,
+                  cursor: isUpdatingPhoto ? "default" : "pointer",
+                  display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+                  opacity: isUpdatingPhoto ? 0.6 : 1,
+                  padding: "13px 0",
+                }}
+              >
+                <span>📷</span>
+                <span>
+                  {isUpdatingPhoto ? "写真を更新中..." : product.packageImage ? "写真を変更" : "写真を追加"}
+                </span>
+              </button>
+            </div>
 
-          <div className="mt-6">
-            <Disclaimer />
+            <div style={{ marginTop: 24 }}>
+              <Disclaimer />
+            </div>
           </div>
         </div>
       </div>

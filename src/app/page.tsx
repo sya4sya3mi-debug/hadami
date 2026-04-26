@@ -1,5 +1,6 @@
 "use client";
 
+import "@/styles/hadami-tokens.css";
 import Link from "next/link";
 import Image from "next/image";
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -16,9 +17,10 @@ import { useUser } from "@/lib/auth";
 
 import LandingPage from "@/components/ui/LandingPage";
 import { ProductGenreIcon, ActiveCategoryIcon } from "@/components/ui/CosmeticIcons";
-import { BookIcon, PackageIcon, ScanIcon, CameraIcon, LeafIcon, LightbulbIcon, SunIcon, MoonIcon } from "@/components/ui/Icons";
+import { CameraIcon } from "@/components/ui/Icons";
 import { ACTIVE_CATEGORIES } from "@/lib/ingredients";
 import { CategoryKey } from "@/types";
+import { Ico } from "@/components/redesign/apothecary/Icons";
 
 interface RoutineStep {
   name: string;
@@ -28,23 +30,16 @@ interface RoutineStep {
   categories: CategoryKey[];
 }
 
-
 const TIPS = [
-  { icon: "💡", text: "パンテノール（ビタミンB5）は保湿と修復の両方を担う万能成分。朝晩どちらでも効果的です。" },
-  { icon: "🌿", text: "ツボクサエキス（CICA）は★3のレア成分。韓国では「鎮静の王様」と呼ばれています。" },
-  { icon: "🔬", text: "ヒアルロン酸Naは1gで6Lの水分を保持。乾燥肌の救世主です。" },
+  { text: "パンテノール（ビタミンB5）は保湿と修復の両方を担う万能成分。朝晩どちらでも効果的です。" },
+  { text: "ツボクサエキス（CICA）は★3のレア成分。韓国では「鎮静の王様」と呼ばれています。" },
+  { text: "ヒアルロン酸Naは1gで6Lの水分を保持。乾燥肌の救世主です。" },
 ];
 
 const ROUTINE_CHECK_KEY = "hadami-routine-checks";
 
-/**
- * ルーティンチェックの有効期間キーを生成
- * 朝ルーティン: その日の日付 + "morning"（15時に夜に切り替わった時点でリセット）
- * 夜ルーティン: その日の日付 + "night"（翌朝に朝に切り替わった時点でリセット）
- */
 function getRoutinePeriodKey(routine: string): string {
   const now = new Date();
-  // 夜ルーティンは翌朝まで有効にするため、15時以降は当日の日付を使う
   const dateStr = `${now.getFullYear()}-${now.getMonth() + 1}-${now.getDate()}`;
   return `${dateStr}:${routine}`;
 }
@@ -89,6 +84,13 @@ function Counter({ to, dur = 900 }: { to: number; dur?: number }) {
   return <>{v}</>;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const moonIco = (p: React.SVGProps<SVGSVGElement> = {}) => (
+  <svg viewBox="0 0 20 20" width={16} height={16} fill="none" stroke="currentColor" strokeWidth={1.6} {...p}>
+    <path d="M16 11.5a6.5 6.5 0 1 1-8-8 5 5 0 0 0 8 8z" strokeLinejoin="round" />
+  </svg>
+);
+
 const RoutineStepButton = memo(function RoutineStepButton({
   step,
   index,
@@ -105,68 +107,89 @@ const RoutineStepButton = memo(function RoutineStepButton({
     <button
       onClick={() => onToggle(index)}
       aria-label={step.name + (done ? "（完了）" : "")}
-      className={`w-full flex items-center gap-2.5 py-2 px-3 rounded-r2 cursor-pointer text-left relative overflow-hidden
-                  transition-all duration-200 border-none pressable ${
-        done
-          ? "bg-bo-accent-soft/40 dark:bg-bo-accent/10 shadow-none scale-[0.985]"
-          : "bg-white dark:bg-white/5 shadow-bo1 scale-100"
-      }`}
-      style={done ? { borderLeft: "3px solid #3A8F7A" } : { borderLeft: "3px solid transparent" }}
+      style={{
+        width: "100%",
+        background: "transparent",
+        border: "none",
+        padding: "12px 0",
+        display: "flex",
+        alignItems: "center",
+        gap: 12,
+        cursor: "pointer",
+        textAlign: "left",
+        opacity: done ? 0.55 : 1,
+        borderBottom: "1px solid var(--hd-hair)",
+      }}
     >
-      {/* Checkbox */}
       <div
-        className={`w-6 h-6 rounded-[8px] shrink-0 flex items-center justify-center transition-all duration-300 ${
-          done
-            ? "bg-bo-accent dark:bg-bo-accent-dark shadow-bo-accent scale-110"
-            : "bg-white dark:bg-white/10 border-2 border-bo-ink-faint/40 scale-100"
-        }`}
+        style={{
+          width: 26, height: 26, borderRadius: 999,
+          background: done ? "var(--hd-moss)" : "transparent",
+          border: done ? "none" : "1.5px solid var(--hd-line)",
+          color: "#fff",
+          display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
+        }}
       >
         {done && (
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3.5" strokeLinecap="round" aria-hidden="true">
-            <path d="M20 6L9 17l-5-5" />
-          </svg>
+          <span className="hd-pop-in" style={{ display: "flex" }}>
+            {Ico.check({ width: 12, height: 12, strokeWidth: 2.5 })}
+          </span>
         )}
       </div>
 
-      {/* Product image or genre icon */}
       {step.image ? (
-        <div className="w-8 h-8 rounded-[8px] overflow-hidden shrink-0 shadow-bo1 relative">
-          <Image src={step.image} alt={step.name} fill className="object-cover" sizes="32px" loading="lazy" />
+        <div style={{ width: 50, height: 50, borderRadius: 10, overflow: "hidden", flexShrink: 0, position: "relative" }}>
+          <Image src={step.image} alt={step.name} fill style={{ objectFit: "cover" }} sizes="50px" loading="lazy" />
         </div>
       ) : genre ? (
         <div
-          className="w-8 h-8 rounded-[8px] flex items-center justify-center shrink-0"
-          style={{ background: `${genre.color}15` }}
+          style={{
+            width: 50, height: 50, borderRadius: 10, flexShrink: 0,
+            background: `${genre.color}15`,
+            display: "flex", alignItems: "center", justifyContent: "center",
+          }}
         >
-          <ProductGenreIcon genre={genre.key} size={15} />
+          <ProductGenreIcon genre={genre.key} size={20} />
         </div>
       ) : null}
 
-      {/* Content */}
-      <div className="flex-1 min-w-0">
-        <div className={`text-sm font-sans overflow-hidden text-ellipsis whitespace-nowrap transition-colors duration-200 ${
-          done ? "font-semibold text-bo-ink-muted" : "font-bold text-bo-ink"
-        }`}>
-          {step.name}
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div
+          style={{
+            fontSize: 11, color: "var(--hd-ink-60)", marginBottom: 3,
+            fontFamily: "var(--hd-sans)",
+          }}
+        >
+          STEP {index + 1}・{genre?.label || step.type}
         </div>
-        <div className={`text-[10px] font-sans mt-0.5 transition-colors duration-200 ${done ? "text-bo-accent dark:text-bo-accent-dark font-semibold" : "text-bo-ink-muted"}`}>
-          {done ? "✓ 完了" : `${step.brand} · ${genre?.label || step.type}`}
+        <div
+          style={{
+            fontSize: 14, lineHeight: 1.35, fontFamily: "var(--hd-sans)",
+            fontWeight: 500,
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            whiteSpace: "nowrap",
+          }}
+        >
+          {step.name}
         </div>
       </div>
 
-      {/* Category icons */}
       {step.categories.length > 0 && (
-        <div className={`flex gap-1 shrink-0 transition-opacity duration-300 ${done ? "opacity-30" : "opacity-100"}`}>
+        <div style={{ display: "flex", gap: 4, flexShrink: 0, opacity: done ? 0.3 : 1 }}>
           {step.categories.slice(0, 3).map((catKey) => {
             const info = ACTIVE_CATEGORIES.find((c) => c.key === catKey);
             return info ? (
               <span
                 key={catKey}
-                className="w-5 h-5 rounded-full inline-flex items-center justify-center"
-                style={{ background: info.color + "20", color: info.color }}
+                style={{
+                  width: 18, height: 18, borderRadius: 999,
+                  background: info.color + "20", color: info.color,
+                  display: "inline-flex", alignItems: "center", justifyContent: "center",
+                }}
                 title={info.label}
               >
-                <ActiveCategoryIcon category={info.key} size={11} />
+                <ActiveCategoryIcon category={info.key} size={10} />
               </span>
             ) : null;
           })}
@@ -185,11 +208,40 @@ export default function HomePage() {
   const router = useRouter();
   const [scanCount, setScanCount] = useState<number | null>(null);
 
-  // Auto-detect routine based on time
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const url = new URL(window.location.href);
+    const hashParams = new URLSearchParams(url.hash.slice(1));
+    const hasRecoveryParams =
+      hashParams.get("type") === "recovery" ||
+      Boolean(hashParams.get("access_token")) ||
+      url.searchParams.get("type") === "recovery" ||
+      url.searchParams.get("flow") === "recovery" ||
+      Boolean(url.searchParams.get("token_hash")) ||
+      Boolean(url.searchParams.get("code"));
+
+    if (!hasRecoveryParams) return;
+
+    const nextUrl = new URL(`${window.location.origin}/auth/reset-password`);
+    nextUrl.searchParams.set("mode", "update");
+
+    ["code", "token_hash", "type", "flow", "recovery_error"].forEach((key) => {
+      const value = url.searchParams.get(key);
+      if (value) nextUrl.searchParams.set(key, value);
+    });
+
+    const nextHash = hashParams.toString();
+    if (nextHash) {
+      nextUrl.hash = nextHash;
+    }
+
+    window.location.replace(nextUrl.toString());
+  }, []);
+
   const currentHour = new Date().getHours();
   const autoRoutine = currentHour < 15 ? "morning" : "night";
 
-  // Routine checklist state
   const [checkedSteps, setCheckedSteps] = useState<Set<number>>(() => getRoutineChecks(autoRoutine));
 
   useEffect(() => {
@@ -272,7 +324,6 @@ export default function HomePage() {
         updateLastUsedAtInDb(supabase, user.id, productId).catch(() => {});
       }
     }
-
   };
 
   const todayTip = TIPS[new Date().getDate() % TIPS.length];
@@ -283,209 +334,310 @@ export default function HomePage() {
     return "Good evening";
   })();
 
-  const RoutineIcon = autoRoutine === "morning" ? SunIcon : MoonIcon;
-  const routineLabel = autoRoutine === "morning" ? "朝ルーティン" : "夜ルーティン";
+  const dateStr = (() => {
+    const d = new Date();
+    const months = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
+    const wds = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
+    return `${String(d.getDate()).padStart(2, "0")} ${months[d.getMonth()]} · ${wds[d.getDay()]} · ${autoRoutine === "morning" ? "朝" : "夜"}`;
+  })();
+
+  const routineLabel = autoRoutine === "morning" ? "朝のルーティン" : "夜のルーティン";
+  const routineCaps = autoRoutine === "morning" ? "Morning Ritual" : "Night Ritual";
   const allComplete = checkedCount === routineSteps.length && routineSteps.length > 0;
   const routineProgress = routineSteps.length > 0 ? checkedCount / routineSteps.length : 0;
 
   return (
-    <div className="min-h-screen bg-bo-cream animate-fade-in">
-      <div className="px-5 pt-5 pb-6 relative overflow-hidden">
-
-          {/* Header */}
-        <div className="flex justify-between items-center mb-6">
-          <div>
-            <p className="text-[10px] text-bo-ink-muted font-sans mb-1 tracking-[0.15em] uppercase font-semibold">
-              {greeting}
-            </p>
-            <h1 className="text-2xl font-extrabold font-serif text-bo-ink m-0 leading-tight tracking-tight">
-              {profile?.display_name || "HADAMI"}
-            </h1>
-          </div>
-          <div
-            onClick={() => router.push("/settings")}
-            className="w-12 h-12 rounded-[16px] bg-gradient-to-br from-bo-accent to-bo-accent-dark flex items-center justify-center text-white text-base font-bold font-sans cursor-pointer pressable shadow-bo-accent"
-          >
-            {profile?.display_name?.charAt(0) || "？"}
-          </div>
-        </div>
-
-        {user && <InstallBanner />}
-
-        {/* Routine Checklist — auto morning/night */}
-        {routineSteps.length > 0 && (
-          <div className="mb-5">
-            {/* Routine header with ring progress */}
-            <div className="flex justify-between items-center mb-2.5">
-              <div className="flex items-center gap-2.5">
-                <RoutineIcon size={20} color="#3A8F7A" />
-                <div>
-                  <h2 className="text-base font-bold font-sans text-bo-ink m-0">{routineLabel}</h2>
-                  <p className="text-[10px] text-bo-ink-muted font-sans mt-0.5">
-                    {checkedCount}/{routineSteps.length} ステップ完了
-                  </p>
-                </div>
+    <div className="hd-root hd-softa" data-density="compact" data-card="default">
+      <div
+        className="hd hd-page"
+        style={{ minHeight: "100vh", background: "var(--hd-bg)" }}
+      >
+        <div style={{ padding: "16px 20px 96px" }}>
+          {/* Header — A pure */}
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 24 }}>
+            <div>
+              <div className="hd-mono hd-caps" style={{ color: "var(--hd-ink-40)", marginBottom: 10 }}>
+                {dateStr}
               </div>
-              {/* Mini ring progress */}
-              <div className="relative w-12 h-12">
-                <svg viewBox="0 0 44 44" className="w-full h-full -rotate-90">
-                  <circle cx="22" cy="22" r="18" fill="none" stroke="#E8F5EE" strokeWidth="3.5" />
-                  <circle
-                    cx="22" cy="22" r="18" fill="none"
-                    stroke="#3A8F7A"
-                    strokeWidth="3.5" strokeLinecap="round"
-                    strokeDasharray={`${routineProgress * 113.1} 999`}
-                    className="transition-all duration-700 ease-out"
-                  />
-                </svg>
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <span className={`text-[10px] font-black font-sans leading-none ${allComplete ? "text-bo-accent" : "text-bo-ink"}`}>
-                    {Math.round(routineProgress * 100)}%
-                  </span>
-                </div>
+              <div className="hd-serif" style={{ lineHeight: 1.0, letterSpacing: "-0.02em", fontSize: 30 }}>
+                {greeting},<br />
+                <span style={{ fontStyle: "italic" }}>{profile?.display_name || "HADAMI"}.</span>
               </div>
             </div>
-
-            {/* Step list */}
-            <div className="flex flex-col gap-1.5">
-              {routineSteps.map((step, i) => (
-                <RoutineStepButton
-                  key={i}
-                  step={step}
-                  index={i}
-                  done={normalizedCheckedSteps.has(i)}
-                  onToggle={toggleStep}
-                />
-              ))}
-            </div>
-
-          </div>
-        )}
-
-        {/* Stats row */}
-        <div className="grid grid-cols-3 gap-2.5 mb-6">
-          {[
-            { n: discoveredCount, label: "成分コレクト", Icon: BookIcon, href: "/zukan" },
-            { n: products.length, label: "マイコスメ", Icon: PackageIcon, href: "/history" },
-            { n: scanCount ?? 0, label: "スキャン回数", Icon: ScanIcon, href: "/scan" },
-          ].map((s) => (
-            <Link
-              key={s.label}
-              href={s.href}
-              className="py-4 px-3 text-center rounded-r2 bg-white shadow-bo1 no-underline pressable
-                         active:scale-[0.97] transition-transform"
+            <div
+              onClick={() => router.push("/settings")}
+              style={{
+                width: 44, height: 44, borderRadius: 999,
+                background: "var(--hd-moss)", color: "#fff",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                fontFamily: "var(--hd-serif)", fontSize: 19, cursor: "pointer",
+              }}
             >
-              <div className="flex justify-center mb-1.5">
-                <s.Icon size={20} color="#3A8F7A" />
-              </div>
-              <div className="text-xl font-black font-serif text-bo-accent leading-none">
-                <Counter to={s.n} />
-              </div>
-              <div className="text-[10px] text-bo-ink-muted font-sans mt-1">{s.label}</div>
-            </Link>
-          ))}
-        </div>
-
-        {/* Today's Ingredient Tip */}
-        <div className="rounded-r2 bg-white shadow-bo1 mb-6 overflow-hidden">
-          <div className="h-0.5 bg-gradient-to-r from-bo-accent/40 via-bo-accent to-bo-accent/40" />
-          <div className="p-4 flex gap-3.5">
-            <div className="w-10 h-10 rounded-[12px] flex items-center justify-center shrink-0
-                            bg-gradient-to-br from-bo-accent-soft to-[#D4F5EF]">
-              <LightbulbIcon size={20} color="#3A8F7A" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="text-[10px] font-extrabold text-bo-accent font-sans mb-1.5 tracking-wider uppercase">
-                今日の成分メモ
-              </div>
-              <p className="text-xs text-bo-ink-soft font-sans leading-relaxed m-0">{todayTip.text}</p>
+              {profile?.display_name?.charAt(0) || "？"}
             </div>
           </div>
-        </div>
 
-        {/* Recent Scans */}
-        {recentProducts.length > 0 && (
-          <div className="mb-6">
-            <div className="flex justify-between items-center mb-3">
-              <h2 className="text-base font-bold font-sans text-bo-ink m-0">最近のスキャン</h2>
-              <Link href="/history" className="text-xs text-bo-accent font-semibold font-sans no-underline pressable">
-                すべて見る →
-              </Link>
+          {user && <InstallBanner />}
+
+          {/* Routine Checklist */}
+          {routineSteps.length > 0 && (
+            <div
+              style={{
+                background: "var(--hd-surface)",
+                borderRadius: 18,
+                padding: "20px 18px",
+                border: "1px solid var(--hd-hair)",
+                marginBottom: 20,
+              }}
+            >
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
+                <div>
+                  <div className="hd-mono hd-caps" style={{ color: "var(--hd-ink-40)" }}>{routineCaps}</div>
+                  <div className="hd-serif" style={{ fontSize: 19, marginTop: 4 }}>{routineLabel}</div>
+                </div>
+                {/* Mini ring progress */}
+                <div style={{ position: "relative", width: 44, height: 44 }}>
+                  <svg viewBox="0 0 44 44" width={44} height={44} style={{ transform: "rotate(-90deg)" }}>
+                    <circle cx="22" cy="22" r="18" fill="none" stroke="oklch(0.38 0.05 155 / 0.18)" strokeWidth="3" />
+                    <circle
+                      cx="22" cy="22" r="18" fill="none"
+                      stroke="var(--hd-moss)"
+                      strokeWidth="3" strokeLinecap="round"
+                      strokeDasharray={`${routineProgress * 113.1} 999`}
+                      style={{ transition: "stroke-dasharray 700ms ease-out" }}
+                    />
+                  </svg>
+                  <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                    <span
+                      style={{
+                        fontSize: 11, fontWeight: 700,
+                        color: allComplete ? "var(--hd-moss)" : "var(--hd-ink)",
+                        fontFamily: "var(--hd-sans)",
+                      }}
+                    >
+                      {Math.round(routineProgress * 100)}%
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="hd-stagger">
+                {routineSteps.map((step, i) => (
+                  <RoutineStepButton
+                    key={i}
+                    step={step}
+                    index={i}
+                    done={normalizedCheckedSteps.has(i)}
+                    onToggle={toggleStep}
+                  />
+                ))}
+              </div>
             </div>
-            <div className="flex gap-3 overflow-x-auto hide-scrollbar -mx-5 px-5 pb-1 snap-x snap-mandatory"
-                 style={{ WebkitOverflowScrolling: "touch" }}>
-              {recentProducts.map((item) => {
-                const genre = getGenreByKey(item.productType || "other");
-                return (
-                  <Link
-                    key={item.id}
-                    href={`/product/${item.id}`}
-                    className="min-w-[170px] max-w-[170px] snap-start bg-white rounded-r2 overflow-hidden shadow-bo1
-                               cursor-pointer shrink-0 no-underline pressable"
-                  >
-                    {/* Product image or gradient placeholder */}
-                    {item.packageImage ? (
-                      <div className="w-full h-24 relative">
-                        <Image
-                          src={item.packageImageThumb ?? item.packageImage}
-                          alt={item.name}
-                          fill
-                          className="object-cover"
-                          sizes="170px"
-                          loading="lazy"
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
-                      </div>
-                    ) : (
-                      <div
-                        className="w-full h-24 flex items-center justify-center text-3xl"
-                        style={{ background: genre ? `${genre.color}10` : "#f5f5f5" }}
-                      >
-                        {genre ? <ProductGenreIcon genre={genre.key} size={32} /> : "📦"}
-                      </div>
-                    )}
-                    <div className="p-3">
-                      {genre && (
-                        <div className="text-[9px] font-bold font-sans px-2 py-0.5 rounded-md inline-block mb-1.5"
-                             style={{ background: `${genre.color}15`, color: genre.color }}>
-                          {genre.label}
+          )}
+
+          {/* Stats trio — A pure (hairline rule, no bg) */}
+          <div
+            className="hd-stagger"
+            style={{
+              margin: "32px 0 0", padding: "24px 0",
+              borderTop: "1px solid var(--hd-hair)",
+              borderBottom: "1px solid var(--hd-hair)",
+              display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 0,
+              marginBottom: 24,
+            }}
+          >
+            {[
+              { n: discoveredCount, label: "成分コレクト", href: "/zukan" },
+              { n: products.length, label: "マイコスメ",   href: "/history" },
+              { n: scanCount ?? 0,  label: "スキャン回数", href: "/scan" },
+            ].map((s, i) => (
+              <Link
+                key={s.label}
+                href={s.href}
+                style={{
+                  padding: "0 8px", textAlign: "center",
+                  borderLeft: i > 0 ? "1px solid var(--hd-hair)" : "none",
+                  textDecoration: "none", color: "inherit",
+                }}
+              >
+                <div className="hd-serif" style={{ fontSize: 34, lineHeight: 1, letterSpacing: "-0.02em" }}>
+                  <Counter to={s.n} />
+                </div>
+                <div
+                  className="hd-mono hd-caps"
+                  style={{ color: "var(--hd-ink-40)", marginTop: 8, fontSize: 9 }}
+                >{s.label}</div>
+              </Link>
+            ))}
+          </div>
+
+          {/* Today's tip — A pure editorial */}
+          <div style={{ padding: "32px 0 24px", marginBottom: 24 }}>
+            <div className="hd-mono hd-caps" style={{ color: "var(--hd-ink-40)" }}>
+              Today&apos;s Ingredient · No. {String(new Date().getDate() % TIPS.length + 1).padStart(2, "0")}
+            </div>
+            <div
+              className="hd-serif"
+              style={{ fontSize: 22, lineHeight: 1.25, marginTop: 14, letterSpacing: "-0.01em" }}
+            >
+              {todayTip.text}
+            </div>
+            <div style={{ marginTop: 16, display: "flex", alignItems: "center", gap: 10 }}>
+              <span
+                className="hd-mono"
+                style={{
+                  fontSize: 10, letterSpacing: "0.2em",
+                  borderBottom: "1px solid var(--hd-ink)", paddingBottom: 2,
+                }}
+              >READ ESSAY</span>
+            </div>
+          </div>
+
+          {/* Recent Scans */}
+          {recentProducts.length > 0 && (
+            <div style={{ marginBottom: 24 }}>
+              <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 12 }}>
+                <div className="hd-mono hd-caps" style={{ color: "var(--hd-ink-40)" }}>
+                  Recent Scans · 最近
+                </div>
+                <Link
+                  href="/history"
+                  className="hd-mono"
+                  style={{
+                    fontSize: 10, color: "var(--hd-ink-60)", textDecoration: "none",
+                    letterSpacing: "0.15em",
+                  }}
+                >VIEW ALL →</Link>
+              </div>
+              <div
+                className="hd-stagger"
+                style={{
+                  display: "flex", gap: 12, overflowX: "auto",
+                  margin: "0 -20px", padding: "0 20px 6px",
+                  WebkitOverflowScrolling: "touch",
+                }}
+              >
+                {recentProducts.map((item) => {
+                  const genre = getGenreByKey(item.productType || "other");
+                  return (
+                    <Link
+                      key={item.id}
+                      href={`/product/${item.id}`}
+                      style={{
+                        minWidth: 170, maxWidth: 170, flexShrink: 0,
+                        background: "var(--hd-surface)", borderRadius: 14,
+                        overflow: "hidden", border: "1px solid var(--hd-hair)",
+                        textDecoration: "none", color: "inherit",
+                      }}
+                    >
+                      {item.packageImage ? (
+                        <div style={{ width: "100%", height: 100, position: "relative" }}>
+                          <Image
+                            src={item.packageImageThumb ?? item.packageImage}
+                            alt={item.name}
+                            fill
+                            style={{ objectFit: "cover" }}
+                            sizes="170px"
+                            loading="lazy"
+                          />
+                        </div>
+                      ) : (
+                        <div
+                          style={{
+                            width: "100%", height: 100,
+                            background: genre ? `${genre.color}15` : "#f5f5f5",
+                            display: "flex", alignItems: "center", justifyContent: "center",
+                          }}
+                        >
+                          {genre ? <ProductGenreIcon genre={genre.key} size={32} /> : "📦"}
                         </div>
                       )}
-                      <div className="text-xs font-bold text-bo-ink font-sans mb-0.5 leading-snug line-clamp-2">
-                        {item.name}
+                      <div style={{ padding: 12 }}>
+                        {genre && (
+                          <div
+                            style={{
+                              fontSize: 10, fontWeight: 600,
+                              padding: "2px 8px", borderRadius: 999,
+                              background: `${genre.color}18`, color: genre.color,
+                              display: "inline-block", marginBottom: 6,
+                              fontFamily: "var(--hd-sans)",
+                            }}
+                          >
+                            {genre.label}
+                          </div>
+                        )}
+                        <div
+                          style={{
+                            fontSize: 12, fontWeight: 500, marginBottom: 3,
+                            lineHeight: 1.4, fontFamily: "var(--hd-sans)",
+                            display: "-webkit-box",
+                            WebkitLineClamp: 2,
+                            WebkitBoxOrient: "vertical",
+                            overflow: "hidden",
+                          }}
+                        >
+                          {item.name}
+                        </div>
+                        <div
+                          style={{
+                            fontSize: 11, color: "var(--hd-ink-60)",
+                            fontFamily: "var(--hd-sans)",
+                            overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                          }}
+                        >{item.brand}</div>
                       </div>
-                      <div className="text-[10px] text-bo-ink-muted font-sans truncate">{item.brand}</div>
-                    </div>
-                  </Link>
-                );
-              })}
+                    </Link>
+                  );
+                })}
+              </div>
             </div>
-          </div>
-        )}
+          )}
 
-        {/* Empty state */}
-        {recentProducts.length === 0 && routineSteps.length === 0 && (
-          <div className="text-center py-12 rounded-r2 bg-white shadow-bo1">
-            <div className="w-20 h-20 rounded-[24px] mx-auto mb-4 flex items-center justify-center
-                            bg-gradient-to-br from-bo-accent-soft to-[#D4F5EF]
-                            shadow-[0_8px_24px_rgba(58,143,122,0.12)]">
-              <LeafIcon size={36} color="#3A8F7A" />
-            </div>
-            <p className="font-bold text-sm text-bo-ink font-sans">まだコスメをスキャンしていません</p>
-            <p className="text-xs text-bo-ink-muted mt-1.5 mb-5 font-sans">
-              化粧品をスキャンしてスキンケアの旅を始めましょう
-            </p>
-            <Link
-              href="/scan"
-              className="inline-flex items-center gap-2 py-3 px-6 rounded-r2 bg-bo-accent text-white
-                         text-sm font-bold no-underline shadow-bo-accent pressable font-sans"
+          {/* Empty state */}
+          {recentProducts.length === 0 && routineSteps.length === 0 && (
+            <div
+              style={{
+                textAlign: "center", padding: "44px 24px",
+                background: "var(--hd-surface)", borderRadius: 18,
+                border: "1px solid var(--hd-hair)",
+              }}
             >
-              <CameraIcon size={16} color="white" /> スキャンする
-            </Link>
-          </div>
-        )}
+              <div
+                style={{
+                  width: 80, height: 80, borderRadius: 999,
+                  background: "var(--hd-mint-bg)", color: "var(--hd-moss)",
+                  margin: "0 auto 18px",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                }}
+              >{Ico.camera({ width: 32, height: 32 })}</div>
+              <div
+                className="hd-serif"
+                style={{ fontSize: 18, marginBottom: 6 }}
+              >まだコスメをスキャンしていません</div>
+              <p
+                style={{
+                  fontSize: 13, color: "var(--hd-ink-60)",
+                  marginTop: 0, marginBottom: 22,
+                  fontFamily: "var(--hd-sans)",
+                }}
+              >
+                化粧品をスキャンしてスキンケアの旅を始めましょう
+              </p>
+              <Link
+                href="/scan"
+                className="hd-cta"
+                style={{
+                  display: "inline-flex", alignItems: "center", gap: 8,
+                  textDecoration: "none", fontSize: 14,
+                }}
+              >
+                <CameraIcon size={16} color="white" /> スキャンする
+              </Link>
+            </div>
+          )}
 
-        <Disclaimer />
+          <Disclaimer />
+        </div>
       </div>
     </div>
   );

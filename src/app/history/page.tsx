@@ -1,5 +1,6 @@
 "use client";
 
+import "@/styles/hadami-tokens.css";
 import { useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
@@ -15,6 +16,7 @@ import { ProductGenreIcon, ActiveCategoryIcon } from "@/components/ui/CosmeticIc
 import { getIngredientById, ACTIVE_CATEGORIES } from "@/lib/ingredients";
 import { CategoryKey, Product } from "@/types";
 import { StarIcon, CameraIcon } from "@/components/ui/Icons";
+import { Ico } from "@/components/redesign/apothecary/Icons";
 import { deleteProductFromDb, updateProductImageInDb, deleteProductImageFromDb, updateProductTypeInDb, toggleFavoriteInDb, updateProductNameInDb } from "@/lib/db";
 import { PRODUCT_GENRES, getGenreByKey } from "@/lib/productGenres";
 import ShareModal from "@/components/ui/ShareModal";
@@ -25,7 +27,6 @@ import { getProductImagePath, getProductImageThumbPath } from "@/lib/productImag
 import { ProductGenre } from "@/types";
 
 type ViewMode = "photo" | "list";
-
 
 export default function HistoryPage() {
   const { user, supabase, loading } = useUser();
@@ -39,7 +40,6 @@ export default function HistoryPage() {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [updatingImageId, setUpdatingImageId] = useState<string | null>(null);
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [deletingImageId, setDeletingImageId] = useState<string | null>(null);
   const [imageError, setImageError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -76,18 +76,6 @@ export default function HistoryPage() {
   }, [products, activeFilter, favOnly]);
 
   if (loading) return null;
-
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const handleCameraCapture = (productId: string) => {
-    pendingProductIdRef.current = productId;
-    cameraInputRef.current?.click();
-  };
-
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const handlePhotoUpdate = (productId: string) => {
-    pendingProductIdRef.current = productId;
-    fileInputRef.current?.click();
-  };
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -130,7 +118,6 @@ export default function HistoryPage() {
     else { updateProductImage(productId, undefined, undefined, undefined, undefined); }
     setDeletingImageId(null);
   };
-
 
   const handleToggleFavorite = async (productId: string, currentFav: boolean) => {
     if (!user) return;
@@ -205,278 +192,383 @@ export default function HistoryPage() {
     });
   };
 
+  const chipStyle = (on: boolean): React.CSSProperties => ({
+    display: "flex", alignItems: "center", gap: 6, flexShrink: 0,
+    padding: "8px 12px", cursor: "pointer",
+    background: on ? "var(--hd-ink)" : "transparent",
+    color: on ? "var(--hd-bg)" : "var(--hd-ink)",
+    border: on ? "none" : "1px solid var(--hd-line)",
+    fontFamily: "var(--hd-serif)", fontSize: 12,
+    whiteSpace: "nowrap",
+  });
+
   return (
     <AuthGuard>
-      <div className="min-h-screen bg-bo-cream animate-fade-in">
-        <div className="px-5 pt-4 pb-6">
-          {/* Header */}
-          <div className="mb-5">
-            <div className="flex justify-between items-center">
-              <p className="text-xs text-bo-ink-muted font-sans m-0">
-                スキャン済みコスメを管理
-              </p>
-              <div className="flex items-center gap-2">
-                {editMode && selectedIds.size > 0 && (
-                  <button
-                    onClick={handleBulkDelete}
-                    className="px-3.5 py-2 rounded-r1 text-[11px] font-bold border-none cursor-pointer font-sans
-                               bg-red-500 text-white shadow-bo1 pressable"
-                  >
-                    {selectedIds.size}件削除
+      <div className="hd-root hd-softa" data-density="compact" data-card="default">
+        <div
+          className="hd hd-page"
+          style={{ minHeight: "100vh", background: "var(--hd-bg)" }}
+        >
+          <div style={{ padding: "16px 20px 96px" }}>
+            {/* Sticky Header */}
+            <div
+              style={{
+                position: "sticky",
+                top: "env(safe-area-inset-top, 0px)",
+                zIndex: 30,
+                background: "var(--hd-bg)",
+                margin: "0 -20px 12px",
+                padding: "8px 20px 16px",
+                borderBottom: "1px solid var(--hd-hair)",
+              }}
+            >
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 14 }}>
+                <div>
+                  <div className="hd-mono hd-caps" style={{ color: "var(--hd-ink-40)" }}>
+                    My Cosmetics · {String(products.length).padStart(3, "0")}
+                  </div>
+                  <div className="hd-serif" style={{ fontSize: 24, letterSpacing: "-0.02em", lineHeight: 1.05, marginTop: 4 }}>
+                    Personal<br /><span style={{ fontStyle: "italic" }}>collection.</span>
+                  </div>
+                </div>
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  {editMode && selectedIds.size > 0 && (
+                    <button
+                      onClick={handleBulkDelete}
+                      style={{
+                        padding: "8px 14px", border: "none",
+                        background: "var(--hd-terra)", color: "#fff",
+                        fontSize: 11, fontWeight: 600, cursor: "pointer",
+                        fontFamily: "var(--hd-sans)",
+                      }}
+                    >
+                      {selectedIds.size}件削除
+                    </button>
+                  )}
+                  {products.length > 0 && (
+                    <button
+                      onClick={() => { setEditMode(!editMode); setEditingGenreId(null); setSelectedIds(new Set()); setEditingNameId(null); }}
+                      style={{
+                        padding: "8px 14px",
+                        background: editMode ? "var(--hd-ink)" : "transparent",
+                        color: editMode ? "var(--hd-bg)" : "var(--hd-ink)",
+                        border: editMode ? "none" : "1px solid var(--hd-ink)",
+                        fontSize: 11, cursor: "pointer",
+                        fontFamily: "var(--hd-mono)", letterSpacing: "0.18em",
+                      }}
+                    >
+                      {editMode ? "DONE" : "EDIT"}
+                    </button>
+                  )}
+                  {/* View mode toggle — A pure */}
+                  <div style={{ display: "flex", border: "1px solid var(--hd-ink)" }}>
+                    {(["photo", "list"] as const).map((m, idx) => {
+                      const on = viewMode === m;
+                      return (
+                        <button
+                          key={m}
+                          onClick={() => setViewMode(m)}
+                          style={{
+                            padding: "8px 10px",
+                            background: on ? "var(--hd-ink)" : "transparent",
+                            color: on ? "var(--hd-bg)" : "var(--hd-ink)",
+                            borderLeft: idx > 0 ? "1px solid var(--hd-ink)" : "none",
+                            border: idx > 0 ? undefined : "none",
+                            display: "flex", alignItems: "center", cursor: "pointer",
+                          }}
+                        >
+                          {m === "photo" ? (
+                            <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5">
+                              <rect x="1" y="1" width="5" height="5" rx="1" />
+                              <rect x="8" y="1" width="5" height="5" rx="1" />
+                              <rect x="1" y="8" width="5" height="5" rx="1" />
+                              <rect x="8" y="8" width="5" height="5" rx="1" />
+                            </svg>
+                          ) : (
+                            <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5">
+                              <path d="M1 3h12M1 7h12M1 11h12" />
+                            </svg>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+
+              <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleFileChange} style={{ display: "none" }} />
+              <input ref={cameraInputRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={handleFileChange} style={{ display: "none" }} />
+
+              {imageError && (
+                <div
+                  style={{
+                    display: "flex", gap: 10, marginBottom: 14,
+                    padding: "12px 14px", borderRadius: 12,
+                    background: "var(--hd-surface)", border: "1px solid var(--hd-terra)",
+                    fontSize: 12, color: "var(--hd-terra)",
+                    fontFamily: "var(--hd-sans)",
+                  }}
+                >
+                  ⚠️ {imageError}
+                </div>
+              )}
+
+              {/* Filters */}
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <button
+                  onClick={() => setFavOnly(!favOnly)}
+                  style={chipStyle(favOnly)}
+                >
+                  <StarIcon size={11} color={favOnly ? "#fff" : "#F59E0B"} filled={favOnly} />
+                  お気に入り
+                </button>
+                <div
+                  style={{
+                    display: "flex", gap: 6, overflowX: "auto", flex: 1,
+                    WebkitOverflowScrolling: "touch",
+                  }}
+                >
+                  <button onClick={() => setActiveFilter("all")} style={chipStyle(activeFilter === "all")}>
+                    すべて
                   </button>
-                )}
-                {products.length > 0 && (
-                  <button
-                    onClick={() => { setEditMode(!editMode); setEditingGenreId(null); setSelectedIds(new Set()); setEditingNameId(null); }}
-                    className={`px-3.5 py-2 rounded-r1 text-[11px] font-bold border-none cursor-pointer font-sans pressable ${
-                      editMode ? "bg-bo-accent text-white shadow-bo-accent" : "bg-white text-bo-ink-muted shadow-bo1"
-                    }`}
-                  >
-                    {editMode ? "完了" : "編集"}
-                  </button>
-                )}
-                {/* View mode toggle — Apple segmented control mini */}
-                <div className="relative flex bg-white rounded-[10px] p-[3px] shadow-bo1">
-                  <div
-                    className="absolute top-[3px] bottom-[3px] w-[calc(50%-1.5px)] rounded-[8px] bg-bo-accent shadow-bo-accent transition-transform duration-200 ease-out"
-                    style={{ transform: viewMode === "list" ? "translateX(100%)" : "translateX(0)" }}
-                  />
-                  <button
-                    onClick={() => setViewMode("photo")}
-                    className={`relative z-10 w-8 h-7 rounded-lg border-none flex items-center justify-center cursor-pointer transition-colors ${
-                      viewMode === "photo" ? "text-white" : "text-bo-ink-faint"
-                    }`}
-                  >
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-                      <rect x="3" y="3" width="7" height="7" rx="1" /><rect x="14" y="3" width="7" height="7" rx="1" />
-                      <rect x="3" y="14" width="7" height="7" rx="1" /><rect x="14" y="14" width="7" height="7" rx="1" />
-                    </svg>
-                  </button>
-                  <button
-                    onClick={() => setViewMode("list")}
-                    className={`relative z-10 w-8 h-7 rounded-lg border-none flex items-center justify-center cursor-pointer transition-colors ${
-                      viewMode === "list" ? "text-white" : "text-bo-ink-faint"
-                    }`}
-                  >
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-                      <line x1="8" y1="6" x2="21" y2="6" /><line x1="8" y1="12" x2="21" y2="12" /><line x1="8" y1="18" x2="21" y2="18" />
-                      <circle cx="3.5" cy="6" r="1.5" /><circle cx="3.5" cy="12" r="1.5" /><circle cx="3.5" cy="18" r="1.5" />
-                    </svg>
-                  </button>
+                  {activeGenres.map((g) => (
+                    <button key={g.key} onClick={() => setActiveFilter(g.key)} style={chipStyle(activeFilter === g.key)}>
+                      <ProductGenreIcon genre={g.key} size={11} />
+                      {g.label}
+                    </button>
+                  ))}
                 </div>
               </div>
             </div>
-          </div>
 
-          <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
-          <input ref={cameraInputRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={handleFileChange} />
-          {imageError && (
-            <div className="flex items-start gap-2.5 mb-4 px-4 py-3 rounded-r2 bg-white shadow-bo1 border border-red-100">
-              <span className="text-base shrink-0">⚠️</span>
-              <span className="text-xs text-red-500 font-sans">{imageError}</span>
-            </div>
-          )}
-
-          {/* Filters */}
-          <div
-            className="sticky z-30 -mx-5 mb-3 border-b border-white/70 bg-bo-cream/95 px-5 pb-3 pt-3 backdrop-blur-sm"
-            style={{
-              top: "env(safe-area-inset-top, 0px)",
-              boxShadow: "0 10px 24px rgba(34, 52, 48, 0.08)",
-            }}
-          >
-            <div className="flex items-center gap-2">
-            <button
-              onClick={() => setFavOnly(!favOnly)}
-              className={`flex items-center gap-1.5 py-2 px-3.5 rounded-r1 border-none text-xs font-semibold font-sans cursor-pointer shrink-0 pressable ${
-                favOnly ? "bg-bo-accent text-white shadow-bo-accent" : "bg-white text-bo-ink-muted shadow-bo1"
-              }`}
-            >
-              <StarIcon size={12} color={favOnly ? "#fff" : "#F59E0B"} filled={favOnly} /> お気に入り
-            </button>
-            <div className="flex gap-1.5 overflow-x-auto hide-scrollbar flex-1"
-                 style={{ WebkitOverflowScrolling: "touch" }}>
-              <button
-                onClick={() => setActiveFilter("all")}
-                className={`py-2 px-3 rounded-r1 border-none text-[11px] font-semibold font-sans cursor-pointer whitespace-nowrap shrink-0 pressable ${
-                  activeFilter === "all" ? "bg-bo-accent text-white shadow-bo-accent" : "bg-white text-bo-ink-muted shadow-bo1"
-                }`}
+            {products.length === 0 ? (
+              <div
+                style={{
+                  textAlign: "center", padding: "44px 24px",
+                  background: "var(--hd-surface)", borderRadius: 18,
+                  border: "1px solid var(--hd-hair)",
+                }}
               >
-                すべて
-              </button>
-              {activeGenres.map((g) => (
-                <button
-                  key={g.key}
-                  onClick={() => setActiveFilter(g.key)}
-                  className={`py-2 px-3 rounded-r1 border-none text-[11px] font-semibold font-sans cursor-pointer whitespace-nowrap shrink-0 pressable ${
-                    activeFilter === g.key ? "bg-bo-accent text-white shadow-bo-accent" : "bg-white text-bo-ink-muted shadow-bo1"
-                  }`}
+                <div
+                  style={{
+                    width: 72, height: 72, borderRadius: 999,
+                    background: "var(--hd-mint-bg)", color: "var(--hd-moss)",
+                    margin: "0 auto 18px",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                  }}
+                >{Ico.camera({ width: 30, height: 30 })}</div>
+                <div className="hd-serif" style={{ fontSize: 17, marginBottom: 6 }}>
+                  まだ保存したコスメはありません
+                </div>
+                <p
+                  style={{
+                    fontSize: 12, color: "var(--hd-ink-60)",
+                    marginTop: 0, marginBottom: 18,
+                    fontFamily: "var(--hd-sans)",
+                  }}
+                >コスメをスキャンして登録しましょう</p>
+                <Link
+                  href="/scan"
+                  className="hd-cta"
+                  style={{
+                    display: "inline-flex", alignItems: "center", gap: 8,
+                    textDecoration: "none", fontSize: 14,
+                  }}
                 >
-                  <span className="inline-flex items-center gap-1">
-                    <ProductGenreIcon genre={g.key} size={12} />
-                    {g.label}
-                  </span>
-                </button>
-              ))}
-            </div>
-            </div>
-          </div>
-
-          {products.length === 0 ? (
-            <div className="text-center py-14 rounded-r2 bg-white shadow-bo1">
-              <div className="w-16 h-16 rounded-[20px] mx-auto mb-4 flex items-center justify-center
-                              bg-gradient-to-br from-bo-accent-soft to-[#D4F5EF]
-                              shadow-[0_6px_20px_rgba(58,143,122,0.12)]">
-                <CameraIcon size={28} color="#3A8F7A" />
+                  <CameraIcon size={16} color="white" /> スキャンを始める
+                </Link>
               </div>
-              <div className="text-sm font-bold text-bo-ink font-sans mb-1">まだ保存したコスメはありません</div>
-              <div className="text-xs text-bo-ink-muted font-sans mb-5">コスメをスキャンして登録しましょう</div>
-              <Link
-                href="/scan"
-                className="inline-flex items-center gap-2 px-6 py-3 rounded-r2 text-sm font-bold text-white bg-bo-accent
-                           no-underline shadow-bo-accent pressable font-sans"
-              >
-                <CameraIcon size={16} color="white" /> スキャンを始める
-              </Link>
-            </div>
-          ) : (
-            <>
-              {/* Photo Grid View */}
-              {viewMode === "photo" && (
-                <div className="grid grid-cols-2 gap-3">
-                  {filtered.length === 0 && (
-                    <div className="col-span-2 py-12 px-5 text-center rounded-r2 bg-white shadow-bo1">
-                      <div className="w-14 h-14 rounded-[18px] mx-auto mb-3 flex items-center justify-center text-2xl
-                                      bg-gradient-to-br from-bo-accent-soft to-[#D4F5EF]">
-                        🔍
-                      </div>
-                      <div className="text-sm font-bold text-bo-ink font-sans mb-1">該当する製品がありません</div>
-                      <div className="text-xs text-bo-ink-muted font-sans">フィルターを変更してみましょう</div>
-                    </div>
-                  )}
-                  {filtered.map((p, i) => {
-                    const genre = getGenreByKey(p.productType || "other");
-                    const isSelected = selectedIds.has(p.id);
-                    return (
+            ) : (
+              <>
+                {/* Photo Grid View */}
+                {viewMode === "photo" && (
+                  <div className="hd-stagger" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                    {filtered.length === 0 && (
                       <div
-                        key={p.id}
-                        className={`rounded-r2 overflow-hidden bg-white shadow-bo1 cursor-pointer animate-fade-up
-                                    transition-all duration-200 relative pressable ${
-                          isSelected ? "ring-2 ring-bo-accent shadow-bo-accent" : ""
-                        }`}
-                        style={{ animationDelay: i * 50 + "ms", opacity: deletingId === p.id ? 0.5 : undefined }}
-                        onClick={() => editMode ? toggleSelect(p.id) : router.push(`/product/${p.id}`)}
+                        style={{
+                          gridColumn: "span 2",
+                          padding: "44px 24px", textAlign: "center",
+                          background: "var(--hd-surface)", borderRadius: 18,
+                          border: "1px solid var(--hd-hair)",
+                        }}
                       >
-                        {editMode && (
-                          <div className={`absolute top-2.5 left-2.5 z-10 w-6 h-6 rounded-[8px] border-2 flex items-center justify-center text-xs font-bold
-                                          shadow-[0_2px_8px_rgba(0,0,0,0.15)] ${
-                            isSelected ? "bg-bo-accent border-bo-accent text-white" : "bg-white/90 backdrop-blur-sm border-white/60"
-                          }`}>
-                            {isSelected && (
-                              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round">
-                                <path d="M20 6L9 17l-5-5"/>
-                              </svg>
-                            )}
-                          </div>
-                        )}
-                        <div>
-                          <div className="relative aspect-square overflow-hidden">
+                        <div className="hd-serif" style={{ fontSize: 16, marginBottom: 4 }}>
+                          該当する製品がありません
+                        </div>
+                        <div style={{ fontSize: 12, color: "var(--hd-ink-60)", fontFamily: "var(--hd-sans)" }}>
+                          フィルターを変更してみましょう
+                        </div>
+                      </div>
+                    )}
+                    {filtered.map((p) => {
+                      const genre = getGenreByKey(p.productType || "other");
+                      const isSelected = selectedIds.has(p.id);
+                      return (
+                        <div
+                          key={p.id}
+                          style={{
+                            background: "var(--hd-surface)", borderRadius: 16,
+                            overflow: "hidden",
+                            border: isSelected ? "2px solid var(--hd-moss)" : "1px solid var(--hd-hair)",
+                            cursor: "pointer", position: "relative",
+                            opacity: deletingId === p.id ? 0.5 : 1,
+                          }}
+                          onClick={() => editMode ? toggleSelect(p.id) : router.push(`/product/${p.id}`)}
+                        >
+                          {editMode && (
+                            <div
+                              style={{
+                                position: "absolute", top: 10, left: 10, zIndex: 10,
+                                width: 26, height: 26, borderRadius: 999,
+                                background: isSelected ? "var(--hd-moss)" : "rgba(255,255,255,0.95)",
+                                color: isSelected ? "#fff" : "var(--hd-ink-40)",
+                                border: isSelected ? "none" : "1.5px solid var(--hd-line)",
+                                display: "flex", alignItems: "center", justifyContent: "center",
+                              }}
+                            >
+                              {isSelected && Ico.check({ width: 12, height: 12, strokeWidth: 2.5 })}
+                            </div>
+                          )}
+                          <div style={{ position: "relative", aspectRatio: "1/1", overflow: "hidden" }}>
                             {p.packageImage && !failedImageIds.has(p.id) ? (
                               <Image
                                 src={p.packageImageThumb ?? p.packageImage}
                                 alt={p.name}
                                 fill
-                                className="object-cover"
+                                style={{ objectFit: "cover" }}
                                 sizes="(max-width:430px) 50vw, 200px"
                                 loading="lazy"
                                 onError={() => setFailedImageIds((prev) => new Set(prev).add(p.id))}
                               />
                             ) : (
-                              <div className="w-full h-full bg-gradient-to-br from-bo-accent-soft to-bo-parchment flex items-center justify-center">
-                                {genre ? <ProductGenreIcon genre={genre.key} size={36} /> : <span className="text-3xl">📦</span>}
+                              <div
+                                style={{
+                                  width: "100%", height: "100%",
+                                  background: "var(--hd-mint-bg)",
+                                  display: "flex", alignItems: "center", justifyContent: "center",
+                                }}
+                              >
+                                {genre ? <ProductGenreIcon genre={genre.key} size={36} /> : <span style={{ fontSize: 30 }}>📦</span>}
                               </div>
                             )}
                             {editMode && p.packageImage && !failedImageIds.has(p.id) && (
                               <button
                                 onClick={(e) => { e.stopPropagation(); handleDeleteImage(p.id); }}
                                 disabled={deletingImageId === p.id}
-                                className="absolute top-2 right-2 rounded-[10px] bg-black/60 backdrop-blur-lg
-                                           flex items-center justify-center gap-1 px-2 py-1 border-none cursor-pointer pressable shadow-bo1"
+                                style={{
+                                  position: "absolute", top: 10, right: 10,
+                                  borderRadius: 999, padding: "5px 9px",
+                                  background: "rgba(0,0,0,0.65)", color: "#fff",
+                                  border: "none", cursor: "pointer",
+                                  display: "flex", alignItems: "center", gap: 4,
+                                  fontFamily: "var(--hd-sans)", fontSize: 10, fontWeight: 600,
+                                }}
                                 title="写真を削除"
                               >
-                                {deletingImageId === p.id ? (
-                                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" className="animate-spin">
-                                    <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
-                                  </svg>
-                                ) : (
-                                  <>
-                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round">
-                                      <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
-                                      <line x1="9" y1="9" x2="15" y2="15"/><line x1="15" y1="9" x2="9" y2="15"/>
-                                    </svg>
-                                    <span className="text-white text-[10px] font-bold font-sans leading-none">写真削除</span>
-                                  </>
-                                )}
+                                {deletingImageId === p.id ? "..." : "写真削除"}
                               </button>
                             )}
                             {!editMode && (
-                              <div className="absolute top-2 right-2 flex flex-col gap-1.5">
+                              <div style={{ position: "absolute", top: 10, right: 10, display: "flex", flexDirection: "column", gap: 6 }}>
                                 <button
                                   onClick={(e) => { e.stopPropagation(); handleToggleFavorite(p.id, p.isFavorite); }}
-                                  className="w-8 h-8 rounded-[10px] bg-white/80 backdrop-blur-lg flex items-center justify-center
-                                             text-sm border-none cursor-pointer p-0 pressable shadow-bo1"
+                                  style={{
+                                    width: 30, height: 30, borderRadius: 999,
+                                    background: p.isFavorite ? "var(--hd-moss)" : "rgba(255,255,255,0.95)",
+                                    color: p.isFavorite ? "#fff" : "var(--hd-ink-40)",
+                                    border: "none", cursor: "pointer", padding: 0,
+                                    display: "flex", alignItems: "center", justifyContent: "center",
+                                  }}
                                 >
-                                  {p.isFavorite ? <StarIcon size={14} color="#F59E0B" filled /> : <StarIcon size={14} color="#BDBDBD" />}
+                                  <StarIcon size={13} color={p.isFavorite ? "#fff" : "#BDBDBD"} filled={p.isFavorite} />
                                 </button>
                                 <button
                                   onClick={(e) => { e.stopPropagation(); setShareImageBase64(undefined); setShareProduct(p); generateProductShareImage(p).then(setShareImageBase64).catch(() => {}); }}
-                                  className="w-8 h-8 rounded-[10px] bg-white/80 backdrop-blur-lg flex items-center justify-center
-                                             border-none cursor-pointer p-0 pressable shadow-bo1"
+                                  style={{
+                                    width: 30, height: 30, borderRadius: 999,
+                                    background: "rgba(255,255,255,0.95)",
+                                    border: "none", cursor: "pointer", padding: 0,
+                                    display: "flex", alignItems: "center", justifyContent: "center",
+                                  }}
                                   title="Xに投稿"
                                 >
-                                  <svg width="14" height="14" viewBox="0 0 24 24" fill="#1DA1F2">
+                                  <svg width="13" height="13" viewBox="0 0 24 24" fill="#1DA1F2">
                                     <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
                                   </svg>
                                 </button>
                               </div>
                             )}
                             {genre && (
-                              <div className="absolute bottom-2 left-2 bg-white/85 backdrop-blur-lg rounded-[8px] py-1 px-2 text-[9px] font-bold font-sans
-                                              inline-flex items-center gap-1"
-                                   style={{ color: genre.color }}>
+                              <div
+                                style={{
+                                  position: "absolute", bottom: 10, left: 10,
+                                  background: "rgba(255,255,255,0.95)",
+                                  padding: "4px 10px", borderRadius: 999,
+                                  fontSize: 10, fontWeight: 600,
+                                  color: "var(--hd-ink)",
+                                  fontFamily: "var(--hd-sans)",
+                                  display: "inline-flex", alignItems: "center", gap: 4,
+                                }}
+                              >
                                 <ProductGenreIcon genre={genre.key} size={10} />
                                 {genre.label}
                               </div>
                             )}
                           </div>
-                          <div className="py-3 px-3">
+                          <div style={{ padding: "12px 12px 14px" }}>
                             {editMode && editingNameId === p.id ? (
-                              <div className="flex gap-1 mb-1" onClick={(e) => e.stopPropagation()}>
+                              <div style={{ display: "flex", gap: 4, marginBottom: 4 }} onClick={(e) => e.stopPropagation()}>
                                 <input
                                   autoFocus
                                   value={editNameValue}
                                   onChange={(e) => setEditNameValue(e.target.value)}
                                   onKeyDown={(e) => { if (e.key === "Enter") handleNameSave(p.id); if (e.key === "Escape") setEditingNameId(null); }}
-                                  className="flex-1 text-xs font-bold border-none rounded-r1 px-2 py-1 font-sans text-bo-ink bg-bo-cream outline-none min-w-0
-                                             focus:ring-2 focus:ring-bo-accent/30"
+                                  style={{
+                                    flex: 1, fontSize: 12, fontWeight: 600,
+                                    border: "1px solid var(--hd-line)", borderRadius: 8,
+                                    padding: "4px 8px", fontFamily: "var(--hd-sans)",
+                                    background: "var(--hd-bg)", outline: "none", minWidth: 0,
+                                  }}
                                 />
-                                <button onClick={() => handleNameSave(p.id)} className="text-[10px] px-2.5 py-1 rounded-r1 bg-bo-accent text-white border-none cursor-pointer font-sans shrink-0 pressable">保存</button>
+                                <button
+                                  onClick={() => handleNameSave(p.id)}
+                                  style={{
+                                    fontSize: 10, padding: "4px 8px", borderRadius: 8,
+                                    background: "var(--hd-moss)", color: "#fff",
+                                    border: "none", cursor: "pointer", flexShrink: 0,
+                                    fontFamily: "var(--hd-sans)",
+                                  }}
+                                >保存</button>
                               </div>
                             ) : (
-                              <div className="flex items-start gap-1 mb-1">
-                                <div className="text-xs font-bold text-bo-ink font-sans leading-snug line-clamp-2 flex-1">{p.name}</div>
+                              <div style={{ display: "flex", gap: 4, marginBottom: 3 }}>
+                                <div
+                                  style={{
+                                    fontSize: 12, fontWeight: 500,
+                                    fontFamily: "var(--hd-sans)", lineHeight: 1.35,
+                                    flex: 1,
+                                    display: "-webkit-box",
+                                    WebkitLineClamp: 2,
+                                    WebkitBoxOrient: "vertical",
+                                    overflow: "hidden",
+                                  }}
+                                >{p.name}</div>
                                 {editMode && (
                                   <button
                                     onClick={(e) => { e.stopPropagation(); setEditNameValue(p.name); setEditingNameId(p.id); }}
-                                    className="shrink-0 w-6 h-6 rounded-[8px] bg-bo-cream flex items-center justify-center border-none cursor-pointer text-[10px]"
-                                  >
-                                    ✏️
-                                  </button>
+                                    style={{
+                                      flexShrink: 0, width: 22, height: 22, borderRadius: 6,
+                                      background: "var(--hd-surface-2)",
+                                      border: "none", cursor: "pointer", fontSize: 10,
+                                      display: "flex", alignItems: "center", justifyContent: "center",
+                                    }}
+                                  >✏️</button>
                                 )}
                               </div>
                             )}
-                            <div className="text-[10px] text-bo-ink-muted font-sans">{p.brand}</div>
-                            {/* Category icons */}
+                            <div style={{ fontSize: 11, color: "var(--hd-ink-60)", fontFamily: "var(--hd-sans)" }}>
+                              {p.brand}
+                            </div>
                             {!editMode && (() => {
                               const cats = new Set<CategoryKey>();
                               p.ingredients.forEach((pi) => {
@@ -485,17 +577,20 @@ export default function HistoryPage() {
                               });
                               const catArr = Array.from(cats).slice(0, 4);
                               return catArr.length > 0 ? (
-                                <div className="flex gap-1 mt-1.5 overflow-hidden">
+                                <div style={{ display: "flex", gap: 4, marginTop: 8 }}>
                                   {catArr.map((catKey) => {
                                     const info = ACTIVE_CATEGORIES.find((c) => c.key === catKey);
                                     return info ? (
                                       <span
                                         key={catKey}
-                                        className="w-5 h-5 rounded-full inline-flex items-center justify-center shrink-0"
-                                        style={{ background: info.color + "20", color: info.color }}
+                                        style={{
+                                          width: 18, height: 18, borderRadius: 999,
+                                          background: info.color + "20", color: info.color,
+                                          display: "inline-flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
+                                        }}
                                         title={info.label}
                                       >
-                                        <ActiveCategoryIcon category={info.key} size={11} />
+                                        <ActiveCategoryIcon category={info.key} size={10} />
                                       </span>
                                     ) : null;
                                   })}
@@ -503,147 +598,189 @@ export default function HistoryPage() {
                               ) : null;
                             })()}
                           </div>
-                        </div>
-                        {editMode && (
-                          <div className="px-3 pb-3" onClick={(e) => e.stopPropagation()}>
-                            <button
-                              onClick={() => setEditingGenreId(editingGenreId === p.id ? null : p.id)}
-                              className="w-full py-2 rounded-r1 text-[10px] font-semibold border-none bg-bo-cream text-bo-ink-muted cursor-pointer font-sans pressable"
-                            >
-                              カテゴリ変更
-                            </button>
-                            {editingGenreId === p.id && (
-                              <div className="flex flex-wrap gap-1.5 mt-2">
-                                {PRODUCT_GENRES.filter((g) => g.key !== "other").map((g) => (
-                                  <button
-                                    key={g.key}
-                                    onClick={() => { handleGenreChange(p.id, g.key); setEditingGenreId(null); }}
-                                    className={`text-[9px] py-1 px-2.5 rounded-r1 border-none cursor-pointer font-sans pressable ${
-                                      p.productType === g.key ? "bg-bo-accent text-white shadow-bo-accent" : "bg-white text-bo-ink-muted shadow-bo1"
-                                    }`}
-                                  >
-                                    <span className="inline-flex items-center gap-1">
-                                      <ProductGenreIcon genre={g.key} size={11} />
-                                      {g.label}
-                                    </span>
-                                  </button>
-                                ))}
-                              </div>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-
-              {/* List View */}
-              {viewMode === "list" && (
-                <div className="flex flex-col gap-2">
-                  {filtered.length === 0 && (
-                    <div className="py-12 px-5 text-center rounded-r2 bg-white shadow-bo1">
-                      <div className="w-14 h-14 rounded-[18px] mx-auto mb-3 flex items-center justify-center text-2xl
-                                      bg-gradient-to-br from-bo-accent-soft to-[#D4F5EF]">
-                        🔍
-                      </div>
-                      <div className="text-sm font-bold text-bo-ink font-sans mb-1">該当する製品がありません</div>
-                    </div>
-                  )}
-                  {filtered.map((p, i) => {
-                    const genre = getGenreByKey(p.productType || "other");
-                    const isSelected = selectedIds.has(p.id);
-                    return (
-                      <div
-                        key={p.id}
-                        className="animate-fade-up"
-                        style={{ animationDelay: i * 40 + "ms", opacity: deletingId === p.id ? 0.5 : undefined }}
-                      >
-                        <div
-                          onClick={() => editMode ? toggleSelect(p.id) : router.push(`/product/${p.id}`)}
-                          className={`flex items-center gap-3 py-2.5 px-3 bg-white rounded-r2 shadow-bo1 cursor-pointer pressable ${
-                            isSelected ? "ring-2 ring-bo-accent shadow-bo-accent" : ""
-                          }`}
-                        >
                           {editMode && (
-                            <div className={`w-6 h-6 rounded-[8px] border-2 flex items-center justify-center text-xs font-bold shrink-0 ${
-                              isSelected ? "bg-bo-accent border-bo-accent text-white" : "bg-white border-bo-ink-faint/40"
-                            }`}>
-                              {isSelected && (
-                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round">
-                                  <path d="M20 6L9 17l-5-5"/>
-                                </svg>
+                            <div style={{ padding: "0 12px 12px" }} onClick={(e) => e.stopPropagation()}>
+                              <button
+                                onClick={() => setEditingGenreId(editingGenreId === p.id ? null : p.id)}
+                                style={{
+                                  width: "100%", padding: "8px 0", borderRadius: 8,
+                                  fontSize: 10, fontWeight: 600, border: "none",
+                                  background: "var(--hd-surface-2)", color: "var(--hd-ink-60)",
+                                  cursor: "pointer", fontFamily: "var(--hd-sans)",
+                                }}
+                              >カテゴリ変更</button>
+                              {editingGenreId === p.id && (
+                                <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 8 }}>
+                                  {PRODUCT_GENRES.filter((g) => g.key !== "other").map((g) => (
+                                    <button
+                                      key={g.key}
+                                      onClick={() => { handleGenreChange(p.id, g.key); setEditingGenreId(null); }}
+                                      style={{
+                                        fontSize: 9, padding: "4px 10px", borderRadius: 999,
+                                        background: p.productType === g.key ? "var(--hd-moss)" : "transparent",
+                                        color: p.productType === g.key ? "#fff" : "var(--hd-ink-60)",
+                                        border: p.productType === g.key ? "none" : "1px solid var(--hd-hair)",
+                                        cursor: "pointer", fontFamily: "var(--hd-sans)",
+                                        display: "inline-flex", alignItems: "center", gap: 4,
+                                      }}
+                                    >
+                                      <ProductGenreIcon genre={g.key} size={10} />
+                                      {g.label}
+                                    </button>
+                                  ))}
+                                </div>
                               )}
                             </div>
                           )}
-                          <div className="w-11 h-11 rounded-r1 overflow-hidden shrink-0 relative shadow-bo1">
-                            {p.packageImage ? (
-                              <Image src={p.packageImageThumb ?? p.packageImage} alt={p.name} fill className="object-cover" sizes="44px" loading="lazy" />
-                            ) : (
-                              <div className="w-full h-full bg-gradient-to-br from-bo-accent-soft to-bo-parchment flex items-center justify-center">
-                                {genre ? <ProductGenreIcon genre={genre.key} size={18} /> : <span className="text-base">📦</span>}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {/* List View */}
+                {viewMode === "list" && (
+                  <div className="hd-stagger" style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                    {filtered.length === 0 && (
+                      <div
+                        style={{
+                          padding: "44px 24px", textAlign: "center",
+                          background: "var(--hd-surface)", borderRadius: 18,
+                          border: "1px solid var(--hd-hair)",
+                        }}
+                      >
+                        <div className="hd-serif" style={{ fontSize: 16, marginBottom: 4 }}>
+                          該当する製品がありません
+                        </div>
+                      </div>
+                    )}
+                    {filtered.map((p) => {
+                      const genre = getGenreByKey(p.productType || "other");
+                      const isSelected = selectedIds.has(p.id);
+                      return (
+                        <div key={p.id} style={{ opacity: deletingId === p.id ? 0.5 : 1 }}>
+                          <div
+                            onClick={() => editMode ? toggleSelect(p.id) : router.push(`/product/${p.id}`)}
+                            style={{
+                              display: "flex", alignItems: "center", gap: 12,
+                              padding: "10px 12px",
+                              background: "var(--hd-surface)", borderRadius: 14,
+                              border: isSelected ? "2px solid var(--hd-moss)" : "1px solid var(--hd-hair)",
+                              cursor: "pointer",
+                            }}
+                          >
+                            {editMode && (
+                              <div
+                                style={{
+                                  width: 22, height: 22, borderRadius: 999,
+                                  background: isSelected ? "var(--hd-moss)" : "transparent",
+                                  color: isSelected ? "#fff" : "var(--hd-ink-40)",
+                                  border: isSelected ? "none" : "1.5px solid var(--hd-line)",
+                                  display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
+                                }}
+                              >
+                                {isSelected && Ico.check({ width: 11, height: 11, strokeWidth: 2.5 })}
                               </div>
                             )}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            {editMode && editingNameId === p.id ? (
-                              <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
-                                <input
-                                  autoFocus
-                                  value={editNameValue}
-                                  onChange={(e) => setEditNameValue(e.target.value)}
-                                  onKeyDown={(e) => { if (e.key === "Enter") handleNameSave(p.id); if (e.key === "Escape") setEditingNameId(null); }}
-                                  className="flex-1 text-xs font-bold border-none rounded-r1 px-2 py-1 font-sans text-bo-ink bg-bo-cream outline-none min-w-0
-                                             focus:ring-2 focus:ring-bo-accent/30"
-                                />
-                                <button onClick={() => handleNameSave(p.id)} className="text-[10px] px-2.5 rounded-r1 bg-bo-accent text-white border-none cursor-pointer font-sans shrink-0 pressable">保存</button>
-                              </div>
-                            ) : (
-                              <div className="flex items-center gap-1">
-                                <div className="text-sm font-bold text-bo-ink font-sans leading-snug line-clamp-1 flex-1">{p.name}</div>
-                                {editMode && (
-                                  <button
-                                    onClick={(e) => { e.stopPropagation(); setEditNameValue(p.name); setEditingNameId(p.id); }}
-                                    className="shrink-0 w-6 h-6 rounded-[8px] bg-bo-cream flex items-center justify-center border-none cursor-pointer text-[10px]"
-                                  >
-                                    ✏️
-                                  </button>
-                                )}
-                              </div>
-                            )}
-                            <div className="flex items-center gap-2 mt-0.5">
-                              <span className="text-[10px] text-bo-ink-muted font-sans">{p.brand}</span>
-                              {genre && (
-                                <span className="text-[9px] font-semibold py-0.5 px-2 rounded-md font-sans"
-                                      style={{ background: `${genre.color}15`, color: genre.color }}>
-                                  {genre.label}
-                                </span>
+                            <div style={{ width: 50, height: 50, borderRadius: 10, overflow: "hidden", flexShrink: 0, position: "relative" }}>
+                              {p.packageImage ? (
+                                <Image src={p.packageImageThumb ?? p.packageImage} alt={p.name} fill style={{ objectFit: "cover" }} sizes="50px" loading="lazy" />
+                              ) : (
+                                <div
+                                  style={{
+                                    width: "100%", height: "100%",
+                                    background: "var(--hd-mint-bg)",
+                                    display: "flex", alignItems: "center", justifyContent: "center",
+                                  }}
+                                >
+                                  {genre ? <ProductGenreIcon genre={genre.key} size={20} /> : <span>📦</span>}
+                                </div>
                               )}
                             </div>
-                          </div>
-                          <div className="flex flex-col items-end gap-1.5 shrink-0">
-                            {editMode ? (
-                              <button
-                                onClick={(e) => { e.stopPropagation(); setEditingGenreId(editingGenreId === p.id ? null : p.id); }}
-                                className="text-[10px] py-1.5 px-2.5 rounded-r1 border-none bg-bo-cream text-bo-ink-muted cursor-pointer font-sans pressable"
-                              >
-                                変更
-                              </button>
-                            ) : (
-                              <>
-                                <div className="flex items-center gap-1.5">
-                                  <button
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      handleToggleFavorite(p.id, p.isFavorite);
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              {editMode && editingNameId === p.id ? (
+                                <div style={{ display: "flex", gap: 4 }} onClick={(e) => e.stopPropagation()}>
+                                  <input
+                                    autoFocus
+                                    value={editNameValue}
+                                    onChange={(e) => setEditNameValue(e.target.value)}
+                                    onKeyDown={(e) => { if (e.key === "Enter") handleNameSave(p.id); if (e.key === "Escape") setEditingNameId(null); }}
+                                    style={{
+                                      flex: 1, fontSize: 12, fontWeight: 600,
+                                      border: "1px solid var(--hd-line)", borderRadius: 8,
+                                      padding: "4px 8px", fontFamily: "var(--hd-sans)",
+                                      background: "var(--hd-bg)", outline: "none", minWidth: 0,
                                     }}
-                                    className="text-sm border-none bg-transparent cursor-pointer p-0 pressable"
+                                  />
+                                  <button
+                                    onClick={() => handleNameSave(p.id)}
+                                    style={{
+                                      fontSize: 10, padding: "4px 8px", borderRadius: 8,
+                                      background: "var(--hd-moss)", color: "#fff",
+                                      border: "none", cursor: "pointer", flexShrink: 0,
+                                      fontFamily: "var(--hd-sans)",
+                                    }}
+                                  >保存</button>
+                                </div>
+                              ) : (
+                                <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                                  <div
+                                    style={{
+                                      fontSize: 13, fontWeight: 500,
+                                      fontFamily: "var(--hd-sans)", lineHeight: 1.35,
+                                      flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                                    }}
+                                  >{p.name}</div>
+                                  {editMode && (
+                                    <button
+                                      onClick={(e) => { e.stopPropagation(); setEditNameValue(p.name); setEditingNameId(p.id); }}
+                                      style={{
+                                        flexShrink: 0, width: 22, height: 22, borderRadius: 6,
+                                        background: "var(--hd-surface-2)",
+                                        border: "none", cursor: "pointer", fontSize: 10,
+                                        display: "flex", alignItems: "center", justifyContent: "center",
+                                      }}
+                                    >✏️</button>
+                                  )}
+                                </div>
+                              )}
+                              <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 2 }}>
+                                <span style={{ fontSize: 11, color: "var(--hd-ink-60)", fontFamily: "var(--hd-sans)" }}>
+                                  {p.brand}
+                                </span>
+                                {genre && (
+                                  <span
+                                    style={{
+                                      fontSize: 10, fontWeight: 600,
+                                      padding: "2px 8px", borderRadius: 999,
+                                      background: `${genre.color}15`, color: genre.color,
+                                      fontFamily: "var(--hd-sans)",
+                                    }}
+                                  >{genre.label}</span>
+                                )}
+                              </div>
+                            </div>
+                            <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 6, flexShrink: 0 }}>
+                              {editMode ? (
+                                <button
+                                  onClick={(e) => { e.stopPropagation(); setEditingGenreId(editingGenreId === p.id ? null : p.id); }}
+                                  style={{
+                                    fontSize: 10, padding: "5px 10px", borderRadius: 999,
+                                    border: "none", background: "var(--hd-surface-2)", color: "var(--hd-ink-60)",
+                                    cursor: "pointer", fontFamily: "var(--hd-sans)",
+                                  }}
+                                >変更</button>
+                              ) : (
+                                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                                  <button
+                                    onClick={(e) => { e.stopPropagation(); handleToggleFavorite(p.id, p.isFavorite); }}
+                                    style={{ border: "none", background: "transparent", cursor: "pointer", padding: 0 }}
                                   >
                                     {p.isFavorite ? <StarIcon size={14} color="#F59E0B" filled /> : <StarIcon size={14} color="#BDBDBD" />}
                                   </button>
                                   <button
                                     onClick={(e) => { e.stopPropagation(); setShareImageBase64(undefined); setShareProduct(p); generateProductShareImage(p).then(setShareImageBase64).catch(() => {}); }}
-                                    className="border-none bg-transparent cursor-pointer p-0 pressable"
+                                    style={{ border: "none", background: "transparent", cursor: "pointer", padding: 0 }}
                                     title="Xに投稿"
                                   >
                                     <svg width="14" height="14" viewBox="0 0 24 24" fill="#1DA1F2">
@@ -651,113 +788,115 @@ export default function HistoryPage() {
                                     </svg>
                                   </button>
                                 </div>
-                                {/* Category icons */}
-                                {(() => {
-                                  const cats = new Set<CategoryKey>();
-                                  p.ingredients.forEach((pi) => {
-                                    const ing = getIngredientById(pi.ingredientId);
-                                    if (ing?.activeIngredient) ing.categories.forEach((c) => cats.add(c));
-                                  });
-                                  const catArr = Array.from(cats).slice(0, 4);
-                                  return catArr.length > 0 ? (
-                                    <div className="flex gap-1">
-                                      {catArr.map((catKey) => {
-                                        const info = ACTIVE_CATEGORIES.find((c) => c.key === catKey);
-                                        return info ? (
-                                          <span
-                                            key={catKey}
-                                            className="w-5 h-5 rounded-full inline-flex items-center justify-center shrink-0"
-                                            style={{ background: info.color + "20", color: info.color }}
-                                            title={info.label}
-                                          >
-                                            <ActiveCategoryIcon category={info.key} size={11} />
-                                          </span>
-                                        ) : null;
-                                      })}
-                                    </div>
-                                  ) : null;
-                                })()}
-                              </>
-                            )}
+                              )}
+                            </div>
                           </div>
-                        </div>
-                        {editMode && editingGenreId === p.id && (
-                          <div className="flex flex-wrap gap-1.5 mt-1.5 mb-1 px-3">
-                            {PRODUCT_GENRES.filter((g) => g.key !== "other").map((g) => (
-                              <button
-                                key={g.key}
-                                onClick={() => { handleGenreChange(p.id, g.key); setEditingGenreId(null); }}
-                                className={`text-[9px] py-1 px-2.5 rounded-r1 border-none cursor-pointer font-sans pressable ${
-                                  p.productType === g.key ? "bg-bo-accent text-white shadow-bo-accent" : "bg-white text-bo-ink-muted shadow-bo1"
-                                }`}
-                              >
-                                <span className="inline-flex items-center gap-1">
-                                  <ProductGenreIcon genre={g.key} size={11} />
+                          {editMode && editingGenreId === p.id && (
+                            <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 6, padding: "0 12px" }}>
+                              {PRODUCT_GENRES.filter((g) => g.key !== "other").map((g) => (
+                                <button
+                                  key={g.key}
+                                  onClick={() => { handleGenreChange(p.id, g.key); setEditingGenreId(null); }}
+                                  style={{
+                                    fontSize: 9, padding: "4px 10px", borderRadius: 999,
+                                    background: p.productType === g.key ? "var(--hd-moss)" : "transparent",
+                                    color: p.productType === g.key ? "#fff" : "var(--hd-ink-60)",
+                                    border: p.productType === g.key ? "none" : "1px solid var(--hd-hair)",
+                                    cursor: "pointer", fontFamily: "var(--hd-sans)",
+                                    display: "inline-flex", alignItems: "center", gap: 4,
+                                  }}
+                                >
+                                  <ProductGenreIcon genre={g.key} size={10} />
                                   {g.label}
-                                </span>
-                              </button>
-                            ))}
-                          </div>
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </>
+            )}
+
+            <Disclaimer />
+
+            {/* Off-screen capture area for sharing */}
+            <div
+              ref={captureRef}
+              style={{
+                position: "absolute", left: -9999, top: 0,
+                width: 360, height: 360, overflow: "hidden",
+                borderRadius: 20, padding: 16, background: "var(--hd-bg)",
+              }}
+            >
+              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+                <span style={{ fontSize: 16, fontWeight: 700 }}>⭐ お気に入りコスメ</span>
+                <span
+                  style={{
+                    fontSize: 11, padding: "2px 8px", borderRadius: 999,
+                    fontWeight: 600, background: "#FFF8E1", color: "#F59E0B",
+                  }}
+                >{favCount}件</span>
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+                {products.filter((p) => p.isFavorite).slice(0, 4).map((p) => {
+                  const genre = getGenreByKey(p.productType || "other");
+                  return (
+                    <div
+                      key={p.id}
+                      style={{
+                        background: "#fff", border: "2px solid #F59E0B",
+                        borderRadius: 14, overflow: "hidden",
+                      }}
+                    >
+                      <div style={{ position: "relative", width: "100%", aspectRatio: "1/1" }}>
+                        {p.packageImage ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={p.packageImage} alt={p.name} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+                        ) : (
+                          <div
+                            style={{
+                              width: "100%", height: "100%",
+                              display: "flex", alignItems: "center", justifyContent: "center",
+                              fontSize: 30, background: "var(--hd-mint-bg)",
+                            }}
+                          >{genre?.icon || "📦"}</div>
                         )}
                       </div>
-                    );
-                  })}
-                </div>
-              )}
-            </>
-          )}
-
-          <Disclaimer />
-
-          {/* Capture area for sharing (off-screen) */}
-          <div ref={captureRef} className="absolute -left-[9999px] top-0 w-[360px] h-[360px] overflow-hidden rounded-[20px] p-4 bg-bo-cream">
-            <div className="flex items-center gap-2 mb-2.5">
-              <span className="text-base font-bold text-bo-ink">⭐ お気に入りコスメ</span>
-              <span className="text-[11px] py-0.5 px-2 rounded-full font-semibold bg-[#FFF8E1] text-[#F59E0B]">{favCount}件</span>
-            </div>
-            <div className="grid grid-cols-2 gap-2">
-              {products.filter((p) => p.isFavorite).slice(0, 4).map((p) => {
-                const genre = getGenreByKey(p.productType || "other");
-                return (
-                  <div key={p.id} className="bg-white border-2 border-[#F59E0B] rounded-[14px] overflow-hidden">
-                    <div className="relative w-full aspect-square">
-                      {p.packageImage ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img src={p.packageImage} alt={p.name} className="w-full h-full object-cover block" />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center text-3xl bg-gradient-to-br from-bo-accent-soft to-bo-parchment">
-                          {genre?.icon || "📦"}
+                      <div style={{ padding: "4px 8px" }}>
+                        <div style={{ fontSize: 10, fontWeight: 700, lineHeight: 1.2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                          {p.name}
                         </div>
-                      )}
+                        <div style={{ fontSize: 9, color: "var(--hd-ink-60)", marginTop: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                          {p.brand}
+                        </div>
+                      </div>
                     </div>
-                    <div className="py-1 px-2">
-                      <div className="text-[10px] font-bold text-bo-ink leading-tight truncate">{p.name}</div>
-                      <div className="text-[9px] text-bo-ink-muted mt-px truncate">{p.brand}</div>
-                    </div>
-                  </div>
-                );
-              })}
+                  );
+                })}
+              </div>
             </div>
           </div>
         </div>
+
+        {shareProduct && (
+          <ShareModal
+            text={shareMyCosmetic(
+              shareProduct,
+              shareProduct.ingredients
+                .sort((a, b) => a.orderIndex - b.orderIndex)
+                .map((pi) => getIngredientById(pi.ingredientId)?.nameJa)
+                .filter((n): n is string => !!n)
+            )}
+            onClose={() => { setShareProduct(null); setShareImageBase64(undefined); }}
+            imageBase64={shareImageBase64}
+          />
+        )}
+
+        <ScrollToTop />
       </div>
-
-      {/* Share Modal（Canvas生成済み画像を直接渡す） */}
-      {shareProduct && (
-        <ShareModal
-          text={shareMyCosmetic(
-            shareProduct,
-            shareProduct.ingredients
-              .sort((a, b) => a.orderIndex - b.orderIndex)
-              .map((pi) => getIngredientById(pi.ingredientId)?.nameJa)
-              .filter((n): n is string => !!n)
-          )}
-          onClose={() => { setShareProduct(null); setShareImageBase64(undefined); }}
-          imageBase64={shareImageBase64}
-        />
-      )}
-
-      <ScrollToTop />
     </AuthGuard>
   );
 }

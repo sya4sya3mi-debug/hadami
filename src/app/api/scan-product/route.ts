@@ -4,8 +4,10 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { authenticateRequest, validateImagePayload } from "@/lib/apiAuth";
 import {
   tryReserveScan,
+  tryReserveScanFallback,
   getMonthlyScanCount,
-  getAccountScanLimit,
+  getUserMonthlyScanLimit,
+  rollbackScan,
 } from "@/lib/db";
 import { rateLimit, getClientIp } from "@/lib/rateLimit";
 import {
@@ -17,10 +19,33 @@ import { resolveActiveIngredient } from "@/lib/mhlwActiveIngredients";
 import { normalizeIngredientName } from "@/lib/normalize";
 import { ocrSpaceExtract } from "@/lib/ocrSpace";
 import { createScanResolveToken, verifyScanResolveToken } from "@/lib/scanResolveToken";
+import {
+  clearScanReservationCookie,
+  setScanReservationCookie,
+} from "@/lib/scanReservationToken";
+import { supabaseAdmin } from "@/lib/supabaseAdmin";
 
 const client = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 const IDENTIFY_MODEL = process.env.GEMINI_IDENTIFY_MODEL || "gemini-2.5-flash-lite";
-const SEARCH_MODEL = process.env.GEMINI_SEARCH_MODEL || "gemini-2.5-flash";
+const SEARCH_MODEL_LEGACY = process.env.GEMINI_SEARCH_MODEL;
+const SEARCH_MODEL_PRIMARY =
+  process.env.GEMINI_SEARCH_MODEL_PRIMARY ||
+  SEARCH_MODEL_LEGACY ||
+  "gemini-2.5-flash-lite";
+const SEARCH_MODEL_FALLBACK =
+  process.env.GEMINI_SEARCH_MODEL_FALLBACK ||
+  SEARCH_MODEL_LEGACY ||
+  "gemini-2.5-flash";
+const DEFAULT_SEARCH_MAX_OUTPUT_TOKENS = 512;
+const RESERVATION_COMPAT_LIMIT_OVERRIDE = 1_000_000;
+const parsedSearchMaxOutputTokens = Number.parseInt(
+  process.env.GEMINI_SEARCH_MAX_OUTPUT_TOKENS || `${DEFAULT_SEARCH_MAX_OUTPUT_TOKENS}`,
+  10,
+);
+const SEARCH_MAX_OUTPUT_TOKENS =
+  Number.isFinite(parsedSearchMaxOutputTokens) && parsedSearchMaxOutputTokens > 0
+    ? parsedSearchMaxOutputTokens
+    : DEFAULT_SEARCH_MAX_OUTPUT_TOKENS;
 
 // ── ユーティリティ ──
 
@@ -256,6 +281,12 @@ interface ResolvedScanProduct extends SearchResult {
   productType: string;
 }
 
+interface RawIngredientSearchPayload {
+  rawText: string;
+  isQuasiDrug: boolean;
+  activeNames: string[];
+}
+
 function extractJsonObject(text: string): string | null {
   const candidates = [
     text.match(/```json\s*([\s\S]*?)```/i)?.[1],
@@ -277,10 +308,55 @@ function extractJsonObject(text: string): string | null {
   return null;
 }
 
+async function fetchRawIngredientsWithModel(
+  prompt: string,
+  model: string,
+): Promise<RawIngredientSearchPayload | null> {
+  try {
+    const response = await withTimeout(
+      client.models.generateContent({
+        model,
+        contents: [{ role: "user", parts: [{ text: prompt }] }],
+        config: {
+          tools: [{ googleSearch: {} }],
+          maxOutputTokens: SEARCH_MAX_OUTPUT_TOKENS,
+          thinkingConfig: { thinkingBudget: 0 },
+        },
+      }),
+      30000,
+      "Timed out while searching for ingredients",
+    );
+
+    const text = response.text ?? "";
+    const jsonText = extractJsonObject(text);
+    logScanInfo("ingredient_search_completed", {
+      model,
+      outputLength: text.length,
+      hasJson: Boolean(jsonText),
+    });
+    if (!jsonText) return null;
+
+    const parsed = JSON.parse(jsonText);
+    const rawText = typeof parsed.full_ingredients === "string" ? parsed.full_ingredients : "";
+    const isQuasiDrug = parsed.is_quasi_drug === true;
+    const activeNames: string[] = Array.isArray(parsed.active_ingredients)
+      ? parsed.active_ingredients.filter((v: unknown) => typeof v === "string")
+      : [];
+
+    return rawText.trim() ? { rawText, isQuasiDrug, activeNames } : null;
+  } catch (error) {
+    console.warn(
+      `[scan-product] fetchRawIngredients failed (${model}):`,
+      error instanceof Error ? error.message : error,
+    );
+    return null;
+  }
+}
+
 /** STEP 2a: Gemini + Google Search で生の全成分テキストを取得 */
 async function fetchRawIngredients(
   query: string,
-): Promise<{ rawText: string; isQuasiDrug: boolean; activeNames: string[] } | null> {
+): Promise<RawIngredientSearchPayload | null> {
   const prompt = [
     "あなたは化粧品成分の専門家です。Google検索を使って以下の製品の全成分リストを調べてください。",
     "",
@@ -305,44 +381,20 @@ async function fetchRawIngredients(
     "- 成分情報が見つからない場合は full_ingredients を空文字で返す",
   ].join("\n");
 
-  try {
-    const response = await withTimeout(
-      client.models.generateContent({
-        model: SEARCH_MODEL,
-        contents: [{ role: "user", parts: [{ text: prompt }] }],
-        config: {
-          tools: [{ googleSearch: {} }],
-          maxOutputTokens: 2048,
-          thinkingConfig: { thinkingBudget: 0 },
-        },
-      }),
-      30000,
-      "Timed out while searching for ingredients",
-    );
-
-    const text = response.text ?? "";
-    const jsonText = extractJsonObject(text);
-    logScanInfo("ingredient_search_completed", {
-      outputLength: text.length,
-      hasJson: Boolean(jsonText),
-    });
-    if (!jsonText) return null;
-
-    const parsed = JSON.parse(jsonText);
-    const rawText = typeof parsed.full_ingredients === "string" ? parsed.full_ingredients : "";
-    const isQuasiDrug = parsed.is_quasi_drug === true;
-    const activeNames: string[] = Array.isArray(parsed.active_ingredients)
-      ? parsed.active_ingredients.filter((v: unknown) => typeof v === "string")
-      : [];
-
-    return rawText.trim() ? { rawText, isQuasiDrug, activeNames } : null;
-  } catch (error) {
-    console.warn(
-      "[scan-product] fetchRawIngredients failed:",
-      error instanceof Error ? error.message : error,
-    );
-    return null;
+  const primary = await fetchRawIngredientsWithModel(prompt, SEARCH_MODEL_PRIMARY);
+  if (primary) {
+    return primary;
   }
+
+  if (SEARCH_MODEL_FALLBACK !== SEARCH_MODEL_PRIMARY) {
+    logScanInfo("ingredient_search_retry_with_fallback_model", {
+      fromModel: SEARCH_MODEL_PRIMARY,
+      toModel: SEARCH_MODEL_FALLBACK,
+    });
+    return fetchRawIngredientsWithModel(prompt, SEARCH_MODEL_FALLBACK);
+  }
+
+  return null;
 }
 
 async function resolveScannedProduct(
@@ -518,7 +570,11 @@ export async function POST(req: NextRequest) {
         type: productType,
         lang: "ja",
       });
-      return NextResponse.json(resolved);
+      const response = NextResponse.json(resolved);
+      if (resolved.found && resolved.ingredients.trim()) {
+        return clearScanReservationCookie(response);
+      }
+      return response;
     } catch (error) {
       console.error(
         "Resolve scan product error:",
@@ -539,14 +595,50 @@ export async function POST(req: NextRequest) {
   }
 
   // 5. スキャン枠予約
-  const reserved = await tryReserveScan(auth.supabase, auth.user.id, auth.user.email!);
+  const userMonthlyLimit = await getUserMonthlyScanLimit(supabaseAdmin, auth.user.id);
+  const reserved = await tryReserveScan(
+    auth.supabase,
+    auth.user.id,
+    auth.user.email!,
+    userMonthlyLimit,
+  );
+  let shouldRollbackReservation = true;
   if (!reserved) {
     const count = await getMonthlyScanCount(auth.supabase, auth.user.id);
-    const limit = getAccountScanLimit();
-    return NextResponse.json(
-      { error: "スキャン回数の上限に達しました", count, limit },
-      { status: 429 },
+    if (count >= userMonthlyLimit) {
+      return NextResponse.json(
+        { error: "スキャン回数の上限に達しました", count, limit: userMonthlyLimit },
+        { status: 429 },
+      );
+    }
+
+    const compatibilityReserved = await tryReserveScan(
+      auth.supabase,
+      auth.user.id,
+      auth.user.email!,
+      RESERVATION_COMPAT_LIMIT_OVERRIDE,
     );
+    const fallbackReserved = compatibilityReserved
+      ? true
+      : await tryReserveScanFallback(
+          supabaseAdmin,
+          auth.user.id,
+          auth.user.email!,
+          userMonthlyLimit
+        );
+
+    if (!fallbackReserved) {
+      return NextResponse.json(
+        {
+          error: "スキャン枠の確認に失敗しました。少し待ってから再度お試しください。",
+          count,
+          limit: userMonthlyLimit,
+        },
+        { status: 503 },
+      );
+    }
+
+    logScanInfo("scan_reservation_compat_mode");
   }
 
   try {
@@ -554,7 +646,8 @@ export async function POST(req: NextRequest) {
     const identifiedProducts = await identifyProducts(validation.base64Data, enhancedData);
 
     if (identifiedProducts.length === 0) {
-      return NextResponse.json({
+      shouldRollbackReservation = false;
+      return setScanReservationCookie(NextResponse.json({
         products: [],
         productName: "",
         brand: "",
@@ -562,7 +655,7 @@ export async function POST(req: NextRequest) {
         ingredients: "",
         isQuasiDrug: false,
         activeIngredients: [],
-      });
+      }), auth.user.id);
     }
 
     // ── STEP 2: 各製品の成分検索 ──
@@ -592,7 +685,8 @@ export async function POST(req: NextRequest) {
       });
 
       const first = unresolvedProducts[0];
-      return NextResponse.json({
+      shouldRollbackReservation = false;
+      return setScanReservationCookie(NextResponse.json({
         productName: first?.productName || "",
         brand: first?.brand || "",
         productType: first?.productType || "other",
@@ -602,11 +696,11 @@ export async function POST(req: NextRequest) {
         activeIngredients: [],
         needsSelection: true,
         products: unresolvedProducts,
-      });
+      }), auth.user.id);
     }
 
     const first = await resolveScannedProduct(auth.supabase, identifiedProducts[0]);
-    return NextResponse.json({
+    const response = NextResponse.json({
       productName: first.productName,
       brand: first.brand,
       productType: first.productType,
@@ -617,8 +711,19 @@ export async function POST(req: NextRequest) {
       needsSelection: false,
       products: [first],
     });
+
+    shouldRollbackReservation = false;
+
+    if (first.found && first.ingredients.trim()) {
+      return clearScanReservationCookie(response);
+    }
+
+    return setScanReservationCookie(response, auth.user.id);
   } catch (error) {
     console.error("Scan product error:", error instanceof Error ? error.message : error);
+    if (shouldRollbackReservation) {
+      await rollbackScan(auth.supabase, auth.user.id, auth.user.email!);
+    }
     return NextResponse.json({ error: "Failed to identify product" }, { status: 500 });
   }
 }

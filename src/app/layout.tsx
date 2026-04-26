@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import Script from "next/script";
 import "./globals.css";
 import TabBar from "@/components/ui/TabBar";
 import PwaRegister from "@/components/PwaRegister";
@@ -44,24 +45,59 @@ export default function RootLayout({
   return (
     <html lang="ja" suppressHydrationWarning>
       <head>
-        <script async src="https://www.googletagmanager.com/gtag/js?id=G-3T6JXDLRB7" />
-        <script dangerouslySetInnerHTML={{ __html: `
+        <Script
+          src="https://www.googletagmanager.com/gtag/js?id=G-3T6JXDLRB7"
+          strategy="afterInteractive"
+        />
+        <Script id="ga-init" strategy="afterInteractive">{`
           window.dataLayer = window.dataLayer || [];
           function gtag(){dataLayer.push(arguments);}
           gtag('js', new Date());
           gtag('config', 'G-3T6JXDLRB7');
-        `}} />
+        `}</Script>
         <link rel="preload" href="/fonts/YakuHanJPs/YakuHanJPs-Regular.woff2" as="font" type="font/woff2" crossOrigin="anonymous" />
         <link rel="preload" href="/fonts/YakuHanJPs/YakuHanJPs-Bold.woff2" as="font" type="font/woff2" crossOrigin="anonymous" />
         {/* Prevent flash of wrong theme on load */}
-        <script dangerouslySetInnerHTML={{ __html: `
+        <Script id="theme-init" strategy="beforeInteractive">{`
           (function(){
             try {
               var t = localStorage.getItem('hadami-theme');
               if (t === 'dark') document.documentElement.classList.add('dark');
             } catch(e) {}
           })();
-        `}} />
+        `}</Script>
+        <Script id="recovery-redirect" strategy="beforeInteractive">{`
+          (function () {
+            try {
+              var url = new URL(window.location.href);
+              if (url.pathname === "/auth/reset-password") return;
+
+              var hashParams = new URLSearchParams(url.hash.slice(1));
+              var hasRecoveryParams =
+                url.searchParams.get("type") === "recovery" ||
+                url.searchParams.get("flow") === "recovery" ||
+                !!url.searchParams.get("token_hash") ||
+                !!url.searchParams.get("code") ||
+                hashParams.get("type") === "recovery" ||
+                !!hashParams.get("access_token");
+
+              if (!hasRecoveryParams) return;
+
+              var nextUrl = new URL("/auth/reset-password", window.location.origin);
+              nextUrl.searchParams.set("mode", "update");
+
+              ["code", "token_hash", "type", "flow", "recovery_error"].forEach(function (key) {
+                var value = url.searchParams.get(key);
+                if (value) nextUrl.searchParams.set(key, value);
+              });
+
+              var nextHash = hashParams.toString();
+              if (nextHash) nextUrl.hash = nextHash;
+
+              window.location.replace(nextUrl.toString());
+            } catch (e) {}
+          })();
+        `}</Script>
       </head>
       <body>
         <AuthProvider>

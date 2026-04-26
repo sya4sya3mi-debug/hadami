@@ -14,6 +14,50 @@ export type InviteClaimResult =
   | { ok: true; claimed: boolean }
   | { ok: false; reason: InviteClaimFailureReason };
 
+type InvitationCodeRecord = {
+  id: string;
+  max_uses: number;
+  used_count: number;
+  is_active: boolean;
+  expires_at: string | null;
+};
+
+function isInvitationCodeUsable(code: InvitationCodeRecord | null): boolean {
+  if (!code || !code.is_active) {
+    return false;
+  }
+
+  if (code.expires_at && new Date(code.expires_at) < new Date()) {
+    return false;
+  }
+
+  return true;
+}
+
+function isInvitationCodeExhausted(code: InvitationCodeRecord): boolean {
+  return code.max_uses > 0 && code.used_count >= code.max_uses;
+}
+
+async function upsertPendingInviteClaim(
+  userId: string,
+  invitationCodeId: string
+): Promise<void> {
+  const { error: upsertError } = await supabaseAdmin
+    .from("pending_invite_claims")
+    .upsert(
+      {
+        user_id: userId,
+        invitation_code_id: invitationCodeId,
+        expires_at: new Date(Date.now() + PENDING_INVITE_CLAIM_TTL_MS).toISOString(),
+      },
+      { onConflict: "user_id" }
+    );
+
+  if (upsertError) {
+    throw upsertError;
+  }
+}
+
 export async function claimInviteProofForUser(
   userId: string,
   token: string | null | undefined
@@ -33,34 +77,43 @@ export async function claimInviteProofForUser(
     .eq("id", invitationCodeId)
     .single();
 
-  if (
-    error ||
-    !data ||
-    !data.is_active ||
-    (data.expires_at && new Date(data.expires_at) < new Date())
-  ) {
+  if (error || !isInvitationCodeUsable(data)) {
     return { ok: false, reason: "invite_invalid" };
   }
 
-  if (data.max_uses > 0 && data.used_count >= data.max_uses) {
+  if (isInvitationCodeExhausted(data)) {
     return { ok: false, reason: "invite_exhausted" };
   }
 
-  const { error: upsertError } = await supabaseAdmin
-    .from("pending_invite_claims")
-    .upsert(
-      {
-        user_id: userId,
-        invitation_code_id: invitationCodeId,
-        expires_at: new Date(Date.now() + PENDING_INVITE_CLAIM_TTL_MS).toISOString(),
-      },
-      { onConflict: "user_id" }
-    );
+  await upsertPendingInviteClaim(userId, invitationCodeId);
 
-  if (upsertError) {
-    throw upsertError;
+  return { ok: true, claimed: true };
+}
+
+export async function claimInviteCodeForUser(
+  userId: string,
+  code: string
+): Promise<InviteClaimResult> {
+  const normalizedCode = code.trim().toUpperCase();
+  if (!normalizedCode) {
+    return { ok: false, reason: "invite_invalid" };
   }
 
+  const { data, error } = await supabaseAdmin
+    .from("invitation_codes")
+    .select("id, max_uses, used_count, is_active, expires_at")
+    .eq("code", normalizedCode)
+    .single();
+
+  if (error || !isInvitationCodeUsable(data)) {
+    return { ok: false, reason: "invite_invalid" };
+  }
+
+  if (isInvitationCodeExhausted(data)) {
+    return { ok: false, reason: "invite_exhausted" };
+  }
+
+  await upsertPendingInviteClaim(userId, data.id);
   return { ok: true, claimed: true };
 }
 

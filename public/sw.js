@@ -1,4 +1,4 @@
-const CACHE_NAME = "hadami-v9";
+const CACHE_NAME = "hadami-v11";
 
 // Pre-cache the start URL and critical fonts on install
 self.addEventListener("install", (e) => {

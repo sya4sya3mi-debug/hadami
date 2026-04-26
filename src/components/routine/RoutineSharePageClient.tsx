@@ -304,9 +304,20 @@ export default function RoutineSharePageClient({
         reader.onerror = () => reject(reader.error);
         reader.readAsDataURL(blob);
       });
-      downloadShareImage(dataUrl, filename);
-      setLastExportMode("downloaded");
-      setTimeout(() => setLastExportMode(null), 2500);
+      const saveResult = await downloadShareImage(dataUrl, {
+        filename,
+        allowNativeShareFallback: false,
+      });
+
+      if (saveResult === "downloaded" || saveResult === "shared") {
+        setLastExportMode(saveResult === "shared" ? "shared" : "downloaded");
+        setTimeout(() => setLastExportMode(null), 2500);
+        return;
+      }
+
+      if (saveResult === "cancelled") return;
+
+      throw new Error("Failed to save generated image");
     } catch (error) {
       console.error("Failed to save routine share image:", error);
       alert("画像の保存に失敗しました。時間をおいてもう一度お試しください。");

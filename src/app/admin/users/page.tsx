@@ -13,6 +13,7 @@ interface AdminUser {
   products: number;
   scansThisMonth: number;
   discoveries: number;
+  monthlyScanLimit: number;
 }
 
 const ADMIN_IDS = ["751ac531-dcdb-4e77-a3ea-67a01677c432"];
@@ -62,6 +63,8 @@ export default function AdminUsersPage() {
   const [error, setError] = useState("");
   const [search, setSearch] = useState("");
   const [banningId, setBanningId] = useState<string | null>(null);
+  const [limitDrafts, setLimitDrafts] = useState<Record<string, number>>({});
+  const [savingLimitId, setSavingLimitId] = useState<string | null>(null);
 
   const isAdmin = user && ADMIN_IDS.includes(user.id);
 
@@ -71,7 +74,13 @@ export default function AdminUsersPage() {
       const res = await fetch("/api/admin/users");
       if (!res.ok) throw new Error("取得失敗");
       const data = await res.json();
-      setUsers(data.users ?? []);
+      const loadedUsers = (data.users ?? []) as AdminUser[];
+      setUsers(loadedUsers);
+      setLimitDrafts(
+        Object.fromEntries(
+          loadedUsers.map((u) => [u.id, u.monthlyScanLimit])
+        )
+      );
     } catch {
       setError("データの取得に失敗しました。");
     } finally {
@@ -112,6 +121,47 @@ export default function AdminUsersPage() {
       setError(e instanceof Error ? e.message : "更新に失敗しました。");
     } finally {
       setBanningId(null);
+    }
+  };
+
+  const adjustLimitDraft = (targetUserId: string, delta: number) => {
+    setLimitDrafts((prev) => {
+      const base = prev[targetUserId] ?? 30;
+      const next = Math.min(9999, Math.max(1, base + delta));
+      return { ...prev, [targetUserId]: next };
+    });
+  };
+
+  const handleSaveLimit = async (targetUser: AdminUser) => {
+    const nextLimit = limitDrafts[targetUser.id] ?? targetUser.monthlyScanLimit;
+    if (nextLimit === targetUser.monthlyScanLimit) return;
+
+    setSavingLimitId(targetUser.id);
+    setError("");
+    try {
+      const res = await fetch("/api/admin/users", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: targetUser.id, monthlyScanLimit: nextLimit }),
+      });
+      if (!res.ok) {
+        const d = await res.json();
+        throw new Error(d.error ?? "上限の更新に失敗しました");
+      }
+
+      setUsers((prev) =>
+        prev.map((u) =>
+          u.id === targetUser.id ? { ...u, monthlyScanLimit: nextLimit } : u
+        )
+      );
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "上限の更新に失敗しました。");
+      setLimitDrafts((prev) => ({
+        ...prev,
+        [targetUser.id]: targetUser.monthlyScanLimit,
+      }));
+    } finally {
+      setSavingLimitId(null);
     }
   };
 
@@ -241,6 +291,56 @@ export default function AdminUsersPage() {
                   <span>今月スキャン {u.scansThisMonth}</span>
                   <span>•</span>
                   <span>成分 {u.discoveries}</span>
+                </div>
+                <div className="mt-3 flex items-center justify-between gap-2">
+                  <div className="text-[10px] text-bo-ink-muted font-sans">
+                    月上限
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      onClick={() => adjustLimitDraft(u.id, -1)}
+                      className="w-6 h-6 rounded-md bg-bo-parchment text-bo-ink text-xs font-bold border-none cursor-pointer pressable"
+                      aria-label="上限を減らす"
+                      disabled={savingLimitId === u.id}
+                    >
+                      −
+                    </button>
+                    <input
+                      type="number"
+                      min={1}
+                      max={9999}
+                      value={limitDrafts[u.id] ?? u.monthlyScanLimit}
+                      onChange={(e) => {
+                        const value = Number.parseInt(e.target.value, 10);
+                        setLimitDrafts((prev) => ({
+                          ...prev,
+                          [u.id]:
+                            Number.isFinite(value) && value > 0
+                              ? Math.min(9999, value)
+                              : 1,
+                        }));
+                      }}
+                      className="w-16 text-center text-[11px] font-bold font-sans border border-bo-parchment rounded-md py-1 bg-white"
+                    />
+                    <button
+                      onClick={() => adjustLimitDraft(u.id, 1)}
+                      className="w-6 h-6 rounded-md bg-bo-parchment text-bo-ink text-xs font-bold border-none cursor-pointer pressable"
+                      aria-label="上限を増やす"
+                      disabled={savingLimitId === u.id}
+                    >
+                      +
+                    </button>
+                    <button
+                      onClick={() => handleSaveLimit(u)}
+                      disabled={
+                        savingLimitId === u.id ||
+                        (limitDrafts[u.id] ?? u.monthlyScanLimit) === u.monthlyScanLimit
+                      }
+                      className="px-2.5 py-1.5 rounded-md bg-bo-accent text-white text-[10px] font-bold font-sans border-none cursor-pointer pressable disabled:opacity-50"
+                    >
+                      {savingLimitId === u.id ? "保存中..." : "保存"}
+                    </button>
+                  </div>
                 </div>
               </div>
             ))}

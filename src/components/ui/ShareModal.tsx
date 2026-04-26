@@ -3,66 +3,128 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { downloadShareImage } from "@/lib/downloadImage";
 
+type ShareCapableNavigator = Navigator & {
+  canShare?: (data: ShareData) => boolean;
+  share?: (data?: ShareData) => Promise<void>;
+};
+
+function extensionForMimeType(mimeType: string) {
+  if (mimeType === "image/jpeg") return "jpg";
+  if (mimeType === "image/webp") return "webp";
+  if (mimeType === "image/gif") return "gif";
+  return "png";
+}
+
+function dataUrlToBlob(dataUrl: string) {
+  const matches = dataUrl.match(
+    /^data:([^;,]+)?(?:;charset=[^;,]+)?(;base64)?,(.*)$/,
+  );
+
+  if (!matches) {
+    throw new Error("Invalid data URL");
+  }
+
+  const mimeType = matches[1] || "image/png";
+  const isBase64 = Boolean(matches[2]);
+  const body = matches[3] || "";
+
+  let decoded = "";
+
+  if (isBase64) {
+    const normalized = body.replace(/\s/g, "").replace(/-/g, "+").replace(/_/g, "/");
+    const padded = normalized + "=".repeat((4 - (normalized.length % 4)) % 4);
+    decoded = atob(padded);
+  } else {
+    decoded = decodeURIComponent(body);
+  }
+
+  const bytes = new Uint8Array(decoded.length);
+  for (let index = 0; index < decoded.length; index += 1) {
+    bytes[index] = decoded.charCodeAt(index);
+  }
+
+  return new Blob([bytes], { type: mimeType });
+}
+
+function isMobileShareDevice() {
+  const ua = navigator.userAgent;
+  return (
+    /Android|iPhone|iPad|iPod/i.test(ua) ||
+    (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1)
+  );
+}
+
 export interface ShareModalProps {
   text: string;
   onClose: () => void;
   /** DOM element to capture as share image (legacy, slow) */
   captureRef?: React.RefObject<HTMLElement | null>;
-  /** Pre-generated base64 image — skips html2canvas entirely */
+  /** Pre-generated base64 image. Skips html2canvas entirely. */
   imageBase64?: string;
 }
 
-export default function ShareModal({ text, onClose, captureRef, imageBase64: imageBase64Prop }: ShareModalProps) {
+export default function ShareModal({
+  text,
+  onClose,
+  captureRef,
+  imageBase64: imageBase64Prop,
+}: ShareModalProps) {
   const [editableText, setEditableText] = useState(text);
   const [copied, setCopied] = useState(false);
   const [cardImage, setCardImage] = useState<string | null>(null);
   const [capturing, setCapturing] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [downloaded, setDownloaded] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const MAX_CHARS = 280;
   const isOverLimit = editableText.length > MAX_CHARS;
   const overlayRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
 
-  // imageBase64Prop が変わるたびに cardImage を同期
   useEffect(() => {
-    if (imageBase64Prop) setCardImage(imageBase64Prop);
+    if (!imageBase64Prop) return;
+    setCardImage(imageBase64Prop);
+    setDownloaded(false);
+    setSaveError(null);
   }, [imageBase64Prop]);
 
-  // imageBase64Prop が渡されている場合は html2canvas をスキップ
   useEffect(() => {
     if (imageBase64Prop) return;
     if (!captureRef?.current) return;
     setCapturing(true);
+    setDownloaded(false);
+    setSaveError(null);
 
-    const el = captureRef.current;
-    const origDisplay = el.style.display;
+    const element = captureRef.current;
+    const originalDisplay = element.style.display;
 
-    import("html2canvas").then(({ default: html2canvas }) => {
-      html2canvas(el, {
-        scale: 2,
-        backgroundColor: null,
-        useCORS: true,
-        logging: false,
+    import("html2canvas")
+      .then(({ default: html2canvas }) =>
+        html2canvas(element, {
+          scale: 2,
+          backgroundColor: null,
+          useCORS: true,
+          logging: false,
+        }),
+      )
+      .then((canvas) => {
+        setCardImage(canvas.toDataURL("image/jpeg", 0.92));
       })
-        .then((canvas) => {
-          setCardImage(canvas.toDataURL("image/jpeg", 0.92));
-        })
-        .catch(() => {
-          setCardImage(null);
-        })
-        .finally(() => {
-          el.style.display = origDisplay;
-          setCapturing(false);
-        });
-    });
+      .catch(() => {
+        setCardImage(null);
+      })
+      .finally(() => {
+        element.style.display = originalDisplay;
+        setCapturing(false);
+      });
   }, [captureRef, imageBase64Prop]);
 
-  // Scroll lock — overflow: hidden only, no position:fixed to avoid broken cleanup on navigation
   useEffect(() => {
-    const prev = document.body.style.overflow;
+    const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
+
     return () => {
-      document.body.style.overflow = prev;
+      document.body.style.overflow = previousOverflow;
     };
   }, []);
 
@@ -74,68 +136,149 @@ export default function ShareModal({ text, onClose, captureRef, imageBase64: ima
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const handleDownload = useCallback(() => {
-    if (!cardImage) return;
-    downloadShareImage(cardImage);
-    setDownloaded(true);
-  }, [cardImage]);
+  const handleDownload = useCallback(async () => {
+    if (!cardImage || saving) return;
+
+    setSaving(true);
+    setSaveError(null);
+
+    try {
+      const imageBlob = dataUrlToBlob(cardImage);
+      const filename = `hadami-share-${Date.now()}.${extensionForMimeType(imageBlob.type)}`;
+      const shareNavigator = navigator as ShareCapableNavigator;
+
+      if (
+        isMobileShareDevice() &&
+        typeof File !== "undefined" &&
+        typeof shareNavigator.share === "function"
+      ) {
+        try {
+          const file = new File([imageBlob], filename, {
+            type: imageBlob.type || "image/png",
+          });
+          const shareData: ShareData = {
+            files: [file],
+            title: "HADAMI シェアカード",
+          };
+
+          if (!shareNavigator.canShare || shareNavigator.canShare(shareData)) {
+            await shareNavigator.share(shareData);
+            setDownloaded(true);
+            return;
+          }
+        } catch (error) {
+          if (error instanceof DOMException && error.name === "AbortError") {
+            setSaveError("画像の保存をキャンセルしました。もう一度お試しください。");
+            return;
+          }
+        }
+      }
+
+      const result = await downloadShareImage(cardImage, {
+        filename,
+        allowNativeShareFallback: false,
+      });
+
+      if (result === "downloaded" || result === "shared") {
+        setDownloaded(true);
+        return;
+      }
+
+      if (result === "cancelled") {
+        setSaveError("画像の保存をキャンセルしました。もう一度お試しください。");
+        return;
+      }
+
+      setSaveError("画像を保存できませんでした。もう一度お試しください。");
+    } finally {
+      setSaving(false);
+    }
+  }, [cardImage, saving]);
+
+  const stepText = downloaded
+    ? "1. 画像を保存しました  2. Xで投稿"
+    : "1. 画像を保存  2. Xで投稿";
 
   return (
     <div
       ref={overlayRef}
-      className="fixed inset-0 bg-black/40 z-50 flex items-end justify-center"
+      className="fixed inset-0 z-50 flex items-end justify-center bg-black/40"
       style={{ touchAction: "none" }}
       onClick={onClose}
     >
       <div
-        className="bg-white w-full max-w-[430px] rounded-t-3xl flex flex-col"
+        className="flex w-full max-w-[430px] flex-col rounded-t-3xl bg-white"
         style={{ boxShadow: "0 -4px 24px rgba(0,0,0,0.08)", maxHeight: "85vh" }}
-        onClick={(e) => e.stopPropagation()}
+        onClick={(event) => event.stopPropagation()}
       >
-        {/* Handle + Header */}
-        <div className="px-6 pt-4 pb-3 shrink-0">
-          <div className="w-10 h-1 rounded-full mx-auto mb-4" style={{ background: "#E0E0E0" }} />
-          <div className="flex justify-between items-center">
-            <h3 className="font-bold text-base" style={{ color: "#2D2D2D" }}>シェアカードを作成</h3>
-            <button onClick={onClose} className="text-xl" style={{ color: "#9B9B9B" }}>✕</button>
+        <div className="shrink-0 px-6 pb-3 pt-4">
+          <div
+            className="mx-auto mb-4 h-1 w-10 rounded-full"
+            style={{ background: "#E0E0E0" }}
+          />
+          <div className="flex items-center justify-between">
+            <h3 className="text-base font-bold" style={{ color: "#2D2D2D" }}>
+              シェアカードを保存
+            </h3>
+            <button
+              type="button"
+              onClick={onClose}
+              className="text-xl"
+              style={{ color: "#9B9B9B" }}
+              aria-label="閉じる"
+            >
+              ×
+            </button>
           </div>
         </div>
 
-        {/* Scrollable content */}
         <div
           ref={contentRef}
-          className="overflow-y-auto px-6 flex-1 min-h-0"
-          style={{ touchAction: "pan-y", WebkitOverflowScrolling: "touch", overscrollBehavior: "contain" }}
+          className="min-h-0 flex-1 overflow-y-auto px-6"
+          style={{
+            touchAction: "pan-y",
+            WebkitOverflowScrolling: "touch",
+            overscrollBehavior: "contain",
+          }}
         >
-          {/* Card image preview */}
           {capturing && (
-            <div className="mb-3 rounded-2xl p-8 text-center" style={{ background: "#F9F9F9" }}>
-              <div className="text-sm" style={{ color: "#9B9B9B" }}>画像を生成中...</div>
-            </div>
-          )}
-          {cardImage && !capturing && (
-            <div className="mb-3 rounded-2xl overflow-hidden shadow-sm" style={{ border: "1px solid #F2F2F2" }}>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={cardImage} alt="シェアカード" className="w-full h-auto" />
+            <div
+              className="mb-3 rounded-2xl p-8 text-center"
+              style={{ background: "#F9F9F9" }}
+            >
+              <div className="text-sm" style={{ color: "#9B9B9B" }}>
+                画像を生成中...
+              </div>
             </div>
           )}
 
-          {/* Editable text */}
+          {cardImage && !capturing && (
+            <div
+              className="mb-3 overflow-hidden rounded-2xl shadow-sm"
+              style={{ border: "1px solid #F2F2F2" }}
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={cardImage} alt="シェアカード" className="h-auto w-full" />
+            </div>
+          )}
+
           <div className="relative mb-4">
             <textarea
               value={editableText}
-              onChange={(e) => setEditableText(e.target.value)}
-              className="w-full rounded-2xl p-4 text-sm leading-relaxed resize-none outline-none"
+              onChange={(event) => setEditableText(event.target.value)}
+              className="w-full resize-none rounded-2xl p-4 text-sm leading-relaxed outline-none"
               style={{
                 background: "#F9F9F9",
                 color: "#2D2D2D",
-                border: isOverLimit ? "1.5px solid #E57373" : "1.5px solid transparent",
+                border: isOverLimit
+                  ? "1.5px solid #E57373"
+                  : "1.5px solid transparent",
                 minHeight: "120px",
               }}
               rows={6}
             />
             <div
-              className="text-right text-xs mt-1 pr-1 font-medium"
+              className="mt-1 pr-1 text-right text-xs font-medium"
               style={{ color: isOverLimit ? "#E57373" : "#9B9B9B" }}
             >
               {editableText.length}/{MAX_CHARS}
@@ -143,56 +286,75 @@ export default function ShareModal({ text, onClose, captureRef, imageBase64: ima
           </div>
         </div>
 
-        {/* Buttons */}
-        <div className="px-6 pb-8 pt-3 shrink-0 space-y-3">
-          {/* Step indicator */}
-          <div className="text-center text-xs font-medium mb-1" style={{ color: "#9B9B9B" }}>
-            {downloaded ? "✓ 画像を保存しました — Xに投稿しましょう" : "① 画像を保存 → ② Xで投稿"}
+        <div className="shrink-0 space-y-3 px-6 pb-8 pt-3">
+          <div
+            className="mb-1 text-center text-xs font-medium"
+            style={{ color: "#9B9B9B" }}
+          >
+            {stepText}
           </div>
 
-          {/* Download button */}
+          {saveError && (
+            <div
+              className="rounded-2xl px-4 py-3 text-sm"
+              style={{ background: "#FFF4F4", color: "#C14B4B" }}
+            >
+              {saveError}
+            </div>
+          )}
+
           {!downloaded && (
             <button
-              onClick={handleDownload}
-              disabled={!cardImage || capturing}
-              className="w-full py-3 rounded-2xl text-white text-center text-sm font-bold transition-opacity"
+              type="button"
+              onClick={() => {
+                void handleDownload();
+              }}
+              disabled={!cardImage || capturing || saving}
+              className="w-full rounded-2xl py-3 text-center text-sm font-bold text-white transition-opacity"
               style={{
-                background: !cardImage || capturing ? "#BDBDBD" : "#3A8F7A",
-                opacity: !cardImage || capturing ? 0.7 : 1,
+                background: !cardImage || capturing || saving ? "#BDBDBD" : "#3A8F7A",
+                opacity: !cardImage || capturing || saving ? 0.7 : 1,
               }}
             >
-              {capturing ? "画像を生成中..." : "画像をダウンロード"}
+              {capturing || saving ? "画像を保存中..." : "画像を保存"}
             </button>
           )}
 
-          {/* X intent button (appears after download) */}
           {downloaded && (
             <a
               href={xIntentUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="block w-full py-3 rounded-2xl text-white text-center text-sm font-bold"
+              className="block w-full rounded-2xl py-3 text-center text-sm font-bold text-white"
               style={{ background: "#0F1419" }}
             >
-              Xで投稿する（画像を添付してね）
+              Xで投稿する
             </a>
           )}
 
           <div className="flex gap-3">
             <button
-              onClick={handleCopy}
-              className="flex-1 py-3 rounded-2xl text-sm font-medium"
+              type="button"
+              onClick={() => {
+                void handleCopy();
+              }}
+              className="flex-1 rounded-2xl py-3 text-sm font-medium"
               style={{ border: "1.5px solid #F2F2F2", color: "#9B9B9B" }}
             >
-              {copied ? "✓ コピー済み" : "コピー"}
+              {copied ? "コピー済み" : "テキストをコピー"}
             </button>
+
             {downloaded && (
               <button
-                onClick={handleDownload}
-                className="flex-1 py-3 rounded-2xl text-sm font-medium"
+                type="button"
+                onClick={() => {
+                  void handleDownload();
+                }}
+                disabled={saving}
+                className="flex-1 rounded-2xl py-3 text-sm font-medium"
                 style={{ border: "1.5px solid #F2F2F2", color: "#9B9B9B" }}
               >
-                もう一度ダウンロード
+                {saving ? "保存中..." : "もう一度保存"}
               </button>
             )}
           </div>

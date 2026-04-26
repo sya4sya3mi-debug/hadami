@@ -1,5 +1,6 @@
 "use client";
 
+import "@/styles/hadami-tokens.css";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { getIngredientById, getIngredientCategoryInfo, getIngredientCategories } from "@/lib/ingredients";
@@ -21,6 +22,16 @@ import {
   CameraIcon,
 } from "@/components/ui/Icons";
 
+const backBtnStyle: React.CSSProperties = {
+  display: "inline-flex", alignItems: "center", gap: 6,
+  fontSize: 13, fontWeight: 600,
+  color: "var(--hd-moss)",
+  background: "transparent",
+  border: "none", cursor: "pointer",
+  marginBottom: 16, padding: 0,
+  fontFamily: "var(--hd-sans)",
+};
+
 export default function IngredientDetailPage() {
   const { loading } = useUser();
   const router = useRouter();
@@ -34,48 +45,57 @@ export default function IngredientDetailPage() {
 
   if (!ingredient) {
     return (
-      <div className="min-h-screen px-5 pt-10 text-center bg-bo-cream">
-        <p className="text-bo-ink-muted">成分が見つかりません</p>
-        <button onClick={() => router.back()} className="text-sm mt-2 inline-block font-medium text-bo-accent bg-transparent border-none cursor-pointer">
-          ← 戻る
-        </button>
+      <div className="hd-root hd-softa" data-density="compact">
+        <div className="hd hd-page" style={{ minHeight: "100vh", padding: "40px 20px", textAlign: "center", background: "var(--hd-bg)" }}>
+          <p style={{ color: "var(--hd-ink-60)", fontFamily: "var(--hd-sans)" }}>成分が見つかりません</p>
+          <button onClick={() => router.back()} style={{ ...backBtnStyle, marginTop: 8 }}>← 戻る</button>
+        </div>
       </div>
     );
   }
 
   if (!isDiscovered) {
     return (
-      <div className="min-h-screen bg-bo-cream">
-        <div className="px-5 pt-8">
-          <button onClick={() => router.back()} className="text-sm font-medium mb-4 inline-block text-bo-accent bg-transparent border-none cursor-pointer">
-            ← 戻る
-          </button>
-          <div className="text-center py-14">
-            <QuestionMarkCircleIcon size={64} color="#C0B8A8" className="mx-auto" />
-            <h1 className="font-bold text-xl mt-4 text-bo-ink">未発見の成分</h1>
-            <p className="text-sm mt-2 text-bo-ink-muted">
-              この成分はまだ発見されていません。<br />
-              化粧品をスキャンして見つけましょう！
-            </p>
-            <Link
-              href="/scan"
-              className="inline-flex items-center gap-2 mt-5 px-8 py-3 rounded-2xl text-sm font-bold text-white bg-gradient-to-br from-bo-accent to-bo-accent-light"
-            >
-              <CameraIcon size={16} color="white" />
-              スキャンする
-            </Link>
-            <div className="mt-5 text-left">
-              <TargetedRakutenSection
-                enabled={true}
-                icon="PR"
-                title={`${ingredient.nameJa} を含む商品を見てみる`}
-                description="まだ未発見でも、配合商品から先に触れておくと次の収集候補を決めやすくなります。"
-                keywords={[
-                  `${ingredient.nameJa} 配合 スキンケア`,
-                  `${ingredient.nameJa} 美容液`,
-                ]}
-                ingredientHints={[ingredient.nameJa]}
-              />
+      <div className="hd-root hd-softa" data-density="compact">
+        <div className="hd hd-page" style={{ minHeight: "100vh", background: "var(--hd-bg)" }}>
+          <div style={{ padding: "32px 20px" }}>
+            <button onClick={() => router.back()} style={backBtnStyle}>← 戻る</button>
+            <div style={{ textAlign: "center", padding: "44px 0" }}>
+              <QuestionMarkCircleIcon size={64} color="#C0B8A8" />
+              <div className="hd-serif" style={{ fontSize: 22, marginTop: 14 }}>未発見の成分</div>
+              <p
+                style={{
+                  fontSize: 13, marginTop: 8, color: "var(--hd-ink-60)",
+                  fontFamily: "var(--hd-sans)", lineHeight: 1.65,
+                }}
+              >
+                この成分はまだ発見されていません。<br />
+                化粧品をスキャンして見つけましょう！
+              </p>
+              <Link
+                href="/scan"
+                className="hd-cta"
+                style={{
+                  display: "inline-flex", alignItems: "center", gap: 8,
+                  marginTop: 20, textDecoration: "none", fontSize: 14,
+                }}
+              >
+                <CameraIcon size={16} color="white" />
+                スキャンする
+              </Link>
+              <div style={{ marginTop: 20, textAlign: "left" }}>
+                <TargetedRakutenSection
+                  enabled={true}
+                  icon="PR"
+                  title={`${ingredient.nameJa} を含む商品を見てみる`}
+                  description="まだ未発見でも、配合商品から先に触れておくと次の収集候補を決めやすくなります。"
+                  keywords={[
+                    `${ingredient.nameJa} 配合 スキンケア`,
+                    `${ingredient.nameJa} 美容液`,
+                  ]}
+                  ingredientHints={[ingredient.nameJa]}
+                />
+              </div>
             </div>
           </div>
         </div>
@@ -88,103 +108,181 @@ export default function IngredientDetailPage() {
   const containingProducts = products.filter((p) =>
     p.ingredients.some((pi) => pi.ingredientId === ingredient.id)
   );
+
   return (
-    <div className="min-h-screen bg-bo-cream">
-      <div className="px-5 pt-8 pb-6">
-        <button onClick={() => router.back()} className="text-sm font-medium mb-4 inline-block text-bo-accent bg-transparent border-none cursor-pointer">
-          ← 戻る
-        </button>
+    <div className="hd-root hd-softa" data-density="compact">
+      <div className="hd hd-page" style={{ minHeight: "100vh", background: "var(--hd-bg)" }}>
+        <div style={{ padding: "32px 20px 24px" }}>
+          <button onClick={() => router.back()} style={backBtnStyle}>← 戻る</button>
 
-        {/* Header */}
-        <div className="text-center mb-5">
-          <div
-            className="relative w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-2 text-[0px]"
-            style={{
-              background: `linear-gradient(135deg, ${catInfo?.color || ingredient.color}20, ${catInfo?.color || ingredient.color}08)`,
-              color: catInfo?.color || ingredient.color,
-            }}
-          >
-            {catInfo?.icon || "🧪"}
-            <span className="pointer-events-none absolute opacity-0" aria-hidden="true" />
-            <span className="absolute inset-0 flex items-center justify-center text-inherit">
-              <ActiveCategoryIcon category={catInfo?.key} size={24} />
-            </span>
-          </div>
-          <h1 className="font-bold text-lg text-bo-ink font-sans">{ingredient.nameJa}</h1>
-          <p className="text-xs mt-0.5 text-bo-ink-muted font-sans">{ingredient.nameInci}</p>
-          <div className="flex items-center justify-center gap-2 mt-1.5 flex-wrap">
-            <Badge rarity={ingredient.rarity} size="sm" />
-            {allCats.map((c) => (
-              <span
-                key={c.key}
-                className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full font-medium font-sans"
-                style={{ background: c.color + "18", color: c.color }}
-              >
-                <ActiveCategoryIcon category={c.key} size={12} />
-                {c.label}
-              </span>
-            ))}
-          </div>
-        </div>
-
-        {/* Description */}
-        <div className="bg-white rounded-r2 p-3.5 mb-2.5 shadow-bo1 border border-bo-parchment">
-          <h2 className="font-bold text-xs mb-1.5 text-bo-ink font-sans flex items-center gap-1.5">
-            <InfoIcon size={13} color="currentColor" />
-            一般的な分類の説明
-          </h2>
-          <p className="text-xs leading-relaxed text-bo-ink-soft font-sans">{ingredient.note}</p>
-        </div>
-
-        {/* Fun fact */}
-        {ingredient.funFact && (
-          <div className="rounded-r2 p-3.5 mb-2.5 bg-bo-accent-soft border border-bo-accent/20">
-            <h2 className="font-bold text-xs mb-1.5 text-bo-accent font-sans flex items-center gap-1.5">
-              <LightbulbIcon size={13} color="currentColor" />
-              トリビア
-            </h2>
-            <p className="text-xs leading-relaxed text-bo-ink-soft font-sans">{ingredient.funFact}</p>
-          </div>
-        )}
-
-        {/* Caution */}
-        {ingredient.caution && (
-          <div className="rounded-r2 p-3.5 mb-2.5 bg-bo-danger-bg border border-bo-danger/20">
-            <h2 className="font-bold text-xs mb-1.5 text-bo-danger font-sans flex items-center gap-1.5">
-              <AlertIcon size={13} color="currentColor" />
-              一般的な注意事項
-            </h2>
-            <p className="text-xs leading-relaxed text-bo-ink-soft font-sans">{ingredient.caution}</p>
-          </div>
-        )}
-
-        {/* Products */}
-        {containingProducts.length > 0 && (
-          <div className="mb-4">
-            <h2 className="font-bold text-xs mb-2 flex items-center gap-2 text-bo-ink font-sans">
-              <span className="w-1 h-3.5 rounded-full inline-block bg-bo-accent" />
-              この成分を含む保存済みコスメ
-            </h2>
-            <div className="space-y-1.5">
-              {containingProducts.map((p) => (
-                <Link
-                  key={p.id}
-                  href={`/product/${p.id}`}
-                  className="flex items-center gap-2.5 bg-white rounded-r1 p-2.5 shadow-bo1 border border-bo-parchment"
+          {/* Header */}
+          <div style={{ textAlign: "center", marginBottom: 22 }}>
+            <div
+              style={{
+                position: "relative",
+                width: 60, height: 60, borderRadius: 999,
+                margin: "0 auto 10px",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                background: `linear-gradient(135deg, ${(catInfo?.color || ingredient.color)}25, ${(catInfo?.color || ingredient.color)}08)`,
+                color: catInfo?.color || ingredient.color,
+              }}
+            >
+              <ActiveCategoryIcon category={catInfo?.key} size={26} />
+            </div>
+            <div className="hd-serif" style={{ fontSize: 22, lineHeight: 1.2 }}>
+              {ingredient.nameJa}
+            </div>
+            <p
+              style={{
+                fontSize: 11, marginTop: 4, color: "var(--hd-ink-60)",
+                fontFamily: "var(--hd-sans)", margin: "4px 0 0",
+              }}
+            >
+              {ingredient.nameInci}
+            </p>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, marginTop: 10, flexWrap: "wrap" }}>
+              <Badge rarity={ingredient.rarity} size="sm" />
+              {allCats.map((c) => (
+                <span
+                  key={c.key}
+                  style={{
+                    display: "inline-flex", alignItems: "center", gap: 4,
+                    fontSize: 10, padding: "3px 10px", borderRadius: 999,
+                    fontWeight: 500, fontFamily: "var(--hd-sans)",
+                    background: c.color + "18", color: c.color,
+                  }}
                 >
-                  <PackageIcon size={16} color="#9A8C7E" />
-                  <div className="flex-1 min-w-0">
-                    <div className="font-medium text-xs truncate text-bo-ink font-sans">{p.name}</div>
-                    <div className="text-[10px] text-bo-ink-muted font-sans">{p.brand}</div>
-                  </div>
-                  <ChevronRightIcon size={16} color="currentColor" className="text-bo-accent" />
-                </Link>
+                  <ActiveCategoryIcon category={c.key} size={11} />
+                  {c.label}
+                </span>
               ))}
             </div>
           </div>
-        )}
 
-        <Disclaimer />
+          {/* Description */}
+          <div
+            style={{
+              background: "var(--hd-surface)", borderRadius: 14,
+              padding: 14, marginBottom: 10,
+              border: "1px solid var(--hd-hair)",
+            }}
+          >
+            <h2
+              style={{
+                fontSize: 12, fontWeight: 700, marginBottom: 6,
+                display: "flex", alignItems: "center", gap: 6,
+                fontFamily: "var(--hd-sans)",
+                color: "var(--hd-ink)",
+              }}
+            >
+              <InfoIcon size={13} color="currentColor" />
+              一般的な分類の説明
+            </h2>
+            <p style={{ fontSize: 12, lineHeight: 1.65, color: "var(--hd-ink-60)", fontFamily: "var(--hd-sans)", margin: 0 }}>
+              {ingredient.note}
+            </p>
+          </div>
+
+          {/* Fun fact */}
+          {ingredient.funFact && (
+            <div
+              style={{
+                background: "var(--hd-mint-bg)", borderRadius: 14,
+                padding: 14, marginBottom: 10,
+                border: "1px solid oklch(0.38 0.05 155 / 0.18)",
+              }}
+            >
+              <h2
+                style={{
+                  fontSize: 12, fontWeight: 700, marginBottom: 6,
+                  display: "flex", alignItems: "center", gap: 6,
+                  color: "var(--hd-moss-deep)",
+                  fontFamily: "var(--hd-sans)",
+                }}
+              >
+                <LightbulbIcon size={13} color="currentColor" />
+                トリビア
+              </h2>
+              <p style={{ fontSize: 12, lineHeight: 1.65, color: "var(--hd-ink-60)", fontFamily: "var(--hd-sans)", margin: 0 }}>
+                {ingredient.funFact}
+              </p>
+            </div>
+          )}
+
+          {/* Caution */}
+          {ingredient.caution && (
+            <div
+              style={{
+                background: "var(--hd-surface)", borderRadius: 14,
+                padding: 14, marginBottom: 10,
+                border: "1px solid var(--hd-terra)",
+                borderLeft: "3px solid var(--hd-terra)",
+              }}
+            >
+              <h2
+                style={{
+                  fontSize: 12, fontWeight: 700, marginBottom: 6,
+                  display: "flex", alignItems: "center", gap: 6,
+                  color: "var(--hd-terra)",
+                  fontFamily: "var(--hd-sans)",
+                }}
+              >
+                <AlertIcon size={13} color="currentColor" />
+                一般的な注意事項
+              </h2>
+              <p style={{ fontSize: 12, lineHeight: 1.65, color: "var(--hd-ink-60)", fontFamily: "var(--hd-sans)", margin: 0 }}>
+                {ingredient.caution}
+              </p>
+            </div>
+          )}
+
+          {/* Products */}
+          {containingProducts.length > 0 && (
+            <div style={{ marginBottom: 16 }}>
+              <h2
+                style={{
+                  fontSize: 13, fontWeight: 700, marginBottom: 10,
+                  display: "flex", alignItems: "center", gap: 8,
+                  fontFamily: "var(--hd-sans)",
+                }}
+              >
+                <span style={{ width: 4, height: 14, borderRadius: 999, background: "var(--hd-moss)" }} />
+                この成分を含む保存済みコスメ
+              </h2>
+              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                {containingProducts.map((p) => (
+                  <Link
+                    key={p.id}
+                    href={`/product/${p.id}`}
+                    style={{
+                      display: "flex", alignItems: "center", gap: 10,
+                      background: "var(--hd-surface)", borderRadius: 12, padding: 12,
+                      border: "1px solid var(--hd-hair)",
+                      textDecoration: "none", color: "inherit",
+                    }}
+                  >
+                    <PackageIcon size={16} color="var(--hd-moss)" />
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div
+                        style={{
+                          fontWeight: 600, fontSize: 12,
+                          fontFamily: "var(--hd-sans)",
+                          overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                        }}
+                      >{p.name}</div>
+                      <div style={{ fontSize: 10, color: "var(--hd-ink-60)", fontFamily: "var(--hd-sans)" }}>
+                        {p.brand}
+                      </div>
+                    </div>
+                    <ChevronRightIcon size={16} color="var(--hd-ink-40)" />
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <Disclaimer />
+        </div>
       </div>
     </div>
   );

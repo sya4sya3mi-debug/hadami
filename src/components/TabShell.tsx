@@ -2,6 +2,8 @@
 
 import { useState, useEffect, ReactNode } from "react";
 import { usePathname } from "next/navigation";
+import { useRouter } from "next/navigation";
+import { useUser } from "@/lib/auth";
 
 // Lazy imports — each tab page is loaded only on first visit
 import dynamic from "next/dynamic";
@@ -25,6 +27,14 @@ const TABS: TabDef[] = [
   { path: "/history", match: (p) => p.startsWith("/history"), Component: HistoryPage },
 ];
 
+const INVITE_ENFORCEMENT_START_AT = "2026-04-22T00:00:00.000Z";
+
+function parseTimestamp(value?: string | null): number | null {
+  if (!value) return null;
+  const timestamp = Date.parse(value);
+  return Number.isFinite(timestamp) ? timestamp : null;
+}
+
 function getActiveTab(pathname: string): string | null {
   return TABS.find((t) => t.match(pathname))?.path ?? null;
 }
@@ -37,6 +47,8 @@ function getActiveTab(pathname: string): string | null {
  * - Non-tab routes (product detail, settings, etc.): fall through to Next.js routing
  */
 export default function TabShell({ children }: { children: ReactNode }) {
+  const router = useRouter();
+  const { user, profile, loading } = useUser();
   // usePathname: detects Next.js Link navigations (settings, product detail, etc.)
   const nextPathname = usePathname();
   // currentPath: also detects TabBar's history.pushState via popstate
@@ -53,6 +65,22 @@ export default function TabShell({ children }: { children: ReactNode }) {
     window.addEventListener("popstate", handler);
     return () => window.removeEventListener("popstate", handler);
   }, []);
+
+  useEffect(() => {
+    if (loading || !user || profile === undefined) return;
+    if (currentPath.startsWith("/auth/")) return;
+
+    const enforcementTs = parseTimestamp(INVITE_ENFORCEMENT_START_AT);
+    const userCreatedAtTs = parseTimestamp(user.created_at);
+    const requiresInvite =
+      enforcementTs !== null &&
+      userCreatedAtTs !== null &&
+      userCreatedAtTs >= enforcementTs;
+
+    if (requiresInvite && !profile?.invite_activated_at) {
+      router.replace("/auth/invite");
+    }
+  }, [currentPath, loading, profile, router, user]);
 
   const activeTab = getActiveTab(currentPath);
   const [mounted, setMounted] = useState<Set<string>>(new Set());

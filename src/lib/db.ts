@@ -6,6 +6,7 @@ import {
 import { r2Delete } from "@/lib/r2";
 
 const USER_LIMIT = 30;
+const LEGACY_SCAN_LIMIT_MARKER = "__limit__";
 const MAX_PRODUCT_IMAGE_BYTES = 8 * 1024 * 1024;
 const UPLOAD_MAX_DIMENSION = 1600;
 const UPLOAD_WEBP_QUALITY = 0.95;
@@ -397,6 +398,73 @@ export function getMonthlyScanLimit() {
   return getAccountScanLimit();
 }
 
+export async function getUserMonthlyScanLimit(
+  supabase: SupabaseClient,
+  userId: string
+): Promise<number> {
+  const defaultLimit = getAccountScanLimit();
+
+  const { data, error } = await supabase
+    .from("user_scan_limits")
+    .select("monthly_limit")
+    .eq("user_id", userId)
+    .maybeSingle();
+
+  if (error) {
+    const isMissingTable =
+      error.code === "42P01" ||
+      error.code === "PGRST205" ||
+      (typeof error.message === "string" && error.message.includes("user_scan_limits"));
+
+    if (!isMissingTable) {
+      console.error("getUserMonthlyScanLimit error:", error);
+      return defaultLimit;
+    }
+  } else if (data && typeof data.monthly_limit === "number" && data.monthly_limit > 0) {
+    return data.monthly_limit;
+  }
+
+  const { data: legacyData, error: legacyError } = await supabase
+    .from("scan_usage")
+    .select("count")
+    .eq("user_id", userId)
+    .eq("month", LEGACY_SCAN_LIMIT_MARKER)
+    .maybeSingle();
+
+  if (legacyError) {
+    console.error("getUserMonthlyScanLimit legacy fallback error:", legacyError);
+    return defaultLimit;
+  }
+
+  if (!legacyData || typeof legacyData.count !== "number" || legacyData.count <= 0) {
+    return defaultLimit;
+  }
+
+  return legacyData.count;
+}
+
+export async function getLegacyUserMonthlyScanLimit(
+  supabase: SupabaseClient,
+  userId: string
+): Promise<number | null> {
+  const { data, error } = await supabase
+    .from("scan_usage")
+    .select("count")
+    .eq("user_id", userId)
+    .eq("month", LEGACY_SCAN_LIMIT_MARKER)
+    .maybeSingle();
+
+  if (error) {
+    return null;
+  }
+
+  if (!data || typeof data.count !== "number" || data.count <= 0) {
+    return null;
+  }
+
+  return data.count;
+}
+
 function getCurrentMonth() {
   const now = new Date();
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
@@ -435,9 +503,10 @@ export async function getMonthlyScanCount(supabase: SupabaseClient, userId: stri
 export async function tryReserveScan(
   supabase: SupabaseClient,
   userId: string,
-  email: string
+  email: string,
+  limitOverride?: number,
 ): Promise<boolean> {
-  const limit = getAccountScanLimit();
+  const limit = limitOverride ?? getAccountScanLimit();
   const { data, error } = await supabase.rpc("try_reserve_scan", {
     p_email: email,
     p_user_id: userId,
@@ -448,6 +517,99 @@ export async function tryReserveScan(
     return false;
   }
   return data === true;
+}
+
+export async function tryReserveScanFallback(
+  supabase: SupabaseClient,
+  userId: string,
+  email: string,
+  limit: number
+): Promise<boolean> {
+  const month = getCurrentMonth();
+  const { data: usage, error: usageError } = await supabase
+    .from("scan_usage")
+    .select("count")
+    .eq("user_id", userId)
+    .eq("month", month)
+    .maybeSingle();
+
+  if (usageError) {
+    console.error("tryReserveScanFallback usage read error:", usageError);
+    return false;
+  }
+
+  const currentCount = usage?.count ?? 0;
+  if (currentCount >= limit) {
+    return false;
+  }
+
+  if (usage) {
+    const { error: updateError } = await supabase
+      .from("scan_usage")
+      .update({ count: currentCount + 1 })
+      .eq("user_id", userId)
+      .eq("month", month)
+      .eq("count", currentCount);
+
+    if (updateError) {
+      console.error("tryReserveScanFallback usage update error:", updateError);
+      return false;
+    }
+  } else {
+    const { error: insertError } = await supabase
+      .from("scan_usage")
+      .insert({ user_id: userId, month, count: 1 });
+
+    if (insertError) {
+      console.error("tryReserveScanFallback usage insert error:", insertError);
+      return false;
+    }
+  }
+
+  const { data: emailRow, error: emailReadError } = await supabase
+    .from("scan_limit_by_email")
+    .select("total_count")
+    .eq("email", email)
+    .maybeSingle();
+
+  if (emailReadError) {
+    console.error("tryReserveScanFallback email read error:", emailReadError);
+    return true;
+  }
+
+  if (emailRow) {
+    const { error: emailUpdateError } = await supabase
+      .from("scan_limit_by_email")
+      .update({ total_count: (emailRow.total_count ?? 0) + 1, updated_at: new Date().toISOString() })
+      .eq("email", email);
+    if (emailUpdateError) {
+      console.error("tryReserveScanFallback email update error:", emailUpdateError);
+    }
+  } else {
+    const { error: emailInsertError } = await supabase
+      .from("scan_limit_by_email")
+      .insert({ email, total_count: 1 });
+    if (emailInsertError) {
+      console.error("tryReserveScanFallback email insert error:", emailInsertError);
+    }
+  }
+
+  return true;
+}
+
+export async function rollbackScan(
+  supabase: SupabaseClient,
+  userId: string,
+  email: string,
+): Promise<void> {
+  const { error } = await supabase.rpc("rollback_scan", {
+    p_email: email,
+    p_user_id: userId,
+  });
+
+  if (error) {
+    console.error("rollbackScan RPC error:", error);
+  }
 }
 
 export async function incrementScanCount(supabase: SupabaseClient, userId: string, email: string) {

@@ -1,6 +1,8 @@
 "use client";
 
+import "@/styles/hadami-tokens.css";
 import { Suspense, useCallback, useEffect, useRef, useState } from "react";
+import { Ico } from "@/components/redesign/apothecary/Icons";
 import { useSearchParams, useRouter } from "next/navigation";
 import StepIndicator from "@/components/scan/StepIndicator";
 import CaptureStep from "@/components/scan/CaptureStep";
@@ -25,7 +27,8 @@ import {
   saveDiscoveriesToDb,
   saveScanHistory,
   getUserLimit,
-  getMonthlyScanLimit,
+  getAccountScanLimit,
+  getLegacyUserMonthlyScanLimit,
   getMonthlyScanCount,
   getProductCount,
 } from "@/lib/db";
@@ -49,6 +52,55 @@ interface ScannedProduct {
   activeIngredients?: string[];
   resolveToken?: string;
   requiresResolve?: boolean;
+}
+
+interface ScanProductResponse {
+  needsSelection?: boolean;
+  products?: ScannedProduct[];
+  productName?: string;
+  brand?: string;
+  productType?: string;
+  found?: boolean;
+  ingredients?: string;
+  isQuasiDrug?: boolean;
+  activeIngredients?: string[];
+}
+
+interface ApiErrorPayload {
+  error?: string;
+  count?: number;
+  limit?: number;
+}
+
+type ApiResponseError = Error & { status?: number };
+
+async function parseApiResponse<T>(
+  response: Response,
+  fallbackMessage: string,
+): Promise<T> {
+  const payload = (await response.json().catch(() => null)) as (T & ApiErrorPayload) | null;
+
+  if (!response.ok) {
+    const error = new Error(
+      payload?.error
+        ? response.status === 429 &&
+          typeof payload.count === "number" &&
+          typeof payload.limit === "number"
+          ? `${payload.error}（${payload.count}/${payload.limit}）`
+          : payload.error
+        : fallbackMessage,
+    ) as ApiResponseError;
+    error.status = response.status;
+    throw error;
+  }
+
+  return payload as T;
+}
+
+function getApiErrorStatus(error: unknown): number | null {
+  return typeof (error as ApiResponseError | null)?.status === "number"
+    ? (error as ApiResponseError).status!
+    : null;
 }
 
 export default function ScanPage() {
@@ -135,16 +187,46 @@ function ScanPageInner() {
   }, [isUnsaved, setUnsavedScan]);
 
   const userLimit = getUserLimit();
-  const monthlyScanLimit = getMonthlyScanLimit();
+  const [monthlyScanLimit, setMonthlyScanLimit] = useState(getAccountScanLimit());
   const [scanLimitReached, setScanLimitReached] = useState(false);
   const [showManualSheet, setShowManualSheet] = useState(false);
 
   useEffect(() => {
-    if (!user?.email) return;
-    getMonthlyScanCount(supabase, user.id).then((count) => {
-      if (count >= monthlyScanLimit) setScanLimitReached(true);
-    });
-  }, [user, supabase, monthlyScanLimit]);
+    if (!user?.id) return;
+    let cancelled = false;
+
+    const loadScanLimit = async () => {
+      const legacyOverride = await getLegacyUserMonthlyScanLimit(supabase, user.id).catch(
+        () => null
+      );
+      try {
+        const res = await fetch(`/api/scan-limit?ts=${Date.now()}`, { cache: "no-store" });
+        if (!res.ok) throw new Error("scan-limit fetch failed");
+        const data = (await res.json()) as { count?: number; limit?: number };
+
+        const apiLimit =
+          typeof data.limit === "number" && data.limit > 0 ? data.limit : getAccountScanLimit();
+        const limit =
+          typeof legacyOverride === "number" && legacyOverride > apiLimit
+            ? legacyOverride
+            : apiLimit;
+        const count = typeof data.count === "number" ? data.count : 0;
+
+        if (cancelled) return;
+        setMonthlyScanLimit(limit);
+        setScanLimitReached(count >= limit);
+      } catch {
+        if (cancelled) return;
+        // If scan-limit API is temporarily unavailable, avoid false blocking in UI.
+        setScanLimitReached(false);
+      }
+    };
+
+    loadScanLimit();
+    return () => {
+      cancelled = true;
+    };
+  }, [user, supabase]);
 
   const resolveActiveIngredientIds = useCallback((names?: string[]) => {
     if (!names?.length) return [] as string[];
@@ -290,12 +372,35 @@ function ScanPageInner() {
 
   const checkScanLimit = useCallback(async (): Promise<boolean> => {
     if (!user?.email) return false;
-    const count = await getMonthlyScanCount(supabase, user.id);
-    if (count >= monthlyScanLimit) {
-      setScanLimitReached(true);
-      return false;
+    try {
+      const [res, legacyOverride] = await Promise.all([
+        fetch(`/api/scan-limit?ts=${Date.now()}`, { cache: "no-store" }),
+        getLegacyUserMonthlyScanLimit(supabase, user.id),
+      ]);
+      if (!res.ok) throw new Error("scan-limit fetch failed");
+      const data = (await res.json()) as { count?: number; limit?: number };
+      const apiLimit =
+        typeof data.limit === "number" && data.limit > 0 ? data.limit : getAccountScanLimit();
+      const latestLimit =
+        typeof legacyOverride === "number" && legacyOverride > apiLimit
+          ? legacyOverride
+          : apiLimit;
+      const count = typeof data.count === "number" ? data.count : 0;
+      setMonthlyScanLimit(latestLimit);
+      const reached = count >= latestLimit;
+      setScanLimitReached(reached);
+      return !reached;
+    } catch {
+      try {
+        const count = await getMonthlyScanCount(supabase, user.id);
+        const reached = count >= monthlyScanLimit;
+        setScanLimitReached(reached);
+        return !reached;
+      } catch {
+        // If lookup fails, do not block here; backend still has authoritative limit checks.
+        return true;
+      }
     }
-    return true;
   }, [user, supabase, monthlyScanLimit]);
 
   const buildEvidenceMap = useCallback(
@@ -338,11 +443,10 @@ function ScanPageInner() {
           }),
         });
 
-        if (!res.ok) {
-          throw new Error("Resolve API error");
-        }
-
-        const resolved = (await res.json()) as ScannedProduct;
+        const resolved = await parseApiResponse<ScannedProduct>(
+          res,
+          "成分検索に失敗しました。"
+        );
         const nextProduct: ScannedProduct = {
           ...product,
           ...resolved,
@@ -415,9 +519,19 @@ function ScanPageInner() {
           }),
         });
 
-        if (!res.ok) throw new Error("API error");
-        const data = await res.json();
-        const products: ScannedProduct[] = data.products || [data];
+        const data = await parseApiResponse<ScanProductResponse>(
+          res,
+          "検索に失敗しました。"
+        );
+        const products: ScannedProduct[] = data.products || [{
+          productName: data.productName || "",
+          brand: data.brand || "",
+          productType: data.productType || "other",
+          found: data.found === true,
+          ingredients: data.ingredients || "",
+          isQuasiDrug: data.isQuasiDrug,
+          activeIngredients: data.activeIngredients,
+        }];
         const nextEvidenceMap = buildEvidenceMap(products);
         scanEvidenceRef.current = nextEvidenceMap;
         setScanEvidenceMap(nextEvidenceMap);
@@ -465,8 +579,18 @@ function ScanPageInner() {
         }
       } catch (error) {
         console.error("Product search error:", error);
-        setProgressMsg("検索に失敗しました");
-        setTimeout(() => setShowFallback(true), 1000);
+        const status = getApiErrorStatus(error);
+        if (status === 429) {
+          setScanLimitReached(true);
+        }
+
+        setProgressMsg(
+          error instanceof Error ? error.message : "検索に失敗しました"
+        );
+
+        if (status !== 401 && status !== 429 && status !== 503) {
+          setTimeout(() => setShowFallback(true), 1000);
+        }
       }
     },
     [buildEvidenceMap, processIngredients, checkScanLimit, user, supabase, userLimit]
@@ -486,12 +610,15 @@ function ScanPageInner() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ imageBase64: imageData }),
         });
-        if (!ocrRes.ok) throw new Error("OCR API error");
         const {
           text,
           isQuasiDrug: ocrIsQuasiDrug,
           activeIngredients: ocrActiveIngredients,
-        } = await ocrRes.json();
+        } = await parseApiResponse<{
+          text: string;
+          isQuasiDrug: boolean;
+          activeIngredients: string[];
+        }>(ocrRes, "OCR処理に失敗しました。");
         const fallbackName = productName || "スキャンしたコスメ";
         const fallbackBrand = brand || "ブランド不明";
         const fallbackEvidenceKey = buildScanEvidenceKey(fallbackName, fallbackBrand);
@@ -530,7 +657,14 @@ function ScanPageInner() {
         }, 500);
       } catch (error) {
         console.error("OCR error:", error);
-        setProgressMsg("エラーが発生しました。もう一度お試しください。");
+        if (getApiErrorStatus(error) === 429) {
+          setScanLimitReached(true);
+        }
+        setProgressMsg(
+          error instanceof Error
+            ? error.message
+            : "エラーが発生しました。もう一度お試しください。"
+        );
         setTimeout(() => setShowFallback(true), 2000);
       }
     },
@@ -569,7 +703,12 @@ function ScanPageInner() {
         }, 300);
       } catch (error) {
         console.error("Multi-product resolve error:", error);
-        setProgressMsg("成分検索に失敗しました");
+        if (getApiErrorStatus(error) === 429) {
+          setScanLimitReached(true);
+        }
+        setProgressMsg(
+          error instanceof Error ? error.message : "成分検索に失敗しました"
+        );
         setTimeout(() => setShowMultiSheet(true), 500);
       }
     },
@@ -776,184 +915,293 @@ function ScanPageInner() {
     doReset();
   }, [step, saved, doReset]);
 
-  // No event listener needed — TabBar directly calls triggerCameraOpen() via global ref
+  useEffect(() => {
+    const handleScanTabPressed = () => {
+      if (typeof document !== "undefined" && document.body.dataset.modalOpen) {
+        return;
+      }
+
+      if (saved) {
+        doReset();
+        return;
+      }
+
+      if (step >= 2) {
+        handleReset();
+        return;
+      }
+    };
+
+    window.addEventListener("hadami:scan-tab-pressed", handleScanTabPressed);
+    return () => {
+      window.removeEventListener("hadami:scan-tab-pressed", handleScanTabPressed);
+    };
+  }, [doReset, handleReset, saved, step]);
 
   return (
     <AuthGuard>
-      <div className="min-h-screen bg-bo-cream animate-fade-in">
-        {/* Sticky header — only show when step > 1 */}
-        {step > 1 && (
-          <div className="sticky top-0 z-50 flex items-center px-4 py-2.5
-                          bg-bo-cream/90 backdrop-blur-xl border-b border-bo-parchment/40">
-            <button
-              onClick={handleReset}
-              className="flex items-center gap-1.5 px-3.5 py-2 rounded-r1 bg-white text-sm font-semibold text-bo-ink-muted
-                         cursor-pointer font-sans pressable border-none shadow-bo1"
+      <div className="hd-root hd-softa" data-density="compact" data-card="default">
+        <div
+          className="hd hd-page"
+          style={{ minHeight: "100vh", background: "var(--hd-bg)" }}
+        >
+          {/* Sticky header — only show when step > 1 */}
+          {step > 1 && (
+            <div
+              style={{
+                position: "sticky", top: 0, zIndex: 50,
+                display: "flex", alignItems: "center",
+                padding: "10px 16px",
+                background: "var(--hd-bg)",
+                borderBottom: "1px solid var(--hd-hair)",
+              }}
             >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" aria-hidden="true">
-                <path d="M15 18l-6-6 6-6" />
-              </svg>
-              最初から
-            </button>
-          </div>
-        )}
-
-        <div className="px-5 pt-4 pb-6">
-          {/* Step indicator */}
-          <StepIndicator currentStep={step} />
-
-          {/* Scan limit warning */}
-          {scanLimitReached && step === 1 && (
-            <div className="rounded-r2 p-5 mb-5 text-center bg-white shadow-bo2">
-              <div className="w-14 h-14 rounded-[18px] mx-auto mb-3 flex items-center justify-center
-                              bg-red-50">
-                <span className="text-2xl">🚫</span>
-              </div>
-              <div className="font-bold text-sm mb-1 text-bo-ink font-sans">
-                今月のスキャン上限（{monthlyScanLimit}回）に達しました
-              </div>
-              <div className="text-xs text-bo-ink-muted mb-4 font-sans">
-                ベータ版では月{monthlyScanLimit}回まで無料です。翌月1日にリセットされます
-              </div>
               <button
-                onClick={() => setShowManualSheet(true)}
-                className="px-6 py-3 rounded-r2 text-sm font-bold text-white bg-bo-accent shadow-bo-accent
-                           border-none cursor-pointer pressable font-sans"
+                onClick={handleReset}
+                style={{
+                  display: "flex", alignItems: "center", gap: 6,
+                  padding: "8px 14px", borderRadius: 999,
+                  background: "transparent",
+                  border: "1px solid var(--hd-line)",
+                  color: "var(--hd-ink-60)",
+                  fontSize: 12, fontWeight: 600,
+                  cursor: "pointer",
+                  fontFamily: "var(--hd-sans)",
+                }}
               >
-                成分を手動入力する
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" aria-hidden="true">
+                  <path d="M15 18l-6-6 6-6" />
+                </svg>
+                最初から
               </button>
-              <div className="text-[10px] text-bo-ink-faint mt-2.5 font-sans">
-                手動入力はスキャン回数にカウントされません
-              </div>
             </div>
           )}
 
-          {/* Step 1: Capture — hidden file input + guide to bottom scan button */}
-          {step === 1 && (
-            <>
-              <CaptureStep
-                onCapture={handlePackageCapture}
-                disabled={scanLimitReached}
-                hidden
-              />
-              <div className="flex flex-col items-center pt-10 pb-6 animate-fade-in">
-                {/* Pulsing ring around camera icon */}
-                <div className="relative w-24 h-24 flex items-center justify-center mb-6">
-                  <div className="absolute inset-0 rounded-full bg-bo-accent/10 animate-[scan-ring_2s_ease-in-out_infinite]" />
-                  <div className="absolute inset-2 rounded-full bg-bo-accent/15 animate-[scan-ring_2s_ease-in-out_infinite_0.4s]" />
-                  <div className="absolute inset-4 rounded-full bg-bo-accent/10 animate-[scan-ring_2s_ease-in-out_infinite_0.8s]" />
-                  <div className="relative w-14 h-14 rounded-full bg-gradient-to-br from-bo-accent to-[#2D7A66] flex items-center justify-center shadow-lg">
-                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                      <path d="M12 15.2a3.2 3.2 0 100-6.4 3.2 3.2 0 000 6.4z" fill="white"/>
-                      <path d="M9 2L7.17 4H4a2 2 0 00-2 2v12a2 2 0 002 2h16a2 2 0 002-2V6a2 2 0 00-2-2h-3.17L15 2H9zm3 15a5 5 0 110-10 5 5 0 010 10z" fill="white"/>
+          <div style={{ padding: "16px 20px 96px" }}>
+            <StepIndicator currentStep={step} />
+
+            {scanLimitReached && step === 1 && (
+              <div
+                style={{
+                  borderRadius: 18, padding: 24, marginBottom: 20,
+                  textAlign: "center",
+                  background: "var(--hd-surface)",
+                  border: "1px solid var(--hd-hair)",
+                }}
+              >
+                <div
+                  style={{
+                    width: 60, height: 60, borderRadius: 999,
+                    background: "var(--hd-surface-2)",
+                    margin: "0 auto 14px",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    fontSize: 28,
+                  }}
+                >🚫</div>
+                <div className="hd-serif" style={{ fontSize: 16, marginBottom: 6 }}>
+                  今月のスキャン上限（{monthlyScanLimit}回）に達しました
+                </div>
+                <div
+                  style={{
+                    fontSize: 12, color: "var(--hd-ink-60)",
+                    marginBottom: 18, fontFamily: "var(--hd-sans)",
+                    lineHeight: 1.6,
+                  }}
+                >
+                  ベータ版では月{monthlyScanLimit}回まで無料です。翌月1日にリセットされます
+                </div>
+                <button
+                  onClick={() => setShowManualSheet(true)}
+                  className="hd-cta"
+                  style={{
+                    padding: "12px 24px", cursor: "pointer", fontSize: 14,
+                    display: "inline-flex", alignItems: "center", gap: 6,
+                  }}
+                >
+                  成分を手動入力する
+                </button>
+                <div
+                  style={{
+                    fontSize: 10, color: "var(--hd-ink-40)", marginTop: 10,
+                    fontFamily: "var(--hd-sans)",
+                  }}
+                >
+                  手動入力はスキャン回数にカウントされません
+                </div>
+              </div>
+            )}
+
+            {/* Step 1: Capture */}
+            {step === 1 && (
+              <>
+                <CaptureStep
+                  onCapture={handlePackageCapture}
+                  disabled={scanLimitReached}
+                  hidden
+                />
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: "32px 0 20px" }}>
+                  {/* Pulsing ring around camera icon */}
+                  <div style={{ position: "relative", width: 110, height: 110, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 24 }}>
+                    <div
+                      style={{
+                        position: "absolute", inset: 0, borderRadius: 999,
+                        background: "oklch(0.22 0.01 95 / 0.08)",
+                        animation: "scan-ring 2s ease-in-out infinite",
+                      }}
+                    />
+                    <div
+                      style={{
+                        position: "absolute", inset: 8, borderRadius: 999,
+                        background: "oklch(0.22 0.01 95 / 0.10)",
+                        animation: "scan-ring 2s ease-in-out 0.4s infinite",
+                      }}
+                    />
+                    <div
+                      style={{
+                        position: "absolute", inset: 16, borderRadius: 999,
+                        background: "oklch(0.22 0.01 95 / 0.08)",
+                        animation: "scan-ring 2s ease-in-out 0.8s infinite",
+                      }}
+                    />
+                    <div
+                      style={{
+                        position: "relative", width: 76, height: 76, borderRadius: 999,
+                        background: "var(--hd-ink)",
+                        color: "var(--hd-bg)",
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                        boxShadow: "0 10px 28px oklch(0.22 0.01 95 / 0.30)",
+                      }}
+                    >
+                      {Ico.camera({ width: 30, height: 30 })}
+                    </div>
+                  </div>
+
+                  <div className="hd-mono hd-caps" style={{ color: "var(--hd-ink-40)", marginBottom: 10 }}>
+                    Tap to scan
+                  </div>
+                  <div className="hd-serif" style={{ fontSize: 22, marginBottom: 10, letterSpacing: "-0.01em", textAlign: "center" }}>
+                    パッケージを撮影してスキャン
+                  </div>
+                  <p
+                    style={{
+                      fontSize: 12, color: "var(--hd-ink-60)",
+                      fontFamily: "var(--hd-sans)", lineHeight: 1.65,
+                      textAlign: "center", marginTop: 0, marginBottom: 24,
+                    }}
+                  >
+                    下のスキャンボタンを押して<br />化粧品のパッケージを撮影してください
+                  </p>
+
+                  <div style={{ animation: "bounce 1.2s ease-in-out infinite", color: "var(--hd-ink-40)" }}>
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
+                      <path d="M12 5v14M5 12l7 7 7-7" />
                     </svg>
                   </div>
                 </div>
 
-                <h2 className="text-base font-bold text-bo-ink font-sans mb-2">
-                  パッケージを撮影してスキャン
-                </h2>
-                <p className="text-xs text-bo-ink-muted font-sans leading-relaxed text-center mb-6">
-                  下のスキャンボタンを押して<br/>化粧品のパッケージを撮影してください
-                </p>
-
-                {/* Bouncing arrow pointing to bottom tab */}
-                <div className="animate-bounce text-bo-accent">
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-                    <path d="M12 5v14M5 12l7 7 7-7"/>
-                  </svg>
+                <div style={{ marginTop: 8 }}>
+                  <ScanDiscoveryAd />
                 </div>
-              </div>
-
-              <div className="mt-2">
-                <ScanDiscoveryAd />
-              </div>
-              <div className="mt-4">
-                <Disclaimer />
-              </div>
-            </>
-          )}
-
-          {/* Step 2: Identify */}
-          {step === 2 && (
-            <IdentifyStep
-              progress={progress}
-              message={progressMsg}
-              imagePreview={packageImageColor || packageImage}
-              showFallback={showFallback}
-              onFallbackCapture={handleFallbackCapture}
-              multiProducts={multiProducts}
-              onSelectProduct={handleSelectProduct}
-              onSaveMulti={handleSaveMulti}
-              multiSavedIndexes={multiSavedIndexes}
-              multiResolvingIndexes={multiResolvingIndexes}
-              showMultiSheet={showMultiSheet}
-              onCloseMultiSheet={() => setShowMultiSheet(false)}
-            />
-          )}
-
-          {/* Step 3: Classify */}
-          {step === 3 && (
-            <ClassifyStep
-              productName={productName}
-              brand={brand}
-              productType={productType}
-              imagePreview={packageImageColor || packageImage}
-              onProductNameChange={setProductName}
-              onBrandChange={setBrand}
-              onProductTypeChange={setProductType}
-              onContinue={handleClassifyContinue}
-              onBack={() => setStep(2)}
-            />
-          )}
-
-          {/* Step 4: Results */}
-          {step === 4 && (
-            <>
-              {!saved && (
-                <button
-                  onClick={() => setStep(3)}
-                  className="flex items-center gap-1.5 text-sm text-bo-ink-muted font-sans font-bold mb-3
-                             bg-white rounded-r2 px-3 py-2 shadow-bo1 border-none cursor-pointer pressable"
-                >
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-                    <path d="M15 18l-6-6 6-6"/>
-                  </svg>
-                  分類に戻る
-                </button>
-              )}
-              {saveError && (
-                <div className="flex items-start gap-3 bg-white rounded-r2 py-3.5 px-4 mb-4 shadow-bo1 border border-red-100">
-                  <span className="text-base shrink-0">⚠️</span>
-                  <span className="text-sm text-red-500 font-sans">{saveError}</span>
+                <div style={{ marginTop: 16 }}>
+                  <Disclaimer />
                 </div>
-              )}
-              <ScanResult
+              </>
+            )}
+
+            {step === 2 && (
+              <IdentifyStep
+                progress={progress}
+                message={progressMsg}
+                imagePreview={packageImageColor || packageImage}
+                showFallback={showFallback}
+                onFallbackCapture={handleFallbackCapture}
+                multiProducts={multiProducts}
+                onSelectProduct={handleSelectProduct}
+                onSaveMulti={handleSaveMulti}
+                multiSavedIndexes={multiSavedIndexes}
+                multiResolvingIndexes={multiResolvingIndexes}
+                showMultiSheet={showMultiSheet}
+                onCloseMultiSheet={() => setShowMultiSheet(false)}
+              />
+            )}
+
+            {step === 3 && (
+              <ClassifyStep
                 productName={productName}
                 brand={brand}
                 productType={productType}
-                foundIngredients={foundIngredients}
-                unknownIngredients={unknownIngredients}
-                combinations={combinations}
-                onSave={handleSave}
-                saved={saved}
                 imagePreview={packageImageColor || packageImage}
-                newDiscoveryIds={new Set(newDiscoveries.map((i) => i.id))}
+                onProductNameChange={setProductName}
+                onBrandChange={setBrand}
+                onProductTypeChange={setProductType}
+                onContinue={handleClassifyContinue}
+                onBack={() => setStep(2)}
               />
-            </>
+            )}
+
+            {step === 4 && (
+              <>
+                {!saved && (
+                  <button
+                    onClick={() => setStep(3)}
+                    style={{
+                      display: "flex", alignItems: "center", gap: 6,
+                      fontSize: 12, fontWeight: 600,
+                      color: "var(--hd-ink-60)",
+                      background: "transparent",
+                      border: "1px solid var(--hd-line)",
+                      borderRadius: 999, padding: "8px 14px",
+                      cursor: "pointer", marginBottom: 14,
+                      fontFamily: "var(--hd-sans)",
+                    }}
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                      <path d="M15 18l-6-6 6-6" />
+                    </svg>
+                    分類に戻る
+                  </button>
+                )}
+                {saveError && (
+                  <div
+                    style={{
+                      display: "flex", alignItems: "flex-start", gap: 10,
+                      padding: "12px 14px", borderRadius: 12,
+                      background: "var(--hd-surface)",
+                      border: "1px solid var(--hd-terra)",
+                      marginBottom: 14,
+                      fontSize: 12, color: "var(--hd-terra)",
+                      fontFamily: "var(--hd-sans)",
+                    }}
+                  >
+                    ⚠️ {saveError}
+                  </div>
+                )}
+                <ScanResult
+                  productName={productName}
+                  brand={brand}
+                  productType={productType}
+                  foundIngredients={foundIngredients}
+                  unknownIngredients={unknownIngredients}
+                  combinations={combinations}
+                  onSave={handleSave}
+                  saved={saved}
+                  imagePreview={packageImageColor || packageImage}
+                  newDiscoveryIds={new Set(newDiscoveries.map((i) => i.id))}
+                />
+              </>
+            )}
+          </div>
+
+          {showDiscovery && (
+            <DiscoveryModal ingredients={newDiscoveries} onClose={() => setShowDiscovery(false)} />
           )}
         </div>
-
-        {/* Discovery modal */}
-        {showDiscovery && (
-          <DiscoveryModal ingredients={newDiscoveries} onClose={() => setShowDiscovery(false)} />
-        )}
+        <ManualInputSheet
+          open={showManualSheet}
+          onClose={() => setShowManualSheet(false)}
+          onSubmit={handleManualSubmit}
+        />
       </div>
-      <ManualInputSheet
-        open={showManualSheet}
-        onClose={() => setShowManualSheet(false)}
-        onSubmit={handleManualSubmit}
-      />
     </AuthGuard>
   );
 }
