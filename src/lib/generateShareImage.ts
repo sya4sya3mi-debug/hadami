@@ -3,11 +3,34 @@
 import { Product, Ingredient } from "@/types";
 import { getIngredientById, RARITY } from "./ingredients";
 import { getGenreByKey } from "./productGenres";
-import { buildCanvasFont } from "./shareCardFonts";
+
+// ── Softa palette (oklch を hex 近似に解いた値) ──
+const SOFTA = {
+  bg: "#f0eee9",
+  surface: "#fbf8f1",
+  surface2: "#e6e2d8",
+  ink: "#231f17",
+  ink60: "#5a544a",
+  ink40: "#8c8678",
+  hair: "#dcd6c8",
+  line: "#cfc8b8",
+  moss: "#3a5a3e",
+} as const;
+
+const SERIF_FONT_STACK =
+  "'Shippori Mincho', 'Hiragino Mincho ProN', 'YuMincho', serif";
+const MONO_FONT_STACK =
+  "'JetBrains Mono', 'SF Mono', Menlo, ui-monospace, monospace";
+
+function fontSerif(weight: number, sizePx: number, italic = false) {
+  return `${italic ? "italic " : ""}${weight} ${sizePx}px ${SERIF_FONT_STACK}`;
+}
+function fontMono(weight: number, sizePx: number) {
+  return `${weight} ${sizePx}px ${MONO_FONT_STACK}`;
+}
 
 /** 画像URLを読み込む（CORS回避のためfetch→ObjectURLを試みる） */
 async function loadImage(src: string): Promise<HTMLImageElement> {
-  // まずfetch経由でBlob取得（CORSヘッダーが不要になる）
   try {
     const res = await fetch(src, { mode: "cors" });
     if (res.ok) {
@@ -15,14 +38,21 @@ async function loadImage(src: string): Promise<HTMLImageElement> {
       const objectUrl = URL.createObjectURL(blob);
       return await new Promise<HTMLImageElement>((resolve, reject) => {
         const img = new Image();
-        img.onload = () => { URL.revokeObjectURL(objectUrl); resolve(img); };
-        img.onerror = () => { URL.revokeObjectURL(objectUrl); reject(); };
+        img.onload = () => {
+          URL.revokeObjectURL(objectUrl);
+          resolve(img);
+        };
+        img.onerror = () => {
+          URL.revokeObjectURL(objectUrl);
+          reject();
+        };
         img.src = objectUrl;
       });
     }
-  } catch { /* fallthrough to direct load */ }
+  } catch {
+    /* fallthrough */
+  }
 
-  // フォールバック：直接読み込み
   return new Promise<HTMLImageElement>((resolve, reject) => {
     const img = new Image();
     img.crossOrigin = "anonymous";
@@ -32,244 +62,211 @@ async function loadImage(src: string): Promise<HTMLImageElement> {
   });
 }
 
-/** 角丸矩形を塗りつぶす */
-function fillRoundRect(
-  ctx: CanvasRenderingContext2D,
-  x: number, y: number, w: number, h: number, r: number,
-  color: string
-) {
-  ctx.fillStyle = color;
-  ctx.beginPath();
-  ctx.roundRect(x, y, w, h, r);
-  ctx.fill();
-}
-
-/** テキストバッジ（textBaseline=top で描画）。描画した幅を返す */
-function drawBadge(
+function drawText(
   ctx: CanvasRenderingContext2D,
   text: string,
   x: number,
-  y: number,          // バッジの上端Y
-  bg: string,
-  fg: string,
-  fontSize: number
-): number {
-  const font = buildCanvasFont(700, fontSize);
+  y: number,
+  font: string,
+  color: string,
+  align: CanvasTextAlign = "left",
+  letterSpacing = 0,
+) {
   ctx.save();
   ctx.font = font;
-  const tw = ctx.measureText(text).width;
-  const PX = 18;          // 横パディング
-  const PY = 10;          // 縦パディング
-  const bw = tw + PX * 2;
-  const bh = fontSize + PY * 2;
-
-  fillRoundRect(ctx, x, y, bw, bh, bh / 2, bg);
-
-  ctx.fillStyle = fg;
+  ctx.fillStyle = color;
   ctx.textBaseline = "top";
-  ctx.textAlign = "left";
-  ctx.fillText(text, x + PX, y + PY);
-
-  ctx.restore();
-  return bw;
-}
-
-/** ブランドフッターを描画（HADAMIロゴ + URL） */
-function drawFooter(ctx: CanvasRenderingContext2D, W: number, footerTop: number) {
-  const FOOTER_H = 72;
-
-  // セパレータライン
-  ctx.fillStyle = "#3A8F7A";
-  ctx.fillRect(24, footerTop, W - 48, 2);
-
-  // HADAMI ロゴテキスト（左）
-  ctx.save();
-  ctx.font = buildCanvasFont(800, 28);
-  ctx.textBaseline = "top";
-  ctx.textAlign = "left";
-  ctx.fillStyle = "#3A8F7A";
-  ctx.fillText("HADAMI", 24, footerTop + 20);
-  ctx.restore();
-
-  // キャッチコピー（ロゴ右）
-  ctx.save();
-  ctx.font = buildCanvasFont(500, 16);
-  ctx.textBaseline = "top";
-  ctx.textAlign = "left";
-  ctx.fillStyle = "#AAAAAA";
-  ctx.fillText("美容成分図鑑", 24, footerTop + 52);
-  ctx.restore();
-
-  // URL（右端）
-  ctx.save();
-  ctx.font = buildCanvasFont(500, 16);
-  ctx.textBaseline = "top";
-  ctx.textAlign = "right";
-  ctx.fillStyle = "#BDBDBD";
-  ctx.fillText("hadami.vercel.app", W - 24, footerTop + 36);
-  ctx.restore();
-
-  return FOOTER_H;
-}
-
-/** 成分タグ行を描画（レアリティ★付き） */
-function drawIngredientTags(
-  ctx: CanvasRenderingContext2D,
-  ingredients: { nameJa: string; color: string; rarity: string }[],
-  W: number,
-  sectionTop: number,
-): number {
-  if (ingredients.length === 0) return 0;
-
-  // 「注目成分」ラベル
-  ctx.save();
-  ctx.font = buildCanvasFont(600, 20);
-  ctx.textBaseline = "top";
-  ctx.textAlign = "left";
-  ctx.fillStyle = "#AAAAAA";
-  ctx.fillText("注目成分", 24, sectionTop);
-  ctx.restore();
-
-  // タグ
-  const TAG_H = 38;
-  const TAG_TOP = sectionTop + 32;
-  let tagX = 24;
-
-  for (const ing of ingredients) {
-    const rarityInfo = RARITY[ing.rarity as keyof typeof RARITY];
-    const stars = rarityInfo ? "★".repeat(rarityInfo.star) + " " : "";
-    const label = stars + ing.nameJa;
-
-    ctx.save();
-    ctx.font = buildCanvasFont(700, 21);
-    const tw = ctx.measureText(label).width;
-    const PX = 16;
-    const tagW = tw + PX * 2;
-
-    if (tagX + tagW > W - 24) { ctx.restore(); break; }
-
-    // 背景
-    const r = parseInt(ing.color.slice(1, 3), 16);
-    const g = parseInt(ing.color.slice(3, 5), 16);
-    const b = parseInt(ing.color.slice(5, 7), 16);
-    fillRoundRect(ctx, tagX, TAG_TOP, tagW, TAG_H, TAG_H / 2, `rgba(${r},${g},${b},0.14)`);
-
-    // テキスト
-    const textPY = (TAG_H - 21) / 2;
-    ctx.fillStyle = ing.color;
-    ctx.textBaseline = "top";
+  ctx.textAlign = align;
+  if (!letterSpacing) {
+    ctx.fillText(text, x, y);
+  } else {
+    // letter-spacing fallback: char-by-char
+    let cx = x;
+    if (align === "right") {
+      // measure full width with spacing first
+      let width = 0;
+      for (let i = 0; i < text.length; i++) {
+        width += ctx.measureText(text[i]).width;
+        if (i < text.length - 1) width += letterSpacing;
+      }
+      cx = x - width;
+    } else if (align === "center") {
+      let width = 0;
+      for (let i = 0; i < text.length; i++) {
+        width += ctx.measureText(text[i]).width;
+        if (i < text.length - 1) width += letterSpacing;
+      }
+      cx = x - width / 2;
+    }
     ctx.textAlign = "left";
-    ctx.fillText(label, tagX + PX, TAG_TOP + textPY);
-
-    ctx.restore();
-    tagX += tagW + 10;
+    for (const ch of text) {
+      ctx.fillText(ch, cx, y);
+      cx += ctx.measureText(ch).width + letterSpacing;
+    }
   }
-
-  return 112; // TAG_AREA_H
+  ctx.restore();
 }
 
-/** 製品画像を描画（cover/contain） */
-async function drawProductImage(
+function getInitials(productName: string, brand: string): string {
+  const candidates = [brand, productName].filter(Boolean);
+  for (const source of candidates) {
+    const ascii = source.match(/[A-Za-z0-9]+/g);
+    if (ascii && ascii.length > 0) {
+      const tokens = ascii.filter(Boolean);
+      if (tokens.length === 1) return tokens[0].slice(0, 3).toUpperCase();
+      return tokens
+        .slice(0, 2)
+        .map((t) => t.charAt(0))
+        .join("")
+        .toUpperCase();
+    }
+  }
+  const fallback = (brand || productName || "?").trim();
+  return fallback.slice(0, 2);
+}
+
+function wrapText(
+  ctx: CanvasRenderingContext2D,
+  text: string,
+  maxWidth: number,
+  font: string,
+): string[] {
+  ctx.save();
+  ctx.font = font;
+  const lines: string[] = [];
+  let current = "";
+  for (const ch of text) {
+    const next = current + ch;
+    if (ctx.measureText(next).width > maxWidth && current) {
+      lines.push(current);
+      current = ch;
+    } else {
+      current = next;
+    }
+  }
+  if (current) lines.push(current);
+  ctx.restore();
+  return lines;
+}
+
+/** Apothecary 商品ポートレートをタイル状に描画 */
+async function drawProductTile(
   ctx: CanvasRenderingContext2D,
   imageSrc: string | undefined,
-  W: number,
-  topPad: number,
-  imgH: number,
-): Promise<boolean> {
+  initials: string,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+) {
   ctx.save();
   ctx.beginPath();
-  ctx.rect(0, topPad, W, imgH);
+  ctx.rect(x, y, w, h);
   ctx.clip();
 
-  let photoLoaded = false;
+  // Tile base color (cream-ish neutral)
+  ctx.fillStyle = SOFTA.surface2;
+  ctx.fillRect(x, y, w, h);
+
+  let drewImage = false;
   if (imageSrc) {
     try {
       const img = await loadImage(imageSrc);
-      const imgRatio = img.naturalWidth / img.naturalHeight;
-      const areaRatio = W / imgH;
-
-      if (imgRatio >= areaRatio * 0.8) {
-        const scale = Math.max(W / img.naturalWidth, imgH / img.naturalHeight);
-        const dw = img.naturalWidth * scale;
-        const dh = img.naturalHeight * scale;
-        ctx.drawImage(img, (W - dw) / 2, topPad + (imgH - dh) / 2, dw, dh);
-      } else {
-        ctx.fillStyle = "#F5F5F5";
-        ctx.fillRect(0, topPad, W, imgH);
-        const scale = Math.min(W / img.naturalWidth, imgH / img.naturalHeight);
-        const dw = img.naturalWidth * scale;
-        const dh = img.naturalHeight * scale;
-        ctx.drawImage(img, (W - dw) / 2, topPad + (imgH - dh) / 2, dw, dh);
-      }
-      photoLoaded = true;
-    } catch { /* fallback */ }
+      const scale = Math.max(w / img.naturalWidth, h / img.naturalHeight);
+      const dw = img.naturalWidth * scale;
+      const dh = img.naturalHeight * scale;
+      ctx.drawImage(img, x + (w - dw) / 2, y + (h - dh) / 2, dw, dh);
+      drewImage = true;
+    } catch {
+      /* fallback to initials */
+    }
   }
 
-  if (!photoLoaded) {
-    const g = ctx.createLinearGradient(0, topPad, W, topPad + imgH);
-    g.addColorStop(0, "#E8F5F0");
-    g.addColorStop(1, "#D4F5EF");
-    ctx.fillStyle = g;
-    ctx.fillRect(0, topPad, W, imgH);
+  if (!drewImage) {
+    // Linen texture
+    ctx.save();
+    ctx.globalAlpha = 0.8;
+    const stripe = 8;
+    for (let i = -h; i < w + h; i += stripe) {
+      ctx.fillStyle = "rgba(255,255,255,0.06)";
+      ctx.fillRect(x + i, y, 2, h);
+    }
+    ctx.restore();
+    // Highlight
+    const grad = ctx.createLinearGradient(x, y, x + w, y + h);
+    grad.addColorStop(0, "rgba(255,255,255,0.25)");
+    grad.addColorStop(0.5, "rgba(255,255,255,0)");
+    grad.addColorStop(1, "rgba(0,0,0,0.15)");
+    ctx.fillStyle = grad;
+    ctx.fillRect(x, y, w, h);
+    // Initials
+    drawText(
+      ctx,
+      initials,
+      x + w / 2,
+      y + h / 2 - Math.round(w * 0.15),
+      fontSerif(400, Math.round(w * 0.32), true),
+      "rgba(255,255,255,0.85)",
+      "center",
+    );
   }
 
   ctx.restore();
-  return photoLoaded;
 }
 
-/** 製品名・ブランドを描画 */
-function drawProductInfo(
+/** Spec sheet 風のフッター */
+function drawFooter(
   ctx: CanvasRenderingContext2D,
-  productName: string,
-  brandName: string,
   W: number,
-  nameTop: number,
+  topY: number,
+  hashtags: string,
 ) {
-  // 製品名
-  ctx.save();
-  ctx.font = buildCanvasFont(800, 36);
-  ctx.textBaseline = "top";
-  ctx.textAlign = "left";
-  ctx.fillStyle = "#212121";
-  let name = productName;
-  const MAX_NAME_W = W - 48;
-  while (name.length > 1 && ctx.measureText(name).width > MAX_NAME_W) {
-    name = name.slice(0, -1);
-  }
-  if (name !== productName) name = name.slice(0, -1) + "…";
-  ctx.fillText(name, 24, nameTop);
-  ctx.restore();
+  ctx.fillStyle = SOFTA.hair;
+  ctx.fillRect(36, topY, W - 72, 1);
 
-  // ブランド
-  ctx.save();
-  ctx.font = buildCanvasFont(500, 24);
-  ctx.textBaseline = "top";
-  ctx.textAlign = "left";
-  ctx.fillStyle = "#888888";
-  ctx.fillText(brandName, 24, nameTop + 46);
-  ctx.restore();
+  drawText(
+    ctx,
+    hashtags,
+    36,
+    topY + 14,
+    fontMono(400, 12),
+    SOFTA.ink40,
+    "left",
+    0.4,
+  );
+
+  drawText(
+    ctx,
+    "HADAMI",
+    W - 36,
+    topY + 12,
+    fontSerif(400, 26, true),
+    SOFTA.moss,
+    "right",
+  );
+
+  // Bottom frame
+  ctx.fillStyle = SOFTA.ink;
+  ctx.fillRect(0, topY + 50, W, 3);
 }
 
-export async function generateProductShareImage(product: Product): Promise<string> {
-  const genre = getGenreByKey(product.productType || "other");
+/** A · Product Card 仕様の Canvas 描画
+ *  720×900 縦長 — 上に商品ポートレート、下にデータシート */
+async function renderProductCard(params: {
+  productName: string;
+  brand: string;
+  productType: string;
+  imageSrc?: string;
+  ingredients: { nameJa: string; rarity: string }[];
+  serial?: string;
+}): Promise<string> {
+  const { productName, brand, productType, imageSrc, ingredients, serial } =
+    params;
+  const genre = getGenreByKey(productType || "other");
+  const initials = getInitials(productName, brand);
 
-  const activeIngs = product.ingredients
-    .sort((a, b) => a.orderIndex - b.orderIndex)
-    .map((pi) => getIngredientById(pi.ingredientId))
-    .filter((ing): ing is NonNullable<typeof ing> => !!ing && !!ing.activeIngredient)
-    .slice(0, 5);
-
-  // ── レイアウト（論理px） ──
   const W = 720;
-  const TOP_PAD = 24;
-  const IMG_H = 480;
-  const NAME_AREA_H = 104;
-  const TAG_AREA_H = activeIngs.length > 0 ? 112 : 0;
-  const FOOTER_H = 72;
-  const BOTTOM_PAD = 20;
-  const H = TOP_PAD + IMG_H + NAME_AREA_H + TAG_AREA_H + FOOTER_H + BOTTOM_PAD;
-
-  // ── Canvas: 2x 解像度 ──
+  const H = 900;
   const DPR = 2;
   const canvas = document.createElement("canvas");
   canvas.width = W * DPR;
@@ -277,49 +274,200 @@ export async function generateProductShareImage(product: Product): Promise<strin
   const ctx = canvas.getContext("2d")!;
   ctx.scale(DPR, DPR);
 
-  // ── 背景 ──
-  ctx.fillStyle = "#FFFFFF";
+  // Background
+  ctx.fillStyle = SOFTA.bg;
   ctx.fillRect(0, 0, W, H);
 
-  // ══ 製品画像 ══
-  await drawProductImage(ctx, product.packageImage, W, TOP_PAD, IMG_H);
+  // Top frame rule
+  ctx.fillStyle = SOFTA.ink;
+  ctx.fillRect(0, 0, W, 3);
 
-  // ── バッジ（左上: カテゴリ、右上: HADAMI）──
-  const BADGE_TOP = TOP_PAD + 20;
-  const BADGE_FONT_SIZE = 22;
+  // Image area
+  const IMG_TOP = 3;
+  const IMG_H = 420;
+  await drawProductTile(ctx, imageSrc, initials, 0, IMG_TOP, W, IMG_H);
 
+  // Category badge top-left
   if (genre) {
-    drawBadge(ctx, genre.label, 20, BADGE_TOP, "rgba(255,255,255,0.92)", genre.color, BADGE_FONT_SIZE);
-  }
-
-  {
-    const text = "HADAMI";
+    const label = genre.label.toUpperCase();
     ctx.save();
-    ctx.font = buildCanvasFont(700, BADGE_FONT_SIZE);
-    const tw = ctx.measureText(text).width;
-    const PX = 18;
-    const bw = tw + PX * 2;
+    ctx.font = fontMono(500, 12);
+    const padX = 12;
+    const padY = 8;
+    const tw = ctx.measureText(label).width + label.length * 1.6;
+    const bw = tw + padX * 2;
+    const bh = 24;
+    ctx.fillStyle = "rgba(252,250,243,0.92)";
+    ctx.fillRect(28, IMG_TOP + 24, bw, bh);
+    ctx.strokeStyle = SOFTA.hair;
+    ctx.lineWidth = 1;
+    ctx.strokeRect(28, IMG_TOP + 24, bw, bh);
     ctx.restore();
-    drawBadge(ctx, text, W - 20 - bw, BADGE_TOP, "#3A8F7A", "#FFFFFF", BADGE_FONT_SIZE);
+    drawText(
+      ctx,
+      label,
+      28 + padX,
+      IMG_TOP + 24 + padY,
+      fontMono(500, 11),
+      SOFTA.ink60,
+      "left",
+      1.6,
+    );
   }
 
-  // ── 製品名・ブランド ──
-  drawProductInfo(ctx, product.name, product.brand, W, TOP_PAD + IMG_H + 28);
-
-  // ══ 成分タグ（レアリティ★付き） ══
-  if (activeIngs.length > 0) {
-    const tagIngs = activeIngs.map((ing) => ({
-      nameJa: ing.nameJa,
-      color: ing.color,
-      rarity: ing.rarity,
-    }));
-    drawIngredientTags(ctx, tagIngs, W, TOP_PAD + IMG_H + NAME_AREA_H + 16);
+  // Vertical brand label on right side of image
+  if (brand) {
+    const label = `${brand.toUpperCase()}`;
+    ctx.save();
+    ctx.translate(W - 36, IMG_TOP + IMG_H - 32);
+    ctx.rotate(-Math.PI / 2);
+    drawText(ctx, label, 0, 0, fontMono(500, 11), "rgba(255,255,255,0.7)", "left", 2.2);
+    ctx.restore();
   }
 
-  // ══ フッター ══
-  drawFooter(ctx, W, TOP_PAD + IMG_H + NAME_AREA_H + TAG_AREA_H + 8);
+  // Data sheet top frame
+  const SHEET_TOP = IMG_TOP + IMG_H;
+  ctx.fillStyle = SOFTA.ink;
+  ctx.fillRect(0, SHEET_TOP, W, 3);
+
+  // No. label
+  const PAD_X = 36;
+  let cursorY = SHEET_TOP + 22;
+  drawText(
+    ctx,
+    `No. ${serial ?? "001"}`,
+    PAD_X,
+    cursorY,
+    fontMono(500, 12),
+    SOFTA.ink40,
+    "left",
+    1.8,
+  );
+
+  cursorY += 24;
+  drawText(
+    ctx,
+    (brand || "").toUpperCase(),
+    PAD_X,
+    cursorY,
+    fontMono(500, 13),
+    SOFTA.moss,
+    "left",
+    1.4,
+  );
+
+  // Product name (Mincho serif) — 2-line wrap
+  cursorY += 24;
+  const nameFont = fontSerif(400, 30);
+  const nameLines = wrapText(ctx, productName, W - PAD_X * 2, nameFont).slice(0, 3);
+  for (const line of nameLines) {
+    drawText(ctx, line, PAD_X, cursorY, nameFont, SOFTA.ink, "left");
+    cursorY += 36;
+  }
+
+  // Hairline divider
+  cursorY += 8;
+  ctx.fillStyle = SOFTA.ink;
+  ctx.fillRect(PAD_X, cursorY, W - PAD_X * 2, 1);
+  cursorY += 22;
+
+  // Active Ingredients label
+  drawText(
+    ctx,
+    "Active Ingredients · 注目成分",
+    PAD_X,
+    cursorY,
+    fontMono(500, 11),
+    SOFTA.ink40,
+    "left",
+    1.6,
+  );
+  cursorY += 24;
+
+  // Ingredient list
+  const itemH = 30;
+  const maxIngs = 5;
+  const list = ingredients.slice(0, maxIngs);
+  if (list.length === 0) {
+    drawText(
+      ctx,
+      "—",
+      PAD_X,
+      cursorY,
+      fontSerif(400, 16),
+      SOFTA.ink60,
+      "left",
+    );
+    cursorY += itemH;
+  } else {
+    list.forEach((ing, i) => {
+      const idx = String(i + 1).padStart(2, "0");
+      drawText(
+        ctx,
+        idx,
+        PAD_X,
+        cursorY + 4,
+        fontMono(500, 11),
+        SOFTA.ink40,
+        "left",
+      );
+      drawText(
+        ctx,
+        ing.nameJa,
+        PAD_X + 36,
+        cursorY,
+        fontSerif(400, 18),
+        SOFTA.ink,
+        "left",
+      );
+      const rarityInfo = RARITY[ing.rarity as keyof typeof RARITY];
+      const stars = rarityInfo
+        ? "★".repeat(rarityInfo.star) + "☆".repeat(Math.max(0, 4 - rarityInfo.star))
+        : "";
+      drawText(
+        ctx,
+        stars,
+        W - PAD_X,
+        cursorY + 4,
+        fontMono(400, 12),
+        SOFTA.ink60,
+        "right",
+        1.2,
+      );
+      // hairline under each row except last
+      if (i < list.length - 1) {
+        ctx.fillStyle = SOFTA.hair;
+        ctx.fillRect(PAD_X, cursorY + itemH - 2, W - PAD_X * 2, 1);
+      }
+      cursorY += itemH;
+    });
+  }
+
+  // Footer
+  const FOOTER_TOP = H - 72;
+  drawFooter(ctx, W, FOOTER_TOP, "#マイコスメ · #スキンケア");
 
   return canvas.toDataURL("image/png");
+}
+
+export async function generateProductShareImage(product: Product): Promise<string> {
+  const activeIngs = product.ingredients
+    .sort((a, b) => a.orderIndex - b.orderIndex)
+    .map((pi) => getIngredientById(pi.ingredientId))
+    .filter((ing): ing is NonNullable<typeof ing> => !!ing && !!ing.activeIngredient)
+    .slice(0, 5);
+
+  return renderProductCard({
+    productName: product.name,
+    brand: product.brand,
+    productType: product.productType,
+    imageSrc: product.packageImage,
+    ingredients: activeIngs.map((ing) => ({
+      nameJa: ing.nameJa,
+      rarity: ing.rarity,
+    })),
+    serial: "001",
+  });
 }
 
 /** スキャン結果からシェアカードを生成（Product型不要） */
@@ -331,68 +479,15 @@ export async function generateScanResultShareImage(params: {
   activeIngredients: Ingredient[];
 }): Promise<string> {
   const { productName, brand, productType, imagePreview, activeIngredients } = params;
-  const genre = getGenreByKey(productType || "other");
-
-  const topIngs = activeIngredients.slice(0, 5);
-
-  // ── レイアウト ──
-  const W = 720;
-  const TOP_PAD = 24;
-  const IMG_H = 480;
-  const NAME_AREA_H = 104;
-  const TAG_AREA_H = topIngs.length > 0 ? 112 : 0;
-  const FOOTER_H = 72;
-  const BOTTOM_PAD = 20;
-  const H = TOP_PAD + IMG_H + NAME_AREA_H + TAG_AREA_H + FOOTER_H + BOTTOM_PAD;
-
-  const DPR = 2;
-  const canvas = document.createElement("canvas");
-  canvas.width = W * DPR;
-  canvas.height = H * DPR;
-  const ctx = canvas.getContext("2d")!;
-  ctx.scale(DPR, DPR);
-
-  // 背景
-  ctx.fillStyle = "#FFFFFF";
-  ctx.fillRect(0, 0, W, H);
-
-  // 製品画像
-  await drawProductImage(ctx, imagePreview, W, TOP_PAD, IMG_H);
-
-  // バッジ
-  const BADGE_TOP = TOP_PAD + 20;
-  const BADGE_FONT_SIZE = 22;
-
-  if (genre) {
-    drawBadge(ctx, genre.label, 20, BADGE_TOP, "rgba(255,255,255,0.92)", genre.color, BADGE_FONT_SIZE);
-  }
-
-  {
-    const text = "HADAMI";
-    ctx.save();
-    ctx.font = buildCanvasFont(700, BADGE_FONT_SIZE);
-    const tw = ctx.measureText(text).width;
-    const PX = 18;
-    const bw = tw + PX * 2;
-    ctx.restore();
-    drawBadge(ctx, text, W - 20 - bw, BADGE_TOP, "#3A8F7A", "#FFFFFF", BADGE_FONT_SIZE);
-  }
-
-  // 製品名・ブランド
-  drawProductInfo(ctx, productName, brand, W, TOP_PAD + IMG_H + 28);
-
-  // 成分タグ
-  if (topIngs.length > 0) {
-    const tagIngs = topIngs.map((ing) => ({
+  return renderProductCard({
+    productName,
+    brand,
+    productType,
+    imageSrc: imagePreview,
+    ingredients: activeIngredients.slice(0, 5).map((ing) => ({
       nameJa: ing.nameJa,
-      color: ing.color,
       rarity: ing.rarity,
-    }));
-    drawIngredientTags(ctx, tagIngs, W, TOP_PAD + IMG_H + NAME_AREA_H + 16);
-  }
-
-  // フッター
-  drawFooter(ctx, W, TOP_PAD + IMG_H + NAME_AREA_H + TAG_AREA_H + 8);
-
-  return canvas.toDataURL("image/png");
+    })),
+    serial: "—",
+  });
 }

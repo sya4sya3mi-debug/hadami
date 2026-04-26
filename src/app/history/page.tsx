@@ -407,9 +407,9 @@ export default function HistoryPage() {
                         <div
                           key={p.id}
                           style={{
-                            background: "var(--hd-surface)", borderRadius: 16,
+                            background: "var(--hd-surface)",
                             overflow: "hidden",
-                            border: isSelected ? "2px solid var(--hd-moss)" : "1px solid var(--hd-hair)",
+                            border: isSelected ? "2px solid var(--hd-ink)" : "1px solid var(--hd-hair)",
                             cursor: "pointer", position: "relative",
                             opacity: deletingId === p.id ? 0.5 : 1,
                           }}
@@ -469,30 +469,35 @@ export default function HistoryPage() {
                               </button>
                             )}
                             {!editMode && (
-                              <div style={{ position: "absolute", top: 10, right: 10, display: "flex", flexDirection: "column", gap: 6 }}>
+                              <div style={{ position: "absolute", top: 8, right: 8, display: "flex", flexDirection: "column", gap: 6 }}>
                                 <button
                                   onClick={(e) => { e.stopPropagation(); handleToggleFavorite(p.id, p.isFavorite); }}
+                                  aria-label={p.isFavorite ? "お気に入り解除" : "お気に入り追加"}
                                   style={{
-                                    width: 30, height: 30, borderRadius: 999,
-                                    background: p.isFavorite ? "var(--hd-moss)" : "rgba(255,255,255,0.95)",
-                                    color: p.isFavorite ? "#fff" : "var(--hd-ink-40)",
-                                    border: "none", cursor: "pointer", padding: 0,
+                                    width: 28, height: 28,
+                                    background: p.isFavorite ? "var(--hd-ink)" : "rgba(255,255,255,0.92)",
+                                    color: p.isFavorite ? "var(--hd-bg)" : "var(--hd-ink)",
+                                    border: p.isFavorite ? "none" : "1px solid var(--hd-ink)",
+                                    cursor: "pointer", padding: 0,
                                     display: "flex", alignItems: "center", justifyContent: "center",
                                   }}
                                 >
-                                  <StarIcon size={13} color={p.isFavorite ? "#fff" : "#BDBDBD"} filled={p.isFavorite} />
+                                  <StarIcon size={11} color={p.isFavorite ? "currentColor" : "currentColor"} filled={p.isFavorite} />
                                 </button>
                                 <button
                                   onClick={(e) => { e.stopPropagation(); setShareImageBase64(undefined); setShareProduct(p); generateProductShareImage(p).then(setShareImageBase64).catch(() => {}); }}
                                   style={{
-                                    width: 30, height: 30, borderRadius: 999,
-                                    background: "rgba(255,255,255,0.95)",
-                                    border: "none", cursor: "pointer", padding: 0,
+                                    width: 28, height: 28,
+                                    background: "rgba(255,255,255,0.92)",
+                                    border: "1px solid var(--hd-ink)",
+                                    cursor: "pointer", padding: 0,
+                                    color: "var(--hd-ink)",
                                     display: "flex", alignItems: "center", justifyContent: "center",
                                   }}
                                   title="Xに投稿"
+                                  aria-label="Xに投稿"
                                 >
-                                  <svg width="13" height="13" viewBox="0 0 24 24" fill="#1DA1F2">
+                                  <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
                                     <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
                                   </svg>
                                 </button>
@@ -500,17 +505,15 @@ export default function HistoryPage() {
                             )}
                             {genre && (
                               <div
+                                className="hd-mono hd-caps"
                                 style={{
-                                  position: "absolute", bottom: 10, left: 10,
-                                  background: "rgba(255,255,255,0.95)",
-                                  padding: "4px 10px", borderRadius: 999,
-                                  fontSize: 10, fontWeight: 600,
+                                  position: "absolute", bottom: 8, left: 8,
+                                  background: "rgba(255,255,255,0.92)",
+                                  padding: "3px 8px",
                                   color: "var(--hd-ink)",
-                                  fontFamily: "var(--hd-sans)",
-                                  display: "inline-flex", alignItems: "center", gap: 4,
+                                  border: "1px solid var(--hd-hair)",
                                 }}
                               >
-                                <ProductGenreIcon genre={genre.key} size={10} />
                                 {genre.label}
                               </div>
                             )}
@@ -541,34 +544,51 @@ export default function HistoryPage() {
                                 >保存</button>
                               </div>
                             ) : (
-                              <div style={{ display: "flex", gap: 4, marginBottom: 3 }}>
+                              <>
                                 <div
+                                  className="hd-mono hd-caps"
                                   style={{
-                                    fontSize: 12, fontWeight: 500,
-                                    fontFamily: "var(--hd-sans)", lineHeight: 1.35,
-                                    flex: 1,
-                                    display: "-webkit-box",
-                                    WebkitLineClamp: 2,
-                                    WebkitBoxOrient: "vertical",
+                                    color: "var(--hd-ink-40)",
+                                    marginBottom: 4,
                                     overflow: "hidden",
+                                    textOverflow: "ellipsis",
+                                    whiteSpace: "nowrap",
                                   }}
-                                >{p.name}</div>
-                                {editMode && (
-                                  <button
-                                    onClick={(e) => { e.stopPropagation(); setEditNameValue(p.name); setEditingNameId(p.id); }}
+                                >
+                                  {p.brand}
+                                </div>
+                                <div style={{ display: "flex", gap: 6, alignItems: "flex-start" }}>
+                                  <div
+                                    className="hd-serif"
                                     style={{
-                                      flexShrink: 0, width: 22, height: 22, borderRadius: 6,
-                                      background: "var(--hd-surface-2)",
-                                      border: "none", cursor: "pointer", fontSize: 10,
-                                      display: "flex", alignItems: "center", justifyContent: "center",
+                                      fontSize: 13,
+                                      lineHeight: 1.3,
+                                      letterSpacing: "-0.01em",
+                                      flex: 1,
+                                      display: "-webkit-box",
+                                      WebkitLineClamp: 2,
+                                      WebkitBoxOrient: "vertical",
+                                      overflow: "hidden",
                                     }}
-                                  >✏️</button>
-                                )}
-                              </div>
+                                  >
+                                    {p.name}
+                                  </div>
+                                  {editMode && (
+                                    <button
+                                      onClick={(e) => { e.stopPropagation(); setEditNameValue(p.name); setEditingNameId(p.id); }}
+                                      aria-label="名前を編集"
+                                      style={{
+                                        flexShrink: 0, width: 22, height: 22,
+                                        background: "var(--hd-surface-2)",
+                                        border: "1px solid var(--hd-hair)",
+                                        cursor: "pointer", fontSize: 10,
+                                        display: "flex", alignItems: "center", justifyContent: "center",
+                                      }}
+                                    >✏️</button>
+                                  )}
+                                </div>
+                              </>
                             )}
-                            <div style={{ fontSize: 11, color: "var(--hd-ink-60)", fontFamily: "var(--hd-sans)" }}>
-                              {p.brand}
-                            </div>
                             {!editMode && (() => {
                               const cats = new Set<CategoryKey>();
                               p.ingredients.forEach((pi) => {

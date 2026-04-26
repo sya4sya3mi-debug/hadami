@@ -16,9 +16,7 @@ import InstallBanner from "@/components/ui/InstallBanner";
 import { useUser } from "@/lib/auth";
 
 import LandingPage from "@/components/ui/LandingPage";
-import { ProductGenreIcon, ActiveCategoryIcon } from "@/components/ui/CosmeticIcons";
 import { CameraIcon } from "@/components/ui/Icons";
-import { ACTIVE_CATEGORIES } from "@/lib/ingredients";
 import { CategoryKey } from "@/types";
 import { Ico } from "@/components/redesign/apothecary/Icons";
 
@@ -28,6 +26,43 @@ interface RoutineStep {
   type: string;
   image?: string;
   categories: CategoryKey[];
+  color?: string;
+}
+
+function getStepInitials(step: RoutineStep): string {
+  const source = (step.brand || step.name || "").trim();
+  if (!source) return "—";
+  const ascii = source.match(/[A-Za-z0-9]+/g)?.join(" ") ?? "";
+  if (ascii) {
+    const tokens = ascii.split(/\s+/).filter(Boolean);
+    if (tokens.length === 1) {
+      return tokens[0].slice(0, 3).toUpperCase();
+    }
+    return tokens
+      .slice(0, 2)
+      .map((t) => t.charAt(0))
+      .join("")
+      .toUpperCase();
+  }
+  return source.slice(0, 2);
+}
+
+function typeLabelEn(type: string): string {
+  const map: Record<string, string> = {
+    toner: "TONER",
+    serum: "SERUM",
+    emulsion: "EMULSION",
+    cream: "CREAM",
+    sunscreen: "SPF 50+",
+    mask_pack: "MASK",
+    cleansing: "CLEANSER",
+    face_wash: "WASH",
+    eye_care: "EYE",
+    oil: "OIL",
+    mist: "MIST",
+    other: "ITEM",
+  };
+  return map[type] ?? "ITEM";
 }
 
 const TIPS = [
@@ -103,6 +138,10 @@ const RoutineStepButton = memo(function RoutineStepButton({
   onToggle: (i: number) => void;
 }) {
   const genre = getGenreByKey(step.type || "other");
+  const eyebrow = `${typeLabelEn(step.type || "other")}${step.brand ? ` — ${step.brand.toUpperCase()}` : ""}`;
+  const initials = getStepInitials(step);
+  const tileColor = step.color || `${genre?.color ?? "#cdc4b3"}33`;
+
   return (
     <button
       onClick={() => onToggle(index)}
@@ -111,10 +150,10 @@ const RoutineStepButton = memo(function RoutineStepButton({
         width: "100%",
         background: "transparent",
         border: "none",
-        padding: "12px 0",
+        padding: "16px 0",
         display: "flex",
         alignItems: "center",
-        gap: 12,
+        gap: 14,
         cursor: "pointer",
         textAlign: "left",
         opacity: done ? 0.55 : 1,
@@ -122,79 +161,105 @@ const RoutineStepButton = memo(function RoutineStepButton({
       }}
     >
       <div
+        className="hd-mono"
         style={{
-          width: 26, height: 26, borderRadius: 999,
-          background: done ? "var(--hd-moss)" : "transparent",
-          border: done ? "none" : "1.5px solid var(--hd-line)",
-          color: "#fff",
-          display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
+          width: 22,
+          fontSize: 11,
+          color: "var(--hd-ink-40)",
+          letterSpacing: "0.05em",
+          flexShrink: 0,
+          textDecoration: done ? "line-through" : "none",
         }}
       >
-        {done && (
-          <span className="hd-pop-in" style={{ display: "flex" }}>
-            {Ico.check({ width: 12, height: 12, strokeWidth: 2.5 })}
+        {String(index + 1).padStart(2, "0")}
+      </div>
+
+      <div
+        style={{
+          width: 50,
+          height: 50,
+          flexShrink: 0,
+          overflow: "hidden",
+          position: "relative",
+          background: tileColor,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          color: "var(--hd-ink-60)",
+          border: "1px solid var(--hd-hair)",
+        }}
+      >
+        {step.image ? (
+          <Image
+            src={step.image}
+            alt={step.name}
+            fill
+            style={{ objectFit: "cover" }}
+            sizes="50px"
+            loading="lazy"
+          />
+        ) : (
+          <span
+            className="hd-mono"
+            style={{
+              fontSize: initials.length > 2 ? 11 : 13,
+              letterSpacing: "0.04em",
+            }}
+          >
+            {initials}
           </span>
         )}
       </div>
 
-      {step.image ? (
-        <div style={{ width: 50, height: 50, borderRadius: 10, overflow: "hidden", flexShrink: 0, position: "relative" }}>
-          <Image src={step.image} alt={step.name} fill style={{ objectFit: "cover" }} sizes="50px" loading="lazy" />
-        </div>
-      ) : genre ? (
-        <div
-          style={{
-            width: 50, height: 50, borderRadius: 10, flexShrink: 0,
-            background: `${genre.color}15`,
-            display: "flex", alignItems: "center", justifyContent: "center",
-          }}
-        >
-          <ProductGenreIcon genre={genre.key} size={20} />
-        </div>
-      ) : null}
-
       <div style={{ flex: 1, minWidth: 0 }}>
         <div
+          className="hd-mono hd-caps"
           style={{
-            fontSize: 11, color: "var(--hd-ink-60)", marginBottom: 3,
-            fontFamily: "var(--hd-sans)",
-          }}
-        >
-          STEP {index + 1}・{genre?.label || step.type}
-        </div>
-        <div
-          style={{
-            fontSize: 14, lineHeight: 1.35, fontFamily: "var(--hd-sans)",
-            fontWeight: 500,
+            color: "var(--hd-ink-40)",
+            marginBottom: 4,
             overflow: "hidden",
             textOverflow: "ellipsis",
             whiteSpace: "nowrap",
+          }}
+        >
+          {eyebrow}
+        </div>
+        <div
+          className="hd-serif"
+          style={{
+            fontSize: 16,
+            lineHeight: 1.25,
+            letterSpacing: "-0.01em",
+            display: "-webkit-box",
+            WebkitLineClamp: 2,
+            WebkitBoxOrient: "vertical",
+            overflow: "hidden",
           }}
         >
           {step.name}
         </div>
       </div>
 
-      {step.categories.length > 0 && (
-        <div style={{ display: "flex", gap: 4, flexShrink: 0, opacity: done ? 0.3 : 1 }}>
-          {step.categories.slice(0, 3).map((catKey) => {
-            const info = ACTIVE_CATEGORIES.find((c) => c.key === catKey);
-            return info ? (
-              <span
-                key={catKey}
-                style={{
-                  width: 18, height: 18, borderRadius: 999,
-                  background: info.color + "20", color: info.color,
-                  display: "inline-flex", alignItems: "center", justifyContent: "center",
-                }}
-                title={info.label}
-              >
-                <ActiveCategoryIcon category={info.key} size={10} />
-              </span>
-            ) : null;
-          })}
-        </div>
-      )}
+      <div
+        style={{
+          width: 24,
+          height: 24,
+          borderRadius: 999,
+          background: done ? "var(--hd-ink)" : "transparent",
+          border: done ? "none" : "1px solid var(--hd-ink-40)",
+          color: "var(--hd-bg)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          flexShrink: 0,
+        }}
+      >
+        {done && (
+          <span className="hd-pop-in" style={{ display: "flex" }}>
+            {Ico.check({ width: 11, height: 11, strokeWidth: 2 })}
+          </span>
+        )}
+      </div>
     </button>
   );
 });
@@ -344,7 +409,6 @@ export default function HomePage() {
   const routineLabel = autoRoutine === "morning" ? "朝のルーティン" : "夜のルーティン";
   const routineCaps = autoRoutine === "morning" ? "Morning Ritual" : "Night Ritual";
   const allComplete = checkedCount === routineSteps.length && routineSteps.length > 0;
-  const routineProgress = routineSteps.length > 0 ? checkedCount / routineSteps.length : 0;
 
   return (
     <div className="hd-root hd-softa" data-density="compact" data-card="default">
@@ -381,43 +445,44 @@ export default function HomePage() {
 
           {/* Routine Checklist */}
           {routineSteps.length > 0 && (
-            <div
-              style={{
-                background: "var(--hd-surface)",
-                borderRadius: 18,
-                padding: "20px 18px",
-                border: "1px solid var(--hd-hair)",
-                marginBottom: 20,
-              }}
-            >
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
+            <div style={{ marginBottom: 24 }}>
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "baseline",
+                  justifyContent: "space-between",
+                  paddingBottom: 12,
+                  borderBottom: "1px solid var(--hd-ink)",
+                }}
+              >
                 <div>
-                  <div className="hd-mono hd-caps" style={{ color: "var(--hd-ink-40)" }}>{routineCaps}</div>
-                  <div className="hd-serif" style={{ fontSize: 19, marginTop: 4 }}>{routineLabel}</div>
-                </div>
-                {/* Mini ring progress */}
-                <div style={{ position: "relative", width: 44, height: 44 }}>
-                  <svg viewBox="0 0 44 44" width={44} height={44} style={{ transform: "rotate(-90deg)" }}>
-                    <circle cx="22" cy="22" r="18" fill="none" stroke="oklch(0.38 0.05 155 / 0.18)" strokeWidth="3" />
-                    <circle
-                      cx="22" cy="22" r="18" fill="none"
-                      stroke="var(--hd-moss)"
-                      strokeWidth="3" strokeLinecap="round"
-                      strokeDasharray={`${routineProgress * 113.1} 999`}
-                      style={{ transition: "stroke-dasharray 700ms ease-out" }}
-                    />
-                  </svg>
-                  <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                    <span
-                      style={{
-                        fontSize: 11, fontWeight: 700,
-                        color: allComplete ? "var(--hd-moss)" : "var(--hd-ink)",
-                        fontFamily: "var(--hd-sans)",
-                      }}
-                    >
-                      {Math.round(routineProgress * 100)}%
-                    </span>
+                  <div
+                    className="hd-mono hd-caps"
+                    style={{ color: "var(--hd-ink-40)" }}
+                  >
+                    {routineCaps}
                   </div>
+                  <div
+                    className="hd-serif"
+                    style={{
+                      fontSize: 20,
+                      marginTop: 4,
+                      letterSpacing: "-0.01em",
+                    }}
+                  >
+                    {routineLabel}
+                  </div>
+                </div>
+                <div
+                  className="hd-mono"
+                  style={{
+                    fontSize: 12,
+                    color: "var(--hd-ink-60)",
+                    letterSpacing: "0.05em",
+                  }}
+                >
+                  {String(checkedCount).padStart(2, "0")} /{" "}
+                  {String(routineSteps.length).padStart(2, "0")}
                 </div>
               </div>
 
@@ -432,6 +497,19 @@ export default function HomePage() {
                   />
                 ))}
               </div>
+
+              {allComplete && (
+                <div
+                  className="hd-mono hd-caps"
+                  style={{
+                    color: "var(--hd-moss)",
+                    marginTop: 14,
+                    textAlign: "center",
+                  }}
+                >
+                  ✓ Complete · 完了
+                </div>
+              )}
             </div>
           )}
 
@@ -524,52 +602,61 @@ export default function HomePage() {
                       key={item.id}
                       href={`/product/${item.id}`}
                       style={{
-                        minWidth: 170, maxWidth: 170, flexShrink: 0,
-                        background: "var(--hd-surface)", borderRadius: 14,
-                        overflow: "hidden", border: "1px solid var(--hd-hair)",
+                        minWidth: 160, maxWidth: 160, flexShrink: 0,
+                        background: "var(--hd-surface)",
+                        overflow: "hidden",
+                        border: "1px solid var(--hd-hair)",
                         textDecoration: "none", color: "inherit",
                       }}
                     >
                       {item.packageImage ? (
-                        <div style={{ width: "100%", height: 100, position: "relative" }}>
+                        <div style={{ width: "100%", height: 160, position: "relative" }}>
                           <Image
                             src={item.packageImageThumb ?? item.packageImage}
                             alt={item.name}
                             fill
                             style={{ objectFit: "cover" }}
-                            sizes="170px"
+                            sizes="160px"
                             loading="lazy"
                           />
                         </div>
                       ) : (
                         <div
                           style={{
-                            width: "100%", height: 100,
-                            background: genre ? `${genre.color}15` : "#f5f5f5",
+                            width: "100%", height: 160,
+                            background: genre ? `${genre.color}15` : "var(--hd-surface-2)",
                             display: "flex", alignItems: "center", justifyContent: "center",
+                            color: "var(--hd-ink-40)",
+                            fontFamily: "var(--hd-mono)",
+                            fontSize: 10,
+                            letterSpacing: "0.18em",
                           }}
                         >
-                          {genre ? <ProductGenreIcon genre={genre.key} size={32} /> : "📦"}
+                          NO IMG
                         </div>
                       )}
                       <div style={{ padding: 12 }}>
                         {genre && (
                           <div
+                            className="hd-mono hd-caps"
                             style={{
-                              fontSize: 10, fontWeight: 600,
-                              padding: "2px 8px", borderRadius: 999,
-                              background: `${genre.color}18`, color: genre.color,
-                              display: "inline-block", marginBottom: 6,
-                              fontFamily: "var(--hd-sans)",
+                              color: "var(--hd-ink-40)",
+                              marginBottom: 4,
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                              whiteSpace: "nowrap",
                             }}
                           >
-                            {genre.label}
+                            {typeLabelEn(genre.key)} — {item.brand || genre.label}
                           </div>
                         )}
                         <div
+                          className="hd-serif"
                           style={{
-                            fontSize: 12, fontWeight: 500, marginBottom: 3,
-                            lineHeight: 1.4, fontFamily: "var(--hd-sans)",
+                            fontSize: 13,
+                            marginBottom: 0,
+                            lineHeight: 1.3,
+                            letterSpacing: "-0.01em",
                             display: "-webkit-box",
                             WebkitLineClamp: 2,
                             WebkitBoxOrient: "vertical",
@@ -578,13 +665,6 @@ export default function HomePage() {
                         >
                           {item.name}
                         </div>
-                        <div
-                          style={{
-                            fontSize: 11, color: "var(--hd-ink-60)",
-                            fontFamily: "var(--hd-sans)",
-                            overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-                          }}
-                        >{item.brand}</div>
                       </div>
                     </Link>
                   );
