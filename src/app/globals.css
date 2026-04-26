@@ -144,7 +144,7 @@
 @font-face { font-family: YakuHanJPs; font-style: normal; font-weight: 900; font-display: swap; src: url("/fonts/YakuHanJPs/YakuHanJPs-Black.woff2") format("woff2"); unicode-range: U+3008-3011,U+3014,U+3015,U+300C-300F,U+300A,U+300B,U+FF08,U+FF09,U+FF3B,U+FF3D,U+FF5B,U+FF5D; }
 
 :root {
-  --background: #f5f6f6;
+  --background: #f0eee9;
   --foreground: #212121;
   --primary: #3A8F7A;
   --primary-light: #e6f7d9;
@@ -158,6 +158,10 @@
   --card: #FFFFFF;
   --app-shell-max-width: 430px;
 }
+
+/* Outer frame around the centered app shell — match softa cream so the
+   browser theme bar / safe-area outside #app-container blends in. */
+html, body { background: #f0eee9; }
 
 /* ── Dark theme ── */
 .dark {
