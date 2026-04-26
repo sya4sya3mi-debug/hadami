@@ -17,7 +17,6 @@ import {
   LightbulbIcon,
   InfoIcon,
   AlertIcon,
-  PackageIcon,
   ChevronRightIcon,
   CameraIcon,
 } from "@/components/ui/Icons";
