@@ -1,3 +1,4 @@
+import "@/styles/hadami-tokens.css";
 import Link from "next/link";
 
 const sections = [
@@ -80,7 +81,7 @@ const sections = [
         ],
       },
       {
-        subtitle: "（3）Google LLC（米国）",
+        subtitle: "(3) Google LLC(米国)",
         items: [
           "提供する情報：OAuth認証に必要な情報、スキャンした化粧品のパッケージ画像",
           "利用目的：Googleアカウントによるログイン認証、Google Gemini APIによるAI成分検索・画像認識",
@@ -168,7 +169,7 @@ const sections = [
         subtitle: "収集される主な情報",
         items: [
           "ページの閲覧情報（URL、滞在時間等）",
-          "アクセス元情報（ブラウザの種類、OS、画面サイズ等）",
+          "アクセス元情報（ブラウザの種類、OS、画面サイズ等)",
           "Cookieおよび類似技術による匿名識別子",
           "※個人を特定できる情報（氏名・メールアドレス等）は収集しません。",
         ],
@@ -201,101 +202,222 @@ const sections = [
   },
 ];
 
+const paragraphStyle: React.CSSProperties = {
+  fontFamily: "var(--hd-sans)",
+  fontSize: 13,
+  lineHeight: 1.85,
+  color: "var(--hd-ink-60)",
+  margin: "0 0 10px",
+};
+
+const itemStyle: React.CSSProperties = {
+  fontFamily: "var(--hd-sans)",
+  fontSize: 12.5,
+  lineHeight: 1.85,
+  color: "var(--hd-ink-60)",
+  paddingLeft: 30,
+  position: "relative",
+  marginBottom: 4,
+};
+
 export default function PrivacyPage() {
   return (
-    <div
-      className="min-h-screen"
-      style={{ background: "linear-gradient(160deg, #F0FDFA 0%, #FFF0F5 100%)" }}
-    >
-      <div className="px-5 pt-8 pb-16 max-w-md mx-auto">
-        {/* ヘッダー */}
-        <Link
-          href="/"
-          className="inline-flex items-center gap-1 text-sm mb-6"
-          style={{ color: "#3A8F7A" }}
-        >
-          ← 戻る
-        </Link>
+    <div className="hd-root hd-softa" data-density="compact">
+      <div
+        className="hd"
+        style={{
+          minHeight: "100vh",
+          background: "var(--hd-bg)",
+          color: "var(--hd-ink)",
+        }}
+      >
+        <div style={{ maxWidth: 480, margin: "0 auto", padding: "32px 22px 56px" }}>
+          <Link
+            href="/"
+            className="hd-mono hd-caps"
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 6,
+              color: "var(--hd-ink-60)",
+              textDecoration: "none",
+              marginBottom: 28,
+            }}
+          >
+            ← Back · 戻る
+          </Link>
 
-        <div className="text-center mb-8">
-          <h1 className="text-lg font-bold mb-1" style={{ color: "#2D2D2D" }}>
-            プライバシーポリシー
-          </h1>
-          <p className="text-xs" style={{ color: "#9B9B9B" }}>
-            制定日：2026年4月4日　最終更新日：2026年4月19日
-          </p>
-        </div>
-
-        {/* セクション */}
-        <div className="space-y-4">
-          {sections.map((section) => (
+          <div style={{ marginBottom: 36 }}>
             <div
-              key={section.title}
-              className="bg-white rounded-2xl p-4 shadow-sm"
-              style={{ border: "1px solid #F5E6EF" }}
+              className="hd-mono hd-caps"
+              style={{ color: "var(--hd-ink-40)", marginBottom: 10 }}
             >
-              <h2 className="text-sm font-bold mb-2" style={{ color: "#3A8F7A" }}>
-                {section.title}
-              </h2>
-              <p className="text-xs leading-relaxed mb-2" style={{ color: "#4A4A4A" }}>
-                {section.content}
-              </p>
+              Privacy Policy
+            </div>
+            <h1
+              className="hd-serif"
+              style={{
+                fontSize: 30,
+                lineHeight: 1.15,
+                letterSpacing: "-0.02em",
+                margin: "0 0 14px",
+              }}
+            >
+              プライバシーポリシー
+              <span style={{ fontStyle: "italic", color: "var(--hd-moss)" }}>.</span>
+            </h1>
+            <p
+              className="hd-mono"
+              style={{
+                fontSize: 11,
+                color: "var(--hd-ink-60)",
+                letterSpacing: "0.04em",
+                margin: 0,
+              }}
+            >
+              制定日: 2026.04.04 · 最終更新: 2026.04.19
+            </p>
+          </div>
 
-              {section.subsections?.map((sub) => (
-                <div key={sub.subtitle} className="mb-3 last:mb-0">
-                  <h3 className="text-xs font-bold mb-1" style={{ color: "#6B6B6B" }}>
-                    {sub.subtitle}
-                  </h3>
-                  <ul className="space-y-0.5">
-                    {sub.items.map((item) => (
-                      <li
-                        key={item}
-                        className="text-xs leading-relaxed pl-3"
-                        style={{ color: "#4A4A4A" }}
-                      >
-                        {item.startsWith("※") ? item : `・${item}`}
+          <div>
+            {sections.map((section, i) => (
+              <section
+                key={section.title}
+                style={{
+                  paddingTop: 22,
+                  paddingBottom: 22,
+                  borderTop: i === 0 ? "1px solid var(--hd-ink)" : "1px solid var(--hd-hair)",
+                  borderBottom:
+                    i === sections.length - 1 ? "1px solid var(--hd-ink)" : "none",
+                }}
+              >
+                <div
+                  className="hd-mono hd-caps"
+                  style={{ color: "var(--hd-ink-40)", marginBottom: 6 }}
+                >
+                  No. {String(i + 1).padStart(2, "0")}
+                </div>
+                <h2
+                  className="hd-serif"
+                  style={{
+                    fontSize: 17,
+                    margin: "0 0 14px",
+                    letterSpacing: "-0.01em",
+                  }}
+                >
+                  {section.title}
+                </h2>
+
+                {section.content && <p style={paragraphStyle}>{section.content}</p>}
+
+                {section.subsections?.map((sub) => (
+                  <div key={sub.subtitle} style={{ marginTop: 14, marginBottom: 8 }}>
+                    <h3
+                      className="hd-mono hd-caps"
+                      style={{
+                        color: "var(--hd-ink-60)",
+                        marginBottom: 8,
+                      }}
+                    >
+                      {sub.subtitle}
+                    </h3>
+                    <ul style={{ margin: 0, padding: 0, listStyle: "none" }}>
+                      {sub.items.map((item, idx) => (
+                        <li key={item} style={itemStyle}>
+                          <span
+                            className="hd-mono"
+                            style={{
+                              position: "absolute",
+                              left: 0,
+                              top: 1,
+                              fontSize: 9,
+                              color: "var(--hd-ink-40)",
+                              letterSpacing: "0.03em",
+                            }}
+                          >
+                            {item.startsWith("※") ? "" : String(idx + 1).padStart(2, "0")}
+                          </span>
+                          {item}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ))}
+
+                {section.items && (
+                  <ul style={{ margin: "8px 0 0", padding: 0, listStyle: "none" }}>
+                    {section.items.map((item, idx) => (
+                      <li key={item} style={itemStyle}>
+                        <span
+                          className="hd-mono"
+                          style={{
+                            position: "absolute",
+                            left: 0,
+                            top: 1,
+                            fontSize: 9,
+                            color: "var(--hd-ink-40)",
+                            letterSpacing: "0.03em",
+                          }}
+                        >
+                          {String(idx + 1).padStart(2, "0")}
+                        </span>
+                        {item}
                       </li>
                     ))}
                   </ul>
-                </div>
-              ))}
+                )}
 
-              {section.items && (
-                <ul className="space-y-0.5">
-                  {section.items.map((item) => (
-                    <li
-                      key={item}
-                      className="text-xs leading-relaxed pl-3"
-                      style={{ color: "#4A4A4A" }}
+                {section.note && (
+                  <p
+                    style={{
+                      fontFamily: "var(--hd-sans)",
+                      fontSize: 11,
+                      lineHeight: 1.7,
+                      color: "var(--hd-ink-40)",
+                      marginTop: 12,
+                      marginBottom: 0,
+                    }}
+                  >
+                    {section.note}
+                  </p>
+                )}
+
+                {section.contact && (
+                  <div style={{ marginTop: 10 }}>
+                    <div
+                      className="hd-mono hd-caps"
+                      style={{ color: "var(--hd-ink-40)", marginBottom: 6 }}
                     >
-                      ・{item}
-                    </li>
-                  ))}
-                </ul>
-              )}
-
-              {section.note && (
-                <p className="text-xs mt-2" style={{ color: "#9B9B9B" }}>
-                  {section.note}
-                </p>
-              )}
-
-              {section.contact && (
-                <div className="mt-2 text-xs" style={{ color: "#4A4A4A" }}>
-                  <p>サービス名：{section.contact.service}</p>
-                  <p>
-                    メール：
+                      Service
+                    </div>
+                    <p
+                      className="hd-serif"
+                      style={{
+                        fontSize: 14,
+                        margin: "0 0 8px",
+                        letterSpacing: "-0.01em",
+                      }}
+                    >
+                      {section.contact.service}
+                    </p>
                     <a
                       href={`mailto:${section.contact.email}`}
-                      style={{ color: "#3A8F7A" }}
+                      className="hd-mono"
+                      style={{
+                        fontSize: 12,
+                        color: "var(--hd-ink)",
+                        textDecoration: "underline",
+                        textUnderlineOffset: 3,
+                        letterSpacing: "0.02em",
+                      }}
                     >
                       {section.contact.email}
                     </a>
-                  </p>
-                </div>
-              )}
-            </div>
-          ))}
+                  </div>
+                )}
+              </section>
+            ))}
+          </div>
         </div>
       </div>
     </div>

@@ -174,8 +174,8 @@ function CategoryExplorer({ discoveredIds }: { discoveredIds: string[] }) {
           </div>
 
           {/* Ingredient list */}
-          <div className="hd-stagger" style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-            {catIngredients.map((ing) => {
+          <div className="hd-stagger">
+            {catIngredients.map((ing, i) => {
               const r = RARITY_VIS[ing.rarity];
               const found = discoveredSet.has(ing.id);
               return (
@@ -183,45 +183,91 @@ function CategoryExplorer({ discoveredIds }: { discoveredIds: string[] }) {
                   key={ing.id}
                   onClick={() => { if (found) router.push(`/ingredient/${ing.id}`); }}
                   style={{
-                    display: "flex", alignItems: "center", gap: 12,
-                    padding: "14px 16px", borderRadius: 12,
-                    background: found ? "var(--hd-surface)" : "var(--hd-surface-2)",
-                    border: `1px solid ${found ? "var(--hd-hair)" : "transparent"}`,
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 14,
+                    padding: "14px 0",
+                    borderTop: i === 0 ? "1px solid var(--hd-ink)" : "1px solid var(--hd-hair)",
+                    borderBottom:
+                      i === catIngredients.length - 1 ? "1px solid var(--hd-ink)" : "none",
                     cursor: found ? "pointer" : "default",
                     opacity: found ? 1 : 0.55,
                   }}
                 >
-                  <div style={{ flexShrink: 0, width: 38, textAlign: "center", color: r.color, fontSize: 11 }}>
-                    {"★".repeat(r.star)}
-                    <span style={{ opacity: 0.25 }}>{"★".repeat(4 - r.star)}</span>
+                  <div
+                    className="hd-mono"
+                    style={{
+                      width: 22,
+                      fontSize: 9,
+                      color: "var(--hd-ink-40)",
+                      flexShrink: 0,
+                    }}
+                  >
+                    {String(i + 1).padStart(2, "0")}
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div
+                      className="hd-serif"
                       style={{
-                        fontSize: 14, fontWeight: 500,
-                        fontFamily: "var(--hd-sans)",
+                        fontSize: 15,
+                        letterSpacing: "-0.01em",
                         color: found ? "var(--hd-ink)" : "var(--hd-ink-60)",
-                        overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap",
                       }}
                     >
                       {found ? ing.nameJa : "？？？"}
                     </div>
+                    <div
+                      className="hd-mono hd-caps"
+                      style={{
+                        color: "var(--hd-ink-40)",
+                        marginTop: 3,
+                      }}
+                    >
+                      {ing.nameInci || "—"}
+                    </div>
                     {(found ? ing.note : ing.funFact) && (
                       <div
                         style={{
-                          fontSize: 11, fontFamily: "var(--hd-sans)",
-                          marginTop: 2,
+                          fontFamily: "var(--hd-sans)",
+                          fontSize: 11,
+                          marginTop: 4,
+                          lineHeight: 1.5,
                           color: found ? "var(--hd-ink-60)" : "#B08D3A",
-                          overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          whiteSpace: "nowrap",
                         }}
                       >
-                        {found ? ing.note : `💡 ${ing.funFact}`}
+                        {found ? ing.note : `${ing.funFact}`}
                       </div>
                     )}
                   </div>
+                  <div
+                    className="hd-mono"
+                    style={{
+                      flexShrink: 0,
+                      fontSize: 11,
+                      color: r.color,
+                      letterSpacing: "0.05em",
+                    }}
+                  >
+                    {"★".repeat(r.star)}
+                    <span style={{ opacity: 0.25 }}>{"★".repeat(4 - r.star)}</span>
+                  </div>
                   {found && (
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none"
-                      stroke="var(--hd-ink-40)" strokeWidth="2" strokeLinecap="round" style={{ flexShrink: 0 }}>
+                    <svg
+                      width="10"
+                      height="10"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="var(--hd-ink-40)"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      style={{ flexShrink: 0 }}
+                    >
                       <path d="M9 18l6-6-6-6" />
                     </svg>
                   )}
@@ -262,8 +308,8 @@ function ConcernView({ discoveredIds, products }: { discoveredIds: string[]; pro
 
   if (!concern) {
     return (
-      <div className="hd-stagger" style={{ display: "flex", flexDirection: "column", gap: 10, padding: "16px 20px" }}>
-        {SKIN_CONCERNS.map((c) => {
+      <div className="hd-stagger" style={{ padding: "16px 20px" }}>
+        {SKIN_CONCERNS.map((c, i) => {
           const covered = c.keyIngredients.filter((k) => getProductsWithIngredient(k.id).length > 0).length;
           const coverPct = Math.round((covered / c.keyIngredients.length) * 100);
           return (
@@ -271,55 +317,112 @@ function ConcernView({ discoveredIds, products }: { discoveredIds: string[]; pro
               key={c.label}
               onClick={() => setSelectedConcern(c.label)}
               style={{
-                display: "flex", alignItems: "center", gap: 14,
-                padding: "16px 16px", borderRadius: 14,
-                background: "var(--hd-surface)",
-                border: "1px solid var(--hd-hair)",
-                cursor: "pointer", textAlign: "left", width: "100%",
+                display: "flex",
+                alignItems: "center",
+                gap: 14,
+                padding: "14px 0",
+                borderTop: i === 0 ? "1px solid var(--hd-ink)" : "1px solid var(--hd-hair)",
+                borderBottom: i === SKIN_CONCERNS.length - 1 ? "1px solid var(--hd-ink)" : "none",
+                background: "transparent",
+                border: "none",
+                borderTopStyle: "solid",
+                borderTopWidth: 1,
+                borderTopColor: i === 0 ? "var(--hd-ink)" : "var(--hd-hair)",
+                borderBottomStyle: i === SKIN_CONCERNS.length - 1 ? "solid" : "none",
+                borderBottomWidth: i === SKIN_CONCERNS.length - 1 ? 1 : 0,
+                borderBottomColor: "var(--hd-ink)",
+                cursor: "pointer",
+                textAlign: "left",
+                width: "100%",
+                color: "inherit",
               }}
             >
               <div
+                className="hd-mono"
                 style={{
-                  width: 44, height: 44, borderRadius: 14, flexShrink: 0,
-                  background: `${c.color}15`, color: c.color,
-                  display: "flex", alignItems: "center", justifyContent: "center",
+                  width: 22,
+                  fontSize: 9,
+                  color: "var(--hd-ink-40)",
+                  flexShrink: 0,
                 }}
               >
-                <SkinConcernIcon concern={c.label} size={20} />
+                {String(i + 1).padStart(2, "0")}
+              </div>
+              <div
+                style={{
+                  width: 36,
+                  height: 36,
+                  borderRadius: 999,
+                  flexShrink: 0,
+                  background: `${c.color}1F`,
+                  color: c.color,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <SkinConcernIcon concern={c.label} size={16} />
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 14, fontWeight: 600, fontFamily: "var(--hd-sans)" }}>
+                <div
+                  className="hd-serif"
+                  style={{
+                    fontSize: 16,
+                    letterSpacing: "-0.01em",
+                  }}
+                >
                   {c.label}
                 </div>
-                <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 6 }}>
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 8,
+                    marginTop: 6,
+                  }}
+                >
                   <div
                     style={{
-                      flex: 1, height: 4, borderRadius: 999,
-                      background: "var(--hd-hair)", overflow: "hidden",
+                      flex: 1,
+                      height: 2,
+                      background: "var(--hd-hair)",
+                      overflow: "hidden",
                     }}
                   >
                     <div
                       style={{
-                        height: "100%", borderRadius: 999, width: `${coverPct}%`,
-                        background: c.color, transition: "width 500ms ease-out",
+                        height: "100%",
+                        width: `${coverPct}%`,
+                        background: c.color,
+                        transition: "width 500ms ease-out",
                       }}
                     />
                   </div>
-                  <span style={{ fontSize: 10, color: "var(--hd-ink-60)", flexShrink: 0, fontFamily: "var(--hd-sans)" }}>
+                  <span
+                    className="hd-mono"
+                    style={{
+                      fontSize: 10,
+                      color: "var(--hd-ink-60)",
+                      flexShrink: 0,
+                      letterSpacing: "0.05em",
+                    }}
+                  >
                     {covered}/{c.keyIngredients.length}
                   </span>
                 </div>
               </div>
               <div
-                className="hd-serif"
+                className="hd-mono"
                 style={{
-                  width: 44, height: 44, borderRadius: 12, flexShrink: 0,
-                  background: `${c.color}15`, color: c.color,
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  fontSize: 14, fontWeight: 600,
+                  flexShrink: 0,
+                  fontSize: 14,
+                  color: c.color,
+                  letterSpacing: "0.02em",
+                  width: 44,
+                  textAlign: "right",
                 }}
               >
-                {coverPct}
+                {coverPct}<span style={{ fontSize: 10, opacity: 0.7 }}>%</span>
               </div>
             </button>
           );
@@ -437,43 +540,53 @@ function ConcernView({ discoveredIds, products }: { discoveredIds: string[]; pro
                   {found ? "✅" : "🔒"}
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                    <span
-                      style={{
-                        fontSize: 14, fontWeight: 600, fontFamily: "var(--hd-sans)",
-                        color: found ? "var(--hd-ink)" : "var(--hd-ink-40)",
-                      }}
-                    >
-                      {found ? ing.name : "？？？"}
-                    </span>
-                    <span style={{ fontSize: 10, color: r.color }}>
-                      {"★".repeat(r.star)}
-                    </span>
-                  </div>
                   <div
+                    className="hd-serif"
                     style={{
-                      fontSize: 11, color: "var(--hd-ink-60)",
-                      fontFamily: "var(--hd-sans)", marginTop: 2,
-                      overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                      fontSize: 15,
+                      letterSpacing: "-0.01em",
+                      color: found ? "var(--hd-ink)" : "var(--hd-ink-40)",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap",
                     }}
                   >
-                    {ing.role}
+                    {found ? ing.name : "？？？"}
+                  </div>
+                  <div
+                    className="hd-mono hd-caps"
+                    style={{
+                      color: "var(--hd-ink-40)",
+                      marginTop: 3,
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    {"★".repeat(r.star)} · {ing.role}
                   </div>
                 </div>
                 {hasProducts ? (
                   <span
+                    className="hd-mono hd-caps"
                     style={{
-                      fontSize: 11, fontWeight: 600,
-                      color: "var(--hd-moss)", flexShrink: 0,
-                      padding: "3px 10px", borderRadius: 999,
-                      background: "var(--hd-mint-bg)",
-                      fontFamily: "var(--hd-sans)",
+                      flexShrink: 0,
+                      padding: "4px 10px",
+                      color: "var(--hd-moss)",
+                      border: "1px solid var(--hd-moss)",
+                      background: "transparent",
                     }}
                   >
                     {matchedProducts.length}件
                   </span>
                 ) : (
-                  <span style={{ fontSize: 11, color: "var(--hd-ink-40)", flexShrink: 0, fontFamily: "var(--hd-sans)" }}>
+                  <span
+                    className="hd-mono hd-caps"
+                    style={{
+                      flexShrink: 0,
+                      color: "var(--hd-ink-40)",
+                    }}
+                  >
                     {found ? "未配合" : "未発見"}
                   </span>
                 )}
@@ -500,30 +613,69 @@ function ConcernView({ discoveredIds, products }: { discoveredIds: string[]; pro
               >
                 <div style={{ padding: "0 16px 14px", borderTop: "1px solid var(--hd-hair)" }}>
                   {hasProducts ? (
-                    matchedProducts.map((p) => (
+                    matchedProducts.map((p, idx) => (
                       <div
                         key={p.id}
                         onClick={() => router.push(`/product/${p.id}`)}
                         style={{
-                          display: "flex", alignItems: "center", gap: 10,
-                          padding: "10px 12px", borderRadius: 10, marginTop: 8,
-                          background: "var(--hd-mint-bg)", cursor: "pointer",
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 12,
+                          padding: "10px 0",
+                          borderBottom:
+                            idx < matchedProducts.length - 1
+                              ? "1px solid var(--hd-hair)"
+                              : "none",
+                          cursor: "pointer",
                         }}
                       >
-                        <span style={{ fontSize: 14 }}>📦</span>
+                        <div
+                          className="hd-mono"
+                          style={{
+                            width: 22,
+                            fontSize: 9,
+                            color: "var(--hd-ink-40)",
+                            flexShrink: 0,
+                          }}
+                        >
+                          {String(idx + 1).padStart(2, "0")}
+                        </div>
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <div
+                            className="hd-mono hd-caps"
                             style={{
-                              fontSize: 12, fontWeight: 600, fontFamily: "var(--hd-sans)",
-                              overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                              color: "var(--hd-ink-40)",
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                              whiteSpace: "nowrap",
                             }}
-                          >{p.name}</div>
-                          <div style={{ fontSize: 10, color: "var(--hd-ink-60)", fontFamily: "var(--hd-sans)" }}>
+                          >
                             {p.brand}
                           </div>
+                          <div
+                            className="hd-serif"
+                            style={{
+                              fontSize: 13,
+                              marginTop: 2,
+                              letterSpacing: "-0.01em",
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                              whiteSpace: "nowrap",
+                            }}
+                          >
+                            {p.name}
+                          </div>
                         </div>
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none"
-                          stroke="var(--hd-ink-40)" strokeWidth="2" strokeLinecap="round" style={{ flexShrink: 0 }}>
+                        <svg
+                          width="10"
+                          height="10"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="var(--hd-ink-40)"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          style={{ flexShrink: 0 }}
+                        >
                           <path d="M9 18l6-6-6-6" />
                         </svg>
                       </div>
