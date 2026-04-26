@@ -1,5 +1,6 @@
 "use client";
 
+import "@/styles/hadami-tokens.css";
 import { useState, useCallback, useEffect, useRef } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import RoutineShareCard from "./RoutineShareCard";
@@ -7,7 +8,6 @@ import type { RoutineCardConfig } from "@/lib/routines";
 import { downloadShareImage } from "@/lib/downloadImage";
 import { useProductStore } from "@/stores/useProductStore";
 import {
-  getRoutineCardEmoji,
   getRoutineCardLabel,
   type RoutineCardMode,
 } from "@/lib/routineCards";
@@ -16,13 +16,6 @@ const SKIN_TYPES = ["乾燥肌", "脂性肌", "混合肌", "敏感肌", "普通�
 const CONCERN_OPTIONS = [
   "毛穴", "ニキビ", "シミ", "くすみ", "シワ", "たるみ",
   "乾燥", "テカリ", "赤み", "肌荒れ", "美白", "エイジング",
-];
-const ACCENT_COLORS = [
-  { label: "グリーン", value: "#3A8F7A" },
-  { label: "テラコッタ", value: "#C47D5E" },
-  { label: "モーブ", value: "#8B7BA8" },
-  { label: "ネイビー", value: "#4A6FA5" },
-  { label: "ゴールド", value: "#B8962A" },
 ];
 const STEP_ICONS = ["🌿", "💧", "✨", "🧴", "🌸", "🫧", "☁️", "🍃", "💎", "🌊"];
 
@@ -58,6 +51,32 @@ function isMobileShareDevice() {
   );
 }
 
+const inputStyle: React.CSSProperties = {
+  width: "100%",
+  padding: "10px 12px",
+  background: "var(--hd-bg)",
+  border: "1px solid var(--hd-line)",
+  borderRadius: 0,
+  fontFamily: "var(--hd-sans)",
+  fontSize: 13,
+  color: "var(--hd-ink)",
+  outline: "none",
+  boxSizing: "border-box",
+};
+
+function chipStyle(active: boolean): React.CSSProperties {
+  return {
+    padding: "6px 12px",
+    background: active ? "var(--hd-ink)" : "transparent",
+    color: active ? "var(--hd-bg)" : "var(--hd-ink)",
+    border: active ? "none" : "1px solid var(--hd-line)",
+    fontFamily: "var(--hd-sans)",
+    fontSize: 12,
+    cursor: "pointer",
+    whiteSpace: "nowrap",
+  };
+}
+
 export default function RoutineSharePageClient({
   initialConfig,
   initialAmSteps,
@@ -89,7 +108,6 @@ export default function RoutineSharePageClient({
   const currentSteps = activeTab === "am" ? amSteps : pmSteps;
   const setCurrentSteps = activeTab === "am" ? setAmSteps : setPmSteps;
   const activeLabel = getRoutineCardLabel(activeTab);
-  const activeEmoji = getRoutineCardEmoji(activeTab);
 
   useEffect(() => {
     const currentCard = searchParams.get("card");
@@ -171,7 +189,7 @@ export default function RoutineSharePageClient({
 
   const updateConfig = useCallback(
     (patch: Partial<RoutineCardConfig>) => setConfig((current) => ({ ...current, ...patch })),
-    []
+    [],
   );
 
   const addStep = () => {
@@ -194,19 +212,17 @@ export default function RoutineSharePageClient({
 
   const updateStep = (index: number, patch: Partial<StepDraft>) => {
     setCurrentSteps((prev) =>
-      prev.map((step, currentIndex) => (currentIndex === index ? { ...step, ...patch } : step))
+      prev.map((step, currentIndex) => (currentIndex === index ? { ...step, ...patch } : step)),
     );
   };
 
   const copyShareText = () => {
     const stepCount = currentSteps.filter((step) => step.step_name.trim()).length;
-
     const concernsText = config.concerns.length > 0 ? config.concerns.join("・") : "お肌の悩みなし";
     const text = [
-      `${activeEmoji} ${config.title} ${activeLabel}カード`,
+      `HADAMI · ${activeLabel}のスキンケア`,
       `${config.skinType} / ${concernsText}`,
-      `${activeEmoji} ${activeLabel} ${stepCount}ステップ`,
-      config.note ? `💬 ${config.note}` : "",
+      `${activeLabel} ${stepCount}ステップ`,
       "#HADAMI #スキンケア",
     ]
       .filter(Boolean)
@@ -250,7 +266,7 @@ export default function RoutineSharePageClient({
           } catch {
             return { ...step, product_image_url: url };
           }
-        })
+        }),
       );
       setCaptureSteps(inlinedSteps);
       await new Promise<void>((resolve) => {
@@ -266,7 +282,10 @@ export default function RoutineSharePageClient({
           skipFonts: true,
         }),
         new Promise<Blob | null>((_, reject) => {
-          window.setTimeout(() => reject(new Error("Share image generation timed out")), 15000);
+          window.setTimeout(
+            () => reject(new Error("Share image generation timed out")),
+            15000,
+          );
         }),
       ]);
 
@@ -338,289 +357,542 @@ export default function RoutineSharePageClient({
   const previewSteps = resolveSteps(currentSteps.filter((step) => step.step_name.trim()));
 
   return (
-    <div className="min-h-screen px-4 pt-4 pb-8 max-w-5xl mx-auto">
-      <div className="flex items-center gap-3 mb-6">
-        <button
-          onClick={() => router.push("/deck")}
-          className="flex items-center gap-1.5 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
+    <div className="hd-root hd-softa" data-density="compact">
+      <div
+        className="hd"
+        style={{
+          minHeight: "100vh",
+          background: "var(--hd-bg)",
+          color: "var(--hd-ink)",
+        }}
+      >
+        <div
+          style={{
+            maxWidth: 980,
+            margin: "0 auto",
+            padding: "20px 20px 56px",
+          }}
         >
-          <span className="text-lg leading-none">‹</span>
-          <span>スキンケア管理</span>
-        </button>
-        <span className="text-gray-300 dark:text-gray-600">/</span>
-        <span className="text-sm font-semibold truncate">{config.title}</span>
-      </div>
-
-      <div className="flex flex-col lg:flex-row gap-8">
-        <div className="flex-1 space-y-6 order-2 lg:order-1">
-          <Section title="タイトル">
-            <input
-              type="text"
-              value={config.title}
-              onChange={(event) => updateConfig({ title: event.target.value })}
-              className="w-full px-3 py-2 rounded-xl border border-black/10 dark:border-white/10 bg-white/50 dark:bg-white/5 text-sm focus:outline-none focus:ring-2 focus:ring-[#3A8F7A]/30"
-              placeholder="ルーティン名"
-            />
-          </Section>
-
-          <Section title="Xアカウント名（任意）">
-            <input
-              type="text"
-              value={config.username}
-              onChange={(event) => updateConfig({ username: event.target.value })}
-              className="w-full px-3 py-2 rounded-xl border border-black/10 dark:border-white/10 bg-white/50 dark:bg-white/5 text-sm focus:outline-none focus:ring-2 focus:ring-[#3A8F7A]/30"
-              placeholder="@username"
-            />
-          </Section>
-
-          <Section title="肌タイプ">
-            <div className="flex flex-wrap gap-2">
-              {SKIN_TYPES.map((skinType) => (
-                <button
-                  key={skinType}
-                  onClick={() => updateConfig({ skinType })}
-                  className={`text-xs px-3 py-1.5 rounded-full font-medium transition-colors ${
-                    config.skinType === skinType
-                      ? "text-white"
-                      : "bg-black/5 dark:bg-white/10 text-gray-600 dark:text-gray-300"
-                  }`}
-                  style={config.skinType === skinType ? { backgroundColor: config.accentColor } : {}}
-                >
-                  {skinType}
-                </button>
-              ))}
-            </div>
-          </Section>
-
-          <Section title="お肌の悩み">
-            <div className="flex flex-wrap gap-2">
-              {CONCERN_OPTIONS.map((concern) => (
-                <button
-                  key={concern}
-                  onClick={() => toggleConcern(concern)}
-                  className={`text-xs px-3 py-1.5 rounded-full font-medium transition-colors ${
-                    config.concerns.includes(concern)
-                      ? "text-white"
-                      : "bg-black/5 dark:bg-white/10 text-gray-600 dark:text-gray-300"
-                  }`}
-                  style={config.concerns.includes(concern) ? { backgroundColor: config.accentColor } : {}}
-                >
-                  {concern}
-                </button>
-              ))}
-            </div>
-          </Section>
-
-          <Section title="ひとことメモ">
-            <textarea
-              value={config.note}
-              onChange={(event) => updateConfig({ note: event.target.value })}
-              className="w-full px-3 py-2 rounded-xl border border-black/10 dark:border-white/10 bg-white/50 dark:bg-white/5 text-sm focus:outline-none focus:ring-2 focus:ring-[#3A8F7A]/30 resize-none"
-              rows={2}
-              placeholder="スキンケアのこだわりポイントなど..."
-            />
-          </Section>
-
-          <Section title="テーマ">
-            <div className="flex gap-2">
-              {(["light", "dark"] as const).map((theme) => (
-                <button
-                  key={theme}
-                  onClick={() => updateConfig({ theme })}
-                  className={`text-xs px-4 py-1.5 rounded-full font-medium transition-colors ${
-                    config.theme === theme
-                      ? "text-white"
-                      : "bg-black/5 dark:bg-white/10 text-gray-600 dark:text-gray-300"
-                  }`}
-                  style={config.theme === theme ? { backgroundColor: config.accentColor } : {}}
-                >
-                  {theme === "light" ? "ライト" : "ダーク"}
-                </button>
-              ))}
-            </div>
-          </Section>
-
-          <Section title="アクセントカラー">
-            <div className="flex gap-3">
-              {ACCENT_COLORS.map((color) => (
-                <button
-                  key={color.value}
-                  onClick={() => updateConfig({ accentColor: color.value })}
-                  className="flex flex-col items-center gap-1"
-                >
-                  <div
-                    className="w-8 h-8 rounded-full transition-transform"
-                    style={{
-                      backgroundColor: color.value,
-                      transform: config.accentColor === color.value ? "scale(1.2)" : "scale(1)",
-                      boxShadow:
-                        config.accentColor === color.value ? `0 0 0 3px ${color.value}40` : "none",
-                    }}
-                  />
-                  <span className="text-[10px] text-gray-500">{color.label}</span>
-                </button>
-              ))}
-            </div>
-          </Section>
-
-          <Section title="ステップ編集">
-            <div className="flex gap-2 mb-4">
-              <button
-                onClick={() => setActiveTab("am")}
-                className={`flex-1 text-center py-2 rounded-xl text-sm font-semibold transition-colors ${
-                  activeTab === "am" ? "text-white" : "bg-black/5 dark:bg-white/10"
-                }`}
-                style={activeTab === "am" ? { backgroundColor: config.accentColor } : {}}
-              >
-                ☀️ 朝カード
-              </button>
-              <button
-                onClick={() => setActiveTab("pm")}
-                className={`flex-1 text-center py-2 rounded-xl text-sm font-semibold transition-colors ${
-                  activeTab === "pm" ? "text-white" : "bg-black/5 dark:bg-white/10"
-                }`}
-                style={activeTab === "pm" ? { backgroundColor: config.accentColor } : {}}
-              >
-                🌙 夜カード
-              </button>
-            </div>
-
-            <div className="space-y-3">
-              {currentSteps.map((step, index) => (
-                <div
-                  key={index}
-                  className="flex items-start gap-2 p-3 rounded-xl border border-black/5 dark:border-white/10 bg-white/50 dark:bg-white/5"
-                >
-                  <select
-                    value={step.icon}
-                    onChange={(event) => updateStep(index, { icon: event.target.value })}
-                    className="text-lg bg-transparent cursor-pointer"
-                  >
-                    {STEP_ICONS.map((icon) => (
-                      <option key={icon} value={icon}>
-                        {icon}
-                      </option>
-                    ))}
-                  </select>
-                  <div className="flex-1 space-y-1.5">
-                    <input
-                      type="text"
-                      value={step.step_name}
-                      onChange={(event) => updateStep(index, { step_name: event.target.value })}
-                      className="w-full text-sm px-2 py-1 rounded-lg border border-black/5 dark:border-white/10 bg-transparent focus:outline-none focus:ring-1 focus:ring-[#3A8F7A]/30"
-                      placeholder="ステップ名（例：化粧水）"
-                    />
-                    <input
-                      type="text"
-                      value={step.product_name}
-                      onChange={(event) => updateStep(index, { product_name: event.target.value })}
-                      className="w-full text-xs px-2 py-1 rounded-lg border border-black/5 dark:border-white/10 bg-transparent focus:outline-none focus:ring-1 focus:ring-[#3A8F7A]/30 text-gray-500"
-                      placeholder="商品名（任意）"
-                    />
-                  </div>
-                  <button
-                    onClick={() => removeStep(index)}
-                    className="text-red-400 hover:text-red-500 text-sm mt-1"
-                  >
-                    ✕
-                  </button>
-                </div>
-              ))}
-            </div>
-
+          {/* Header */}
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              paddingBottom: 14,
+              borderBottom: "1px solid var(--hd-ink)",
+              marginBottom: 26,
+            }}
+          >
             <button
-              onClick={addStep}
-              className="mt-3 w-full py-2 rounded-xl border-2 border-dashed border-black/10 dark:border-white/10 text-sm text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
-            >
-              ＋ ステップを追加
-            </button>
-          </Section>
-
-          <div className="space-y-3">
-            <div className="grid gap-3 sm:grid-cols-2">
-              <button
-                onClick={handleDownloadImage}
-                disabled={isDownloading}
-                className="px-6 py-3 rounded-xl text-sm font-semibold text-white transition-colors disabled:opacity-60"
-                style={{ backgroundColor: config.accentColor }}
-              >
-                {isDownloading
-                  ? "画像を作成中..."
-                  : lastExportMode === "shared"
-                    ? "保存メニューを開きました"
-                    : lastExportMode === "downloaded"
-                      ? "画像を保存しました"
-                      : `${activeLabel}カード画像を保存`}
-              </button>
-              <button
-                onClick={copyShareText}
-                className="px-6 py-3 rounded-xl text-sm font-semibold border border-black/10 dark:border-white/10 transition-colors hover:bg-black/5 dark:hover:bg-white/5"
-              >
-                本文をコピー
-              </button>
-            </div>
-
-            <p className="text-xs text-gray-400">
-              iPhoneやAndroidでは保存メニューから「画像を保存」を選ぶと写真に入れやすくなります。このカードはデバイス上でのみ保持され、ページを離れるとリセットされます。
-            </p>
-          </div>
-        </div>
-
-        <div className="lg:sticky lg:top-6 lg:self-start order-1 lg:order-2">
-          <div className="text-xs text-gray-400 mb-2 text-center lg:text-left">
-            {activeEmoji} {activeLabel}カードのプレビュー
-          </div>
-          <div ref={previewViewportRef} className="w-full overflow-hidden">
-            <div
-              className="flex justify-center"
+              onClick={() => router.push("/deck")}
+              className="hd-mono hd-caps"
               style={{
-                height: previewHeight ? previewHeight * previewScale : undefined,
+                background: "transparent",
+                border: "none",
+                color: "var(--hd-ink-60)",
+                cursor: "pointer",
+                padding: 0,
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 6,
               }}
             >
-              <div
-                style={{
-                  width: ROUTINE_CARD_WIDTH,
-                  transform: `scale(${previewScale})`,
-                  transformOrigin: "top center",
-                }}
-              >
-                <RoutineShareCard
-                  config={config}
-                  mode={activeTab}
-                  steps={previewSteps}
+              ← Back · スキンケア管理
+            </button>
+            <span
+              className="hd-mono hd-caps"
+              style={{ color: "var(--hd-ink-40)" }}
+            >
+              Share Card
+            </span>
+          </div>
+
+          {/* Title */}
+          <div style={{ marginBottom: 24 }}>
+            <div
+              className="hd-mono hd-caps"
+              style={{ color: "var(--hd-ink-40)", marginBottom: 8 }}
+            >
+              Compose · ルーティンカード
+            </div>
+            <h1
+              className="hd-serif"
+              style={{
+                fontSize: 32,
+                lineHeight: 1.1,
+                letterSpacing: "-0.02em",
+                margin: 0,
+              }}
+            >
+              ルーティンカードを
+              <span style={{ fontStyle: "italic", color: "var(--hd-moss)" }}>
+                作る。
+              </span>
+            </h1>
+          </div>
+
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "1fr",
+              gap: 28,
+              alignItems: "start",
+            }}
+            className="rsc-grid"
+          >
+            <style>{`
+              @media (min-width: 880px) {
+                .rsc-grid {
+                  grid-template-columns: 1fr ${ROUTINE_CARD_WIDTH + 20}px !important;
+                }
+              }
+            `}</style>
+
+            {/* === Editor === */}
+            <div style={{ minWidth: 0 }}>
+              {/* AM/PM tabs */}
+              <Section no="01" title="編集対象 · AM / PM">
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "1fr 1fr",
+                    border: "1px solid var(--hd-ink)",
+                  }}
+                >
+                  {(["am", "pm"] as const).map((mode) => {
+                    const on = activeTab === mode;
+                    return (
+                      <button
+                        key={mode}
+                        onClick={() => setActiveTab(mode)}
+                        style={{
+                          padding: "12px 0",
+                          background: on ? "var(--hd-ink)" : "transparent",
+                          color: on ? "var(--hd-bg)" : "var(--hd-ink)",
+                          border: "none",
+                          cursor: "pointer",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          gap: 10,
+                        }}
+                      >
+                        <span
+                          className="hd-serif"
+                          style={{ fontSize: 15, letterSpacing: "-0.01em" }}
+                        >
+                          {mode === "am" ? "朝" : "夜"}
+                        </span>
+                        <span
+                          className="hd-mono"
+                          style={{
+                            fontSize: 9,
+                            letterSpacing: "0.18em",
+                            opacity: 0.7,
+                          }}
+                        >
+                          {mode === "am" ? "AM" : "PM"}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </Section>
+
+              {/* Username */}
+              <Section no="02" title="X アカウント名">
+                <input
+                  type="text"
+                  value={config.username}
+                  onChange={(event) => updateConfig({ username: event.target.value })}
+                  style={inputStyle}
+                  placeholder="@username（任意）"
                 />
+              </Section>
+
+              {/* Skin type */}
+              <Section no="03" title="肌タイプ">
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                  {SKIN_TYPES.map((skinType) => (
+                    <button
+                      key={skinType}
+                      onClick={() => updateConfig({ skinType })}
+                      style={chipStyle(config.skinType === skinType)}
+                    >
+                      {skinType}
+                    </button>
+                  ))}
+                </div>
+              </Section>
+
+              {/* Concerns */}
+              <Section
+                no="04"
+                title="お肌の悩み"
+                hint={`${config.concerns.length} 件選択中`}
+              >
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                  {CONCERN_OPTIONS.map((concern) => (
+                    <button
+                      key={concern}
+                      onClick={() => toggleConcern(concern)}
+                      style={chipStyle(config.concerns.includes(concern))}
+                    >
+                      {concern}
+                    </button>
+                  ))}
+                </div>
+              </Section>
+
+              {/* Steps */}
+              <Section
+                no="05"
+                title="ステップ編集"
+                hint={`${activeLabel} · ${currentSteps.filter((s) => s.step_name.trim()).length} ステップ`}
+              >
+                <div>
+                  {currentSteps.length === 0 && (
+                    <p
+                      style={{
+                        fontFamily: "var(--hd-sans)",
+                        fontSize: 12,
+                        color: "var(--hd-ink-40)",
+                        textAlign: "center",
+                        padding: "18px 0",
+                        margin: 0,
+                      }}
+                    >
+                      ステップがまだありません。下のボタンから追加してください。
+                    </p>
+                  )}
+                  {currentSteps.map((step, index) => (
+                    <div
+                      key={index}
+                      style={{
+                        display: "flex",
+                        alignItems: "stretch",
+                        gap: 12,
+                        padding: "12px 14px",
+                        marginBottom: 8,
+                        background: "var(--hd-surface)",
+                        border: "1px solid var(--hd-hair)",
+                      }}
+                    >
+                      <div
+                        className="hd-mono"
+                        style={{
+                          width: 22,
+                          fontSize: 11,
+                          color: "var(--hd-ink-40)",
+                          paddingTop: 8,
+                          flexShrink: 0,
+                        }}
+                      >
+                        {String(index + 1).padStart(2, "0")}
+                      </div>
+                      <select
+                        value={step.icon}
+                        onChange={(event) =>
+                          updateStep(index, { icon: event.target.value })
+                        }
+                        style={{
+                          fontSize: 18,
+                          background: "transparent",
+                          border: "1px solid var(--hd-hair)",
+                          padding: "0 4px",
+                          cursor: "pointer",
+                          fontFamily: "var(--hd-sans)",
+                          alignSelf: "flex-start",
+                        }}
+                      >
+                        {STEP_ICONS.map((icon) => (
+                          <option key={icon} value={icon}>
+                            {icon}
+                          </option>
+                        ))}
+                      </select>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <input
+                          type="text"
+                          value={step.step_name}
+                          onChange={(event) =>
+                            updateStep(index, { step_name: event.target.value })
+                          }
+                          style={{
+                            ...inputStyle,
+                            padding: "8px 10px",
+                            fontSize: 13,
+                            marginBottom: 6,
+                          }}
+                          placeholder="ステップ名（例：化粧水）"
+                        />
+                        <input
+                          type="text"
+                          value={step.product_name}
+                          onChange={(event) =>
+                            updateStep(index, { product_name: event.target.value })
+                          }
+                          style={{
+                            ...inputStyle,
+                            padding: "8px 10px",
+                            fontSize: 12,
+                            color: "var(--hd-ink-60)",
+                          }}
+                          placeholder="商品名（任意）"
+                        />
+                      </div>
+                      <button
+                        onClick={() => removeStep(index)}
+                        aria-label="削除"
+                        style={{
+                          width: 26,
+                          height: 26,
+                          alignSelf: "flex-start",
+                          marginTop: 4,
+                          border: "1px solid var(--hd-hair)",
+                          background: "transparent",
+                          borderRadius: 999,
+                          cursor: "pointer",
+                          color: "var(--hd-ink-40)",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          flexShrink: 0,
+                          fontSize: 12,
+                          fontFamily: "var(--hd-mono)",
+                        }}
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ))}
+                  <button
+                    onClick={addStep}
+                    style={{
+                      width: "100%",
+                      padding: "12px 0",
+                      background: "transparent",
+                      border: "1px dashed var(--hd-line)",
+                      cursor: "pointer",
+                      color: "var(--hd-ink-60)",
+                      fontFamily: "var(--hd-mono)",
+                      fontSize: 11,
+                      letterSpacing: "0.18em",
+                      textTransform: "uppercase",
+                      marginTop: 4,
+                    }}
+                  >
+                    + Add Step · ステップを追加
+                  </button>
+                </div>
+              </Section>
+
+              {/* Actions */}
+              <div style={{ marginTop: 32 }}>
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "1fr 1fr",
+                    gap: 10,
+                  }}
+                >
+                  <button
+                    onClick={handleDownloadImage}
+                    disabled={isDownloading}
+                    style={{
+                      padding: "14px 0",
+                      background: "var(--hd-ink)",
+                      color: "var(--hd-bg)",
+                      border: "none",
+                      fontFamily: "var(--hd-sans)",
+                      fontSize: 14,
+                      cursor: isDownloading ? "default" : "pointer",
+                      opacity: isDownloading ? 0.7 : 1,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: 12,
+                    }}
+                  >
+                    <span>
+                      {isDownloading
+                        ? "画像を作成中..."
+                        : lastExportMode === "shared"
+                          ? "保存メニューを開きました"
+                          : lastExportMode === "downloaded"
+                            ? "画像を保存しました"
+                            : `${activeLabel}カードを保存`}
+                    </span>
+                    <span
+                      className="hd-mono"
+                      style={{
+                        fontSize: 9,
+                        letterSpacing: "0.2em",
+                        opacity: 0.7,
+                      }}
+                    >
+                      EXPORT →
+                    </span>
+                  </button>
+                  <button
+                    onClick={copyShareText}
+                    style={{
+                      padding: "14px 0",
+                      background: "transparent",
+                      color: "var(--hd-ink)",
+                      border: "1px solid var(--hd-ink)",
+                      fontFamily: "var(--hd-sans)",
+                      fontSize: 14,
+                      cursor: "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: 10,
+                    }}
+                  >
+                    <span>本文をコピー</span>
+                    <span
+                      className="hd-mono"
+                      style={{
+                        fontSize: 9,
+                        letterSpacing: "0.2em",
+                        color: "var(--hd-ink-60)",
+                      }}
+                    >
+                      COPY
+                    </span>
+                  </button>
+                </div>
+                <p
+                  style={{
+                    fontFamily: "var(--hd-sans)",
+                    fontSize: 11,
+                    color: "var(--hd-ink-40)",
+                    marginTop: 14,
+                    lineHeight: 1.7,
+                    margin: "14px 0 0",
+                  }}
+                >
+                  ※ iPhoneやAndroidでは保存メニューから「画像を保存」を選ぶと写真に保存できます。
+                  カードはデバイス上でのみ保持され、ページを離れるとリセットされます。
+                </p>
+              </div>
+            </div>
+
+            {/* === Preview === */}
+            <div style={{ position: "sticky", top: 20, alignSelf: "start" }}>
+              <div
+                className="hd-mono hd-caps"
+                style={{ color: "var(--hd-ink-40)", marginBottom: 10 }}
+              >
+                Preview · {activeLabel}カード
+              </div>
+              <div
+                ref={previewViewportRef}
+                style={{ width: "100%", overflow: "hidden" }}
+              >
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "center",
+                    height: previewHeight ? previewHeight * previewScale : undefined,
+                  }}
+                >
+                  <div
+                    style={{
+                      width: ROUTINE_CARD_WIDTH,
+                      transform: `scale(${previewScale})`,
+                      transformOrigin: "top center",
+                    }}
+                  >
+                    <RoutineShareCard
+                      config={config}
+                      mode={activeTab}
+                      steps={previewSteps}
+                    />
+                  </div>
+                </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
 
-      <div
-        aria-hidden="true"
-        className="pointer-events-none fixed left-[-10000px] top-0 opacity-0"
-      >
-        <div ref={captureRef}>
-          <RoutineShareCard
-            config={config}
-            mode={activeTab}
-            steps={
-              captureSteps
-                ? resolveSteps(captureSteps.filter((step) => step.step_name.trim()))
-                : previewSteps
-            }
-          />
+        <div
+          aria-hidden="true"
+          style={{
+            pointerEvents: "none",
+            position: "fixed",
+            left: -10000,
+            top: 0,
+            opacity: 0,
+          }}
+        >
+          <div ref={captureRef}>
+            <RoutineShareCard
+              config={config}
+              mode={activeTab}
+              steps={
+                captureSteps
+                  ? resolveSteps(captureSteps.filter((step) => step.step_name.trim()))
+                  : previewSteps
+              }
+            />
+          </div>
         </div>
       </div>
     </div>
   );
 }
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+function Section({
+  no,
+  title,
+  hint,
+  children,
+}: {
+  no: string;
+  title: string;
+  hint?: string;
+  children: React.ReactNode;
+}) {
   return (
-    <div>
-      <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 mb-2">
-        {title}
-      </label>
+    <div style={{ paddingTop: 18, paddingBottom: 18, borderTop: "1px solid var(--hd-hair)" }}>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "baseline",
+          justifyContent: "space-between",
+          marginBottom: 12,
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "baseline", gap: 10 }}>
+          <span
+            className="hd-mono hd-caps"
+            style={{ color: "var(--hd-ink-40)" }}
+          >
+            No. {no}
+          </span>
+          <span
+            className="hd-serif"
+            style={{ fontSize: 16, letterSpacing: "-0.01em" }}
+          >
+            {title}
+          </span>
+        </div>
+        {hint && (
+          <span
+            className="hd-mono"
+            style={{
+              fontSize: 10,
+              color: "var(--hd-ink-40)",
+              letterSpacing: "0.05em",
+            }}
+          >
+            {hint}
+          </span>
+        )}
+      </div>
       {children}
     </div>
   );
