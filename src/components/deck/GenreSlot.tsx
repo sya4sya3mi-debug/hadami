@@ -4,7 +4,8 @@ import Image from "next/image";
 import { Product, ProductGenre } from "@/types";
 import { getGenreByKey } from "@/lib/productGenres";
 import { getIngredientById, ACTIVE_CATEGORIES } from "@/lib/ingredients";
-import { ProductGenreIcon, ActiveCategoryIcon } from "@/components/ui/CosmeticIcons";
+import { ActiveCategoryIcon } from "@/components/ui/CosmeticIcons";
+import { Ico } from "@/components/redesign/apothecary/Icons";
 
 interface GenreSlotProps {
   genre: ProductGenre;
@@ -23,35 +24,71 @@ export default function GenreSlot({
 }: GenreSlotProps) {
   const genreInfo = getGenreByKey(genre);
   if (!genreInfo) return null;
-  const { label, color } = genreInfo;
+  const { label } = genreInfo;
 
   // Empty slot
   if (!product) {
     return (
       <div
         onClick={onAdd}
-        className="flex items-center gap-4 px-4 h-[76px] rounded-r2 mb-3 cursor-pointer
-                   bg-white
-                   border border-bo-parchment
-                   shadow-bo1
-                   active:scale-[0.98] transition-all duration-150"
+        role="button"
+        tabIndex={0}
+        className="hd-softa-card hd-press"
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 14,
+          padding: "14px 16px",
+          marginBottom: 10,
+          background: "var(--hd-surface)",
+          border: "1px solid var(--hd-hair)",
+          cursor: "pointer",
+        }}
       >
         <div
-          className="w-11 h-11 rounded-[14px] flex items-center justify-center shrink-0"
-          style={{ background: `${color}15` }}
+          className="hd-mono"
+          style={{
+            width: 26,
+            fontSize: 11,
+            color: "var(--hd-ink-40)",
+            letterSpacing: "0.05em",
+            flexShrink: 0,
+          }}
         >
-          <ProductGenreIcon genre={genre} size={22} />
+          {stepLabel}
         </div>
-        <div className="flex-1 min-w-0">
-          <span className="text-sm font-semibold text-bo-ink font-sans block">
+        <div
+          className="hd-softa-thumb"
+          style={{
+            width: 50,
+            height: 50,
+            border: "1px dashed var(--hd-line)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            color: "var(--hd-ink-40)",
+            flexShrink: 0,
+          }}
+        >
+          {Ico.plus({ width: 14, height: 14 })}
+        </div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div
+            className="hd-serif"
+            style={{
+              fontSize: 16,
+              color: "var(--hd-ink-60)",
+              letterSpacing: "-0.01em",
+            }}
+          >
             {label}
-          </span>
-          <span className="text-[11px] text-bo-ink-muted font-sans">
-            タップして追加
-          </span>
-        </div>
-        <div className="w-9 h-9 rounded-full flex items-center justify-center bg-bo-accent text-white text-lg font-sans shadow-bo-accent shrink-0">
-          +
+          </div>
+          <div
+            className="hd-mono hd-caps"
+            style={{ color: "var(--hd-ink-40)", marginTop: 3 }}
+          >
+            Tap to add · 追加
+          </div>
         </div>
       </div>
     );
@@ -67,52 +104,82 @@ export default function GenreSlot({
   });
 
   return (
-    <div className="flex items-center relative overflow-hidden deck-card-enter h-[76px] rounded-r2 mb-3 bg-white shadow-bo1 border border-bo-parchment/60
-                    active:scale-[0.98] transition-all duration-150 cursor-pointer">
-      {/* Left color bar */}
+    <div
+      className="hd-softa-card"
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: 14,
+        padding: "14px 16px",
+        marginBottom: 10,
+        background: "var(--hd-surface)",
+        border: "1px solid var(--hd-hair)",
+      }}
+    >
       <div
-        className="absolute left-0 top-0 w-1.5 h-full"
-        style={{ background: `linear-gradient(to bottom, ${color}, ${color}80)` }}
-      />
-
-      {/* Step badge */}
-      <div className="absolute top-2 left-3 z-10 w-5 h-5 rounded-md flex items-center justify-center
-                      text-[10px] font-black text-white font-serif bg-bo-accent/90">
+        className="hd-mono"
+        style={{
+          width: 26,
+          fontSize: 11,
+          color: "var(--hd-ink-40)",
+          letterSpacing: "0.05em",
+          flexShrink: 0,
+        }}
+      >
         {stepLabel}
       </div>
 
-      {/* Product image */}
-      <div className="ml-4 shrink-0">
+      <div
+        className="hd-softa-thumb"
+        style={{
+          width: 50,
+          height: 50,
+          flexShrink: 0,
+          overflow: "hidden",
+          background: "var(--hd-surface-2)",
+          position: "relative",
+        }}
+      >
         {product.packageImage ? (
-          <div className="w-14 h-14 rounded-[12px] overflow-hidden relative shadow-bo1">
-            <Image
-              src={product.packageImageThumb ?? product.packageImage}
-              alt={product.name}
-              fill
-              className="object-cover"
-              sizes="56px"
-              loading="lazy"
-            />
-          </div>
-        ) : (
-          <div
-            className="w-14 h-14 rounded-[12px] flex items-center justify-center bg-bo-accent-soft"
-            style={{ color }}
-          >
-            <ProductGenreIcon genre={genre} size={24} />
-          </div>
-        )}
+          <Image
+            src={product.packageImageThumb ?? product.packageImage}
+            alt={product.name}
+            fill
+            style={{ objectFit: "cover" }}
+            sizes="50px"
+            loading="lazy"
+          />
+        ) : null}
       </div>
 
-      {/* Product info */}
-      <div className="flex-1 min-w-0 px-3">
-        <div className="text-sm font-bold truncate text-bo-ink font-sans">
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div
+          className="hd-mono hd-caps"
+          style={{
+            color: "var(--hd-ink-40)",
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            whiteSpace: "nowrap",
+          }}
+        >
+          {product.brand}
+        </div>
+        <div
+          className="hd-serif"
+          style={{
+            fontSize: 14,
+            marginTop: 3,
+            lineHeight: 1.3,
+            letterSpacing: "-0.01em",
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            whiteSpace: "nowrap",
+          }}
+        >
           {product.name}
         </div>
-        <div className="text-xs mt-0.5 text-bo-ink-muted font-sans">{product.brand}</div>
-        {/* Category icons */}
         {categories.size > 0 && (
-          <div className="flex gap-1 mt-1.5">
+          <div style={{ display: "flex", gap: 5, marginTop: 8 }}>
             {Array.from(categories)
               .slice(0, 5)
               .map((catKey) => {
@@ -120,11 +187,19 @@ export default function GenreSlot({
                 return info ? (
                   <span
                     key={catKey}
-                    className="w-5 h-5 rounded-full inline-flex items-center justify-center"
-                    style={{ background: info.color + "20", color: info.color }}
                     title={info.label}
+                    style={{
+                      width: 18,
+                      height: 18,
+                      borderRadius: 999,
+                      display: "inline-flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      background: `${info.color}1F`,
+                      color: info.color,
+                    }}
                   >
-                    <ActiveCategoryIcon category={info.key} size={11} />
+                    <ActiveCategoryIcon category={info.key} size={10} />
                   </span>
                 ) : null;
               })}
@@ -132,17 +207,28 @@ export default function GenreSlot({
         )}
       </div>
 
-      {/* Remove button */}
       {onRemove && (
         <button
           onClick={(e) => {
             e.stopPropagation();
             onRemove();
           }}
-          className="w-8 h-8 rounded-full border-none flex items-center justify-center text-xs cursor-pointer mr-3 shrink-0
-                     bg-bo-danger-bg text-bo-danger pressable"
+          aria-label="削除"
+          style={{
+            width: 24,
+            height: 24,
+            border: "1px solid var(--hd-hair)",
+            background: "transparent",
+            borderRadius: 999,
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            color: "var(--hd-ink-40)",
+            flexShrink: 0,
+          }}
         >
-          ×
+          {Ico.close({ width: 10, height: 10 })}
         </button>
       )}
     </div>
