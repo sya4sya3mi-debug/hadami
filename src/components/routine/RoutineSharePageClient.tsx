@@ -17,7 +17,6 @@ const CONCERN_OPTIONS = [
   "毛穴", "ニキビ", "シミ", "くすみ", "シワ", "たるみ",
   "乾燥", "テカリ", "赤み", "肌荒れ", "美白", "エイジング",
 ];
-const STEP_ICONS = ["🌿", "💧", "✨", "🧴", "🌸", "🫧", "☁️", "🍃", "💎", "🌊"];
 
 export type StepDraft = {
   icon: string;
@@ -367,12 +366,17 @@ export default function RoutineSharePageClient({
         }}
       >
         <div
+          className="rsc-shell"
           style={{
             maxWidth: 980,
             margin: "0 auto",
-            padding: "20px 20px 56px",
+            padding: "16px 16px 56px",
           }}
-        >
+        ><style>{`
+          @media (min-width: 640px) {
+            .rsc-shell { padding: 20px 24px 64px; }
+          }
+        `}</style>
           {/* Header */}
           <div
             style={{
@@ -436,7 +440,7 @@ export default function RoutineSharePageClient({
             style={{
               display: "grid",
               gridTemplateColumns: "1fr",
-              gap: 28,
+              gap: 24,
               alignItems: "start",
             }}
             className="rsc-grid"
@@ -445,12 +449,19 @@ export default function RoutineSharePageClient({
               @media (min-width: 880px) {
                 .rsc-grid {
                   grid-template-columns: 1fr ${ROUTINE_CARD_WIDTH + 20}px !important;
+                  gap: 36px !important;
                 }
+                .rsc-editor { order: 1; }
+                .rsc-preview { order: 2; position: sticky; top: 20px; }
+              }
+              @media (max-width: 879px) {
+                .rsc-editor { order: 2; }
+                .rsc-preview { order: 1; }
               }
             `}</style>
 
             {/* === Editor === */}
-            <div style={{ minWidth: 0 }}>
+            <div className="rsc-editor" style={{ minWidth: 0 }}>
               {/* AM/PM tabs */}
               <Section no="01" title="編集対象 · AM / PM">
                 <div
@@ -591,27 +602,6 @@ export default function RoutineSharePageClient({
                       >
                         {String(index + 1).padStart(2, "0")}
                       </div>
-                      <select
-                        value={step.icon}
-                        onChange={(event) =>
-                          updateStep(index, { icon: event.target.value })
-                        }
-                        style={{
-                          fontSize: 18,
-                          background: "transparent",
-                          border: "1px solid var(--hd-hair)",
-                          padding: "0 4px",
-                          cursor: "pointer",
-                          fontFamily: "var(--hd-sans)",
-                          alignSelf: "flex-start",
-                        }}
-                      >
-                        {STEP_ICONS.map((icon) => (
-                          <option key={icon} value={icon}>
-                            {icon}
-                          </option>
-                        ))}
-                      </select>
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <input
                           type="text"
@@ -781,7 +771,7 @@ export default function RoutineSharePageClient({
             </div>
 
             {/* === Preview === */}
-            <div style={{ position: "sticky", top: 20, alignSelf: "start" }}>
+            <div className="rsc-preview" style={{ alignSelf: "start", minWidth: 0 }}>
               <div
                 className="hd-mono hd-caps"
                 style={{ color: "var(--hd-ink-40)", marginBottom: 10 }}
