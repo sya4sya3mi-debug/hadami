@@ -1,16 +1,11 @@
 "use client";
 
+import "@/styles/hadami-tokens.css";
 import {
-  getRoutineCardEmoji,
-  getRoutineCardHeading,
   getRoutineCardLabel,
   type RoutineCardMode,
 } from "@/lib/routineCards";
 import type { RoutineCardConfig } from "@/lib/routines";
-import {
-  SHARE_CARD_BODY_FONT_STACK,
-  SHARE_CARD_DISPLAY_FONT_STACK,
-} from "@/lib/shareCardFonts";
 
 type StepItem = {
   icon: string;
@@ -26,332 +21,443 @@ type Props = {
   steps: StepItem[];
 };
 
-const hexToRgba = (hex: string, alpha: number) => {
-  const h = hex.replace("#", "");
-  if (h.length !== 6) return hex;
-  const r = parseInt(h.slice(0, 2), 16);
-  const g = parseInt(h.slice(2, 4), 16);
-  const b = parseInt(h.slice(4, 6), 16);
-  if ([r, g, b].some((n) => Number.isNaN(n))) return hex;
-  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
-};
+const SC_W = 560;
+const SC_H = 720;
 
-export default function RoutineShareCard({ config, mode, steps }: Props) {
-  const { skinType, concerns, note, username, theme, accentColor } = config;
-  const isDark = theme === "dark";
-  const modeLabel = getRoutineCardLabel(mode);
-  const modeEmoji = getRoutineCardEmoji(mode);
-  const heading = getRoutineCardHeading(mode);
+function todayJP() {
+  const d = new Date();
+  return `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, "0")}.${String(d.getDate()).padStart(2, "0")}`;
+}
 
-  const bg = isDark
-    ? "linear-gradient(135deg, #0d1f1c, #162e29)"
-    : "linear-gradient(135deg, #f0faf7, #e8f5f1)";
-  const cardBg = isDark ? "rgba(255,255,255,0.06)" : "rgba(255,255,255,0.85)";
-  const textMain = isDark ? "#e8f0ed" : "#1a2e28";
-  const textSub = isDark ? "#8aaa9e" : "#5a7a70";
-  const borderColor = isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.06)";
+function getInitials(name: string): string {
+  if (!name) return "—";
+  const trimmed = name.trim();
+  const ascii = trimmed.match(/[A-Za-z]+/g)?.join(" ") ?? "";
+  if (ascii) {
+    return ascii
+      .split(/\s+/)
+      .slice(0, 2)
+      .map((w) => w.charAt(0).toUpperCase())
+      .join("");
+  }
+  return trimmed.charAt(0);
+}
+
+function ProductTile({
+  step,
+  index,
+  fontSize = 26,
+}: {
+  step: StepItem;
+  index: number;
+  fontSize?: number;
+}) {
+  const productName = step.product_name?.trim() || step.step_name;
+  const brand = step.brand?.trim() || "";
+  const initials = getInitials(productName || brand);
+  const hasImage = !!step.product_image_url;
 
   return (
     <div
       style={{
-        width: 560,
-        background: bg,
-        borderRadius: 28,
-        padding: 30,
-        fontFamily: SHARE_CARD_BODY_FONT_STACK,
-        color: textMain,
         position: "relative",
         overflow: "hidden",
+        background: "#cdc4b3",
+        width: "100%",
+        height: "100%",
       }}
     >
-      <div style={{ marginBottom: 16 }}>
-        <div
+      {hasImage ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={step.product_image_url ?? ""}
+          alt=""
           style={{
-            fontSize: 11,
-            fontWeight: 700,
-            letterSpacing: 2,
-            color: accentColor,
-            textTransform: "uppercase",
-            marginBottom: 6,
-            fontFamily: SHARE_CARD_DISPLAY_FONT_STACK,
-            lineHeight: 1.2,
+            position: "absolute",
+            inset: 0,
+            width: "100%",
+            height: "100%",
+            objectFit: "cover",
           }}
-        >
-          HADAMI
-        </div>
-        <div
-          style={{
-            fontSize: 24,
-            fontWeight: 700,
-            lineHeight: 1.25,
-            marginBottom: 10,
-            fontFamily: SHARE_CARD_DISPLAY_FONT_STACK,
-          }}
-        >
-          {modeEmoji} {heading}
-        </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-          <span
+        />
+      ) : (
+        <>
+          <div
             style={{
-              display: "inline-block",
-              background: isDark ? "rgba(255,255,255,0.12)" : "rgba(255,255,255,0.72)",
-              color: textMain,
-              fontSize: 13,
-              fontWeight: 700,
-              padding: "7px 12px 9px",
-              borderRadius: 999,
-              border: `1px solid ${borderColor}`,
-              lineHeight: 1,
+              position: "absolute",
+              inset: 0,
+              background:
+                "repeating-linear-gradient(45deg, rgba(255,255,255,0.06) 0px, rgba(255,255,255,0.06) 2px, transparent 2px, transparent 8px), repeating-linear-gradient(-45deg, rgba(0,0,0,0.03) 0px, rgba(0,0,0,0.03) 1px, transparent 1px, transparent 6px)",
+            }}
+          />
+          <div
+            style={{
+              position: "absolute",
+              inset: 0,
+              background:
+                "linear-gradient(135deg, rgba(255,255,255,0.4) 0%, transparent 50%, rgba(0,0,0,0.1) 100%)",
+            }}
+          />
+          <div
+            style={{
+              position: "absolute",
+              inset: 0,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              fontFamily: "var(--hd-serif)",
+              fontSize,
+              fontStyle: "italic",
+              color: "rgba(255,255,255,0.85)",
+              letterSpacing: "-0.02em",
             }}
           >
-            {modeLabel}カード
-          </span>
-          <span
-            style={{
-              display: "inline-block",
-              background: isDark ? "rgba(255,255,255,0.08)" : hexToRgba(accentColor, 0.08),
-              color: accentColor,
-              fontSize: 13,
-              fontWeight: 600,
-              padding: "8px 12px 10px",
-              borderRadius: 999,
-              lineHeight: 1,
-            }}
-          >
-            {skinType}
-          </span>
-          {username && (
-            <span style={{ fontSize: 12, color: textSub }}>by @{username}</span>
-          )}
-        </div>
+            {initials}
+          </div>
+        </>
+      )}
+
+      {/* Step badge */}
+      <div
+        style={{
+          position: "absolute",
+          top: 8,
+          left: 8,
+          width: 18,
+          height: 18,
+          borderRadius: 999,
+          background: "var(--hd-moss)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          fontFamily: "var(--hd-serif)",
+          fontSize: 11,
+          fontStyle: "italic",
+          color: "#fff",
+          lineHeight: 1,
+        }}
+      >
+        {index + 1}
       </div>
 
-      {concerns.length > 0 && (
+      {/* Bottom info band */}
+      <div
+        style={{
+          position: "absolute",
+          bottom: 0,
+          left: 0,
+          right: 0,
+          background: "rgba(0,0,0,0.55)",
+          backdropFilter: "blur(4px)",
+          padding: "6px 8px",
+        }}
+      >
         <div
           style={{
-            display: "flex",
-            flexWrap: "wrap",
-            gap: 6,
-            marginBottom: 18,
+            fontFamily: "var(--hd-mono)",
+            fontSize: 7.5,
+            letterSpacing: "0.14em",
+            textTransform: "uppercase",
+            color: "rgba(255,255,255,0.65)",
+            lineHeight: 1.2,
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            whiteSpace: "nowrap",
           }}
         >
-          {concerns.map((concern) => (
-            <span
-              key={concern}
-              style={{
-                fontSize: 11,
-                padding: "2px 8px",
-                borderRadius: 12,
-                border: `1px solid ${borderColor}`,
-                color: textSub,
-                background: isDark ? "rgba(255,255,255,0.04)" : "rgba(255,255,255,0.6)",
-              }}
-            >
-              {concern}
-            </span>
-          ))}
+          {step.step_name}
         </div>
-      )}
-
-      <StepList
-        steps={steps}
-        accentColor={accentColor}
-        cardBg={cardBg}
-        textMain={textMain}
-        textSub={textSub}
-        borderColor={borderColor}
-        isDark={isDark}
-      />
-
-      {note && (
         <div
           style={{
-            background: cardBg,
-            borderRadius: 12,
-            padding: "12px 16px",
-            fontSize: 13,
-            lineHeight: 1.6,
-            color: textSub,
-            marginBottom: 20,
-            border: `1px solid ${borderColor}`,
+            fontFamily: "var(--hd-sans)",
+            fontSize: 9.5,
+            color: "rgba(255,255,255,0.95)",
+            fontWeight: 600,
+            lineHeight: 1.2,
+            marginTop: 1,
+            overflow: "hidden",
+            whiteSpace: "nowrap",
+            textOverflow: "ellipsis",
           }}
         >
-          💬 {note}
+          {productName}
         </div>
-      )}
+      </div>
+    </div>
+  );
+}
+
+export default function RoutineShareCard({ config, mode, steps }: Props) {
+  const { skinType, concerns, username } = config;
+  const modeLabel = getRoutineCardLabel(mode);
+  const isMorning = mode === "am";
+  const date = todayJP();
+
+  // Display up to 5 steps in the editorial 3+2 grid
+  const displaySteps = steps.slice(0, 5);
+  const topRow = displaySteps.slice(0, 3);
+  const bottomRow = displaySteps.slice(3, 5);
+
+  const titleFirst = isMorning ? "私の" : "私の";
+  const titleSecond = isMorning ? "朝の" : "夜の";
+  const titleAccent = "ルーティン。";
+
+  // Build chip list: skin type + concerns (limit to 4)
+  const chips = [skinType, ...concerns].filter(Boolean).slice(0, 4);
+
+  return (
+    <div
+      className="hd-root hd-softa"
+      data-density="compact"
+      style={{
+        width: SC_W,
+        height: SC_H,
+        background: "var(--hd-bg)",
+        color: "var(--hd-ink)",
+        position: "relative",
+        overflow: "hidden",
+        boxSizing: "border-box",
+      }}
+    >
+      {/* Top frame rule */}
+      <div style={{ height: 3, background: "var(--hd-ink)" }} />
 
       <div
         style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          fontSize: 10,
-          color: textSub,
-          opacity: 0.7,
+          display: "grid",
+          gridTemplateColumns: "1fr 248px",
+          height: SC_H - 6,
+          boxSizing: "border-box",
         }}
       >
-        <span>hadami.vercel.app</span>
-        <span
+        {/* Left — title column */}
+        <div
           style={{
-            fontFamily: SHARE_CARD_DISPLAY_FONT_STACK,
-            lineHeight: 1.2,
-            fontWeight: 600,
-            color: accentColor,
+            padding: "32px 0 28px 32px",
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "space-between",
+            borderRight: "1px solid var(--hd-ink)",
+            minWidth: 0,
           }}
         >
-          HADAMI
-        </span>
-      </div>
-    </div>
-  );
-}
-
-function StepList({
-  steps,
-  accentColor,
-  cardBg,
-  textMain,
-  textSub,
-  borderColor,
-  isDark,
-}: {
-  steps: StepItem[];
-  accentColor: string;
-  cardBg: string;
-  textMain: string;
-  textSub: string;
-  borderColor: string;
-  isDark: boolean;
-}) {
-  return (
-    <div style={{ marginBottom: steps.length > 0 ? 18 : 0 }}>
-      <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-        {steps.length === 0 ? (
-          <div
-            style={{
-              fontSize: 13,
-              color: textSub,
-              opacity: 0.6,
-              padding: "10px 0",
-            }}
-          >
-            このカードにはまだステップがありません
+          <div>
+            <div
+              style={{
+                fontFamily: "var(--hd-mono)",
+                fontSize: 9,
+                letterSpacing: "0.28em",
+                textTransform: "uppercase",
+                color: "var(--hd-moss)",
+                marginBottom: 14,
+              }}
+            >
+              HADAMI · {isMorning ? "Morning" : "Evening"}
+            </div>
+            <div
+              style={{
+                fontFamily: "var(--hd-serif)",
+                fontSize: 56,
+                lineHeight: 0.88,
+                letterSpacing: "-0.035em",
+                color: "var(--hd-ink)",
+              }}
+            >
+              {titleFirst}
+              <br />
+              {titleSecond}
+              <br />
+              <span style={{ fontStyle: "italic", color: "var(--hd-moss)" }}>
+                {titleAccent}
+              </span>
+            </div>
+            <div
+              style={{
+                marginTop: 18,
+                height: 2,
+                width: 44,
+                background: "var(--hd-moss)",
+              }}
+            />
           </div>
-        ) : (
-          steps.map((step, index) => {
-            const hasProductName = Boolean(step.product_name);
-            return (
-              <div
-                key={index}
-                style={{
-                  display: "flex",
-                  alignItems: "stretch",
-                  gap: 14,
-                  background: cardBg,
-                  borderRadius: 18,
-                  padding: "14px",
-                  border: `1px solid ${borderColor}`,
-                  minWidth: 0,
-                  minHeight: 108,
-                }}
-              >
-                <div
-                  style={{
-                    width: 84,
-                    height: 108,
-                    flexShrink: 0,
-                    alignSelf: "center",
-                    borderRadius: 16,
-                    overflow: "hidden",
-                    background: isStepImageAvailable(step)
-                      ? isDark
-                        ? "rgba(255,255,255,0.12)"
-                        : "rgba(255,255,255,0.9)"
-                      : isDark
-                      ? "rgba(255,255,255,0.08)"
-                      : hexToRgba(accentColor, 0.07),
-                    border: `1px solid ${borderColor}`,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                >
-                  {step.product_image_url ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={step.product_image_url}
-                      alt=""
-                      style={{
-                        width: "100%",
-                        height: "100%",
-                        objectFit: "contain",
-                        objectPosition: "center center",
-                      }}
-                    />
-                  ) : (
-                    <span style={{ fontSize: 34, lineHeight: 1 }}>{step.icon}</span>
-                  )}
-                </div>
 
-                <div
+          <div>
+            <div
+              style={{
+                fontFamily: "var(--hd-mono)",
+                fontSize: 8,
+                letterSpacing: "0.22em",
+                textTransform: "uppercase",
+                color: "var(--hd-ink-40)",
+                marginBottom: 10,
+              }}
+            >
+              Skin Profile · {modeLabel}
+            </div>
+            <div
+              style={{
+                display: "flex",
+                flexWrap: "wrap",
+                gap: 5,
+                marginBottom: 14,
+              }}
+            >
+              {chips.length === 0 ? (
+                <span
                   style={{
-                    flex: 1,
-                    minWidth: 0,
-                    display: "flex",
-                    flexDirection: "column",
-                    justifyContent: "center",
-                    gap: 6,
+                    fontFamily: "var(--hd-mono)",
+                    fontSize: 9,
+                    color: "var(--hd-ink-40)",
+                    letterSpacing: "0.1em",
                   }}
                 >
-                  <div
+                  ——
+                </span>
+              ) : (
+                chips.map((t) => (
+                  <span
+                    key={t}
                     style={{
-                      display: "inline-block",
-                      alignSelf: "flex-start",
-                      padding: "7px 10px 9px",
-                      lineHeight: 1,
-                      borderRadius: 999,
-                      background: isDark ? "rgba(255,255,255,0.08)" : hexToRgba(accentColor, 0.07),
-                      color: accentColor,
-                      fontSize: 12,
-                      fontWeight: 700,
+                      fontFamily: "var(--hd-mono)",
+                      fontSize: 9,
+                      letterSpacing: "0.12em",
+                      padding: "3px 9px",
+                      border: "1px solid var(--hd-line)",
+                      color: "var(--hd-ink-60)",
                       whiteSpace: "nowrap",
                     }}
                   >
-                    {step.step_name}
-                  </div>
-                  {step.brand && (
+                    {t}
+                  </span>
+                ))
+              )}
+            </div>
+            <div
+              style={{
+                fontFamily: "var(--hd-mono)",
+                fontSize: 9,
+                color: "var(--hd-ink-40)",
+                letterSpacing: "0.1em",
+              }}
+            >
+              {username ? `@${username} · ${date}` : date}
+            </div>
+            <div
+              style={{
+                fontFamily: "var(--hd-serif)",
+                fontSize: 22,
+                fontStyle: "italic",
+                color: "var(--hd-moss)",
+                letterSpacing: "-0.02em",
+                marginTop: 10,
+              }}
+            >
+              HADAMI
+            </div>
+          </div>
+        </div>
+
+        {/* Right — product grid (3 top + 2 bottom) */}
+        {displaySteps.length > 0 ? (
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              gap: 2,
+              minWidth: 0,
+            }}
+          >
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "1fr 1fr 1fr",
+                gap: 2,
+                flex: bottomRow.length > 0 ? "0 0 auto" : 1,
+                height: bottomRow.length > 0 ? Math.round(SC_H * 0.5) : "100%",
+              }}
+            >
+              {topRow.map((step, i) => (
+                <ProductTile key={i} step={step} index={i} fontSize={28} />
+              ))}
+              {/* Fill empty top cells if fewer than 3 */}
+              {Array.from({ length: Math.max(0, 3 - topRow.length) }).map((_, i) => (
+                <div
+                  key={`empty-top-${i}`}
+                  style={{
+                    background: "var(--hd-surface-2)",
+                    border: "1px dashed var(--hd-line)",
+                    boxSizing: "border-box",
+                  }}
+                />
+              ))}
+            </div>
+            {bottomRow.length > 0 && (
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "1fr 1fr",
+                  gap: 2,
+                  flex: 1,
+                }}
+              >
+                {bottomRow.map((step, i) => (
+                  <ProductTile
+                    key={i}
+                    step={step}
+                    index={i + 3}
+                    fontSize={32}
+                  />
+                ))}
+                {Array.from({ length: Math.max(0, 2 - bottomRow.length) }).map(
+                  (_, i) => (
                     <div
+                      key={`empty-bot-${i}`}
                       style={{
-                        fontSize: 12,
-                        color: textSub,
-                        lineHeight: 1.45,
+                        background: "var(--hd-surface-2)",
+                        border: "1px dashed var(--hd-line)",
+                        boxSizing: "border-box",
                       }}
-                    >
-                      {step.brand}
-                    </div>
-                  )}
-                  <div
-                    style={{
-                      fontSize: hasProductName ? 16 : 14,
-                      fontWeight: hasProductName ? 700 : 600,
-                      color: textMain,
-                      lineHeight: 1.5,
-                      whiteSpace: "pre-wrap",
-                      wordBreak: "break-word",
-                    }}
-                  >
-                    {step.product_name || `${step.step_name}をセットしてください`}
-                  </div>
-                </div>
+                    />
+                  ),
+                )}
               </div>
-            );
-          })
+            )}
+          </div>
+        ) : (
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              padding: 24,
+              color: "var(--hd-ink-40)",
+              fontFamily: "var(--hd-mono)",
+              fontSize: 10,
+              letterSpacing: "0.12em",
+              textAlign: "center",
+              lineHeight: 1.7,
+            }}
+          >
+            このカードには
+            <br />
+            まだステップが
+            <br />
+            ありません
+          </div>
         )}
       </div>
+
+      {/* Bottom frame rule */}
+      <div
+        style={{
+          position: "absolute",
+          bottom: 0,
+          left: 0,
+          right: 0,
+          height: 3,
+          background: "var(--hd-ink)",
+        }}
+      />
     </div>
   );
-}
-
-function isStepImageAvailable(step: StepItem) {
-  return typeof step.product_image_url === "string" && step.product_image_url.length > 0;
 }
