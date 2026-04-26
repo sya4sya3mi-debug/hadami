@@ -2,19 +2,45 @@ import { DISCLAIMER_TEXT } from "@/lib/compliance";
 
 export default function Disclaimer() {
   return (
-    <div className="mt-2 text-center">
-      <p className="text-xs py-4 px-4 leading-relaxed rounded-r1 text-bo-ink-faint bg-white/50">
+    <div
+      style={{
+        marginTop: 32,
+        paddingTop: 20,
+        borderTop: "1px solid var(--hd-hair)",
+        textAlign: "center",
+      }}
+    >
+      <p
+        style={{
+          fontSize: 10,
+          fontFamily: "var(--hd-sans)",
+          color: "var(--hd-ink-40)",
+          lineHeight: 1.75,
+          margin: 0,
+          padding: "0 4px",
+        }}
+      >
         {DISCLAIMER_TEXT}
       </p>
-      <div className="mt-3 pb-2">
-        <p className="text-[10px] text-bo-ink-muted font-sans mb-1">
+      <div style={{ marginTop: 24 }}>
+        <div
+          className="hd-mono hd-caps"
+          style={{ color: "var(--hd-ink-40)", marginBottom: 6 }}
+        >
           Produced by
-        </p>
+        </div>
         <a
           href="https://blog-engine.com/"
           target="_blank"
           rel="noopener noreferrer"
-          className="text-xs font-bold text-bo-accent font-sans no-underline pressable"
+          className="hd-serif"
+          style={{
+            fontSize: 14,
+            fontStyle: "italic",
+            color: "var(--hd-ink)",
+            textDecoration: "underline",
+            textUnderlineOffset: 4,
+          }}
         >
           みおのミハダノート
         </a>

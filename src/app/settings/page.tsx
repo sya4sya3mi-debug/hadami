@@ -1,19 +1,87 @@
 "use client";
 
+import "@/styles/hadami-tokens.css";
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useUser } from "@/lib/auth";
 
 import AuthGuard from "@/components/ui/AuthGuard";
 import { clearCachedUserData } from "@/lib/userData";
 import { getStoredTheme, setTheme, type Theme } from "@/lib/theme";
-import { getMonthlyScanCount, getProductCount, getAccountScanLimit, getUserLimit } from "@/lib/db";
+import {
+  getProductCount,
+  getAccountScanLimit,
+  getLegacyUserMonthlyScanLimit,
+  getMonthlyScanCount,
+  getUserLimit,
+} from "@/lib/db";
 
+const sectionWrap: React.CSSProperties = {
+  background: "var(--hd-surface)",
+  border: "1px solid var(--hd-hair)",
+  padding: "20px 20px 18px",
+  marginBottom: 14,
+};
+
+function SectionHeader({ no, title }: { no: string; title: string }) {
+  return (
+    <div
+      style={{
+        display: "flex",
+        alignItems: "baseline",
+        gap: 10,
+        borderBottom: "1px solid var(--hd-ink)",
+        paddingBottom: 10,
+        marginBottom: 16,
+      }}
+    >
+      <span className="hd-mono hd-caps" style={{ color: "var(--hd-ink-40)" }}>
+        {no}
+      </span>
+      <span className="hd-serif" style={{ fontSize: 17 }}>
+        {title}
+      </span>
+    </div>
+  );
+}
+
+const Toggle = ({ on, onClick }: { on: boolean; onClick: () => void }) => (
+  <button
+    onClick={onClick}
+    aria-pressed={on}
+    style={{
+      width: 44,
+      height: 24,
+      borderRadius: 999,
+      border: "1px solid var(--hd-line)",
+      cursor: "pointer",
+      position: "relative",
+      background: on ? "var(--hd-ink)" : "var(--hd-bg)",
+      transition: "background 200ms",
+      flexShrink: 0,
+    }}
+  >
+    <span
+      style={{
+        display: "block",
+        width: 18,
+        height: 18,
+        borderRadius: 999,
+        background: on ? "var(--hd-bg)" : "var(--hd-ink)",
+        position: "absolute",
+        top: 2,
+        left: on ? 22 : 2,
+        transition: "left 200ms, background 200ms",
+      }}
+    />
+  </button>
+);
 
 export default function SettingsPage() {
   const { user, profile, supabase, loading, refreshProfile } = useUser();
   const router = useRouter();
+  const pathname = usePathname();
   const [showConfirm, setShowConfirm] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState("");
@@ -25,18 +93,31 @@ export default function SettingsPage() {
   const [showHistoryConfirm, setShowHistoryConfirm] = useState(false);
   const [deletingHistory, setDeletingHistory] = useState(false);
   const [scanCount, setScanCount] = useState<number | null>(null);
+  const [scanLimit, setScanLimit] = useState(getAccountScanLimit());
   const [productCount, setProductCount] = useState<number | null>(null);
   const [currentTheme, setCurrentTheme] = useState<Theme>("light");
+  const [usageReloadTick, setUsageReloadTick] = useState(0);
 
-  // Initialize theme state on mount
   useEffect(() => {
     setCurrentTheme(getStoredTheme());
   }, []);
 
-
   useEffect(() => {
     const stored = localStorage.getItem("hadami-personalize-enabled");
     if (stored !== null) setPersonalize(stored === "true");
+  }, []);
+
+  useEffect(() => {
+    const onFocus = () => setUsageReloadTick((n) => n + 1);
+    const onVisible = () => {
+      if (document.visibilityState === "visible") setUsageReloadTick((n) => n + 1);
+    };
+    window.addEventListener("focus", onFocus);
+    document.addEventListener("visibilitychange", onVisible);
+    return () => {
+      window.removeEventListener("focus", onFocus);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
   }, []);
 
   const handlePersonalizeToggle = () => {
@@ -55,11 +136,34 @@ export default function SettingsPage() {
   };
 
   useEffect(() => {
-    if (!user) return;
-    getMonthlyScanCount(supabase, user.id).then(setScanCount);
-    getProductCount(supabase, user.id).then(setProductCount);
-  }, [user, supabase]);
-
+    if (!user || pathname !== "/settings") return;
+    let cancelled = false;
+    const loadScanUsage = async () => {
+      const nextProductCount = await getProductCount(supabase, user.id).catch(() => null);
+      if (!cancelled) setProductCount(nextProductCount);
+      const legacyOverride = await getLegacyUserMonthlyScanLimit(supabase, user.id).catch(() => null);
+      try {
+        const res = await fetch(`/api/scan-limit?ts=${Date.now()}`, { cache: "no-store" });
+        if (!res.ok) throw new Error("scan-limit fetch failed");
+        const data = (await res.json()) as { count?: number; limit?: number };
+        if (cancelled) return;
+        const apiLimit = typeof data.limit === "number" && data.limit > 0 ? data.limit : getAccountScanLimit();
+        const resolvedLimit =
+          typeof legacyOverride === "number" && legacyOverride > apiLimit ? legacyOverride : apiLimit;
+        setScanCount(typeof data.count === "number" ? data.count : 0);
+        setScanLimit(resolvedLimit);
+      } catch {
+        const fallbackCount = await getMonthlyScanCount(supabase, user.id).catch(() => null);
+        if (cancelled) return;
+        setScanCount(fallbackCount);
+        if (typeof legacyOverride === "number" && legacyOverride > 0) setScanLimit(legacyOverride);
+      }
+    };
+    loadScanUsage();
+    return () => {
+      cancelled = true;
+    };
+  }, [user, supabase, pathname, usageReloadTick]);
 
   const handleNicknameSave = async () => {
     if (!user) return;
@@ -74,18 +178,15 @@ export default function SettingsPage() {
     }
     setNicknameSaving(true);
     setNicknameError("");
-
     const { error: dbError } = await supabase
       .from("profiles")
       .update({ display_name: trimmed })
       .eq("id", user.id);
-
     if (dbError) {
       setNicknameError("保存に失敗しました");
       setNicknameSaving(false);
       return;
     }
-
     await refreshProfile();
     setEditingNickname(false);
     setNicknameSaving(false);
@@ -99,16 +200,9 @@ export default function SettingsPage() {
     if (!user) return;
     setDeleting(true);
     setError("");
-
     try {
-      const response = await fetch("/api/delete-account", {
-        method: "DELETE",
-      });
-
-      if (!response.ok) {
-        throw new Error("アカウント削除に失敗しました");
-      }
-
+      const response = await fetch("/api/delete-account", { method: "DELETE" });
+      if (!response.ok) throw new Error("アカウント削除に失敗しました");
       clearLocalData();
       await supabase.auth.signOut().catch(() => {});
       window.location.href = "/";
@@ -119,296 +213,718 @@ export default function SettingsPage() {
   };
 
   if (loading) return null;
-
-  if (!user) {
-    return null;
-  }
+  if (!user) return null;
 
   return (
     <AuthGuard>
-      <div className="min-h-screen bg-bo-cream">
-        {/* Sticky header */}
-        <div className="sticky top-0 z-50 flex items-center gap-3 px-4 py-2.5
-                        bg-bo-cream/90 backdrop-blur-xl border-b border-bo-parchment/40">
-          <button
-            onClick={() => router.back()}
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-r1 bg-white text-sm font-semibold text-bo-ink-muted
-                       cursor-pointer font-sans pressable border-none shadow-bo1"
+      <div className="hd-root hd-softa" data-density="compact">
+        <div
+          className="hd hd-page"
+          style={{ minHeight: "100vh", background: "var(--hd-bg)", color: "var(--hd-ink)" }}
+        >
+          {/* Sticky header */}
+          <div
+            style={{
+              position: "sticky",
+              top: 0,
+              zIndex: 50,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              padding: "14px 20px",
+              background: "var(--hd-bg)",
+              borderBottom: "1px solid var(--hd-hair)",
+            }}
           >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" aria-hidden="true">
-              <path d="M15 18l-6-6 6-6" />
-            </svg>
-            戻る
-          </button>
-          <h1 className="text-lg font-extrabold font-serif text-bo-ink m-0">設定</h1>
-        </div>
+            <button
+              onClick={() => router.back()}
+              style={{
+                background: "transparent",
+                border: "none",
+                color: "var(--hd-ink-60)",
+                cursor: "pointer",
+                fontFamily: "var(--hd-mono)",
+                fontSize: 10,
+                letterSpacing: "0.2em",
+                padding: 0,
+                display: "flex",
+                alignItems: "center",
+                gap: 6,
+              }}
+            >
+              <svg
+                width="12"
+                height="12"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+              >
+                <path d="M15 18l-6-6 6-6" />
+              </svg>
+              BACK
+            </button>
+            <div className="hd-mono hd-caps" style={{ color: "var(--hd-ink-40)" }}>
+              Settings · 設定
+            </div>
+            <span style={{ width: 36 }} />
+          </div>
 
-        <div className="px-5 pt-5 pb-6">
-          {/* Profile */}
-          <div className="bg-white rounded-r2 shadow-bo1 p-5 mb-3">
-            <h2 className="text-[13px] font-bold text-bo-ink font-sans mb-3.5">アカウント情報</h2>
-
-            <div className="flex items-center gap-3.5 mb-4">
-              <div className="w-[52px] h-[52px] rounded-2xl bg-gradient-to-br from-bo-accent-soft to-bo-parchment flex items-center justify-center text-2xl shrink-0">
-                🌿
+          <div className="hd-stagger" style={{ padding: "24px 20px 80px" }}>
+            {/* Account */}
+            <div style={sectionWrap}>
+              <SectionHeader no="No. 01" title="アカウント情報" />
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 14,
+                  marginBottom: 16,
+                }}
+              >
+                <div
+                  style={{
+                    width: 50,
+                    height: 50,
+                    borderRadius: 999,
+                    flexShrink: 0,
+                    background: "var(--hd-moss)",
+                    color: "#fff",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontFamily: "var(--hd-serif)",
+                    fontSize: 22,
+                  }}
+                >
+                  {profile?.display_name?.charAt(0) || "？"}
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  {editingNickname ? (
+                    <div>
+                      <input
+                        type="text"
+                        value={nickname}
+                        onChange={(e) => setNickname(e.target.value)}
+                        maxLength={20}
+                        autoFocus
+                        style={{
+                          width: "100%",
+                          fontSize: 14,
+                          fontFamily: "var(--hd-sans)",
+                          border: "1px solid var(--hd-ink)",
+                          borderRadius: 0,
+                          padding: "8px 12px",
+                          outline: "none",
+                          background: "var(--hd-bg)",
+                          color: "var(--hd-ink)",
+                          boxSizing: "border-box",
+                        }}
+                      />
+                      {nicknameError && (
+                        <p
+                          style={{
+                            fontSize: 11,
+                            color: "var(--hd-terra)",
+                            marginTop: 4,
+                            fontFamily: "var(--hd-sans)",
+                          }}
+                        >
+                          {nicknameError}
+                        </p>
+                      )}
+                      <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
+                        <button
+                          onClick={handleNicknameSave}
+                          disabled={nicknameSaving}
+                          style={{
+                            padding: "6px 16px",
+                            background: "var(--hd-ink)",
+                            color: "var(--hd-bg)",
+                            border: "none",
+                            fontFamily: "var(--hd-sans)",
+                            fontSize: 11,
+                            cursor: "pointer",
+                            opacity: nicknameSaving ? 0.7 : 1,
+                          }}
+                        >
+                          {nicknameSaving ? "保存中..." : "保存"}
+                        </button>
+                        <button
+                          onClick={() => {
+                            setEditingNickname(false);
+                            setNicknameError("");
+                          }}
+                          style={{
+                            padding: "6px 16px",
+                            background: "transparent",
+                            color: "var(--hd-ink-60)",
+                            border: "1px solid var(--hd-line)",
+                            fontFamily: "var(--hd-sans)",
+                            fontSize: 11,
+                            cursor: "pointer",
+                          }}
+                        >
+                          キャンセル
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        gap: 10,
+                      }}
+                    >
+                      <div style={{ minWidth: 0 }}>
+                        <div className="hd-mono hd-caps" style={{ color: "var(--hd-ink-40)" }}>
+                          Nickname
+                        </div>
+                        <div
+                          className="hd-serif"
+                          style={{
+                            fontSize: 17,
+                            marginTop: 2,
+                            letterSpacing: "-0.01em",
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                            whiteSpace: "nowrap",
+                          }}
+                        >
+                          {profile?.display_name || "未設定"}
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => {
+                          setNickname(profile?.display_name || "");
+                          setEditingNickname(true);
+                        }}
+                        className="hd-mono hd-caps"
+                        style={{
+                          padding: "5px 14px",
+                          background: "transparent",
+                          color: "var(--hd-ink)",
+                          border: "1px solid var(--hd-ink)",
+                          cursor: "pointer",
+                          flexShrink: 0,
+                        }}
+                      >
+                        Edit
+                      </button>
+                    </div>
+                  )}
+                </div>
               </div>
-              <div className="flex-1">
-                {editingNickname ? (
-                  <div>
-                    <input
-                      type="text"
-                      value={nickname}
-                      onChange={(e) => setNickname(e.target.value)}
-                      maxLength={20}
-                      autoFocus
-                      className="w-full text-sm font-bold font-sans text-bo-ink border-[1.5px] border-bo-accent rounded-r1 py-2 px-3 outline-none bg-bo-cream"
-                    />
-                    {nicknameError && (
-                      <p className="text-xs text-bo-danger mt-1 font-sans">{nicknameError}</p>
-                    )}
-                    <div className="flex gap-2 mt-2">
-                      <button
-                        onClick={handleNicknameSave}
-                        disabled={nicknameSaving}
-                        className="px-4 py-1.5 rounded-r1 border-none bg-bo-accent text-white text-[11px] font-bold font-sans cursor-pointer pressable disabled:opacity-70"
-                      >
-                        {nicknameSaving ? "保存中..." : "保存"}
-                      </button>
-                      <button
-                        onClick={() => { setEditingNickname(false); setNicknameError(""); }}
-                        className="px-4 py-1.5 rounded-r1 border-none bg-bo-parchment text-bo-ink-muted text-[11px] font-semibold font-sans cursor-pointer pressable"
-                      >
-                        キャンセル
-                      </button>
+
+              <div style={{ paddingTop: 14, borderTop: "1px solid var(--hd-hair)" }}>
+                <div className="hd-mono hd-caps" style={{ color: "var(--hd-ink-40)" }}>
+                  Email · メール
+                </div>
+                <div
+                  className="hd-mono"
+                  style={{
+                    fontSize: 12,
+                    marginTop: 4,
+                    color: "var(--hd-ink)",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  {user.email}
+                </div>
+              </div>
+            </div>
+
+            {/* Usage */}
+            <div style={sectionWrap}>
+              <SectionHeader no="No. 02" title="利用状況" />
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "1fr 1fr",
+                  border: "1px solid var(--hd-hair)",
+                }}
+              >
+                {[
+                  {
+                    en: "MONTHLY SCANS",
+                    label: "今月のスキャン",
+                    value:
+                      scanCount !== null ? `${scanCount} / ${scanLimit}` : "...",
+                  },
+                  {
+                    en: "SAVED COSMETICS",
+                    label: "保存コスメ",
+                    value:
+                      productCount !== null
+                        ? `${productCount} / ${getUserLimit()}`
+                        : "...",
+                  },
+                ].map((s, i) => (
+                  <div
+                    key={i}
+                    style={{
+                      padding: "16px 14px",
+                      textAlign: "center",
+                      borderLeft: i > 0 ? "1px solid var(--hd-hair)" : "none",
+                    }}
+                  >
+                    <div
+                      className="hd-serif"
+                      style={{
+                        fontSize: 22,
+                        lineHeight: 1.1,
+                        letterSpacing: "-0.01em",
+                      }}
+                    >
+                      {s.value}
+                    </div>
+                    <div
+                      className="hd-mono hd-caps"
+                      style={{ color: "var(--hd-ink-40)", marginTop: 8 }}
+                    >
+                      {s.en}
+                    </div>
+                    <div
+                      style={{
+                        fontFamily: "var(--hd-sans)",
+                        fontSize: 11,
+                        color: "var(--hd-ink-60)",
+                        marginTop: 3,
+                      }}
+                    >
+                      {s.label}
                     </div>
                   </div>
-                ) : (
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <div className="text-[15px] font-bold text-bo-ink font-sans">
-                        {profile?.display_name || "未設定"}
-                      </div>
-                      <div className="text-[10px] text-bo-ink-muted font-sans mt-0.5">ニックネーム</div>
-                    </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Personalization */}
+            <div style={sectionWrap}>
+              <SectionHeader no="No. 03" title="パーソナライズ" />
+
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  paddingBottom: 14,
+                  borderBottom: "1px solid var(--hd-hair)",
+                }}
+              >
+                <div>
+                  <div
+                    className="hd-serif"
+                    style={{ fontSize: 14, letterSpacing: "-0.01em" }}
+                  >
+                    ダークモード
+                  </div>
+                  <div
+                    style={{
+                      fontFamily: "var(--hd-sans)",
+                      fontSize: 11,
+                      color: "var(--hd-ink-60)",
+                      marginTop: 2,
+                    }}
+                  >
+                    画面の配色をダークテーマに切り替え
+                  </div>
+                </div>
+                <Toggle
+                  on={currentTheme === "dark"}
+                  onClick={() => {
+                    const next: Theme = currentTheme === "dark" ? "light" : "dark";
+                    setTheme(next);
+                    setCurrentTheme(next);
+                  }}
+                />
+              </div>
+
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  paddingTop: 14,
+                  paddingBottom: 14,
+                  borderBottom: showHistoryConfirm ? "none" : "1px solid var(--hd-hair)",
+                }}
+              >
+                <div>
+                  <div
+                    className="hd-serif"
+                    style={{ fontSize: 14, letterSpacing: "-0.01em" }}
+                  >
+                    商品レコメンド
+                  </div>
+                  <div
+                    style={{
+                      fontFamily: "var(--hd-sans)",
+                      fontSize: 11,
+                      color: "var(--hd-ink-60)",
+                      marginTop: 2,
+                    }}
+                  >
+                    スキャン履歴に基づく商品提案を表示
+                  </div>
+                </div>
+                <Toggle on={personalize} onClick={handlePersonalizeToggle} />
+              </div>
+
+              {showHistoryConfirm ? (
+                <div
+                  style={{
+                    marginTop: 14,
+                    padding: 14,
+                    border: "1px solid var(--hd-terra)",
+                  }}
+                >
+                  <div
+                    className="hd-serif"
+                    style={{
+                      fontSize: 14,
+                      color: "var(--hd-terra)",
+                      marginBottom: 6,
+                    }}
+                  >
+                    スキャン履歴をすべて削除しますか？
+                  </div>
+                  <div
+                    style={{
+                      fontFamily: "var(--hd-sans)",
+                      fontSize: 11,
+                      color: "var(--hd-ink-60)",
+                      marginBottom: 12,
+                      lineHeight: 1.6,
+                    }}
+                  >
+                    レコメンドがリセットされます。この操作は取り消せません。
+                  </div>
+                  <div style={{ display: "flex", gap: 8 }}>
                     <button
-                      onClick={() => { setNickname(profile?.display_name || ""); setEditingNickname(true); }}
-                      className="px-3.5 py-1 rounded-full border-none bg-bo-accent-soft text-bo-accent text-[10px] font-bold font-sans cursor-pointer pressable"
+                      onClick={handleDeleteScanHistory}
+                      disabled={deletingHistory}
+                      style={{
+                        flex: 1,
+                        padding: "9px 0",
+                        background: "var(--hd-terra)",
+                        color: "#fff",
+                        border: "none",
+                        fontFamily: "var(--hd-sans)",
+                        fontSize: 12,
+                        cursor: "pointer",
+                        opacity: deletingHistory ? 0.7 : 1,
+                      }}
                     >
-                      編集
+                      {deletingHistory ? "削除中..." : "削除する"}
+                    </button>
+                    <button
+                      onClick={() => setShowHistoryConfirm(false)}
+                      disabled={deletingHistory}
+                      style={{
+                        flex: 1,
+                        padding: "9px 0",
+                        background: "transparent",
+                        color: "var(--hd-ink-60)",
+                        border: "1px solid var(--hd-line)",
+                        fontFamily: "var(--hd-sans)",
+                        fontSize: 12,
+                        cursor: "pointer",
+                      }}
+                    >
+                      キャンセル
                     </button>
                   </div>
-                )}
-              </div>
-            </div>
-
-            <div className="py-3 px-3.5 rounded-r1 bg-bo-cream">
-              <div className="text-[10px] text-bo-ink-muted font-sans mb-0.5">メールアドレス</div>
-              <div className="text-[13px] font-semibold text-bo-ink font-sans">{user.email}</div>
-            </div>
-          </div>
-
-
-          {/* Usage Stats */}
-          <div className="bg-white rounded-r2 shadow-bo1 p-5 mb-3">
-            <h2 className="text-[13px] font-bold text-bo-ink font-sans mb-3.5">利用状況</h2>
-            <div className="flex gap-2.5">
-              {[
-                { label: "スキャン回数 (今月)", icon: "📸", value: scanCount !== null ? `${scanCount}/${getAccountScanLimit()}` : "..." },
-                { label: "保存コスメ", icon: "📦", value: productCount !== null ? `${productCount}/${getUserLimit()}` : "..." },
-              ].map((s, i) => (
-                <div key={i} className="flex-1 py-3.5 px-3 rounded-r1 bg-bo-cream text-center">
-                  <div className="text-sm mb-1">{s.icon}</div>
-                  <div className="text-sm font-black font-serif text-bo-accent">{s.value}</div>
-                  <div className="text-[9px] text-bo-ink-muted font-sans mt-0.5">{s.label}</div>
                 </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Personalization */}
-          <div className="bg-white rounded-r2 shadow-bo1 p-5 mb-3">
-            <h2 className="text-[13px] font-bold text-bo-ink font-sans mb-3.5">パーソナライズ設定</h2>
-
-            {/* Dark mode toggle */}
-            <div className="flex items-center justify-between mb-4 pb-4 border-b border-bo-parchment/40">
-              <div>
-                <div className="text-[13px] font-semibold text-bo-ink font-sans">ダークモード</div>
-                <div className="text-[10px] text-bo-ink-muted font-sans mt-0.5">
-                  画面の配色をダークテーマに切り替え
-                </div>
-              </div>
-              <button
-                onClick={() => {
-                  const next: Theme = currentTheme === "dark" ? "light" : "dark";
-                  setTheme(next);
-                  setCurrentTheme(next);
-                }}
-                className={`w-[44px] h-[24px] rounded-full border-none cursor-pointer transition-colors duration-200 relative ${
-                  currentTheme === "dark" ? "bg-bo-accent" : "bg-bo-parchment"
-                }`}
-              >
-                <span
-                  className={`block w-5 h-5 rounded-full bg-white shadow-sm absolute top-[2px] transition-transform duration-200 ${
-                    currentTheme === "dark" ? "translate-x-[22px]" : "translate-x-[2px]"
-                  }`}
-                />
-              </button>
-            </div>
-
-            <div className="flex items-center justify-between mb-3">
-              <div>
-                <div className="text-[13px] font-semibold text-bo-ink font-sans">商品レコメンド</div>
-                <div className="text-[10px] text-bo-ink-muted font-sans mt-0.5">
-                  スキャン履歴に基づく商品提案を表示
-                </div>
-              </div>
-              <button
-                onClick={handlePersonalizeToggle}
-                className={`w-[44px] h-[24px] rounded-full border-none cursor-pointer transition-colors duration-200 relative ${
-                  personalize ? "bg-bo-accent" : "bg-bo-parchment"
-                }`}
-              >
-                <span
-                  className={`block w-5 h-5 rounded-full bg-white shadow-sm absolute top-[2px] transition-transform duration-200 ${
-                    personalize ? "translate-x-[22px]" : "translate-x-[2px]"
-                  }`}
-                />
-              </button>
-            </div>
-
-            {showHistoryConfirm ? (
-              <div className="p-3 rounded-r1 bg-bo-danger/5 animate-fade-up">
-                <div className="text-[12px] font-bold text-bo-danger font-sans mb-2">
-                  スキャン履歴をすべて削除しますか？
-                </div>
-                <div className="text-[10px] text-bo-ink-muted font-sans mb-2.5">
-                  レコメンドがリセットされます。この操作は取り消せません。
-                </div>
-                <div className="flex gap-2">
-                  <button
-                    onClick={handleDeleteScanHistory}
-                    disabled={deletingHistory}
-                    className="flex-1 py-2 rounded-r1 border-none bg-bo-danger text-white text-[11px] font-bold font-sans cursor-pointer pressable disabled:opacity-70"
-                  >
-                    {deletingHistory ? "削除中..." : "削除する"}
-                  </button>
-                  <button
-                    onClick={() => setShowHistoryConfirm(false)}
-                    disabled={deletingHistory}
-                    className="flex-1 py-2 rounded-r1 border border-bo-parchment bg-white text-bo-ink-muted text-[11px] font-semibold font-sans cursor-pointer pressable"
-                  >
-                    キャンセル
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <button
-                onClick={() => setShowHistoryConfirm(true)}
-                className="text-[11px] font-medium text-bo-ink-muted font-sans underline cursor-pointer bg-transparent border-none p-0"
-              >
-                スキャン履歴を削除する
-              </button>
-            )}
-          </div>
-
-          {/* Logout */}
-          <button
-            onClick={async () => { clearLocalData(); await supabase.auth.signOut(); window.location.href = "/"; }}
-            className="w-full bg-white rounded-r2 shadow-bo1 py-3.5 px-5 mb-3 flex items-center gap-3 cursor-pointer border-none pressable"
-          >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3A8F7A" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
-              <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9" />
-            </svg>
-            <span className="text-[13px] font-bold text-bo-accent font-sans">ログアウト</span>
-          </button>
-
-          {/* Admin */}
-          {user && ["751ac531-dcdb-4e77-a3ea-67a01677c432"].includes(user.id) && (
-            <div className="bg-white rounded-r2 shadow-bo1 p-5 mb-3">
-              <h2 className="text-[13px] font-bold text-bo-ink font-sans mb-3.5">管理者メニュー</h2>
-              <Link
-                href="/admin/invites"
-                className="flex items-center justify-between py-3 cursor-pointer no-underline pressable"
-              >
-                <div className="flex items-center gap-2.5">
-                  <span className="w-8 h-8 rounded-lg bg-[#FFF3DC] flex items-center justify-center text-sm">🔑</span>
-                  <div>
-                    <span className="text-[13px] font-semibold text-bo-ink font-sans block">招待コード管理</span>
-                    <span className="text-[10px] text-bo-ink-muted font-sans">コードの発行・無効化</span>
-                  </div>
-                </div>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#BDBDBD" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
-                  <path d="M9 18l6-6-6-6" />
-                </svg>
-              </Link>
-            </div>
-          )}
-
-          {/* Legal */}
-          <div className="bg-white rounded-r2 shadow-bo1 p-5 mb-3">
-            <h2 className="text-[13px] font-bold text-bo-ink font-sans mb-3.5">法的情報</h2>
-            {["プライバシーポリシー", "利用規約"].map((item, i) => (
-              <div key={i}>
-                {i > 0 && <div className="h-px bg-bo-parchment/60 -mx-5" />}
-                <Link
-                  href={i === 0 ? "/privacy" : "/terms"}
-                  className="flex items-center justify-between py-3 cursor-pointer no-underline pressable"
+              ) : (
+                <button
+                  onClick={() => setShowHistoryConfirm(true)}
+                  className="hd-mono hd-caps"
+                  style={{
+                    marginTop: 12,
+                    background: "transparent",
+                    border: "none",
+                    color: "var(--hd-ink-60)",
+                    textDecoration: "underline",
+                    textUnderlineOffset: 3,
+                    cursor: "pointer",
+                    padding: 0,
+                  }}
                 >
-                  <span className="text-[13px] font-semibold text-bo-ink font-sans">{item}</span>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#BDBDBD" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+                  スキャン履歴を削除
+                </button>
+              )}
+            </div>
+
+            {/* Logout */}
+            <button
+              onClick={async () => {
+                clearLocalData();
+                await supabase.auth.signOut();
+                window.location.href = "/";
+              }}
+              style={{
+                width: "100%",
+                background: "var(--hd-surface)",
+                border: "1px solid var(--hd-hair)",
+                padding: "16px 20px",
+                marginBottom: 14,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                cursor: "pointer",
+              }}
+            >
+              <span
+                className="hd-serif"
+                style={{ fontSize: 15, letterSpacing: "-0.01em" }}
+              >
+                ログアウト
+              </span>
+              <span
+                className="hd-mono hd-caps"
+                style={{ color: "var(--hd-ink-40)" }}
+              >
+                Sign Out →
+              </span>
+            </button>
+
+            {/* Admin */}
+            {user && ["751ac531-dcdb-4e77-a3ea-67a01677c432"].includes(user.id) && (
+              <div style={sectionWrap}>
+                <SectionHeader no="No. 04" title="管理者メニュー" />
+                <Link
+                  href="/admin/invites"
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    padding: "8px 0",
+                    textDecoration: "none",
+                    color: "inherit",
+                  }}
+                >
+                  <div>
+                    <div className="hd-mono hd-caps" style={{ color: "var(--hd-ink-40)" }}>
+                      Invite Codes
+                    </div>
+                    <div
+                      className="hd-serif"
+                      style={{ fontSize: 14, marginTop: 2, letterSpacing: "-0.01em" }}
+                    >
+                      招待コード管理
+                    </div>
+                  </div>
+                  <svg
+                    width="12"
+                    height="12"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="var(--hd-ink-40)"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                  >
                     <path d="M9 18l6-6-6-6" />
                   </svg>
                 </Link>
               </div>
-            ))}
-          </div>
-
-          {/* Danger Zone */}
-          <div className="bg-white rounded-r2 shadow-bo1 border border-bo-danger/10 p-5">
-            <h2 className="text-[13px] font-bold text-bo-danger font-sans mb-3.5">アカウント削除</h2>
-            <p className="text-[11px] text-bo-ink-muted font-sans leading-relaxed mb-3.5">
-              アカウントを削除すると、保存したコスメ・図鑑データ・写真がすべて完全に削除されます。この操作は取り消せません。
-            </p>
-
-            {showConfirm ? (
-              <div className="p-4 rounded-r1 bg-bo-danger/5 animate-fade-up">
-                <div className="text-[13px] font-bold text-bo-danger font-sans mb-3">
-                  本当に削除しますか？
-                </div>
-                {error && (
-                  <p className="text-xs text-bo-danger mb-2 font-sans">{error}</p>
-                )}
-                <div className="flex gap-2">
-                  <button
-                    onClick={handleDeleteAccount}
-                    disabled={deleting}
-                    className="flex-1 py-2.5 rounded-r1 border-none bg-bo-danger text-white text-xs font-bold font-sans cursor-pointer pressable disabled:opacity-70"
-                  >
-                    {deleting ? "削除中..." : "完全に削除する"}
-                  </button>
-                  <button
-                    onClick={() => setShowConfirm(false)}
-                    disabled={deleting}
-                    className="flex-1 py-2.5 rounded-r1 border border-bo-parchment bg-white text-bo-ink-muted text-xs font-semibold font-sans cursor-pointer pressable"
-                  >
-                    キャンセル
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <button
-                onClick={() => setShowConfirm(true)}
-                className="py-2 px-4 rounded-r1 border border-bo-danger/30 bg-transparent text-bo-danger text-xs font-semibold font-sans cursor-pointer pressable"
-              >
-                アカウントを削除する
-              </button>
             )}
-          </div>
 
-          {/* Version */}
-          <div className="text-center mt-5 pb-5">
-            <div className="text-[10px] text-bo-ink-faint font-sans">HADAMI v0.1.0 β</div>
-            <div className="text-[9px] text-bo-ink-faint font-sans mt-0.5">クローズドβ版 — 15名限定</div>
+            {/* Legal */}
+            <div style={sectionWrap}>
+              <SectionHeader no="No. 05" title="法的情報" />
+              {[
+                { label: "プライバシーポリシー", en: "Privacy Policy", href: "/privacy" },
+                { label: "利用規約", en: "Terms of Use", href: "/terms" },
+              ].map((item, i) => (
+                <Link
+                  key={i}
+                  href={item.href}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    padding: "12px 0",
+                    textDecoration: "none",
+                    color: "inherit",
+                    borderTop: i > 0 ? "1px solid var(--hd-hair)" : "none",
+                  }}
+                >
+                  <div>
+                    <div className="hd-mono hd-caps" style={{ color: "var(--hd-ink-40)" }}>
+                      {item.en}
+                    </div>
+                    <div
+                      className="hd-serif"
+                      style={{ fontSize: 14, marginTop: 2, letterSpacing: "-0.01em" }}
+                    >
+                      {item.label}
+                    </div>
+                  </div>
+                  <svg
+                    width="12"
+                    height="12"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="var(--hd-ink-40)"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                  >
+                    <path d="M9 18l6-6-6-6" />
+                  </svg>
+                </Link>
+              ))}
+            </div>
+
+            {/* Danger Zone */}
+            <div
+              style={{
+                ...sectionWrap,
+                border: "1px solid var(--hd-terra)",
+              }}
+            >
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "baseline",
+                  gap: 10,
+                  borderBottom: "1px solid var(--hd-terra)",
+                  paddingBottom: 10,
+                  marginBottom: 14,
+                }}
+              >
+                <span
+                  className="hd-mono hd-caps"
+                  style={{ color: "var(--hd-terra)" }}
+                >
+                  Danger
+                </span>
+                <span
+                  className="hd-serif"
+                  style={{ fontSize: 17, color: "var(--hd-terra)" }}
+                >
+                  アカウント削除
+                </span>
+              </div>
+              <p
+                style={{
+                  fontFamily: "var(--hd-sans)",
+                  fontSize: 11,
+                  color: "var(--hd-ink-60)",
+                  lineHeight: 1.7,
+                  marginBottom: 14,
+                  marginTop: 0,
+                }}
+              >
+                アカウントを削除すると、保存したコスメ・図鑑データ・写真がすべて完全に削除されます。この操作は取り消せません。
+              </p>
+              {showConfirm ? (
+                <div
+                  style={{
+                    padding: 14,
+                    border: "1px solid var(--hd-terra)",
+                  }}
+                >
+                  <div
+                    className="hd-serif"
+                    style={{
+                      fontSize: 14,
+                      color: "var(--hd-terra)",
+                      marginBottom: 12,
+                    }}
+                  >
+                    本当に削除しますか？
+                  </div>
+                  {error && (
+                    <p
+                      style={{
+                        fontSize: 12,
+                        color: "var(--hd-terra)",
+                        marginBottom: 8,
+                        fontFamily: "var(--hd-sans)",
+                      }}
+                    >
+                      {error}
+                    </p>
+                  )}
+                  <div style={{ display: "flex", gap: 8 }}>
+                    <button
+                      onClick={handleDeleteAccount}
+                      disabled={deleting}
+                      style={{
+                        flex: 1,
+                        padding: "10px 0",
+                        background: "var(--hd-terra)",
+                        color: "#fff",
+                        border: "none",
+                        fontFamily: "var(--hd-sans)",
+                        fontSize: 12,
+                        cursor: "pointer",
+                        opacity: deleting ? 0.7 : 1,
+                      }}
+                    >
+                      {deleting ? "削除中..." : "完全に削除する"}
+                    </button>
+                    <button
+                      onClick={() => setShowConfirm(false)}
+                      disabled={deleting}
+                      style={{
+                        flex: 1,
+                        padding: "10px 0",
+                        background: "transparent",
+                        color: "var(--hd-ink-60)",
+                        border: "1px solid var(--hd-line)",
+                        fontFamily: "var(--hd-sans)",
+                        fontSize: 12,
+                        cursor: "pointer",
+                      }}
+                    >
+                      キャンセル
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <button
+                  onClick={() => setShowConfirm(true)}
+                  style={{
+                    padding: "9px 18px",
+                    border: "1px solid var(--hd-terra)",
+                    background: "transparent",
+                    color: "var(--hd-terra)",
+                    fontFamily: "var(--hd-sans)",
+                    fontSize: 12,
+                    cursor: "pointer",
+                  }}
+                >
+                  アカウントを削除する
+                </button>
+              )}
+            </div>
+
+            {/* Version */}
+            <div style={{ textAlign: "center", marginTop: 28, paddingBottom: 8 }}>
+              <div
+                className="hd-mono hd-caps"
+                style={{ color: "var(--hd-ink-40)" }}
+              >
+                HADAMI v0.1.0 β
+              </div>
+              <div
+                style={{
+                  fontFamily: "var(--hd-sans)",
+                  fontSize: 10,
+                  color: "var(--hd-ink-40)",
+                  marginTop: 4,
+                }}
+              >
+                クローズドβ版 — 15名限定
+              </div>
+            </div>
           </div>
         </div>
       </div>

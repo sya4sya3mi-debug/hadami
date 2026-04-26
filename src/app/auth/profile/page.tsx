@@ -1,8 +1,10 @@
 "use client";
 
+import "@/styles/hadami-tokens.css";
 import { useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { Suspense } from "react";
+import Image from "next/image";
 import { useUser } from "@/lib/auth";
 import { BETA_USER_LIMIT } from "@/lib/limits";
 
@@ -14,17 +16,17 @@ type ProfileSetupResult = {
 function getProfileErrorMessage(reason?: string) {
   switch (reason) {
     case "invite_proof_invalid":
-      return "\u62db\u5f85\u30b3\u30fc\u30c9\u306e\u78ba\u8a8d\u671f\u9650\u304c\u5207\u308c\u307e\u3057\u305f\u3002\u3082\u3046\u4e00\u5ea6\u3084\u308a\u76f4\u3057\u3066\u304f\u3060\u3055\u3044\u3002";
+      return "招待コードの確認期限が切れました。もう一度やり直してください。";
     case "invite_invalid":
-      return "\u3053\u306e\u62db\u5f85\u30b3\u30fc\u30c9\u306f\u7121\u52b9\u3067\u3059\u3002";
+      return "この招待コードは無効です。";
     case "invite_exhausted":
-      return "\u3053\u306e\u62db\u5f85\u30b3\u30fc\u30c9\u306f\u5229\u7528\u4e0a\u9650\u306b\u9054\u3057\u3066\u3044\u307e\u3059\u3002";
+      return "この招待コードは利用上限に達しています。";
     case "invite_required":
-      return "\u30d7\u30ed\u30d5\u30a3\u30fc\u30eb\u4f5c\u6210\u306b\u306f\u62db\u5f85\u30b3\u30fc\u30c9\u306e\u78ba\u8a8d\u304c\u5fc5\u8981\u3067\u3059\u3002";
+      return "プロフィール作成には招待コードの確認が必要です。";
     case "limit_reached":
-      return "\u73fe\u5728\u30d9\u30fc\u30bf\u7248\u306e\u65b0\u898f\u767b\u9332\u306f\u4e0a\u9650\u306b\u9054\u3057\u3066\u3044\u307e\u3059\u3002";
+      return "現在ベータ版の新規登録は上限に達しています。";
     default:
-      return "\u30d7\u30ed\u30d5\u30a3\u30fc\u30eb\u306e\u4f5c\u6210\u306b\u5931\u6557\u3057\u307e\u3057\u305f\u3002\u3057\u3070\u3089\u304f\u3057\u3066\u304b\u3089\u304a\u8a66\u3057\u304f\u3060\u3055\u3044\u3002";
+      return "プロフィールの作成に失敗しました。しばらくしてからお試しください。";
   }
 }
 
@@ -38,25 +40,18 @@ function ProfileSetupPageInner() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
     if (!nickname.trim()) {
-      setError("\u30cb\u30c3\u30af\u30cd\u30fc\u30e0\u3092\u5165\u529b\u3057\u3066\u304f\u3060\u3055\u3044\u3002");
+      setError("ニックネームを入力してください。");
       return;
     }
-
     if (nickname.trim().length > 20) {
-      setError("\u30cb\u30c3\u30af\u30cd\u30fc\u30e0\u306f20\u6587\u5b57\u4ee5\u5185\u3067\u5165\u529b\u3057\u3066\u304f\u3060\u3055\u3044\u3002");
+      setError("ニックネームは20文字以内で入力してください。");
       return;
     }
-
     if (!user) return;
-
     setLoading(true);
     setError("");
-
     try {
-      // claimはベストエフォート: 招待証明をDBに記録する試み。
-      // コールバックで既に記録済みの場合や失敗しても、RPCが最終判定する。
       const claimBody = inviteToken ? JSON.stringify({ invite_token: inviteToken }) : undefined;
       const claimResponse = await fetch("/api/invite/claim", {
         method: "POST",
@@ -64,27 +59,21 @@ function ProfileSetupPageInner() {
         body: claimBody,
       }).catch(() => null);
 
-      // 明示的な招待エラー（400/403）の場合のみ中断、500は続行する
       if (claimResponse && !claimResponse.ok && claimResponse.status !== 500) {
-        const claimData = (await claimResponse.json().catch(() => null)) as {
-          error?: string;
-        } | null;
+        const claimData = (await claimResponse.json().catch(() => null)) as { error?: string } | null;
         setError(getProfileErrorMessage(claimData?.error));
         setLoading(false);
         return;
       }
 
-      const { data, error: dbError } = await supabase.rpc(
-        "complete_profile_with_invite",
-        {
-          p_display_name: nickname.trim(),
-          p_limit: BETA_USER_LIMIT,
-        }
-      );
+      const { data, error: dbError } = await supabase.rpc("complete_profile_with_invite", {
+        p_display_name: nickname.trim(),
+        p_limit: BETA_USER_LIMIT,
+      });
 
       if (dbError) {
         console.error("profile save error:", dbError);
-        setError("\u30d7\u30ed\u30d5\u30a3\u30fc\u30eb\u306e\u4f5c\u6210\u306b\u5931\u6557\u3057\u307e\u3057\u305f\u3002\u3057\u3070\u3089\u304f\u3057\u3066\u304b\u3089\u304a\u8a66\u3057\u304f\u3060\u3055\u3044\u3002");
+        setError("プロフィールの作成に失敗しました。しばらくしてからお試しください。");
         setLoading(false);
         return;
       }
@@ -99,64 +88,188 @@ function ProfileSetupPageInner() {
       window.location.href = "/";
     } catch (submitError) {
       console.error("profile setup failed:", submitError);
-      setError("\u30d7\u30ed\u30d5\u30a3\u30fc\u30eb\u306e\u4f5c\u6210\u306b\u5931\u6557\u3057\u307e\u3057\u305f\u3002\u3057\u3070\u3089\u304f\u3057\u3066\u304b\u3089\u304a\u8a66\u3057\u304f\u3060\u3055\u3044\u3002");
+      setError("プロフィールの作成に失敗しました。しばらくしてからお試しください。");
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center px-6 bg-bo-cream">
+    <div className="hd-root hd-softa" data-density="compact">
+      <div
+        className="hd"
+        style={{
+          minHeight: "100vh",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          padding: "32px 24px 48px",
+          background: "var(--hd-bg)",
+          color: "var(--hd-ink)",
+        }}
+      >
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            marginBottom: 36,
+          }}
+        >
+          <Image
+            src="/hadami-logo.png"
+            alt="HADAMI"
+            width={56}
+            height={56}
+            style={{ borderRadius: 12, marginBottom: 12 }}
+          />
+          <div
+            className="hd-serif"
+            style={{
+              fontSize: 26,
+              letterSpacing: "0.06em",
+              fontStyle: "italic",
+            }}
+          >
+            HADAMI
+          </div>
+          <div
+            className="hd-mono hd-caps"
+            style={{ color: "var(--hd-ink-40)", marginTop: 12 }}
+          >
+            Profile · プロフィール
+          </div>
+        </div>
 
-      <div className="mb-8 text-center">
-        <div className="text-4xl mb-2">H</div>
-        <h1 className="text-[28px] font-black font-serif text-bo-accent m-0">
-          HADAMI
-        </h1>
-        <p className="text-[13px] text-bo-ink-muted mt-1">
-          {"\u3088\u3046\u3053\u305d\u3002\u3042\u306a\u305f\u306e\u3053\u3068\u3092\u6559\u3048\u3066\u304f\u3060\u3055\u3044"}
-        </p>
-      </div>
-
-      <div className="w-full max-w-[360px] bg-white rounded-r2 py-7 px-6 shadow-bo2">
-        <h2 className="text-[18px] font-bold mb-5 text-center text-bo-ink">
-          {"\u30d7\u30ed\u30d5\u30a3\u30fc\u30eb\u8a2d\u5b9a"}
-        </h2>
-
-        <form onSubmit={handleSubmit}>
-          <div className="mb-2">
-            <label className="text-[13px] font-semibold text-bo-ink mb-1.5 block">
-              {"\u30cb\u30c3\u30af\u30cd\u30fc\u30e0"}
-            </label>
-            <input
-              type="text"
-              placeholder=""
-              value={nickname}
-              onChange={(e) => setNickname(e.target.value)}
-              maxLength={20}
-              className="w-full p-3 border-[1.5px] border-bo-parchment rounded-r1 text-[15px] bg-white outline-none focus:border-bo-accent focus:ring-1 focus:ring-bo-accent/30 transition-colors"
-            />
+        <div
+          style={{
+            width: "100%",
+            maxWidth: 380,
+            background: "var(--hd-surface)",
+            border: "1px solid var(--hd-ink)",
+            padding: "28px 24px",
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 10,
+              borderBottom: "1px solid var(--hd-ink)",
+              paddingBottom: 12,
+              marginBottom: 18,
+            }}
+          >
+            <span className="hd-mono hd-caps" style={{ color: "var(--hd-ink-40)" }}>
+              No. 03
+            </span>
+            <span className="hd-serif" style={{ fontSize: 16 }}>
+              ニックネームを設定
+            </span>
           </div>
 
-          <p className="text-[11px] text-bo-ink-muted mb-4">
-            {"\u0032\u0030\u6587\u5b57\u4ee5\u5185\u3067\u5165\u529b\u3057\u3066\u304f\u3060\u3055\u3044\u3002\u3042\u3068\u304b\u3089\u5909\u66f4\u3067\u304d\u307e\u3059\u3002"}
+          <p
+            style={{
+              fontSize: 12,
+              color: "var(--hd-ink-60)",
+              marginBottom: 20,
+              lineHeight: 1.7,
+              fontFamily: "var(--hd-sans)",
+              textAlign: "center",
+            }}
+          >
+            ようこそ。あなたのことを教えてください。
           </p>
 
-          {error && (
-            <p className="text-[13px] text-bo-caution mb-3 text-center">
-              {error}
-            </p>
-          )}
+          <form onSubmit={handleSubmit}>
+            <div style={{ marginBottom: 8 }}>
+              <label
+                className="hd-mono hd-caps"
+                style={{
+                  color: "var(--hd-ink-40)",
+                  marginBottom: 6,
+                  display: "block",
+                }}
+              >
+                Nickname · ニックネーム
+              </label>
+              <input
+                type="text"
+                value={nickname}
+                onChange={(e) => setNickname(e.target.value)}
+                maxLength={20}
+                autoFocus
+                style={{
+                  width: "100%",
+                  padding: "13px 14px",
+                  border: "1px solid var(--hd-line)",
+                  borderRadius: 0,
+                  fontSize: 15,
+                  background: "var(--hd-bg)",
+                  outline: "none",
+                  fontFamily: "var(--hd-sans)",
+                  boxSizing: "border-box",
+                  color: "var(--hd-ink)",
+                }}
+              />
+            </div>
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full py-3.5 bg-bo-accent text-white border-none rounded-r1 text-[15px] font-bold cursor-pointer shadow-bo-accent disabled:opacity-70 hover:bg-bo-accent-dark transition-colors"
-          >
-            {loading
-              ? "\u4fdd\u5b58\u4e2d..."
-              : "\u306f\u3058\u3081\u308b"}
-          </button>
-        </form>
+            <p
+              style={{
+                fontSize: 11,
+                color: "var(--hd-ink-40)",
+                marginBottom: 18,
+                fontFamily: "var(--hd-sans)",
+                lineHeight: 1.6,
+              }}
+            >
+              20文字以内で入力してください。あとから変更できます。
+            </p>
+
+            {error && (
+              <p
+                style={{
+                  fontSize: 12,
+                  color: "var(--hd-terra)",
+                  marginBottom: 12,
+                  textAlign: "center",
+                  fontFamily: "var(--hd-sans)",
+                  lineHeight: 1.6,
+                }}
+              >
+                {error}
+              </p>
+            )}
+
+            <button
+              type="submit"
+              disabled={loading}
+              style={{
+                width: "100%",
+                padding: "13px 0",
+                background: "var(--hd-ink)",
+                color: "var(--hd-bg)",
+                border: "none",
+                fontFamily: "var(--hd-sans)",
+                fontSize: 14,
+                cursor: "pointer",
+                opacity: loading ? 0.7 : 1,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 12,
+              }}
+            >
+              <span>{loading ? "保存中..." : "はじめる"}</span>
+              <span
+                className="hd-mono"
+                style={{ fontSize: 9, letterSpacing: "0.2em", opacity: 0.7 }}
+              >
+                START →
+              </span>
+            </button>
+          </form>
+        </div>
       </div>
     </div>
   );
