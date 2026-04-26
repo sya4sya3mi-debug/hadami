@@ -162,23 +162,35 @@ export default function IngredientDetailPage() {
           {/* Description */}
           <div
             style={{
-              background: "var(--hd-surface)", borderRadius: 14,
-              padding: 14, marginBottom: 10,
+              background: "var(--hd-surface)",
+              padding: "14px 16px",
+              marginBottom: 10,
               border: "1px solid var(--hd-hair)",
             }}
           >
-            <h2
+            <div
+              className="hd-mono hd-caps"
               style={{
-                fontSize: 12, fontWeight: 700, marginBottom: 6,
-                display: "flex", alignItems: "center", gap: 6,
-                fontFamily: "var(--hd-sans)",
-                color: "var(--hd-ink)",
+                color: "var(--hd-ink-40)",
+                marginBottom: 6,
+                display: "flex",
+                alignItems: "center",
+                gap: 6,
               }}
             >
-              <InfoIcon size={13} color="currentColor" />
-              一般的な分類の説明
-            </h2>
-            <p style={{ fontSize: 12, lineHeight: 1.65, color: "var(--hd-ink-60)", fontFamily: "var(--hd-sans)", margin: 0 }}>
+              <InfoIcon size={11} color="currentColor" />
+              Description · 解説
+            </div>
+            <p
+              className="hd-serif"
+              style={{
+                fontSize: 14,
+                lineHeight: 1.7,
+                color: "var(--hd-ink)",
+                margin: 0,
+                letterSpacing: "-0.005em",
+              }}
+            >
               {ingredient.note}
             </p>
           </div>
@@ -187,23 +199,36 @@ export default function IngredientDetailPage() {
           {ingredient.funFact && (
             <div
               style={{
-                background: "var(--hd-mint-bg)", borderRadius: 14,
-                padding: 14, marginBottom: 10,
-                border: "1px solid oklch(0.38 0.05 155 / 0.18)",
+                background: "var(--hd-surface)",
+                padding: "14px 16px",
+                marginBottom: 10,
+                border: "1px solid var(--hd-hair)",
+                borderLeft: "3px solid var(--hd-moss)",
               }}
             >
-              <h2
+              <div
+                className="hd-mono hd-caps"
                 style={{
-                  fontSize: 12, fontWeight: 700, marginBottom: 6,
-                  display: "flex", alignItems: "center", gap: 6,
-                  color: "var(--hd-moss-deep)",
-                  fontFamily: "var(--hd-sans)",
+                  color: "var(--hd-moss)",
+                  marginBottom: 6,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 6,
                 }}
               >
-                <LightbulbIcon size={13} color="currentColor" />
-                トリビア
-              </h2>
-              <p style={{ fontSize: 12, lineHeight: 1.65, color: "var(--hd-ink-60)", fontFamily: "var(--hd-sans)", margin: 0 }}>
+                <LightbulbIcon size={11} color="currentColor" />
+                Trivia · 豆知識
+              </div>
+              <p
+                className="hd-serif"
+                style={{
+                  fontSize: 14,
+                  lineHeight: 1.7,
+                  color: "var(--hd-ink)",
+                  margin: 0,
+                  letterSpacing: "-0.005em",
+                }}
+              >
                 {ingredient.funFact}
               </p>
             </div>
@@ -213,24 +238,36 @@ export default function IngredientDetailPage() {
           {ingredient.caution && (
             <div
               style={{
-                background: "var(--hd-surface)", borderRadius: 14,
-                padding: 14, marginBottom: 10,
-                border: "1px solid var(--hd-terra)",
+                background: "var(--hd-surface)",
+                padding: "14px 16px",
+                marginBottom: 10,
+                border: "1px solid var(--hd-hair)",
                 borderLeft: "3px solid var(--hd-terra)",
               }}
             >
-              <h2
+              <div
+                className="hd-mono hd-caps"
                 style={{
-                  fontSize: 12, fontWeight: 700, marginBottom: 6,
-                  display: "flex", alignItems: "center", gap: 6,
                   color: "var(--hd-terra)",
-                  fontFamily: "var(--hd-sans)",
+                  marginBottom: 6,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 6,
                 }}
               >
-                <AlertIcon size={13} color="currentColor" />
-                一般的な注意事項
-              </h2>
-              <p style={{ fontSize: 12, lineHeight: 1.65, color: "var(--hd-ink-60)", fontFamily: "var(--hd-sans)", margin: 0 }}>
+                <AlertIcon size={11} color="currentColor" />
+                Caution · 注意事項
+              </div>
+              <p
+                className="hd-serif"
+                style={{
+                  fontSize: 14,
+                  lineHeight: 1.7,
+                  color: "var(--hd-ink)",
+                  margin: 0,
+                  letterSpacing: "-0.005em",
+                }}
+              >
                 {ingredient.caution}
               </p>
             </div>
@@ -238,43 +275,95 @@ export default function IngredientDetailPage() {
 
           {/* Products */}
           {containingProducts.length > 0 && (
-            <div style={{ marginBottom: 16 }}>
-              <h2
+            <div style={{ marginBottom: 16, marginTop: 24 }}>
+              <div
                 style={{
-                  fontSize: 13, fontWeight: 700, marginBottom: 10,
-                  display: "flex", alignItems: "center", gap: 8,
-                  fontFamily: "var(--hd-sans)",
+                  display: "flex",
+                  alignItems: "baseline",
+                  justifyContent: "space-between",
+                  paddingBottom: 10,
+                  marginBottom: 12,
+                  borderBottom: "1px solid var(--hd-ink)",
                 }}
               >
-                <span style={{ width: 4, height: 14, borderRadius: 999, background: "var(--hd-moss)" }} />
-                この成分を含む保存済みコスメ
-              </h2>
-              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                {containingProducts.map((p) => (
+                <div>
+                  <div
+                    className="hd-mono hd-caps"
+                    style={{ color: "var(--hd-ink-40)" }}
+                  >
+                    Found In · 含有コスメ
+                  </div>
+                  <div
+                    className="hd-serif"
+                    style={{ fontSize: 16, marginTop: 3, letterSpacing: "-0.01em" }}
+                  >
+                    この成分を含む保存済みコスメ
+                  </div>
+                </div>
+                <div
+                  className="hd-mono"
+                  style={{ fontSize: 11, color: "var(--hd-ink-60)" }}
+                >
+                  {String(containingProducts.length).padStart(2, "0")}
+                </div>
+              </div>
+              <div>
+                {containingProducts.map((p, i) => (
                   <Link
                     key={p.id}
                     href={`/product/${p.id}`}
                     style={{
-                      display: "flex", alignItems: "center", gap: 10,
-                      background: "var(--hd-surface)", borderRadius: 12, padding: 12,
-                      border: "1px solid var(--hd-hair)",
-                      textDecoration: "none", color: "inherit",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 12,
+                      padding: "12px 0",
+                      borderBottom:
+                        i < containingProducts.length - 1
+                          ? "1px solid var(--hd-hair)"
+                          : "none",
+                      textDecoration: "none",
+                      color: "inherit",
                     }}
                   >
-                    <PackageIcon size={16} color="var(--hd-moss)" />
+                    <div
+                      className="hd-mono"
+                      style={{
+                        width: 22,
+                        fontSize: 9,
+                        color: "var(--hd-ink-40)",
+                        flexShrink: 0,
+                      }}
+                    >
+                      {String(i + 1).padStart(2, "0")}
+                    </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div
+                        className="hd-mono hd-caps"
                         style={{
-                          fontWeight: 600, fontSize: 12,
-                          fontFamily: "var(--hd-sans)",
-                          overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                          color: "var(--hd-ink-40)",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          whiteSpace: "nowrap",
                         }}
-                      >{p.name}</div>
-                      <div style={{ fontSize: 10, color: "var(--hd-ink-60)", fontFamily: "var(--hd-sans)" }}>
+                      >
                         {p.brand}
                       </div>
+                      <div
+                        className="hd-serif"
+                        style={{
+                          fontSize: 14,
+                          marginTop: 3,
+                          letterSpacing: "-0.01em",
+                          lineHeight: 1.3,
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        {p.name}
+                      </div>
                     </div>
-                    <ChevronRightIcon size={16} color="var(--hd-ink-40)" />
+                    <ChevronRightIcon size={12} color="var(--hd-ink-40)" />
                   </Link>
                 ))}
               </div>

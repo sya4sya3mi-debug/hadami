@@ -6,7 +6,8 @@ import Image from "next/image";
 import { Product, ProductGenre, DeckItem, RoutineType } from "@/types";
 import { getGenreByKey } from "@/lib/productGenres";
 import { getIngredientById, ACTIVE_CATEGORIES } from "@/lib/ingredients";
-import { ProductGenreIcon } from "@/components/ui/CosmeticIcons";
+import { ActiveCategoryIcon } from "@/components/ui/CosmeticIcons";
+import { Ico } from "@/components/redesign/apothecary/Icons";
 import BottomSheet from "@/components/scan/BottomSheet";
 
 interface ProductPickerProps {
@@ -36,14 +37,13 @@ export default function ProductPicker({
 
   const { availableProducts, productTypes, filteredProducts, genreFallback } = useMemo(() => {
     const available = allProducts.filter(
-      (p) => !deckItems.some((item) => item.productId === p.id && item.routine === routine)
+      (p) => !deckItems.some((item) => item.productId === p.id && item.routine === routine),
     );
 
     const genreMatched = genreFilter
       ? available.filter((p) => p.productType === genreFilter)
       : available;
 
-    // If genre filter produces no results, fall back to all available products
     const fallback = genreFilter !== null && genreMatched.length === 0 && available.length > 0;
     const byGenre = fallback ? available : genreMatched;
 
@@ -52,20 +52,22 @@ export default function ProductPicker({
       ...Array.from(new Set(byGenre.map((p) => p.productType).filter(Boolean))),
     ];
 
-    let filtered = typeFilter === "すべて"
-      ? byGenre
-      : byGenre.filter((p) => p.productType === typeFilter);
+    let filtered =
+      typeFilter === "すべて" ? byGenre : byGenre.filter((p) => p.productType === typeFilter);
 
     if (searchQuery.trim()) {
       const q = searchQuery.trim().toLowerCase();
       filtered = filtered.filter(
-        (p) =>
-          p.name.toLowerCase().includes(q) ||
-          p.brand.toLowerCase().includes(q)
+        (p) => p.name.toLowerCase().includes(q) || p.brand.toLowerCase().includes(q),
       );
     }
 
-    return { availableProducts: available, productTypes: types, filteredProducts: filtered, genreFallback: fallback };
+    return {
+      availableProducts: available,
+      productTypes: types,
+      filteredProducts: filtered,
+      genreFallback: fallback,
+    };
   }, [allProducts, deckItems, routine, genreFilter, typeFilter, searchQuery]);
 
   const handleAdd = (productId: string) => {
@@ -83,197 +85,358 @@ export default function ProductPicker({
 
   return (
     <BottomSheet open={open} onClose={handleClose} title={title} height="calc(100dvh - 2rem)">
-      <div className="pb-4">
-        {/* Search bar */}
-        <div className="relative mb-4">
-          <svg
-            width="16"
-            height="16"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="#9E9E9E"
-            strokeWidth="2"
-            strokeLinecap="round"
-            className="absolute left-3.5 top-1/2 -translate-y-1/2"
-          >
-            <circle cx="11" cy="11" r="8" />
-            <line x1="21" y1="21" x2="16.65" y2="16.65" />
-          </svg>
-          <input
-            type="text"
-            placeholder="製品名やブランドで検索..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-3 rounded-[14px] border-none bg-bo-cream text-sm font-sans
-                       text-bo-ink placeholder:text-bo-ink-faint outline-none
-                       focus:ring-2 focus:ring-bo-accent/30 transition-shadow"
-          />
-        </div>
-
-        {/* Genre filter chips — hide in fallback mode */}
-        {!genreFallback && productTypes.length > 2 && (
-          <div className="mb-4 -mx-1 flex gap-1.5 overflow-x-auto px-1 hide-scrollbar">
-            {productTypes.map((type) => {
-              const genre = typeof type === "string" && type !== "すべて" ? getGenreByKey(type) : null;
-              return (
-                <button
-                  key={type}
-                  onClick={() => setTypeFilter(type as string)}
-                  className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap border-none cursor-pointer pressable font-sans ${
-                    typeFilter === type
-                      ? "bg-bo-accent text-white shadow-bo-accent"
-                      : "bg-white text-bo-ink-muted shadow-bo1"
-                  }`}
-                >
-                  {genre ? `${genre.icon} ${genre.label}` : type}
-                </button>
-              );
-            })}
+      <div
+        className="hd-root hd-softa"
+        data-density="compact"
+        style={{ paddingBottom: 16 }}
+      >
+        <div className="hd" style={{ color: "var(--hd-ink)" }}>
+          {/* Search bar */}
+          <div style={{ position: "relative", marginBottom: 16 }}>
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="var(--hd-ink-40)"
+              strokeWidth="2"
+              strokeLinecap="round"
+              style={{
+                position: "absolute",
+                left: 12,
+                top: "50%",
+                transform: "translateY(-50%)",
+              }}
+            >
+              <circle cx="11" cy="11" r="8" />
+              <line x1="21" y1="21" x2="16.65" y2="16.65" />
+            </svg>
+            <input
+              type="text"
+              placeholder="製品名・ブランドで検索"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              style={{
+                width: "100%",
+                padding: "12px 14px 12px 36px",
+                border: "1px solid var(--hd-line)",
+                borderRadius: 0,
+                background: "var(--hd-bg)",
+                fontFamily: "var(--hd-sans)",
+                fontSize: 14,
+                color: "var(--hd-ink)",
+                outline: "none",
+                boxSizing: "border-box",
+              }}
+            />
           </div>
-        )}
 
-        {/* Empty states */}
-        {genreFallback && genreInfo ? (
-          /* Genre has no matching products — show scan prompt */
-          <div className="text-center py-16 animate-fade-up">
+          {/* Genre filter chips */}
+          {!genreFallback && productTypes.length > 2 && (
             <div
-              className="w-16 h-16 rounded-[20px] mx-auto mb-4 flex items-center justify-center text-3xl"
-              style={{ background: `${genreInfo.color}15` }}
+              style={{
+                display: "flex",
+                gap: 8,
+                overflowX: "auto",
+                marginBottom: 18,
+                paddingBottom: 4,
+              }}
+              className="hide-scrollbar"
             >
-              {genreInfo.icon}
+              {productTypes.map((type) => {
+                const genre =
+                  typeof type === "string" && type !== "すべて" ? getGenreByKey(type) : null;
+                const on = typeFilter === type;
+                return (
+                  <button
+                    key={type}
+                    onClick={() => setTypeFilter(type as string)}
+                    style={{
+                      flexShrink: 0,
+                      padding: "8px 14px",
+                      background: on ? "var(--hd-ink)" : "transparent",
+                      color: on ? "var(--hd-bg)" : "var(--hd-ink)",
+                      border: on ? "none" : "1px solid var(--hd-line)",
+                      borderRadius: 0,
+                      cursor: "pointer",
+                      fontFamily: "var(--hd-sans)",
+                      fontSize: 12,
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    {genre ? genre.label : type}
+                  </button>
+                );
+              })}
             </div>
-            <p className="text-sm font-bold text-bo-ink mb-1 font-sans">
-              {genreInfo.label}の製品がありません
-            </p>
-            <p className="text-xs text-bo-ink-muted mb-5 font-sans">
-              {genreInfo.label}をスキャンして追加しましょう
-            </p>
-            <Link
-              href="/scan"
-              className="inline-flex items-center gap-2 py-3 px-6 rounded-r1 bg-bo-accent text-white
-                         text-sm font-bold no-underline shadow-bo-accent pressable font-sans"
-            >
-              📷 スキャンする
-            </Link>
-          </div>
-        ) : filteredProducts.length === 0 ? (
-          <div className="text-center py-16 animate-fade-up">
-            {availableProducts.length === 0 && allProducts.length === 0 ? (
-              <>
-                <div className="w-16 h-16 rounded-[20px] mx-auto mb-4 flex items-center justify-center
-                                bg-gradient-to-br from-bo-accent-soft to-bo-accent-pale">
-                  <span className="text-3xl">📷</span>
-                </div>
-                <p className="text-sm font-bold text-bo-ink mb-1 font-sans">まだ製品がありません</p>
-                <p className="text-xs text-bo-ink-muted mb-5 font-sans">
-                  化粧品をスキャンして成分を読み取りましょう
-                </p>
-                <Link
-                  href="/scan"
-                  className="inline-flex items-center gap-2 py-3 px-6 rounded-r1 bg-bo-accent text-white
-                             text-sm font-bold no-underline shadow-bo-accent pressable font-sans"
-                >
-                  📷 スキャンする
-                </Link>
-              </>
-            ) : (
-              <>
-                <div className="text-3xl mb-3">🔍</div>
-                <p className="text-sm text-bo-ink-muted font-sans">
-                  {searchQuery
-                    ? "検索結果がありません"
-                    : availableProducts.length === 0 && allProducts.length > 0
-                    ? "すべての製品がルーティンに追加済みです"
-                    : "追加できる製品がありません"}
-                </p>
-              </>
-            )}
-          </div>
-        ) : (
-          <div className="space-y-2.5">
-            {filteredProducts.map((p) => {
-              const genre = getGenreByKey(p.productType || "other");
-              const categories = new Set<string>();
-              p.ingredients.forEach((pi) => {
-                const ing = getIngredientById(pi.ingredientId);
-                if (ing?.activeIngredient) {
-                  ing.categories.forEach((cat) => categories.add(cat));
-                }
-              });
+          )}
 
-              return (
-                <button
-                  key={p.id}
-                  onClick={() => handleAdd(p.id)}
-                  className="w-full flex items-center gap-3 rounded-r2 p-4 text-left border-none
-                             bg-white shadow-bo1 cursor-pointer pressable animate-spring-in"
-                >
-                  {p.packageImage ? (
-                    <div className="w-14 h-14 rounded-[14px] overflow-hidden shrink-0 relative shadow-bo1">
-                      <Image
-                        src={p.packageImageThumb ?? p.packageImage}
-                        alt={p.name}
-                        fill
-                        className="object-cover"
-                        sizes="56px"
-                        loading="lazy"
-                      />
-                    </div>
-                  ) : (
+          {/* Empty states */}
+          {genreFallback && genreInfo ? (
+            <div style={{ textAlign: "center", padding: "48px 20px" }}>
+              <div
+                className="hd-mono hd-caps"
+                style={{ color: "var(--hd-ink-40)", marginBottom: 8 }}
+              >
+                Empty · 該当なし
+              </div>
+              <div
+                className="hd-serif"
+                style={{ fontSize: 18, marginBottom: 6, letterSpacing: "-0.01em" }}
+              >
+                {genreInfo.label}の製品がありません
+              </div>
+              <p
+                style={{
+                  fontFamily: "var(--hd-sans)",
+                  fontSize: 12,
+                  color: "var(--hd-ink-60)",
+                  marginBottom: 22,
+                  lineHeight: 1.7,
+                }}
+              >
+                {genreInfo.label}をスキャンして追加しましょう。
+              </p>
+              <Link
+                href="/scan"
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 10,
+                  padding: "12px 24px",
+                  background: "var(--hd-ink)",
+                  color: "var(--hd-bg)",
+                  textDecoration: "none",
+                  fontFamily: "var(--hd-sans)",
+                  fontSize: 13,
+                }}
+              >
+                {Ico.camera({ width: 16, height: 16 })}
+                <span>スキャンする</span>
+              </Link>
+            </div>
+          ) : filteredProducts.length === 0 ? (
+            <div style={{ textAlign: "center", padding: "48px 20px" }}>
+              {availableProducts.length === 0 && allProducts.length === 0 ? (
+                <>
+                  <div
+                    className="hd-mono hd-caps"
+                    style={{ color: "var(--hd-ink-40)", marginBottom: 8 }}
+                  >
+                    Empty · 製品なし
+                  </div>
+                  <div
+                    className="hd-serif"
+                    style={{ fontSize: 18, marginBottom: 6, letterSpacing: "-0.01em" }}
+                  >
+                    まだ製品がありません
+                  </div>
+                  <p
+                    style={{
+                      fontFamily: "var(--hd-sans)",
+                      fontSize: 12,
+                      color: "var(--hd-ink-60)",
+                      marginBottom: 22,
+                      lineHeight: 1.7,
+                    }}
+                  >
+                    化粧品をスキャンして成分を読み取りましょう。
+                  </p>
+                  <Link
+                    href="/scan"
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 10,
+                      padding: "12px 24px",
+                      background: "var(--hd-ink)",
+                      color: "var(--hd-bg)",
+                      textDecoration: "none",
+                      fontFamily: "var(--hd-sans)",
+                      fontSize: 13,
+                    }}
+                  >
+                    {Ico.camera({ width: 16, height: 16 })}
+                    <span>スキャンする</span>
+                  </Link>
+                </>
+              ) : (
+                <>
+                  <div
+                    className="hd-mono hd-caps"
+                    style={{ color: "var(--hd-ink-40)", marginBottom: 6 }}
+                  >
+                    No Result
+                  </div>
+                  <p
+                    className="hd-serif"
+                    style={{
+                      fontSize: 15,
+                      color: "var(--hd-ink-60)",
+                      letterSpacing: "-0.01em",
+                    }}
+                  >
+                    {searchQuery
+                      ? "検索結果がありません"
+                      : availableProducts.length === 0 && allProducts.length > 0
+                        ? "すべての製品がルーティンに追加済みです"
+                        : "追加できる製品がありません"}
+                  </p>
+                </>
+              )}
+            </div>
+          ) : (
+            <div>
+              {filteredProducts.map((p, i) => {
+                const genre = getGenreByKey(p.productType || "other");
+                const categories = new Set<string>();
+                p.ingredients.forEach((pi) => {
+                  const ing = getIngredientById(pi.ingredientId);
+                  if (ing?.activeIngredient) {
+                    ing.categories.forEach((cat) => categories.add(cat));
+                  }
+                });
+
+                return (
+                  <button
+                    key={p.id}
+                    onClick={() => handleAdd(p.id)}
+                    className="hd-softa-card"
+                    style={{
+                      width: "100%",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 14,
+                      padding: "14px 14px",
+                      marginBottom: 10,
+                      background: "var(--hd-surface)",
+                      border: "1px solid var(--hd-hair)",
+                      cursor: "pointer",
+                      textAlign: "left",
+                    }}
+                  >
                     <div
-                      className="w-14 h-14 rounded-[14px] flex items-center justify-center text-2xl shrink-0"
-                      style={{ background: genre ? `${genre.color}15` : "#f0f0f0" }}
+                      className="hd-mono"
+                      style={{
+                        width: 22,
+                        fontSize: 9,
+                        color: "var(--hd-ink-40)",
+                        flexShrink: 0,
+                      }}
                     >
-                      {genre?.icon || "📦"}
+                      {String(i + 1).padStart(2, "0")}
                     </div>
-                  )}
-                  <div className="flex-1 min-w-0">
-                    <div className="font-semibold text-sm text-bo-ink font-sans">
-                      {p.name}
-                    </div>
-                    <div className="flex items-center gap-2 mt-0.5">
-                      <span className="text-xs text-bo-ink-muted font-sans">{p.brand}</span>
-                      {genre && (
-                        <span
-                          className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md text-[10px] font-sans"
-                          style={{
-                            background: `${genre.color}15`,
-                            color: genre.color,
-                          }}
-                        >
-                          <ProductGenreIcon genre={genre.key} size={10} />
-                          {genre.label}
-                        </span>
-                      )}
-                    </div>
-                    {/* Category coverage badges */}
-                    {categories.size > 0 && (
-                      <div className="flex gap-1 flex-wrap mt-1.5">
-                        {Array.from(categories)
-                          .slice(0, 5)
-                          .map((catKey) => {
-                            const info = ACTIVE_CATEGORIES.find((c) => c.key === catKey);
-                            return info ? (
-                              <span
-                                key={catKey}
-                                className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md text-[9px] font-semibold font-sans"
-                                style={{ background: info.color + "18", color: info.color }}
-                              >
-                                {info.icon} {info.label}
-                              </span>
-                            ) : null;
-                          })}
+                    {p.packageImage ? (
+                      <div
+                        className="hd-softa-thumb"
+                        style={{
+                          width: 50,
+                          height: 50,
+                          flexShrink: 0,
+                          overflow: "hidden",
+                          background: "var(--hd-surface-2)",
+                          position: "relative",
+                        }}
+                      >
+                        <Image
+                          src={p.packageImageThumb ?? p.packageImage}
+                          alt={p.name}
+                          fill
+                          style={{ objectFit: "cover" }}
+                          sizes="50px"
+                          loading="lazy"
+                        />
+                      </div>
+                    ) : (
+                      <div
+                        className="hd-softa-thumb"
+                        style={{
+                          width: 50,
+                          height: 50,
+                          flexShrink: 0,
+                          background: "var(--hd-surface-2)",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          color: "var(--hd-ink-40)",
+                        }}
+                      >
+                        {Ico.camera({ width: 16, height: 16 })}
                       </div>
                     )}
-                  </div>
-                  <div className="px-3.5 py-2 rounded-full text-xs font-bold shrink-0 font-sans bg-bo-accent text-white shadow-bo-accent">
-                    追加
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-        )}
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div
+                        className="hd-mono hd-caps"
+                        style={{
+                          color: "var(--hd-ink-40)",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        {p.brand}
+                        {genre ? ` · ${genre.label}` : ""}
+                      </div>
+                      <div
+                        className="hd-serif"
+                        style={{
+                          fontSize: 14,
+                          marginTop: 3,
+                          lineHeight: 1.3,
+                          letterSpacing: "-0.01em",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        {p.name}
+                      </div>
+                      {categories.size > 0 && (
+                        <div style={{ display: "flex", gap: 5, marginTop: 7 }}>
+                          {Array.from(categories)
+                            .slice(0, 5)
+                            .map((catKey) => {
+                              const info = ACTIVE_CATEGORIES.find((c) => c.key === catKey);
+                              return info ? (
+                                <span
+                                  key={catKey}
+                                  title={info.label}
+                                  style={{
+                                    width: 18,
+                                    height: 18,
+                                    borderRadius: 999,
+                                    display: "inline-flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    background: `${info.color}1F`,
+                                    color: info.color,
+                                  }}
+                                >
+                                  <ActiveCategoryIcon category={info.key} size={10} />
+                                </span>
+                              ) : null;
+                            })}
+                        </div>
+                      )}
+                    </div>
+                    <span
+                      className="hd-mono hd-caps"
+                      style={{
+                        flexShrink: 0,
+                        padding: "5px 12px",
+                        border: "1px solid var(--hd-ink)",
+                        color: "var(--hd-ink)",
+                        background: "var(--hd-bg)",
+                      }}
+                    >
+                      Add →
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
       </div>
     </BottomSheet>
   );

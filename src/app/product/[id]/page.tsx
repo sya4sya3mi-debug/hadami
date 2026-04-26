@@ -287,16 +287,31 @@ export default function ProductDetailPage() {
             {/* Active ingredients */}
             {activeIngredients.length > 0 && (
               <>
-                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
-                  <span style={{ width: 4, height: 18, borderRadius: 999, background: "var(--hd-moss)" }} />
-                  <div className="hd-serif" style={{ fontSize: 18 }}>美容成分</div>
-                  <span style={{ fontSize: 12, color: "var(--hd-ink-60)", fontFamily: "var(--hd-sans)" }}>
-                    {activeIngredients.length}種
-                  </span>
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "baseline",
+                    justifyContent: "space-between",
+                    paddingBottom: 10,
+                    marginBottom: 14,
+                    borderBottom: "1px solid var(--hd-ink)",
+                  }}
+                >
+                  <div>
+                    <div className="hd-mono hd-caps" style={{ color: "var(--hd-ink-40)" }}>
+                      Active Ingredients
+                    </div>
+                    <div className="hd-serif" style={{ fontSize: 18, marginTop: 3, letterSpacing: "-0.01em" }}>
+                      美容成分
+                    </div>
+                  </div>
+                  <div className="hd-mono" style={{ fontSize: 12, color: "var(--hd-ink-60)" }}>
+                    {String(activeIngredients.length).padStart(2, "0")} 種
+                  </div>
                 </div>
 
-                <div className="hd-stagger" style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 24 }}>
-                  {activeIngredients.map((ing) => {
+                <div className="hd-stagger" style={{ marginBottom: 24 }}>
+                  {activeIngredients.map((ing, i) => {
                     const catInfo = getIngredientCategoryInfo(ing);
                     const rarity = ing.rarity === "legendary" ? 4 : ing.rarity === "rare" ? 3 : ing.rarity === "uncommon" ? 2 : 1;
                     return (
@@ -304,39 +319,91 @@ export default function ProductDetailPage() {
                         key={ing.id}
                         onClick={() => router.push(`/ingredient/${encodeURIComponent(ing.id)}`)}
                         style={{
-                          display: "flex", alignItems: "center", gap: 12,
-                          padding: "12px 14px",
-                          background: "var(--hd-surface)",
-                          border: "1px solid var(--hd-hair)",
-                          borderRadius: 12, cursor: "pointer",
-                          textAlign: "left", width: "100%",
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 14,
+                          padding: "14px 4px",
+                          background: "transparent",
+                          border: "none",
+                          borderBottom:
+                            i < activeIngredients.length - 1
+                              ? "1px solid var(--hd-hair)"
+                              : "1px solid var(--hd-hair)",
+                          cursor: "pointer",
+                          textAlign: "left",
+                          width: "100%",
+                          color: "inherit",
                         }}
                       >
                         <div
+                          className="hd-mono"
                           style={{
-                            width: 36, height: 36, borderRadius: 10, flexShrink: 0,
-                            background: (catInfo?.color ?? "#9E9E9E") + "15",
-                            color: catInfo?.color ?? "#9E9E9E",
-                            display: "flex", alignItems: "center", justifyContent: "center",
+                            width: 22,
+                            fontSize: 9,
+                            color: "var(--hd-ink-40)",
+                            flexShrink: 0,
                           }}
                         >
-                          <ActiveCategoryIcon category={catInfo?.key ?? null} size={16} />
+                          {String(i + 1).padStart(2, "0")}
+                        </div>
+                        <div
+                          style={{
+                            width: 30,
+                            height: 30,
+                            borderRadius: 999,
+                            flexShrink: 0,
+                            background: (catInfo?.color ?? "#9E9E9E") + "1F",
+                            color: catInfo?.color ?? "#9E9E9E",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                          }}
+                        >
+                          <ActiveCategoryIcon category={catInfo?.key ?? null} size={13} />
                         </div>
                         <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ fontSize: 14, fontWeight: 600, fontFamily: "var(--hd-sans)" }}>
+                          <div
+                            className="hd-serif"
+                            style={{
+                              fontSize: 15,
+                              letterSpacing: "-0.01em",
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                              whiteSpace: "nowrap",
+                            }}
+                          >
                             {ing.nameJa}
                           </div>
                           {catInfo && (
-                            <div style={{ fontSize: 10, marginTop: 2, fontFamily: "var(--hd-sans)", color: catInfo.color }}>
+                            <div
+                              className="hd-mono hd-caps"
+                              style={{ color: "var(--hd-ink-40)", marginTop: 2 }}
+                            >
                               {catInfo.label}
                             </div>
                           )}
                         </div>
-                        <span style={{ fontSize: 10, color: "#D4A853", flexShrink: 0 }}>
+                        <span
+                          className="hd-mono"
+                          style={{
+                            fontSize: 11,
+                            color: "var(--hd-ink-60)",
+                            flexShrink: 0,
+                            letterSpacing: "0.05em",
+                          }}
+                        >
                           {"★".repeat(rarity)}
                           <span style={{ opacity: 0.3 }}>{"★".repeat(5 - rarity)}</span>
                         </span>
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--hd-ink-40)" strokeWidth="2" strokeLinecap="round">
+                        <svg
+                          width="10"
+                          height="10"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="var(--hd-ink-40)"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                        >
                           <path d="M9 18l6-6-6-6" />
                         </svg>
                       </button>
@@ -348,24 +415,65 @@ export default function ProductDetailPage() {
 
             {activeIngredients.length === 0 && (
               <div style={{ marginBottom: 24, padding: "32px 0", textAlign: "center" }}>
-                <p style={{ fontSize: 12, color: "var(--hd-ink-60)", fontFamily: "var(--hd-sans)" }}>
+                <p
+                  className="hd-mono hd-caps"
+                  style={{ color: "var(--hd-ink-40)" }}
+                >
+                  No Active Ingredients
+                </p>
+                <p
+                  className="hd-serif"
+                  style={{
+                    fontSize: 14,
+                    color: "var(--hd-ink-60)",
+                    marginTop: 8,
+                    letterSpacing: "-0.01em",
+                  }}
+                >
                   美容成分は検出されませんでした
                 </p>
               </div>
             )}
 
-            <p style={{ fontSize: 10, color: "var(--hd-ink-40)", lineHeight: 1.6, fontFamily: "var(--hd-sans)" }}>
-              成分をタップすると図鑑で詳細を確認できます
+            <p
+              className="hd-mono"
+              style={{
+                fontSize: 10,
+                color: "var(--hd-ink-40)",
+                lineHeight: 1.6,
+                letterSpacing: "0.04em",
+                marginTop: 12,
+              }}
+            >
+              ※ 成分をタップすると図鑑で詳細を確認できます
             </p>
 
             {/* Combinations */}
             {combinations.length > 0 && (
-              <div style={{ marginTop: 24, marginBottom: 24 }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
-                  <span style={{ width: 4, height: 18, borderRadius: 999, background: "var(--hd-moss)" }} />
-                  <div className="hd-serif" style={{ fontSize: 18 }}>組み合わせ情報</div>
+              <div style={{ marginTop: 28, marginBottom: 24 }}>
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "baseline",
+                    justifyContent: "space-between",
+                    paddingBottom: 10,
+                    marginBottom: 12,
+                    borderBottom: "1px solid var(--hd-ink)",
+                  }}
+                >
+                  <div>
+                    <div className="hd-mono hd-caps" style={{ color: "var(--hd-ink-40)" }}>
+                      Combinations · 組み合わせ
+                    </div>
+                    <div className="hd-serif" style={{ fontSize: 18, marginTop: 3, letterSpacing: "-0.01em" }}>
+                      組み合わせ情報
+                    </div>
+                  </div>
+                  <div className="hd-mono" style={{ fontSize: 12, color: "var(--hd-ink-60)" }}>
+                    {String(combinations.length).padStart(2, "0")}
+                  </div>
                 </div>
-                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                <div>
                   {combinations.map((combo, i) => {
                     const isGood = combo.type === "recommended";
                     const accent = isGood ? "var(--hd-moss)" : "var(--hd-terra)";
@@ -373,31 +481,53 @@ export default function ProductDetailPage() {
                       <div
                         key={i}
                         style={{
-                          borderRadius: 12, padding: 14,
-                          display: "flex", gap: 10,
+                          padding: "14px 14px",
+                          marginBottom: 8,
                           background: "var(--hd-surface)",
                           border: "1px solid var(--hd-hair)",
                           borderLeft: `3px solid ${accent}`,
                         }}
                       >
-                        <span style={{ fontSize: 16, flexShrink: 0 }}>{isGood ? "📚" : "📋"}</span>
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ fontWeight: 600, fontSize: 12, fontFamily: "var(--hd-sans)" }}>
-                            {combo.label}
-                          </div>
-                          <p
-                            style={{
-                              fontSize: 11, marginTop: 2, marginBottom: 0,
-                              color: "var(--hd-ink-60)", fontFamily: "var(--hd-sans)",
-                            }}
-                          >{combo.desc}</p>
-                          <p
-                            style={{
-                              fontSize: 10, marginTop: 2, marginBottom: 0,
-                              color: "var(--hd-ink-40)", fontFamily: "var(--hd-sans)",
-                            }}
-                          >出典: {combo.source}</p>
+                        <div
+                          className="hd-mono hd-caps"
+                          style={{ color: accent, marginBottom: 4 }}
+                        >
+                          {isGood ? "Recommended · 推奨" : "Note · 注意"}
                         </div>
+                        <div
+                          className="hd-serif"
+                          style={{
+                            fontSize: 14,
+                            letterSpacing: "-0.01em",
+                            lineHeight: 1.4,
+                          }}
+                        >
+                          {combo.label}
+                        </div>
+                        <p
+                          style={{
+                            fontFamily: "var(--hd-sans)",
+                            fontSize: 12,
+                            marginTop: 6,
+                            marginBottom: 0,
+                            color: "var(--hd-ink-60)",
+                            lineHeight: 1.6,
+                          }}
+                        >
+                          {combo.desc}
+                        </p>
+                        <p
+                          className="hd-mono"
+                          style={{
+                            fontSize: 9,
+                            marginTop: 6,
+                            marginBottom: 0,
+                            color: "var(--hd-ink-40)",
+                            letterSpacing: "0.05em",
+                          }}
+                        >
+                          SOURCE · {combo.source}
+                        </p>
                       </div>
                     );
                   })}
