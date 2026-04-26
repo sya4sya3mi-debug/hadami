@@ -25,7 +25,6 @@ export default function TargetedRakutenSection({
   keywords,
   ingredientHints = [],
   icon = "PR",
-  bgClass = "bg-[#FFF7F0]",
   hideIfEmpty = true,
   emptyMessage = "楽天で該当アイテムが見つからないため、ここでは非表示にしています。",
 }: Props) {
@@ -38,10 +37,10 @@ export default function TargetedRakutenSection({
         new Set(
           ingredientHints
             .map((hint) => hint.trim())
-            .filter((hint) => hint.length > 0)
-        )
+            .filter((hint) => hint.length > 0),
+        ),
       ).slice(0, 3),
-    [ingredientHints]
+    [ingredientHints],
   );
 
   const products = useMemo(() => {
@@ -71,26 +70,80 @@ export default function TargetedRakutenSection({
   if (!loading && products.length === 0 && hideIfEmpty) return null;
 
   return (
-    <div className={`rounded-r2 ${bgClass} border border-bo-parchment p-3`}>
-      <div className="flex items-center gap-2 mb-1">
-        <span className="inline-flex min-w-7 h-7 items-center justify-center rounded-full bg-white/80 px-2 text-[10px] font-bold text-bo-accent font-sans">
-          {icon}
-        </span>
-        <h3 className="text-[13px] font-bold text-bo-ink font-sans">{title}</h3>
+    <div
+      style={{
+        background: "var(--hd-surface-2)",
+        border: "1px solid var(--hd-hair)",
+        padding: "16px 16px",
+      }}
+    >
+      <div
+        style={{
+          display: "flex",
+          alignItems: "baseline",
+          justifyContent: "space-between",
+          marginBottom: description ? 6 : 12,
+        }}
+      >
+        <div
+          className="hd-mono hd-caps"
+          style={{ color: "var(--hd-ink-40)" }}
+        >
+          Sponsored · {icon}
+        </div>
+        <div
+          className="hd-mono"
+          style={{ fontSize: 9, color: "var(--hd-ink-40)", letterSpacing: "0.15em" }}
+        >
+          1 / {products.length || 6}
+        </div>
+      </div>
+
+      <div
+        className="hd-serif"
+        style={{
+          fontSize: 16,
+          lineHeight: 1.35,
+          letterSpacing: "-0.01em",
+          marginBottom: description ? 8 : 14,
+        }}
+      >
+        {title}
       </div>
 
       {description && (
-        <p className="text-[11px] leading-relaxed text-bo-ink-muted font-sans mb-2">
+        <p
+          style={{
+            fontFamily: "var(--hd-sans)",
+            fontSize: 11,
+            lineHeight: 1.7,
+            color: "var(--hd-ink-60)",
+            margin: "0 0 12px",
+          }}
+        >
           {description}
         </p>
       )}
 
       {normalizedHints.length > 0 && (
-        <div className="flex flex-wrap gap-1 mb-2">
+        <div
+          style={{
+            display: "flex",
+            flexWrap: "wrap",
+            gap: 6,
+            marginBottom: 14,
+          }}
+        >
           {normalizedHints.map((hint) => (
             <span
               key={hint}
-              className="text-[9px] px-1.5 py-0.5 rounded-full bg-white/80 text-bo-ink-muted font-sans"
+              className="hd-mono hd-caps"
+              style={{
+                padding: "3px 8px",
+                color: "var(--hd-ink-60)",
+                border: "1px solid var(--hd-hair)",
+                background: "var(--hd-bg)",
+              }}
             >
               {hint}
             </span>
@@ -103,13 +156,29 @@ export default function TargetedRakutenSection({
       ) : products.length > 0 ? (
         <AdCarousel products={products} />
       ) : (
-        <p className="text-xs text-bo-ink-muted font-sans py-3 text-center">
+        <p
+          style={{
+            fontFamily: "var(--hd-sans)",
+            fontSize: 12,
+            color: "var(--hd-ink-60)",
+            padding: "12px 0",
+            textAlign: "center",
+            margin: 0,
+          }}
+        >
           {emptyMessage}
         </p>
       )}
 
-      <div className="text-[9px] text-bo-ink-faint font-sans text-right mt-2">
-        楽天アフィリエイトを含みます
+      <div
+        className="hd-mono hd-caps"
+        style={{
+          color: "var(--hd-ink-40)",
+          textAlign: "right",
+          marginTop: 12,
+        }}
+      >
+        Rakuten Affiliate
       </div>
     </div>
   );

@@ -88,14 +88,30 @@ export default function AdCarousel({ products }: Props) {
 
       {/* ドットインジケーター */}
       {count > 1 && (
-        <div className="flex justify-center gap-1.5 mt-2">
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "center",
+            gap: 6,
+            marginTop: 10,
+          }}
+        >
           {products.map((_, i) => (
             <button
               key={i}
               onClick={() => goTo(i)}
-              className={`w-1.5 h-1.5 rounded-full border-none p-0 cursor-pointer transition-colors duration-300 ${
-                i === currentIndex ? "bg-bo-accent" : "bg-bo-parchment"
-              }`}
+              aria-label={`ad ${i + 1}`}
+              style={{
+                width: 5,
+                height: 5,
+                borderRadius: 999,
+                border: "none",
+                padding: 0,
+                cursor: "pointer",
+                background:
+                  i === currentIndex ? "var(--hd-ink)" : "var(--hd-hair)",
+                transition: "background-color 300ms ease",
+              }}
             />
           ))}
         </div>

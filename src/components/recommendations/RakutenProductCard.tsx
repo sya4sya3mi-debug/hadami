@@ -17,45 +17,129 @@ export default function RakutenProductCard({ product, fullWidth }: Props) {
         href={product.affiliateUrl}
         target="_blank"
         rel="noopener noreferrer sponsored"
-        className="flex w-full rounded-r1 border border-bo-parchment bg-white shadow-bo1 hover:shadow-bo2 transition-shadow no-underline relative overflow-hidden"
+        style={{
+          display: "flex",
+          width: "100%",
+          background: "var(--hd-surface)",
+          border: "1px solid var(--hd-hair)",
+          textDecoration: "none",
+          color: "inherit",
+          position: "relative",
+          overflow: "hidden",
+        }}
       >
-        {/* PRラベル */}
-        <span className="absolute top-2 right-2 text-[9px] font-bold px-1.5 py-0.5 rounded z-10" style={{ color: "#B88A2D", background: "#FDF6E3" }}>
+        <span
+          className="hd-mono hd-caps"
+          style={{
+            position: "absolute",
+            top: 8,
+            right: 8,
+            fontSize: 9,
+            padding: "2px 6px",
+            color: "var(--hd-ink-40)",
+            background: "var(--hd-bg)",
+            border: "1px solid var(--hd-hair)",
+            zIndex: 10,
+          }}
+        >
           PR
         </span>
 
-        {/* 商品画像 */}
-        <div className="shrink-0 w-[90px] bg-bo-cream overflow-hidden" style={{ height: "90px" }}>
+        <div
+          style={{
+            flexShrink: 0,
+            width: 96,
+            height: 96,
+            background: "var(--hd-surface-2)",
+            overflow: "hidden",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
           {imageSrc ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={imageSrc} alt={product.name} className="w-full h-full object-cover" />
+            <img
+              src={imageSrc}
+              alt={product.name}
+              style={{ width: "100%", height: "100%", objectFit: "cover" }}
+            />
           ) : (
-            <div className="w-full h-full flex items-center justify-center">
-              <span className="text-3xl text-bo-ink-faint">📦</span>
-            </div>
+            <span
+              className="hd-mono hd-caps"
+              style={{ color: "var(--hd-ink-40)" }}
+            >
+              No Img
+            </span>
           )}
         </div>
 
-        {/* 情報 */}
-        <div className="p-3 flex flex-col justify-center min-w-0">
-          <div className="text-[12px] font-semibold text-bo-ink font-sans line-clamp-2 leading-tight">
+        <div
+          style={{
+            padding: "12px 14px",
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "center",
+            minWidth: 0,
+            flex: 1,
+          }}
+        >
+          <div
+            className="hd-mono hd-caps"
+            style={{
+              color: "var(--hd-ink-40)",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap",
+              marginBottom: 4,
+            }}
+          >
+            {product.shopName}
+          </div>
+          <div
+            className="hd-serif"
+            style={{
+              fontSize: 13,
+              lineHeight: 1.35,
+              letterSpacing: "-0.01em",
+              display: "-webkit-box",
+              WebkitLineClamp: 2,
+              WebkitBoxOrient: "vertical",
+              overflow: "hidden",
+            }}
+          >
             {product.name}
           </div>
-          <div className="mt-1.5 flex items-center gap-2">
-            <span className="text-sm font-black text-bo-accent font-sans">
+          <div
+            style={{
+              marginTop: 8,
+              display: "flex",
+              alignItems: "baseline",
+              gap: 10,
+            }}
+          >
+            <span
+              className="hd-mono"
+              style={{
+                fontSize: 13,
+                color: "var(--hd-ink)",
+                letterSpacing: "0.02em",
+              }}
+            >
               ¥{product.price.toLocaleString()}
             </span>
             {product.reviewScore > 0 && (
-              <span className="flex items-center gap-0.5">
-                <span className="text-[10px] text-amber-500">★</span>
-                <span className="text-[10px] font-medium text-bo-ink-muted font-sans">
-                  {product.reviewScore.toFixed(1)}
-                </span>
+              <span
+                className="hd-mono"
+                style={{
+                  fontSize: 10,
+                  color: "var(--hd-ink-60)",
+                  letterSpacing: "0.05em",
+                }}
+              >
+                ★ {product.reviewScore.toFixed(1)}
               </span>
             )}
-          </div>
-          <div className="text-[9px] text-bo-ink-faint font-sans mt-1 truncate">
-            {product.shopName}
           </div>
         </div>
       </a>
@@ -68,57 +152,121 @@ export default function RakutenProductCard({ product, fullWidth }: Props) {
       href={product.affiliateUrl}
       target="_blank"
       rel="noopener noreferrer sponsored"
-      className="block rounded-r1 border border-bo-parchment bg-white shadow-bo1 hover:shadow-bo2 transition-shadow no-underline relative"
       style={{
+        display: "block",
+        background: "var(--hd-surface)",
+        border: "1px solid var(--hd-hair)",
+        textDecoration: "none",
+        color: "inherit",
+        position: "relative",
         minWidth: `${RAKUTEN_CARD_WIDTH_PX}px`,
         maxWidth: `${RAKUTEN_CARD_WIDTH_PX}px`,
+        overflow: "hidden",
       }}
     >
-      {/* PRラベル（ステマ規制対応） */}
-      <span className="absolute top-2 right-2 text-[9px] font-bold px-1.5 py-0.5 rounded z-10" style={{ color: "#B88A2D", background: "#FDF6E3" }}>
+      <span
+        className="hd-mono hd-caps"
+        style={{
+          position: "absolute",
+          top: 6,
+          right: 6,
+          fontSize: 9,
+          padding: "2px 6px",
+          color: "var(--hd-ink-40)",
+          background: "var(--hd-bg)",
+          border: "1px solid var(--hd-hair)",
+          zIndex: 10,
+        }}
+      >
         PR
       </span>
 
-      {/* 商品画像 */}
       <div
-        className="w-full bg-bo-cream rounded-t-r1 overflow-hidden"
-        style={{ height: "80px" }}
+        style={{
+          width: "100%",
+          height: 88,
+          background: "var(--hd-surface-2)",
+          overflow: "hidden",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
       >
         {imageSrc ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
             src={imageSrc}
             alt={product.name}
-            className="w-full h-full object-cover"
+            style={{ width: "100%", height: "100%", objectFit: "cover" }}
           />
         ) : (
-          <span className="text-3xl text-bo-ink-faint">📦</span>
+          <span
+            className="hd-mono hd-caps"
+            style={{ color: "var(--hd-ink-40)" }}
+          >
+            No Img
+          </span>
         )}
       </div>
 
-      {/* 情報 */}
-      <div className="p-2">
-        <div className="text-[11px] font-semibold text-bo-ink font-sans line-clamp-2 leading-tight min-h-[24px]">
+      <div style={{ padding: "10px 10px 12px" }}>
+        <div
+          className="hd-mono hd-caps"
+          style={{
+            color: "var(--hd-ink-40)",
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            whiteSpace: "nowrap",
+            marginBottom: 4,
+          }}
+        >
+          {product.shopName}
+        </div>
+        <div
+          className="hd-serif"
+          style={{
+            fontSize: 12,
+            lineHeight: 1.35,
+            letterSpacing: "-0.01em",
+            display: "-webkit-box",
+            WebkitLineClamp: 2,
+            WebkitBoxOrient: "vertical",
+            overflow: "hidden",
+            minHeight: 32,
+          }}
+        >
           {product.name}
         </div>
-
-        <div className="mt-1.5 flex items-baseline gap-1">
-          <span className="text-sm font-black text-bo-accent font-sans">
+        <div
+          style={{
+            marginTop: 8,
+            display: "flex",
+            alignItems: "baseline",
+            gap: 8,
+          }}
+        >
+          <span
+            className="hd-mono"
+            style={{
+              fontSize: 12,
+              color: "var(--hd-ink)",
+              letterSpacing: "0.02em",
+            }}
+          >
             ¥{product.price.toLocaleString()}
           </span>
-        </div>
-
-        {product.reviewScore > 0 && (
-          <div className="flex items-center gap-1 mt-1">
-            <span className="text-[10px] text-amber-500">★</span>
-            <span className="text-[10px] font-medium text-bo-ink-muted font-sans">
-              {product.reviewScore.toFixed(1)}
+          {product.reviewScore > 0 && (
+            <span
+              className="hd-mono"
+              style={{
+                fontSize: 10,
+                color: "var(--hd-ink-60)",
+                letterSpacing: "0.05em",
+              }}
+            >
+              ★ {product.reviewScore.toFixed(1)}
             </span>
-          </div>
-        )}
-
-        <div className="text-[9px] text-bo-ink-faint font-sans mt-1 truncate">
-          {product.shopName}
+          )}
         </div>
       </div>
     </a>
