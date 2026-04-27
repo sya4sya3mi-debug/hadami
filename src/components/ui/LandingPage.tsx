@@ -187,7 +187,7 @@ export default function LandingPage() {
             }}
           >
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-              <Image src="/hadami-logo.png" alt="HADAMI" width={28} height={28} style={{ borderRadius: 6 }} />
+              <Image src="/hadami-app-icon.png" alt="HADAMI" width={28} height={28} style={{ borderRadius: 6 }} />
               <span
                 className="hd-serif"
                 style={{ fontSize: 18, letterSpacing: "0.06em", fontStyle: "italic" }}
@@ -835,7 +835,7 @@ export default function LandingPage() {
           }}
         >
           <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 10, marginBottom: 16 }}>
-            <Image src="/hadami-logo.png" alt="HADAMI" width={22} height={22} style={{ borderRadius: 5 }} />
+            <Image src="/hadami-app-icon.png" alt="HADAMI" width={22} height={22} style={{ borderRadius: 5 }} />
             <span
               className="hd-serif"
               style={{ fontSize: 16, letterSpacing: "0.06em", fontStyle: "italic" }}

@@ -55,8 +55,6 @@ export default function DeckAnalysis({
     { key: "ingredients", label: "成分" },
   ];
 
-  const tabIndex = tabs.findIndex((t) => t.key === tab);
-
   const allIngredientIds = useMemo(
     () => deckProducts.flatMap((d) => d.ingredients.map((pi) => pi.ingredientId)),
     [deckProducts]

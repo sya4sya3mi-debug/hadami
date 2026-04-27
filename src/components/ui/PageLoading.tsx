@@ -18,7 +18,7 @@ export default function PageLoading({
       >
         <div className="w-20 h-20 mx-auto mb-4 animate-pulse">
           <Image
-            src="/hadami-logo.png"
+            src="/hadami-app-icon.png"
             alt="HADAMI"
             width={80}
             height={80}

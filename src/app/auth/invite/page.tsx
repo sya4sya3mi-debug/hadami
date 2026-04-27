@@ -64,7 +64,7 @@ export default function InvitePage() {
           }}
         >
           <Image
-            src="/hadami-logo.png"
+            src="/hadami-app-icon.png"
             alt="HADAMI"
             width={56}
             height={56}
