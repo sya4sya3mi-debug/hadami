@@ -66,57 +66,45 @@ export default function DeckAnalysis({
     <BottomSheet open={open} onClose={onClose} title="ルーティン分析" height="calc(100dvh - 2rem)">
       <div style={{ paddingBottom: 24 }}>
 
-        {/* Tab bar */}
+        {/* Tab bar — sharp inverted, same style as AM/PM segmented */}
         <div
           style={{
-            position: "relative",
-            display: "flex",
-            background: "var(--hd-mint-bg, #eef3f0)",
-            borderRadius: 10,
-            padding: 4,
+            display: "grid",
+            gridTemplateColumns: `repeat(${tabs.length}, 1fr)`,
+            border: "1px solid var(--hd-ink)",
             marginBottom: 20,
           }}
         >
-          <div
-            style={{
-              position: "absolute",
-              top: 4,
-              bottom: 4,
-              left: 4,
-              borderRadius: 8,
-              background: "var(--hd-bg)",
-              boxShadow: "0 1px 4px rgba(0,0,0,0.10)",
-              transition: "transform 0.25s cubic-bezier(0.25,0.1,0.25,1)",
-              width: `calc(${100 / tabs.length}% - ${(8 / tabs.length)}px)`,
-              transform: `translateX(calc(${tabIndex * 100}% + ${tabIndex * (8 / tabs.length)}px))`,
-            }}
-          />
-          {tabs.map((t) => (
-            <button
-              key={t.key}
-              onClick={() => setTab(t.key)}
-              style={{
-                position: "relative",
-                zIndex: 1,
-                flex: 1,
-                padding: "8px 0",
-                borderRadius: 8,
-                border: "none",
-                background: "transparent",
-                fontFamily: "var(--hd-sans)",
-                fontSize: 12,
-                fontWeight: 700,
-                cursor: "pointer",
-                transition: "color 0.2s",
-                color: tab === t.key ? "var(--hd-moss)" : "var(--hd-ink-40)",
-              }}
-            >
-              {t.label}
-              {t.key === "combos" && combinations.length > 0 && (
-                <span style={{ marginLeft: 3, fontSize: 10, opacity: 0.7 }}>({combinations.length})</span>
-              )}
-            </button>
-          ))}
+          {tabs.map((t, i) => {
+            const on = tab === t.key;
+            return (
+              <button
+                key={t.key}
+                onClick={() => setTab(t.key)}
+                style={{
+                  padding: "12px 0",
+                  cursor: "pointer",
+                  background: on ? "var(--hd-ink)" : "transparent",
+                  color: on ? "var(--hd-bg)" : "var(--hd-ink)",
+                  border: "none",
+                  borderLeft: i > 0 ? "1px solid var(--hd-ink)" : "none",
+                  fontFamily: "var(--hd-sans)",
+                  fontSize: 12,
+                  fontWeight: 600,
+                  letterSpacing: "0.01em",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: 4,
+                }}
+              >
+                {t.label}
+                {t.key === "combos" && combinations.length > 0 && (
+                  <span style={{ fontSize: 10, opacity: 0.7 }}>({combinations.length})</span>
+                )}
+              </button>
+            );
+          })}
         </div>
 
         {/* Coverage tab */}

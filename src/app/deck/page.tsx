@@ -374,7 +374,7 @@ export default function DeckPage() {
                     opacity: isCreatingShareCard ? 0.6 : 1,
                   }}
                 >
-                  🌿 シェアカードを作成
+                  シェアカードを作成
                 </button>
                 {isCreatingShareCard && (
                   <p style={{ marginTop: 8, textAlign: "center", fontSize: 12, color: "var(--hd-ink-60)", fontFamily: "var(--hd-sans)" }}>
@@ -419,7 +419,7 @@ export default function DeckPage() {
                     opacity: isCreatingShareCard ? 0.6 : 1,
                   }}
                 >
-                  🌿 シェアカードを作成
+                  シェアカードを作成
                 </button>
                 {isCreatingShareCard && (
                   <p style={{ marginTop: 8, textAlign: "center", fontSize: 12, color: "var(--hd-ink-60)", fontFamily: "var(--hd-sans)" }}>
