@@ -347,6 +347,7 @@ export default function HistoryPage() {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [updatingImageId, setUpdatingImageId] = useState<string | null>(null);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [deletingImageId, setDeletingImageId] = useState<string | null>(null);
   const [imageError, setImageError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -413,6 +414,7 @@ export default function HistoryPage() {
     reader.readAsDataURL(file);
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const handleDeleteImage = async (productId: string) => {
     if (!user) return;
     if (!window.confirm("このコスメの写真を削除しますか？")) return;
