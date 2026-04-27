@@ -15,54 +15,56 @@ interface StepIndicatorProps {
 
 export default function StepIndicator({ currentStep }: StepIndicatorProps) {
   return (
-    <div className="flex items-center justify-between mb-5 px-1">
+    <div style={{ display: "flex", alignItems: "center", marginBottom: 20, padding: "0 4px" }}>
       {STEPS.map((step, i) => {
         const stepNum = i + 1;
         const isCompleted = stepNum < currentStep;
         const isActive = stepNum === currentStep;
 
         return (
-          <div key={i} className={`flex items-center ${i < STEPS.length - 1 ? "flex-1" : ""}`}>
-            <div className="flex flex-col items-center gap-1.5 min-w-[48px]">
+          <div key={i} style={{ display: "flex", alignItems: "center", flex: i < STEPS.length - 1 ? 1 : undefined }}>
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 5, minWidth: 44 }}>
               <div
-                className={`w-10 h-10 rounded-[14px] flex items-center justify-center transition-all duration-300 ${
-                  isActive
-                    ? "bg-gradient-to-br from-bo-accent to-[#7DD3C8] text-white shadow-bo-accent scale-110"
-                    : isCompleted
-                    ? "bg-bo-accent text-white shadow-bo1"
-                    : "bg-white text-bo-ink-faint shadow-bo1"
-                }`}
+                style={{
+                  width: 36,
+                  height: 36,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  background: isActive || isCompleted ? "var(--hd-ink)" : "transparent",
+                  border: "1px solid var(--hd-ink)",
+                  color: isActive || isCompleted ? "var(--hd-bg)" : "var(--hd-ink-40)",
+                  transition: "background 0.2s, color 0.2s",
+                }}
               >
                 {isCompleted ? (
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                     <path d="M20 6L9 17l-5-5" />
                   </svg>
                 ) : (
-                  <step.Icon size={18} color="currentColor" />
+                  <step.Icon size={16} color="currentColor" />
                 )}
               </div>
               <span
-                className={`text-[10px] font-sans transition-colors duration-300 ${
-                  isActive
-                    ? "font-bold text-bo-accent"
-                    : isCompleted
-                    ? "font-semibold text-bo-accent"
-                    : "font-medium text-bo-ink-faint"
-                }`}
+                style={{
+                  fontFamily: "var(--hd-mono)",
+                  fontSize: 9,
+                  letterSpacing: "0.1em",
+                  color: isActive ? "var(--hd-ink)" : isCompleted ? "var(--hd-ink-60)" : "var(--hd-ink-40)",
+                  fontWeight: isActive ? 700 : 400,
+                }}
               >
                 {step.label}
               </span>
             </div>
             {i < STEPS.length - 1 && (
-              <div className="flex-1 mx-2 mb-5">
+              <div style={{ flex: 1, margin: "0 6px", marginBottom: 20 }}>
                 <div
-                  className={`h-[2.5px] rounded-full transition-all duration-500 ${
-                    isCompleted
-                      ? "bg-bo-accent"
-                      : isActive
-                      ? "bg-gradient-to-r from-bo-accent to-bo-parchment"
-                      : "bg-bo-parchment"
-                  }`}
+                  style={{
+                    height: 1,
+                    background: isCompleted ? "var(--hd-ink)" : "var(--hd-hair)",
+                    transition: "background 0.3s",
+                  }}
                 />
               </div>
             )}
