@@ -13,7 +13,7 @@ import { AlertIcon, CheckCircleIcon } from "@/components/ui/Icons";
 
 const CoverageChart = dynamic(() => import("./CoverageChart"), {
   loading: () => (
-    <div className="h-[280px] flex items-center justify-center text-sm text-bo-ink-muted">
+    <div style={{ height: 280, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "var(--hd-sans)", fontSize: 13, color: "var(--hd-ink-40)" }}>
       チャート読み込み中...
     </div>
   ),
@@ -64,28 +64,56 @@ export default function DeckAnalysis({
 
   return (
     <BottomSheet open={open} onClose={onClose} title="ルーティン分析" height="calc(100dvh - 2rem)">
-      <div className="pb-6">
+      <div style={{ paddingBottom: 24 }}>
+
         {/* Tab bar */}
-        <div className="relative flex bg-bo-cream rounded-r1 p-1 mb-5">
+        <div
+          style={{
+            position: "relative",
+            display: "flex",
+            background: "var(--hd-mint-bg, #eef3f0)",
+            borderRadius: 10,
+            padding: 4,
+            marginBottom: 20,
+          }}
+        >
           <div
-            className="absolute top-1 bottom-1 rounded-[10px] bg-white shadow-bo1 transition-transform duration-300 ease-[cubic-bezier(0.25,0.1,0.25,1)]"
             style={{
-              width: `calc(${100 / tabs.length}% - 4px)`,
-              transform: `translateX(calc(${tabIndex * 100}% + ${tabIndex * 4}px))`,
-              left: "2px",
+              position: "absolute",
+              top: 4,
+              bottom: 4,
+              left: 4,
+              borderRadius: 8,
+              background: "var(--hd-bg)",
+              boxShadow: "0 1px 4px rgba(0,0,0,0.10)",
+              transition: "transform 0.25s cubic-bezier(0.25,0.1,0.25,1)",
+              width: `calc(${100 / tabs.length}% - ${(8 / tabs.length)}px)`,
+              transform: `translateX(calc(${tabIndex * 100}% + ${tabIndex * (8 / tabs.length)}px))`,
             }}
           />
           {tabs.map((t) => (
             <button
               key={t.key}
               onClick={() => setTab(t.key)}
-              className={`relative z-10 flex-1 py-2 rounded-[10px] border-none text-xs font-bold font-sans cursor-pointer transition-colors duration-200 ${
-                tab === t.key ? "text-bo-accent" : "text-bo-ink-muted"
-              }`}
+              style={{
+                position: "relative",
+                zIndex: 1,
+                flex: 1,
+                padding: "8px 0",
+                borderRadius: 8,
+                border: "none",
+                background: "transparent",
+                fontFamily: "var(--hd-sans)",
+                fontSize: 12,
+                fontWeight: 700,
+                cursor: "pointer",
+                transition: "color 0.2s",
+                color: tab === t.key ? "var(--hd-moss)" : "var(--hd-ink-40)",
+              }}
             >
               {t.label}
               {t.key === "combos" && combinations.length > 0 && (
-                <span className="ml-1 text-[10px] opacity-70">({combinations.length})</span>
+                <span style={{ marginLeft: 3, fontSize: 10, opacity: 0.7 }}>({combinations.length})</span>
               )}
             </button>
           ))}
@@ -93,26 +121,63 @@ export default function DeckAnalysis({
 
         {/* Coverage tab */}
         {tab === "coverage" && (
-          <div className="animate-fade-up">
+          <div>
             {/* Stats grid */}
-            <div className="grid grid-cols-3 gap-2.5 mb-5">
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10, marginBottom: 20 }}>
               {[
-                { value: `${coveredCategories}/${ACTIVE_CATEGORIES.length}`, label: "効果カバー", color: "#3A8F7A" },
+                { value: `${coveredCategories}/${ACTIVE_CATEGORIES.length}`, label: "効果カバー", color: "var(--hd-moss)" },
                 { value: `${totalIngredients}`, label: "成分数", color: "#D4A853" },
                 { value: `${deckProducts.length}`, label: "アイテム", color: "#6B4A8A" },
               ].map((s) => (
-                <div key={s.label} className="text-center py-3.5 rounded-r2 bg-white shadow-bo1">
-                  <div className="text-xl font-black font-serif" style={{ color: s.color }}>
+                <div
+                  key={s.label}
+                  style={{
+                    textAlign: "center",
+                    padding: "14px 8px",
+                    background: "var(--hd-bg)",
+                    border: "1px solid var(--hd-hair)",
+                  }}
+                >
+                  <div
+                    className="hd-serif"
+                    style={{ fontSize: 20, fontWeight: 900, color: s.color }}
+                  >
                     {s.value}
                   </div>
-                  <div className="text-[10px] text-bo-ink-muted font-sans mt-0.5">{s.label}</div>
+                  <div
+                    style={{
+                      fontFamily: "var(--hd-mono)",
+                      fontSize: 9,
+                      letterSpacing: "0.16em",
+                      textTransform: "uppercase",
+                      color: "var(--hd-ink-40)",
+                      marginTop: 4,
+                    }}
+                  >
+                    {s.label}
+                  </div>
                 </div>
               ))}
             </div>
 
             {/* Concern coverage */}
-            <div className="bg-white rounded-r2 shadow-bo1 p-5 mb-5">
-              <div className="text-sm font-bold text-bo-ink font-sans mb-4">
+            <div
+              style={{
+                background: "var(--hd-bg)",
+                border: "1px solid var(--hd-hair)",
+                padding: 20,
+                marginBottom: 20,
+              }}
+            >
+              <div
+                style={{
+                  fontFamily: "var(--hd-sans)",
+                  fontSize: 11,
+                  fontWeight: 600,
+                  color: "var(--hd-ink)",
+                  marginBottom: 16,
+                }}
+              >
                 効能別のカバー
               </div>
               {SKIN_CONCERNS.map((concern) => {
@@ -122,30 +187,56 @@ export default function DeckAnalysis({
                 const covered = coveredKeys.length > 0;
                 const pct = (coveredKeys.length / concern.keyIngredients.length) * 100;
                 return (
-                  <div key={concern.label} className="mb-3 last:mb-0">
-                    <div className="flex justify-between items-center mb-1.5">
+                  <div key={concern.label} style={{ marginBottom: 14 }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
                       <span
-                        className={`text-xs font-semibold font-sans flex items-center gap-1 ${
-                          covered ? "text-bo-ink-soft" : "text-bo-ink-faint"
-                        }`}
+                        style={{
+                          fontFamily: "var(--hd-sans)",
+                          fontSize: 12,
+                          fontWeight: 600,
+                          color: covered ? "var(--hd-ink)" : "var(--hd-ink-40)",
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 5,
+                        }}
                       >
                         {covered
-                          ? <CheckCircleIcon size={12} color="#3A8F7A" />
+                          ? <CheckCircleIcon size={12} color="var(--hd-moss)" />
                           : <svg width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="1.8" /><path d="M15 9l-6 6M9 9l6 6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /></svg>
                         }
                         <SkinConcernIcon concern={concern.label} size={12} />
                         {concern.label}
                       </span>
-                      <span className="text-[11px] text-bo-ink-muted font-sans">
+                      <span
+                        style={{
+                          fontFamily: "var(--hd-mono)",
+                          fontSize: 10,
+                          color: "var(--hd-ink-40)",
+                        }}
+                      >
                         {covered
                           ? `${coveredKeys.length}/${concern.keyIngredients.length}成分`
                           : "未カバー"}
                       </span>
                     </div>
-                    <div className="h-1.5 rounded-full bg-bo-parchment/60 overflow-hidden">
+                    <div
+                      style={{
+                        height: 2,
+                        background: "var(--hd-hair)",
+                        position: "relative",
+                        overflow: "hidden",
+                      }}
+                    >
                       <div
-                        className="h-full rounded-full transition-all duration-500"
-                        style={{ width: `${pct}%`, backgroundColor: concern.color }}
+                        style={{
+                          position: "absolute",
+                          left: 0,
+                          top: 0,
+                          height: "100%",
+                          width: `${pct}%`,
+                          background: concern.color,
+                          transition: "width 0.5s ease",
+                        }}
                       />
                     </div>
                   </div>
@@ -154,8 +245,22 @@ export default function DeckAnalysis({
             </div>
 
             {/* Radar chart */}
-            <div className="bg-white rounded-r2 shadow-bo1 p-4">
-              <div className="text-sm font-bold text-bo-ink font-sans mb-2">
+            <div
+              style={{
+                background: "var(--hd-bg)",
+                border: "1px solid var(--hd-hair)",
+                padding: 16,
+              }}
+            >
+              <div
+                style={{
+                  fontFamily: "var(--hd-sans)",
+                  fontSize: 11,
+                  fontWeight: 600,
+                  color: "var(--hd-ink)",
+                  marginBottom: 8,
+                }}
+              >
                 カテゴリ別レーダー
               </div>
               <CoverageChart categoryCounts={categoryCounts} />
@@ -165,28 +270,75 @@ export default function DeckAnalysis({
 
         {/* Combinations tab */}
         {tab === "combos" && (
-          <div className="animate-fade-up">
+          <div>
             {combinations.length === 0 ? (
-              <div className="text-center py-12 text-sm text-bo-ink-muted font-sans">
-                <p>成分の組み合わせ情報はまだありません</p>
+              <div
+                style={{
+                  textAlign: "center",
+                  padding: "48px 20px",
+                  fontFamily: "var(--hd-sans)",
+                  fontSize: 13,
+                  color: "var(--hd-ink-40)",
+                }}
+              >
+                成分の組み合わせ情報はまだありません
               </div>
             ) : (
               <>
                 {recommendedCombos.length > 0 && (
-                  <div className="mb-5">
-                    <h3 className="font-bold text-sm text-bo-ink mb-1.5 flex items-center gap-2 font-sans">
-                      <span className="w-5 h-5 rounded-full bg-bo-accent-soft text-bo-accent flex items-center justify-center text-[10px]">
+                  <div style={{ marginBottom: 20 }}>
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 8,
+                        marginBottom: 6,
+                      }}
+                    >
+                      <span
+                        style={{
+                          width: 20,
+                          height: 20,
+                          borderRadius: 999,
+                          background: "var(--hd-moss)",
+                          color: "#fff",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          fontSize: 10,
+                          flexShrink: 0,
+                        }}
+                      >
                         ✓
                       </span>
-                      相乗効果
-                      <span className="text-xs font-normal text-bo-ink-muted">
+                      <span
+                        className="hd-serif"
+                        style={{ fontSize: 14, color: "var(--hd-ink)" }}
+                      >
+                        相乗効果
+                      </span>
+                      <span
+                        style={{
+                          fontFamily: "var(--hd-mono)",
+                          fontSize: 10,
+                          color: "var(--hd-ink-40)",
+                        }}
+                      >
                         ({recommendedCombos.length}件)
                       </span>
-                    </h3>
-                    <p className="text-xs text-bo-ink-muted mb-3 font-sans">
+                    </div>
+                    <p
+                      style={{
+                        fontFamily: "var(--hd-sans)",
+                        fontSize: 11,
+                        color: "var(--hd-ink-40)",
+                        marginBottom: 12,
+                        lineHeight: 1.6,
+                      }}
+                    >
                       成分同士でより良いはたらきが期待できる組み合わせ
                     </p>
-                    <div className="space-y-2.5">
+                    <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                       {comboWithSources
                         .filter((c) => c.combo.type === "recommended")
                         .map((item, i) => (
@@ -201,14 +353,32 @@ export default function DeckAnalysis({
                 )}
                 {cautionCombos.length > 0 && (
                   <div>
-                    <h3 className="font-bold text-sm text-bo-ink mb-3 flex items-center gap-2 font-sans">
-                      <AlertIcon size={16} color="#F59E0B" />
-                      注意が必要な組み合わせ
-                      <span className="text-xs font-normal text-bo-ink-muted">
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 8,
+                        marginBottom: 12,
+                      }}
+                    >
+                      <AlertIcon size={16} color="#D4A853" />
+                      <span
+                        className="hd-serif"
+                        style={{ fontSize: 14, color: "var(--hd-ink)" }}
+                      >
+                        注意が必要な組み合わせ
+                      </span>
+                      <span
+                        style={{
+                          fontFamily: "var(--hd-mono)",
+                          fontSize: 10,
+                          color: "var(--hd-ink-40)",
+                        }}
+                      >
                         ({cautionCombos.length}件)
                       </span>
-                    </h3>
-                    <div className="space-y-2.5">
+                    </div>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                       {comboWithSources
                         .filter((c) => c.combo.type === "note")
                         .map((item, i) => (
@@ -228,7 +398,7 @@ export default function DeckAnalysis({
 
         {/* Ingredients tab */}
         {tab === "ingredients" && (
-          <div className="animate-fade-up space-y-2.5">
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
             {ACTIVE_CATEGORIES.map((cat) => {
               const ings: { id: string; nameJa: string }[] = [];
               const seen = new Set<string>();
@@ -249,26 +419,44 @@ export default function DeckAnalysis({
               return (
                 <div
                   key={cat.key}
-                  className="w-full rounded-r2 p-4 shadow-bo1"
                   style={{
+                    padding: 16,
                     background: cat.color + "0A",
-                    border: `1px solid ${cat.color}20`,
+                    border: `1px solid ${cat.color}30`,
                   }}
                 >
-                  <div className="flex items-center gap-1.5 mb-2">
-                    <span style={{ color: cat.color }}><ActiveCategoryIcon category={cat.key} size={16} /></span>
-                    <span className="text-sm font-bold font-sans" style={{ color: cat.color }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 10 }}>
+                    <span style={{ color: cat.color }}>
+                      <ActiveCategoryIcon category={cat.key} size={16} />
+                    </span>
+                    <span
+                      className="hd-serif"
+                      style={{ fontSize: 13, color: cat.color }}
+                    >
                       {cat.label}
                     </span>
-                    <span className="text-xs text-bo-ink-muted font-sans">({ings.length}種)</span>
+                    <span
+                      style={{
+                        fontFamily: "var(--hd-mono)",
+                        fontSize: 9,
+                        color: "var(--hd-ink-40)",
+                      }}
+                    >
+                      ({ings.length}種)
+                    </span>
                   </div>
-                  <div className="flex flex-wrap gap-1.5">
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
                     {ings.map((ing) => (
                       <Link
                         key={ing.id}
                         href={`/ingredient/${ing.id}`}
-                        className="text-xs px-2.5 py-1 rounded-full no-underline font-sans font-medium"
                         style={{
+                          fontFamily: "var(--hd-sans)",
+                          fontSize: 11,
+                          fontWeight: 600,
+                          padding: "4px 10px",
+                          borderRadius: 999,
+                          textDecoration: "none",
                           background: cat.color + "20",
                           color: cat.color,
                         }}

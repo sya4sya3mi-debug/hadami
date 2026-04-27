@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <!-- HADAMI App Icon — Custom Tuned -->
+  <rect width="1024" height="1024" fill="#161a18"/>
+  <text
+    x="481.28" y="706.56"
+    text-anchor="middle"
+    font-family="'Cormorant Garamond', 'EB Garamond', serif"
+    font-size="655.36"
+    font-style="italic"
+    font-weight="300"
+    fill="#F2EFE8"
+  >H</text>
+  <circle cx="737.28" cy="727.04" r="55.29600000000001" fill="#5a9670"/>
+</svg>

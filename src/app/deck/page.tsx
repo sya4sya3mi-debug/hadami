@@ -354,12 +354,19 @@ export default function DeckPage() {
                   type="button"
                   onClick={() => { void handleCreateShareCard(); }}
                   disabled={isCreatingShareCard}
-                  className="hd-cta"
                   style={{
                     width: "100%",
                     marginTop: 12,
                     cursor: isCreatingShareCard ? "default" : "pointer",
-                    fontSize: 14,
+                    fontSize: 13,
+                    fontFamily: "var(--hd-sans)",
+                    fontStyle: "normal",
+                    fontWeight: 600,
+                    letterSpacing: "0.01em",
+                    background: "var(--hd-ink)",
+                    color: "var(--hd-bg)",
+                    border: "none",
+                    padding: "14px 22px",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
@@ -392,12 +399,19 @@ export default function DeckPage() {
                   type="button"
                   onClick={() => { void handleCreateShareCard(); }}
                   disabled={isCreatingShareCard}
-                  className="hd-cta"
                   style={{
                     width: "100%",
                     marginTop: 24,
                     cursor: isCreatingShareCard ? "default" : "pointer",
-                    fontSize: 14,
+                    fontSize: 13,
+                    fontFamily: "var(--hd-sans)",
+                    fontStyle: "normal",
+                    fontWeight: 600,
+                    letterSpacing: "0.01em",
+                    background: "var(--hd-ink)",
+                    color: "var(--hd-bg)",
+                    border: "none",
+                    padding: "14px 22px",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
