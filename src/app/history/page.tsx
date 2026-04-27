@@ -82,6 +82,7 @@ interface CoverCardProps {
   showFeatured?: boolean;
   favSize?: number;
   gradientStop?: string;
+  priority?: boolean;
   editMode?: boolean;
   isSelected?: boolean;
   failedImageIds: Set<string>;
@@ -100,6 +101,7 @@ function CoverCard({
   showFeatured = false,
   favSize = 22,
   gradientStop = "oklch(0.18 0.02 90 / 0.55)",
+  priority = false,
   editMode = false,
   isSelected = false,
   failedImageIds,
@@ -128,8 +130,9 @@ function CoverCard({
           alt={p.name}
           fill
           style={{ objectFit: "cover" }}
-          sizes="(max-width:430px) 60vw, 300px"
-          loading="lazy"
+          sizes="(max-width:430px) 55vw, 300px"
+          priority={priority}
+          loading={priority ? undefined : "lazy"}
         />
       ) : (
         <div
@@ -491,8 +494,9 @@ export default function HistoryPage() {
   const layoutLabels: Record<LayoutMode, string> = { magazine: "Magazine", mosaic: "Mosaic", list: "List" };
 
   // ── Shared cover card props helper ────────────────────────
-  const coverCardProps = (p: Product, idx: number) => ({
+  const coverCardProps = (p: Product, idx: number, pri = false) => ({
     p, index: idx,
+    priority: pri,
     failedImageIds,
     editMode,
     isSelected: selectedIds.has(p.id),
@@ -502,35 +506,57 @@ export default function HistoryPage() {
     onShare: (e: React.MouseEvent) => { e.stopPropagation(); openShare(p); },
   });
 
+  // Overflow grid — shows items beyond the featured section
+  function OverflowGrid({ items, startIdx }: { items: Product[]; startIdx: number }) {
+    if (items.length === 0) return null;
+    return (
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+        {items.map((p, i) => (
+          <div key={p.id} style={{ aspectRatio: "2/3", opacity: deletingId === p.id ? 0.5 : 1 }}>
+            <CoverCard
+              {...coverCardProps(p, startIdx + i)}
+              style={{ width: "100%", height: "100%", borderRadius: 12 }}
+              nameSize={11}
+              favSize={22}
+            />
+          </div>
+        ))}
+      </div>
+    );
+  }
+
   // ── Magazine grid ─────────────────────────────────────────
   function MagazineGrid() {
     if (filtered.length === 0) return <NoResults />;
     const hero = filtered[0];
     const right = filtered.slice(1, 3);
     const bottom = filtered.slice(3, 6);
+    const rest = filtered.slice(6);
     return (
       <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
         {/* Top row */}
-        <div style={{ display: "grid", gridTemplateColumns: "1.6fr 1fr", gap: 10 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "1.6fr 1fr", gap: 10, alignItems: "start" }}>
           {/* Hero */}
           {hero && (
-            <CoverCard
-              {...coverCardProps(hero, 0)}
-              style={{ aspectRatio: "2/3", borderRadius: 18 }}
-              nameSize={15}
-              brandSize={9}
-              showFeatured
-              favSize={28}
-              gradientStop="oklch(0.18 0.02 90 / 0.7)"
-            />
+            <div style={{ aspectRatio: "2/3", opacity: deletingId === hero.id ? 0.5 : 1 }}>
+              <CoverCard
+                {...coverCardProps(hero, 0, true)}
+                style={{ width: "100%", height: "100%", borderRadius: 18 }}
+                nameSize={15}
+                brandSize={9}
+                showFeatured
+                favSize={28}
+                gradientStop="oklch(0.18 0.02 90 / 0.7)"
+              />
+            </div>
           )}
-          {/* Right stack */}
-          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          {/* Right stack — flex:1 items share the hero's height */}
+          <div style={{ display: "flex", flexDirection: "column", gap: 10, alignSelf: "stretch" }}>
             {right.map((p, i) => (
-              <div key={p.id} style={{ flex: 1, opacity: deletingId === p.id ? 0.5 : 1 }}>
+              <div key={p.id} style={{ flex: 1, minHeight: 0, overflow: "hidden", borderRadius: 12, opacity: deletingId === p.id ? 0.5 : 1 }}>
                 <CoverCard
-                  {...coverCardProps(p, i + 1)}
-                  style={{ height: "100%", borderRadius: 12 }}
+                  {...coverCardProps(p, i + 1, i === 0)}
+                  style={{ width: "100%", height: "100%", borderRadius: 12 }}
                   nameSize={11}
                   favSize={22}
                 />
@@ -553,7 +579,8 @@ export default function HistoryPage() {
             ))}
           </div>
         )}
-        {/* Edit mode genre panels */}
+        {/* Remaining items */}
+        <OverflowGrid items={rest} startIdx={6} />
         {editMode && <EditGenrePanels />}
       </div>
     );
@@ -565,23 +592,25 @@ export default function HistoryPage() {
     const left = filtered[0];
     const rightStack = filtered.slice(1, 4);
     const wide = filtered[4];
+    const rest = filtered.slice(5);
     return (
       <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-        {/* Top section */}
-        <div style={{ display: "grid", gridTemplateColumns: "1.1fr 1fr", gap: 8 }}>
+        {/* Top section — right column stretches to match left card height */}
+        <div style={{ display: "grid", gridTemplateColumns: "1.1fr 1fr", gap: 8, alignItems: "start" }}>
           {left && (
             <div style={{ aspectRatio: "2/2.8", opacity: deletingId === left.id ? 0.5 : 1 }}>
               <CoverCard
-                {...coverCardProps(left, 0)}
+                {...coverCardProps(left, 0, true)}
                 style={{ width: "100%", height: "100%", borderRadius: 16 }}
                 nameSize={12}
                 favSize={24}
               />
             </div>
           )}
-          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          {/* Right stack — flex:1 so 3 items share the left card's height */}
+          <div style={{ display: "flex", flexDirection: "column", gap: 8, alignSelf: "stretch" }}>
             {rightStack.map((p, i) => (
-              <div key={p.id} style={{ aspectRatio: "3/2.2", opacity: deletingId === p.id ? 0.5 : 1 }}>
+              <div key={p.id} style={{ flex: 1, minHeight: 0, overflow: "hidden", borderRadius: 12, opacity: deletingId === p.id ? 0.5 : 1 }}>
                 <CoverCard
                   {...coverCardProps(p, i + 1)}
                   style={{ width: "100%", height: "100%", borderRadius: 12 }}
@@ -604,6 +633,8 @@ export default function HistoryPage() {
             />
           </div>
         )}
+        {/* Remaining items */}
+        <OverflowGrid items={rest} startIdx={5} />
         {editMode && <EditGenrePanels />}
       </div>
     );
@@ -728,7 +759,8 @@ export default function HistoryPage() {
                       fill
                       style={{ objectFit: "cover" }}
                       sizes="70px"
-                      loading="lazy"
+                      priority={idx < 4}
+                      loading={idx < 4 ? undefined : "lazy"}
                       onError={() => setFailedImageIds((prev) => new Set(prev).add(p.id))}
                     />
                   ) : (
