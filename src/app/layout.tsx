@@ -13,7 +13,10 @@ export const metadata: Metadata = {
   description: "化粧品の成分表を撮影するだけで成分を解析し、図鑑として集め、スキンケアルーティンを組めるアプリ",
   manifest: "/manifest.json",
   icons: {
-    icon: "/favicon.ico",
+    icon: [
+      { url: "/icon.svg", type: "image/svg+xml" },
+      { url: "/favicon.ico", sizes: "48x48" },
+    ],
     apple: [
       { url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
     ],
