@@ -24,7 +24,6 @@ interface ScanResultProps {
   onSave?: () => void;
   saved: boolean;
   imagePreview?: string;
-  newDiscoveryIds?: Set<string>;
 }
 
 export default function ScanResult({
@@ -37,7 +36,6 @@ export default function ScanResult({
   onSave,
   saved,
   imagePreview,
-  newDiscoveryIds,
 }: ScanResultProps) {
   const [showUnknown, setShowUnknown] = useState(false);
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set(["_all"]));
@@ -362,7 +360,6 @@ export default function ScanResult({
                           key={ingredient.id}
                           ingredient={ingredient}
                           orderIndex={orderIndex}
-                          isNew={newDiscoveryIds?.has(ingredient.id)}
                           onSelect={setSelectedIngredient}
                         />
                       ))}
@@ -379,7 +376,6 @@ export default function ScanResult({
                 key={ingredient.id}
                 ingredient={ingredient}
                 orderIndex={orderIndex}
-                isNew={newDiscoveryIds?.has(ingredient.id)}
                 onSelect={setSelectedIngredient}
               />
             ))}
@@ -644,12 +640,10 @@ function Section({
 function IngredientRow({
   ingredient,
   orderIndex,
-  isNew,
   onSelect,
 }: {
   ingredient: Ingredient;
   orderIndex: number;
-  isNew?: boolean;
   onSelect: (ingredient: Ingredient) => void;
 }) {
   const c = getIngredientCategoryInfo(ingredient);
@@ -664,7 +658,7 @@ function IngredientRow({
         gap: 12,
         padding: "12px 14px",
         background: "var(--hd-surface)",
-        border: `1px solid ${isNew ? "var(--hd-ink)" : "var(--hd-hair)"}`,
+        border: "1px solid var(--hd-hair)",
         cursor: "pointer",
         fontFamily: "var(--hd-sans)",
       }}
@@ -680,21 +674,6 @@ function IngredientRow({
           >
             {ingredient.nameJa}
           </span>
-          {isNew && (
-            <span
-              className="hd-mono hd-caps"
-              style={{
-                fontSize: 8,
-                padding: "2px 6px",
-                background: "var(--hd-ink)",
-                color: "var(--hd-bg)",
-                letterSpacing: "0.14em",
-                fontWeight: 700,
-              }}
-            >
-              New
-            </span>
-          )}
         </div>
         <div
           className="hd-mono"

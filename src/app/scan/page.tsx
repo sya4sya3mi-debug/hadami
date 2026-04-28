@@ -11,7 +11,6 @@ import ClassifyStep from "@/components/scan/ClassifyStep";
 import ScanResult from "@/components/scan/ScanResult";
 import ScanDiscoveryAd from "@/components/recommendations/ScanDiscoveryAd";
 import ManualInputSheet from "@/components/scan/ManualInputSheet";
-import DiscoveryModal from "@/components/ui/DiscoveryModal";
 import AuthGuard from "@/components/ui/AuthGuard";
 import Disclaimer from "@/components/ui/Disclaimer";
 import { extractIngredients } from "@/lib/ocr";
@@ -139,8 +138,6 @@ function ScanPageInner() {
   const [foundIngredients, setFoundIngredients] = useState<{ ingredient: Ingredient; orderIndex: number }[]>([]);
   const [unknownIngredients, setUnknownIngredients] = useState<string[]>([]);
   const [combinations, setCombinations] = useState<Combination[]>([]);
-  const [newDiscoveries, setNewDiscoveries] = useState<Ingredient[]>([]);
-  const [showDiscovery, setShowDiscovery] = useState(false);
   const [saved, setSaved] = useState(false);
   const [saveError, setSaveError] = useState("");
   const isSavingRef = useRef(false);
@@ -339,7 +336,6 @@ function ScanPageInner() {
       setFoundIngredients(foundIngs);
       setUnknownIngredients(result.unknown);
       setCombinations(combos);
-      setNewDiscoveries(discoveries);
       setIsQuasiDrug(qd);
       setResolvedActiveIngredients(resolved);
 
@@ -363,7 +359,6 @@ function ScanPageInner() {
 
       setTimeout(() => {
         setStep(3);
-        if (discoveries.length > 0) setShowDiscovery(true);
       }, 500);
     },
     [processIngredients]
@@ -565,8 +560,7 @@ function ScanPageInner() {
 
           setTimeout(() => {
             setStep(3);
-            if (discoveries.length > 0) setShowDiscovery(true);
-          }, 500);
+            }, 500);
         } else {
           const first = products[0] || data;
           setProductName(first.productName || "スキャンしたコスメ");
@@ -650,7 +644,6 @@ function ScanPageInner() {
 
         setTimeout(() => {
           setStep(3);
-          if (discoveries.length > 0) setShowDiscovery(true);
         }, 500);
       } catch (error) {
         console.error("OCR error:", error);
@@ -696,7 +689,6 @@ function ScanPageInner() {
 
         setTimeout(() => {
           setStep(3);
-          if (discoveries.length > 0) setShowDiscovery(true);
         }, 300);
       } catch (error) {
         console.error("Multi-product resolve error:", error);
@@ -888,8 +880,7 @@ function ScanPageInner() {
     setFoundIngredients([]);
     setUnknownIngredients([]);
     setCombinations([]);
-    setNewDiscoveries([]);
-    setSaved(false);
+      setSaved(false);
     setSaveError("");
     setIsQuasiDrug(false);
     setResolvedActiveIngredients([]);
@@ -1182,15 +1173,11 @@ function ScanPageInner() {
                   onSave={handleSave}
                   saved={saved}
                   imagePreview={packageImage}
-                  newDiscoveryIds={new Set(newDiscoveries.map((i) => i.id))}
                 />
               </>
             )}
           </div>
 
-          {showDiscovery && (
-            <DiscoveryModal ingredients={newDiscoveries} onClose={() => setShowDiscovery(false)} />
-          )}
         </div>
         <ManualInputSheet
           open={showManualSheet}
