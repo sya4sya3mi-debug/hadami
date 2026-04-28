@@ -1,7 +1,7 @@
 "use client";
 
 import "@/styles/hadami-tokens.css";
-import { useMemo, useRef, useState } from "react";
+import React, { useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
@@ -506,23 +506,101 @@ export default function HistoryPage() {
     onShare: (e: React.MouseEvent) => { e.stopPropagation(); openShare(p); },
   });
 
-  // Overflow grid — shows items beyond the featured section
-  function OverflowGrid({ items, startIdx }: { items: Product[]; startIdx: number }) {
-    if (items.length === 0) return null;
-    return (
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-        {items.map((p, i) => (
-          <div key={p.id} style={{ aspectRatio: "2/3", opacity: deletingId === p.id ? 0.5 : 1 }}>
-            <CoverCard
-              {...coverCardProps(p, startIdx + i)}
-              style={{ width: "100%", height: "100%", borderRadius: 12 }}
-              nameSize={11}
-              favSize={22}
-            />
+  // ── Overflow section — cycles through layout patterns ─────
+
+  const chunkPatterns: { count: number; render: (ps: Product[], base: number) => React.ReactNode }[] = [
+    // A: 2-col equal portrait (2 items)
+    {
+      count: 2,
+      render: (ps, base) => (
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+          {ps.map((p, i) => (
+            <div key={p.id} style={{ aspectRatio: "2/3", opacity: deletingId === p.id ? 0.5 : 1 }}>
+              <CoverCard {...coverCardProps(p, base + i)} style={{ width: "100%", height: "100%", borderRadius: 12 }} nameSize={11} favSize={22} />
+            </div>
+          ))}
+        </div>
+      ),
+    },
+    // B: 3-col equal square-ish (3 items)
+    {
+      count: 3,
+      render: (ps, base) => (
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 8 }}>
+          {ps.map((p, i) => (
+            <div key={p.id} style={{ aspectRatio: "1/1.3", opacity: deletingId === p.id ? 0.5 : 1 }}>
+              <CoverCard {...coverCardProps(p, base + i)} style={{ width: "100%", height: "100%", borderRadius: 10 }} nameSize={9} favSize={18} />
+            </div>
+          ))}
+        </div>
+      ),
+    },
+    // C: asymmetric 1.6fr + 1fr, both portrait (2 items)
+    {
+      count: 2,
+      render: (ps, base) => (
+        <div style={{ display: "grid", gridTemplateColumns: "1.6fr 1fr", gap: 8, alignItems: "start" }}>
+          <div style={{ aspectRatio: "2/2.8", opacity: deletingId === ps[0]?.id ? 0.5 : 1 }}>
+            <CoverCard {...coverCardProps(ps[0], base)} style={{ width: "100%", height: "100%", borderRadius: 14 }} nameSize={12} favSize={24} />
           </div>
-        ))}
-      </div>
-    );
+          {ps[1] && (
+            <div style={{ aspectRatio: "2/2.8", opacity: deletingId === ps[1].id ? 0.5 : 1 }}>
+              <CoverCard {...coverCardProps(ps[1], base + 1)} style={{ width: "100%", height: "100%", borderRadius: 12 }} nameSize={10} favSize={20} />
+            </div>
+          )}
+        </div>
+      ),
+    },
+    // D: full-width wide banner (1 item)
+    {
+      count: 1,
+      render: (ps, base) => (
+        <div style={{ aspectRatio: "16/7", opacity: deletingId === ps[0]?.id ? 0.5 : 1 }}>
+          <CoverCard {...coverCardProps(ps[0], base)} style={{ width: "100%", height: "100%", borderRadius: 14 }} nameSize={14} brandSize={8} favSize={26} gradientStop="oklch(0.18 0.02 90 / 0.65)" />
+        </div>
+      ),
+    },
+    // E: 1fr left tall + right 2-stack (3 items)
+    {
+      count: 3,
+      render: (ps, base) => (
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, alignItems: "start" }}>
+          <div style={{ aspectRatio: "2/3", opacity: deletingId === ps[0]?.id ? 0.5 : 1 }}>
+            <CoverCard {...coverCardProps(ps[0], base)} style={{ width: "100%", height: "100%", borderRadius: 14 }} nameSize={12} favSize={22} />
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 8, alignSelf: "stretch" }}>
+            {ps.slice(1).map((p, i) => (
+              <div key={p.id} style={{ flex: 1, minHeight: 0, overflow: "hidden", borderRadius: 12, opacity: deletingId === p.id ? 0.5 : 1 }}>
+                <CoverCard {...coverCardProps(p, base + 1 + i)} style={{ width: "100%", height: "100%", borderRadius: 12 }} nameSize={10} favSize={19} />
+              </div>
+            ))}
+          </div>
+        </div>
+      ),
+    },
+  ];
+
+  // Cycle order (index into chunkPatterns)
+  const PATTERN_CYCLE = [0, 1, 2, 4, 3, 1, 0, 2, 4, 1, 3, 0];
+
+  function OverflowSection({ items, startIdx }: { items: Product[]; startIdx: number }) {
+    if (items.length === 0) return null;
+    const chunks: React.ReactNode[] = [];
+    let pos = 0;
+    let cycleIdx = 0;
+    while (pos < items.length) {
+      const pattern = chunkPatterns[PATTERN_CYCLE[cycleIdx % PATTERN_CYCLE.length]];
+      const slice = items.slice(pos, pos + pattern.count);
+      if (slice.length === 0) break;
+      chunks.push(
+        <React.Fragment key={startIdx + pos}>
+          {pattern.render(slice, startIdx + pos)}
+        </React.Fragment>
+      );
+      pos += pattern.count;
+      cycleIdx++;
+    }
+    return <>{chunks}</>;
   }
 
   // ── Magazine grid ─────────────────────────────────────────
@@ -580,7 +658,7 @@ export default function HistoryPage() {
           </div>
         )}
         {/* Remaining items */}
-        <OverflowGrid items={rest} startIdx={6} />
+        <OverflowSection items={rest} startIdx={6} />
         {editMode && <EditGenrePanels />}
       </div>
     );
@@ -634,7 +712,7 @@ export default function HistoryPage() {
           </div>
         )}
         {/* Remaining items */}
-        <OverflowGrid items={rest} startIdx={5} />
+        <OverflowSection items={rest} startIdx={5} />
         {editMode && <EditGenrePanels />}
       </div>
     );
