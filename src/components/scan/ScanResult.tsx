@@ -222,20 +222,32 @@ export default function ScanResult({
           <button
             onClick={handleSave}
             disabled={isSaving}
-            className="hd-cta"
             style={{
               width: "100%",
               marginTop: 16,
-              padding: "13px 22px",
+              padding: "14px 22px",
               fontSize: 14,
+              fontWeight: 600,
+              fontFamily: "var(--hd-sans)",
+              letterSpacing: "0.02em",
               cursor: isSaving ? "wait" : "pointer",
               display: "inline-flex",
               alignItems: "center",
               justifyContent: "center",
-              gap: 8,
+              gap: 10,
               opacity: isSaving ? 0.6 : 1,
+              background: "var(--hd-moss)",
+              color: "#fff",
+              border: "none",
+              borderRadius: 999,
+              boxShadow: "0 6px 18px oklch(0.38 0.05 155 / 0.28)",
             }}
           >
+            {!isSaving && (
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z" />
+              </svg>
+            )}
             {isSaving ? "保存中…" : "マイコスメに保存する"}
           </button>
         )}
