@@ -6,7 +6,6 @@ import Link from "next/link";
 import { getIngredientById, getIngredientCategoryInfo, getIngredientCategories } from "@/lib/ingredients";
 import { useProductStore } from "@/stores/useProductStore";
 import { useZukanStore } from "@/stores/useZukanStore";
-import Badge from "@/components/ui/Badge";
 import Disclaimer from "@/components/ui/Disclaimer";
 import TargetedRakutenSection from "@/components/recommendations/TargetedRakutenSection";
 import { useUser } from "@/lib/auth";
@@ -140,7 +139,6 @@ export default function IngredientDetailPage() {
               {ingredient.nameInci}
             </p>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, marginTop: 10, flexWrap: "wrap" }}>
-              <Badge rarity={ingredient.rarity} size="sm" />
               {allCats.map((c) => (
                 <span
                   key={c.key}

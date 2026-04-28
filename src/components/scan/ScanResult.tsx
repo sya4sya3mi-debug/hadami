@@ -3,9 +3,8 @@
 import { useState, useCallback } from "react";
 import { createPortal } from "react-dom";
 import { Ingredient, Combination, ProductGenre } from "@/types";
-import { RARITY, ACTIVE_CATEGORIES, getIngredientCategoryInfo, getIngredientCategories, isActiveIngredient } from "@/lib/ingredients";
+import { ACTIVE_CATEGORIES, getIngredientCategoryInfo, getIngredientCategories, isActiveIngredient } from "@/lib/ingredients";
 import { getGenreByKey } from "@/lib/productGenres";
-import Badge, { StarIcon } from "@/components/ui/Badge";
 import Disclaimer from "@/components/ui/Disclaimer";
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import RecommendSection from "@/components/recommendations/RecommendSection";
@@ -670,11 +669,6 @@ function IngredientRow({
         fontFamily: "var(--hd-sans)",
       }}
     >
-      <span style={{ display: "inline-flex", gap: 1 }}>
-        {Array.from({ length: RARITY[ingredient.rarity].star }).map((_, i) => (
-          <StarIcon key={i} color={RARITY[ingredient.rarity].color} size={13} />
-        ))}
-      </span>
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
           <span
@@ -686,7 +680,6 @@ function IngredientRow({
           >
             {ingredient.nameJa}
           </span>
-          <Badge rarity={ingredient.rarity} size="sm" />
           {isNew && (
             <span
               className="hd-mono hd-caps"
@@ -810,7 +803,6 @@ function IngredientDetailSheet({
             {ingredient.nameInci}
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap", justifyContent: "center" }}>
-            <Badge rarity={ingredient.rarity} size="sm" />
             {allCats.map((cat) => (
               <span
                 key={cat.key}

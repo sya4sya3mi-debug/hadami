@@ -337,7 +337,6 @@ export default function ProductDetailPage() {
                 <div className="hd-stagger" style={{ marginBottom: 24 }}>
                   {activeIngredients.map((ing, i) => {
                     const catInfo = getIngredientCategoryInfo(ing);
-                    const rarity = ing.rarity === "legendary" ? 4 : ing.rarity === "rare" ? 3 : ing.rarity === "uncommon" ? 2 : 1;
                     return (
                       <button
                         key={ing.id}
@@ -407,18 +406,6 @@ export default function ProductDetailPage() {
                             </div>
                           )}
                         </div>
-                        <span
-                          className="hd-mono"
-                          style={{
-                            fontSize: 11,
-                            color: "var(--hd-ink-60)",
-                            flexShrink: 0,
-                            letterSpacing: "0.05em",
-                          }}
-                        >
-                          {"★".repeat(rarity)}
-                          <span style={{ opacity: 0.3 }}>{"★".repeat(5 - rarity)}</span>
-                        </span>
                         <svg
                           width="10"
                           height="10"
