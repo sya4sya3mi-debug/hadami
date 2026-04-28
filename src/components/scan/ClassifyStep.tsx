@@ -46,13 +46,13 @@ export default function ClassifyStep({
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-      {/* Top action bar — primary CTA at top so it's always visible */}
-      <div style={{ display: "flex", gap: 8 }}>
-        {onBack && (
+      {/* Top action bar */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
+        {onBack ? (
           <button
             onClick={onBack}
             style={{
-              padding: "13px 18px",
+              padding: "10px 16px",
               background: "transparent",
               color: "var(--hd-ink-60)",
               border: "1px solid var(--hd-line)",
@@ -60,29 +60,34 @@ export default function ClassifyStep({
               fontFamily: "var(--hd-sans)",
               fontSize: 13,
               fontWeight: 500,
-              display: "flex",
+              display: "inline-flex",
               alignItems: "center",
               gap: 6,
+              flexShrink: 0,
             }}
           >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" aria-hidden="true">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" aria-hidden="true">
               <path d="M15 18l-6-6 6-6" />
             </svg>
             戻る
           </button>
-        )}
+        ) : <div />}
         <button
           onClick={onContinue}
-          className="hd-cta"
           style={{
-            flex: 1,
-            padding: "13px 22px",
-            fontSize: 14,
+            padding: "13px 24px",
+            background: "var(--hd-moss)",
+            color: "#fff",
+            border: "none",
+            borderRadius: 0,
             cursor: "pointer",
+            fontFamily: "var(--hd-sans)",
+            fontSize: 14,
+            fontWeight: 600,
             display: "inline-flex",
             alignItems: "center",
-            justifyContent: "center",
             gap: 8,
+            boxShadow: "0 4px 14px oklch(0.38 0.05 155 / 0.22)",
           }}
         >
           成分を確認する
