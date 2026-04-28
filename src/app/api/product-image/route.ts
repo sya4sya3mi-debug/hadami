@@ -13,9 +13,9 @@ import { r2Upload, r2Delete, r2Download } from "@/lib/r2";
 export const runtime = "nodejs";
 export const maxDuration = 30;
 
-const AVIF_FULL_QUALITY = 50;
-const AVIF_THUMB_QUALITY = 45;
-const AVIF_EFFORT = 3;
+const AVIF_FULL_QUALITY = 72;
+const AVIF_THUMB_QUALITY = 65;
+const AVIF_EFFORT = 5;
 const AVIF_CONTENT_TYPE = "image/avif";
 
 function getContentTypeFromKey(key: string) {

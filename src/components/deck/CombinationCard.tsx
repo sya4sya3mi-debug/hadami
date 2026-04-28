@@ -17,28 +17,61 @@ function getIngredientCatInfo(nameJa: string) {
 
 function IngredientTag({ name, products }: { name: string; products: string[] }) {
   const cat = getIngredientCatInfo(name);
-  const bg = cat ? `${cat.color}1A` : "rgba(200,200,200,0.15)";
-  const color = cat ? cat.color : "#9E9E9E";
 
   return (
-    <div className="flex-1 min-w-0">
+    <div style={{ flex: 1, minWidth: 0 }}>
       <div
-        className="px-2.5 py-1.5 rounded-xl text-center"
-        style={{ background: bg, border: `1px solid ${color}30` }}
+        style={{
+          padding: "8px 10px",
+          textAlign: "center",
+          background: "var(--hd-surface)",
+          border: "1px solid var(--hd-line)",
+        }}
       >
         {cat && (
           <div
-            className="inline-flex items-center gap-1 text-[10px] mb-0.5 font-sans"
-            style={{ color }}
+            className="hd-mono hd-caps"
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 4,
+              fontSize: 9,
+              letterSpacing: "0.14em",
+              color: "var(--hd-ink-40)",
+              marginBottom: 3,
+            }}
           >
-            <ActiveCategoryIcon category={cat.key} size={11} />
+            <ActiveCategoryIcon category={cat.key} size={10} />
             {cat.label}
           </div>
         )}
-        <div className="text-xs font-bold truncate text-bo-ink font-sans">{name}</div>
+        <div
+          className="hd-serif"
+          style={{
+            fontSize: 13,
+            color: "var(--hd-ink)",
+            letterSpacing: "-0.01em",
+            whiteSpace: "nowrap",
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+          }}
+        >
+          {name}
+        </div>
       </div>
       {products.length > 0 && (
-        <div className="text-[10px] text-center mt-1 px-1 leading-tight text-bo-ink-muted font-sans">
+        <div
+          className="hd-mono"
+          style={{
+            fontSize: 9,
+            textAlign: "center",
+            marginTop: 5,
+            padding: "0 4px",
+            lineHeight: 1.4,
+            color: "var(--hd-ink-40)",
+            letterSpacing: "0.04em",
+          }}
+        >
           {products.map((product, index) => (
             <span key={index}>
               {index > 0 && "、"}
@@ -56,22 +89,31 @@ export default function CombinationCard({ combo, ingredientProducts }: Props) {
 
   return (
     <div
-      className={`rounded-r2 p-4 ${
-        isRecommended
-          ? "bg-white border border-bo-parchment shadow-bo1"
-          : "bg-gradient-to-br from-[#FFF8F0] to-bo-danger-bg border border-bo-danger/25"
-      }`}
+      style={{
+        padding: 14,
+        background: "var(--hd-bg)",
+        border: "1px solid var(--hd-hair)",
+        borderLeft: isRecommended ? "1px solid var(--hd-hair)" : "2px solid var(--hd-ink)",
+      }}
     >
-      <div className="flex items-start gap-2 mb-3">
+      <div style={{ display: "flex", alignItems: "flex-start", gap: 8, marginBottom: 12 }}>
         <IngredientTag name={combo.pair[0]} products={ingredientProducts[0]} />
 
-        <div className="flex items-center justify-center pt-3 shrink-0">
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", paddingTop: 12, flexShrink: 0 }}>
           <span
-            className={`text-[10px] font-bold w-6 h-6 rounded-full flex items-center justify-center ${
-              isRecommended
-                ? "bg-bo-accent/15 text-bo-accent"
-                : "bg-bo-danger/15 text-bo-danger"
-            }`}
+            style={{
+              width: 22,
+              height: 22,
+              borderRadius: 999,
+              background: "var(--hd-ink)",
+              color: "var(--hd-bg)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              fontSize: 11,
+              fontWeight: 600,
+            }}
+            aria-hidden="true"
           >
             {isRecommended ? "+" : "!"}
           </span>
@@ -81,13 +123,27 @@ export default function CombinationCard({ combo, ingredientProducts }: Props) {
       </div>
 
       <div
-        className={`text-xs font-bold mb-0.5 font-sans ${
-          isRecommended ? "text-bo-ink" : "text-bo-danger"
-        }`}
+        className="hd-serif"
+        style={{
+          fontSize: 14,
+          color: "var(--hd-ink)",
+          letterSpacing: "-0.01em",
+          marginBottom: 4,
+        }}
       >
         {combo.label}
       </div>
-      <p className="text-xs leading-relaxed text-bo-ink-muted font-sans">{combo.desc}</p>
+      <p
+        style={{
+          fontSize: 11,
+          fontFamily: "var(--hd-sans)",
+          lineHeight: 1.7,
+          color: "var(--hd-ink-60)",
+          margin: 0,
+        }}
+      >
+        {combo.desc}
+      </p>
     </div>
   );
 }

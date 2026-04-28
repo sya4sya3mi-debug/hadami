@@ -198,8 +198,6 @@ export default function RoutineShareCard({ config, mode, steps }: Props) {
   const topRow = displaySteps.slice(0, 3);
   const bottomRow = displaySteps.slice(3, 5);
 
-  const titlePrefix = isMorning ? "私の朝の" : "私の夜の";
-  const titleAccent = "ルーティン。";
 
   // Build chip list: skin type + concerns (limit to 4)
   const chips = [skinType, ...concerns].filter(Boolean).slice(0, 4);
@@ -262,9 +260,10 @@ export default function RoutineShareCard({ config, mode, steps }: Props) {
                 color: "var(--hd-ink)",
               }}
             >
-              {titlePrefix}
+              私の<br />
+              {isMorning ? "朝の" : "夜の"}<br />
               <span style={{ fontStyle: "italic", color: "var(--hd-moss)" }}>
-                {titleAccent}
+                ルーティン。
               </span>
             </div>
             <div

@@ -33,56 +33,126 @@ export default function ClassifyStep({
 }: ClassifyStepProps) {
   const needsType = !SCAN_GENRES.some((g) => g.key === productType);
 
+  const inputStyle: React.CSSProperties = {
+    width: "100%",
+    padding: "10px 12px",
+    fontSize: 14,
+    fontFamily: "var(--hd-sans)",
+    color: "var(--hd-ink)",
+    background: "var(--hd-bg)",
+    border: "1px solid var(--hd-line)",
+    outline: "none",
+  };
+
   return (
-    <div className="space-y-3 animate-fade-up">
-      {/* Hero image */}
+    <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+      {/* Hero */}
       {imagePreview ? (
-        <div className="relative w-full h-[120px] rounded-r2 overflow-hidden shadow-bo2">
+        <div
+          style={{
+            position: "relative",
+            width: "100%",
+            height: 120,
+            overflow: "hidden",
+            border: "1px solid var(--hd-hair)",
+          }}
+        >
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={imagePreview} alt="" className="w-full h-full object-cover" />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
-          <div className="absolute bottom-3 left-4">
-            <div className="px-3 py-1.5 rounded-r1 bg-white/20 backdrop-blur-lg text-[10px] font-bold text-white font-sans
-                            inline-flex items-center gap-1.5">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round">
-                <path d="M20 6L9 17l-5-5"/>
-              </svg>
-              撮影完了
-            </div>
+          <img
+            src={imagePreview}
+            alt=""
+            style={{ width: "100%", height: "100%", objectFit: "cover" }}
+          />
+          <div
+            style={{
+              position: "absolute",
+              inset: 0,
+              background:
+                "linear-gradient(to top, oklch(0.22 0.01 95 / 0.45), transparent 70%)",
+            }}
+          />
+          <div
+            className="hd-mono hd-caps"
+            style={{
+              position: "absolute",
+              bottom: 12,
+              left: 14,
+              fontSize: 9,
+              color: "var(--hd-bg)",
+              letterSpacing: "0.14em",
+            }}
+          >
+            ✓ Captured
           </div>
         </div>
       ) : (
-        <div className="w-full h-[120px] rounded-r2 flex items-center justify-center
-                        bg-gradient-to-br from-bo-accent-soft to-bo-parchment shadow-bo2">
-          <span className="text-5xl">📦</span>
+        <div
+          style={{
+            width: "100%",
+            height: 120,
+            border: "1px dashed var(--hd-line)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            color: "var(--hd-ink-40)",
+            fontFamily: "var(--hd-sans)",
+            fontSize: 12,
+          }}
+        >
+          画像なし
         </div>
       )}
 
-      {/* Editable fields card */}
-      <div className="bg-white rounded-r2 shadow-bo1 p-5 space-y-3.5">
+      {/* Editable fields */}
+      <div
+        style={{
+          background: "var(--hd-surface)",
+          border: "1px solid var(--hd-hair)",
+          padding: 18,
+          display: "flex",
+          flexDirection: "column",
+          gap: 14,
+        }}
+      >
         <div>
-          <label className="block text-[10px] font-semibold mb-1.5 text-bo-ink-muted font-sans uppercase tracking-wider">
-            コスメ名
+          <label
+            className="hd-mono hd-caps"
+            style={{
+              display: "block",
+              fontSize: 9,
+              color: "var(--hd-ink-40)",
+              marginBottom: 6,
+              letterSpacing: "0.14em",
+            }}
+          >
+            Product Name
           </label>
           <input
             type="text"
             value={productName}
             onChange={(e) => onProductNameChange(e.target.value)}
-            className="w-full text-sm font-bold outline-none border-none bg-bo-cream rounded-r1 px-3 py-2.5
-                       text-bo-ink font-sans focus:ring-2 focus:ring-bo-accent/30 transition-shadow"
+            style={inputStyle}
             placeholder="コスメ名を入力"
           />
         </div>
         <div>
-          <label className="block text-[10px] font-semibold mb-1.5 text-bo-ink-muted font-sans uppercase tracking-wider">
-            ブランド
+          <label
+            className="hd-mono hd-caps"
+            style={{
+              display: "block",
+              fontSize: 9,
+              color: "var(--hd-ink-40)",
+              marginBottom: 6,
+              letterSpacing: "0.14em",
+            }}
+          >
+            Brand
           </label>
           <input
             type="text"
             value={brand}
             onChange={(e) => onBrandChange(e.target.value)}
-            className="w-full text-sm outline-none border-none bg-bo-cream rounded-r1 px-3 py-2.5
-                       text-bo-ink font-sans focus:ring-2 focus:ring-bo-accent/30 transition-shadow"
+            style={inputStyle}
             placeholder="ブランド名を入力"
           />
         </div>
@@ -90,33 +160,63 @@ export default function ClassifyStep({
 
       {/* Genre selector */}
       <div>
-        <div className="flex items-center gap-2.5 mb-3">
-          <span className="text-sm font-bold font-sans text-bo-ink">コスメタイプを選択</span>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
+          <span
+            className="hd-mono hd-caps"
+            style={{
+              fontSize: 9,
+              color: "var(--hd-ink-40)",
+              letterSpacing: "0.14em",
+            }}
+          >
+            Type
+          </span>
           {needsType && (
-            <span className="text-[10px] font-bold text-bo-accent font-sans animate-pulse
-                             px-2 py-0.5 rounded-full bg-bo-accent-soft">
-              必須
+            <span
+              className="hd-mono hd-caps"
+              style={{
+                fontSize: 9,
+                color: "var(--hd-ink)",
+                letterSpacing: "0.14em",
+                padding: "2px 8px",
+                border: "1px solid var(--hd-ink)",
+              }}
+            >
+              Required
             </span>
           )}
         </div>
-        <div className={`grid grid-cols-3 gap-2 ${needsType ? "ring-2 ring-bo-accent/30 ring-offset-4 ring-offset-bo-cream rounded-r2 transition-all" : ""}`}>
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(3, 1fr)",
+            gap: 8,
+          }}
+        >
           {SCAN_GENRES.map((genre) => {
             const isSelected = productType === genre.key;
             return (
               <button
                 key={genre.key}
                 onClick={() => onProductTypeChange(genre.key)}
-                className={`flex flex-col items-center gap-1 py-2.5 px-2 rounded-r2 text-xs font-semibold
-                           transition-all duration-200 font-sans pressable border-none cursor-pointer ${
-                  isSelected
-                    ? "bg-bo-accent text-white shadow-bo-accent"
-                    : "bg-white text-bo-ink-muted shadow-bo1"
-                }`}
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  gap: 6,
+                  padding: "12px 8px",
+                  background: isSelected ? "var(--hd-ink)" : "var(--hd-surface)",
+                  color: isSelected ? "var(--hd-bg)" : "var(--hd-ink-60)",
+                  border: `1px solid ${isSelected ? "var(--hd-ink)" : "var(--hd-hair)"}`,
+                  cursor: "pointer",
+                  fontFamily: "var(--hd-sans)",
+                  fontSize: 11,
+                  fontWeight: 500,
+                  transition: "background 0.15s, color 0.15s, border-color 0.15s",
+                }}
               >
-                <span className="inline-flex">
-                  <ProductGenreIcon genre={genre.key} size={20} />
-                </span>
-                <span className="text-[11px]">{genre.label}</span>
+                <ProductGenreIcon genre={genre.key} size={20} />
+                <span>{genre.label}</span>
               </button>
             );
           })}
@@ -124,28 +224,47 @@ export default function ClassifyStep({
       </div>
 
       {/* Buttons */}
-      <div className="flex gap-2">
+      <div style={{ display: "flex", gap: 8, marginTop: 4 }}>
         {onBack && (
           <button
             onClick={onBack}
-            className="flex-none py-4 px-4 rounded-r2 bg-white text-bo-ink-muted text-sm font-bold font-sans
-                       shadow-bo1 pressable border-none cursor-pointer flex items-center gap-1.5"
+            style={{
+              padding: "13px 18px",
+              background: "transparent",
+              color: "var(--hd-ink-60)",
+              border: "1px solid var(--hd-line)",
+              cursor: "pointer",
+              fontFamily: "var(--hd-sans)",
+              fontSize: 13,
+              fontWeight: 500,
+              display: "flex",
+              alignItems: "center",
+              gap: 6,
+            }}
           >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-              <path d="M15 18l-6-6 6-6"/>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" aria-hidden="true">
+              <path d="M15 18l-6-6 6-6" />
             </svg>
-            特定
+            戻る
           </button>
         )}
         <button
           onClick={onContinue}
-          className="flex-1 py-4 rounded-r2 bg-bo-accent text-white text-sm font-bold font-sans
-                     shadow-bo-accent pressable border-none cursor-pointer
-                     flex items-center justify-center gap-2"
+          className="hd-cta"
+          style={{
+            flex: 1,
+            padding: "13px 22px",
+            fontSize: 14,
+            cursor: "pointer",
+            display: "inline-flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 8,
+          }}
         >
           成分を確認する
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-            <path d="M9 18l6-6-6-6"/>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" aria-hidden="true">
+            <path d="M9 18l6-6-6-6" />
           </svg>
         </button>
       </div>

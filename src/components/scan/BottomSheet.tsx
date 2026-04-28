@@ -99,30 +99,81 @@ export default function BottomSheet({
       {/* Sheet */}
       <div
         ref={sheetRef}
-        className="absolute bottom-0 w-full bg-white rounded-t-3xl animate-slide-up flex flex-col"
-        style={{ maxHeight, height, maxWidth: "var(--app-shell-max-width, 430px)", transition: "transform 0.3s ease" }}
+        className="hd-root hd-softa absolute bottom-0 w-full animate-slide-up flex flex-col"
+        style={{
+          maxHeight,
+          height,
+          maxWidth: "var(--app-shell-max-width, 430px)",
+          transition: "transform 0.3s ease",
+          background: "var(--hd-surface)",
+          borderTopLeftRadius: 4,
+          borderTopRightRadius: 4,
+          borderTop: "1px solid var(--hd-hair)",
+        }}
       >
         {/* Drag handle + header */}
         <div
-          className="shrink-0 px-6 pt-3 pb-4 cursor-grab active:cursor-grabbing"
-          style={{ borderBottom: title ? "1px solid #e0e0e0" : undefined }}
+          className="shrink-0 cursor-grab active:cursor-grabbing"
+          style={{
+            padding: "10px 20px 14px",
+            borderBottom: title ? "1px solid var(--hd-hair)" : undefined,
+          }}
           onTouchStart={handleDragHandleTouchStart}
           onTouchMove={handleDragHandleTouchMove}
           onTouchEnd={handleDragHandleTouchEnd}
         >
-          <div className="flex justify-center mb-3">
-            <div className="w-10 h-1.5 rounded-full bg-gray-200" />
+          <div style={{ display: "flex", justifyContent: "center", marginBottom: 10 }}>
+            <div
+              style={{
+                width: 36,
+                height: 3,
+                background: "var(--hd-line)",
+              }}
+            />
           </div>
           {title && (
-            <div className="flex justify-between items-center">
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <div>
-                <h3 className="font-bold text-base text-bo-ink">{title}</h3>
-                {subtitle && <p className="text-xs mt-0.5 text-bo-ink-muted">{subtitle}</p>}
+                <h3
+                  className="hd-serif"
+                  style={{
+                    margin: 0,
+                    fontSize: 17,
+                    color: "var(--hd-ink)",
+                    letterSpacing: "-0.01em",
+                  }}
+                >
+                  {title}
+                </h3>
+                {subtitle && (
+                  <p
+                    style={{
+                      margin: "4px 0 0",
+                      fontSize: 11,
+                      color: "var(--hd-ink-60)",
+                      fontFamily: "var(--hd-sans)",
+                    }}
+                  >
+                    {subtitle}
+                  </p>
+                )}
               </div>
               <button
                 onClick={onClose}
-                className="w-8 h-8 rounded-full flex items-center justify-center text-base text-bo-ink-muted
-                           bg-bo-cream border-none cursor-pointer pressable shrink-0"
+                aria-label="閉じる"
+                style={{
+                  width: 30,
+                  height: 30,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  background: "transparent",
+                  border: "1px solid var(--hd-line)",
+                  color: "var(--hd-ink-60)",
+                  cursor: "pointer",
+                  fontSize: 13,
+                  flexShrink: 0,
+                }}
               >
                 ✕
               </button>

@@ -12,9 +12,9 @@ import {
 } from "@/lib/productImages";
 import { r2Upload, r2Download, r2Delete } from "@/lib/r2";
 
-const AVIF_FULL_QUALITY = 50;
-const AVIF_THUMB_QUALITY = 45;
-const AVIF_EFFORT = 3;
+const AVIF_FULL_QUALITY = 72;
+const AVIF_THUMB_QUALITY = 65;
+const AVIF_EFFORT = 5;
 const AVIF_CONTENT_TYPE = "image/avif";
 const BACKFILL_WINDOW_MS = 10 * 60_000;
 const BACKFILL_MAX_REQUESTS = 12;

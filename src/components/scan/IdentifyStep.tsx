@@ -31,7 +31,7 @@ async function preprocessImage(dataUrl: string): Promise<string> {
   return new Promise((resolve) => {
     const img = new Image();
     img.onload = () => {
-      const MAX_SIDE = 1200;
+      const MAX_SIDE = 1600;
       let { width, height } = img;
       if (width > MAX_SIDE || height > MAX_SIDE) {
         const scale = MAX_SIDE / Math.max(width, height);
@@ -43,14 +43,7 @@ async function preprocessImage(dataUrl: string): Promise<string> {
       canvas.height = height;
       const ctx = canvas.getContext("2d")!;
       ctx.drawImage(img, 0, 0, width, height);
-      const d = ctx.getImageData(0, 0, width, height);
-      for (let i = 0; i < d.data.length; i += 4) {
-        const gray = Math.round(0.299 * d.data[i] + 0.587 * d.data[i + 1] + 0.114 * d.data[i + 2]);
-        const contrast = Math.min(255, Math.max(0, (gray - 128) * 1.5 + 128));
-        d.data[i] = d.data[i + 1] = d.data[i + 2] = contrast;
-      }
-      ctx.putImageData(d, 0, 0);
-      resolve(canvas.toDataURL("image/jpeg", 0.80));
+      resolve(canvas.toDataURL("image/jpeg", 0.90));
     };
     img.src = dataUrl;
   });
@@ -93,90 +86,308 @@ export default function IdentifyStep({
   const displayImage = capturedPreview || imagePreview;
 
   return (
-    <div className="animate-fade-up">
+    <div>
       {!showFallback ? (
-        <div className="space-y-5">
+        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
           {/* Hero image with progress overlay */}
           {displayImage && (
-            <div className="relative w-full h-[200px] rounded-r2 overflow-hidden shadow-bo2">
+            <div
+              style={{
+                position: "relative",
+                width: "100%",
+                height: 200,
+                overflow: "hidden",
+                background: "var(--hd-surface-2, var(--hd-surface))",
+                border: "1px solid var(--hd-hair)",
+              }}
+            >
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={displayImage} alt="撮影した画像" className="w-full h-full object-cover" />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/20 to-transparent" />
-
-              {/* Progress bar on image */}
-              <div className="absolute bottom-0 left-0 right-0 px-4 pb-4">
-                <div className="h-1.5 rounded-full overflow-hidden bg-white/30 backdrop-blur-sm">
+              <img
+                src={displayImage}
+                alt="撮影した画像"
+                style={{ width: "100%", height: "100%", objectFit: "cover" }}
+              />
+              <div
+                style={{
+                  position: "absolute",
+                  inset: 0,
+                  background:
+                    "linear-gradient(to top, oklch(0.22 0.01 95 / 0.55), transparent 60%)",
+                }}
+              />
+              <div
+                style={{
+                  position: "absolute",
+                  bottom: 14,
+                  left: 14,
+                  right: 14,
+                }}
+              >
+                <div
+                  style={{
+                    height: 2,
+                    background: "oklch(0.99 0.005 85 / 0.30)",
+                    overflow: "hidden",
+                  }}
+                >
                   <div
-                    className="h-full rounded-full transition-all duration-700 ease-out bg-white"
-                    style={{ width: `${progress}%` }}
+                    style={{
+                      height: "100%",
+                      width: `${progress}%`,
+                      background: "var(--hd-bg)",
+                      transition: "width 0.7s ease-out",
+                    }}
                   />
                 </div>
-                <div className="flex justify-between mt-1.5">
-                  <span className="text-[10px] text-white/70 font-sans font-medium">{progress}%</span>
+                <div
+                  className="hd-mono"
+                  style={{
+                    marginTop: 6,
+                    fontSize: 10,
+                    color: "oklch(0.99 0.005 85 / 0.85)",
+                    letterSpacing: "0.1em",
+                  }}
+                >
+                  {progress}%
                 </div>
               </div>
             </div>
           )}
 
           {/* Status card */}
-          <div className="bg-white rounded-r2 shadow-bo1 p-5 text-center">
-            {/* Animated rings */}
-            <div className="relative w-16 h-16 mx-auto mb-4 flex items-center justify-center">
-              <div className="absolute inset-0 rounded-full border-2 border-bo-accent/30 animate-[ripple_2s_ease-in-out_infinite]" />
-              <div className="absolute inset-[6px] rounded-full border-2 border-bo-accent/20 animate-[ripple_2s_ease-in-out_infinite_0.4s]" />
-              <div className="absolute inset-3 rounded-full border-2 border-bo-accent/30 animate-[ripple_2s_ease-in-out_infinite_0.8s]" />
-              <span className="text-2xl relative z-10">✨</span>
+          <div
+            style={{
+              background: "var(--hd-surface)",
+              border: "1px solid var(--hd-hair)",
+              padding: "28px 20px",
+              textAlign: "center",
+            }}
+          >
+            <div
+              style={{
+                position: "relative",
+                width: 56,
+                height: 56,
+                margin: "0 auto 18px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <div
+                style={{
+                  position: "absolute",
+                  inset: 0,
+                  borderRadius: 999,
+                  border: "1px solid var(--hd-line)",
+                  animation: "ripple 2s ease-in-out infinite",
+                }}
+              />
+              <div
+                style={{
+                  position: "absolute",
+                  inset: 8,
+                  borderRadius: 999,
+                  border: "1px solid var(--hd-line)",
+                  animation: "ripple 2s ease-in-out 0.4s infinite",
+                }}
+              />
+              <div
+                style={{
+                  position: "relative",
+                  width: 28,
+                  height: 28,
+                  borderRadius: 999,
+                  background: "var(--hd-ink)",
+                  color: "var(--hd-bg)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: 14,
+                  zIndex: 1,
+                }}
+              >
+                ✦
+              </div>
             </div>
-
-            <p key={message} className="text-sm font-bold text-bo-accent font-sans animate-float-up">
+            <p
+              key={message}
+              className="hd-serif"
+              style={{
+                fontSize: 17,
+                color: "var(--hd-ink)",
+                margin: 0,
+                letterSpacing: "-0.01em",
+              }}
+            >
               {message}
             </p>
-            <p className="text-[10px] text-bo-ink-muted font-sans mt-1.5">
-              AIがコスメと成分情報を特定しています
+            <p
+              className="hd-mono hd-caps"
+              style={{
+                marginTop: 10,
+                fontSize: 10,
+                color: "var(--hd-ink-40)",
+              }}
+            >
+              AI is identifying the product
             </p>
           </div>
         </div>
       ) : (
         /* Fallback: capture ingredients photo */
-        <div className="space-y-4">
-          {/* Warning card */}
-          <div className="flex items-start gap-3 w-full px-4 py-4 rounded-r2 bg-white shadow-bo1 border border-bo-caution/20">
-            <div className="w-10 h-10 rounded-[12px] flex items-center justify-center shrink-0
-                            bg-bo-caution-bg text-lg">
-              ⚠️
+        <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+          {/* Notice */}
+          <div
+            style={{
+              display: "flex",
+              alignItems: "flex-start",
+              gap: 12,
+              padding: "16px 18px",
+              background: "var(--hd-surface)",
+              border: "1px solid var(--hd-hair)",
+              borderLeft: "2px solid var(--hd-ink)",
+            }}
+          >
+            <div
+              style={{
+                width: 28,
+                height: 28,
+                flexShrink: 0,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                color: "var(--hd-ink-60)",
+                fontSize: 16,
+              }}
+              aria-hidden="true"
+            >
+              ⓘ
             </div>
-            <div>
-              <div className="font-bold text-sm text-bo-ink font-sans">成分情報が見つかりませんでした</div>
-              <div className="text-xs mt-0.5 text-bo-ink-muted font-sans">
-                裏面の成分表を撮影して読み取ります
+            <div style={{ flex: 1 }}>
+              <div
+                className="hd-serif"
+                style={{
+                  fontSize: 16,
+                  color: "var(--hd-ink)",
+                  letterSpacing: "-0.01em",
+                  marginBottom: 4,
+                }}
+              >
+                成分情報が見つかりませんでした
+              </div>
+              <div
+                style={{
+                  fontSize: 12,
+                  color: "var(--hd-ink-60)",
+                  fontFamily: "var(--hd-sans)",
+                  lineHeight: 1.6,
+                }}
+              >
+                パッケージから商品を特定できなかったため、裏面の成分表を撮影して読み取ります。
               </div>
             </div>
           </div>
 
-          {/* Fallback capture button */}
+          {/* Tip card */}
+          <div
+            style={{
+              padding: "14px 18px",
+              background: "var(--hd-surface)",
+              border: "1px solid var(--hd-hair)",
+            }}
+          >
+            <div
+              className="hd-mono hd-caps"
+              style={{
+                fontSize: 9,
+                color: "var(--hd-ink-40)",
+                marginBottom: 8,
+                letterSpacing: "0.12em",
+              }}
+            >
+              Tips
+            </div>
+            <ul
+              style={{
+                margin: 0,
+                paddingLeft: 18,
+                fontSize: 12,
+                color: "var(--hd-ink-60)",
+                fontFamily: "var(--hd-sans)",
+                lineHeight: 1.8,
+              }}
+            >
+              <li>明るい場所で撮影してください</li>
+              <li>成分表全体が画面に収まるように</li>
+              <li>反射やボケを避けてピントを合わせて</li>
+            </ul>
+          </div>
+
+          {/* Capture CTA */}
           <button
             onClick={() => fileInputRef.current?.click()}
-            className="w-full rounded-r2 flex flex-col items-center justify-center gap-4 py-10
-                       bg-white shadow-bo2 border-none pressable cursor-pointer"
+            style={{
+              width: "100%",
+              padding: "32px 20px",
+              background: "var(--hd-surface)",
+              border: "1px dashed var(--hd-line)",
+              cursor: "pointer",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              gap: 14,
+            }}
           >
-            <div className="w-16 h-16 rounded-[20px] flex items-center justify-center
-                            bg-gradient-to-br from-bo-accent-soft to-[#C5E8D8]
-                            shadow-[0_6px_20px_rgba(58,143,122,0.15)]">
-              <span className="text-3xl">📋</span>
+            <div
+              style={{
+                width: 56,
+                height: 56,
+                borderRadius: 999,
+                background: "var(--hd-ink)",
+                color: "var(--hd-bg)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontSize: 22,
+              }}
+              aria-hidden="true"
+            >
+              ⌘
             </div>
-            <div className="text-center">
-              <div className="text-[10px] font-extrabold tracking-widest text-bo-accent font-sans mb-1 uppercase">
-                STEP 2
+            <div style={{ textAlign: "center" }}>
+              <div
+                className="hd-mono hd-caps"
+                style={{
+                  fontSize: 9,
+                  color: "var(--hd-ink-40)",
+                  letterSpacing: "0.14em",
+                  marginBottom: 6,
+                }}
+              >
+                Step 2 · Fallback
               </div>
-              <div className="font-bold text-sm text-bo-ink font-sans">裏面の成分表を撮影</div>
-              <div className="text-xs mt-1.5 text-bo-ink-muted font-sans">
-                成分一覧が書いてある面を撮影して読み取ります
+              <div
+                className="hd-serif"
+                style={{
+                  fontSize: 18,
+                  color: "var(--hd-ink)",
+                  letterSpacing: "-0.01em",
+                  marginBottom: 4,
+                }}
+              >
+                裏面の成分表を撮影
               </div>
-            </div>
-
-            <div className="mt-1 px-6 py-2.5 rounded-full bg-bo-accent text-white text-xs font-bold font-sans
-                            shadow-bo-accent inline-flex items-center gap-1.5">
-              📷 撮影する
+              <div
+                style={{
+                  fontSize: 11,
+                  color: "var(--hd-ink-60)",
+                  fontFamily: "var(--hd-sans)",
+                  lineHeight: 1.6,
+                }}
+              >
+                成分一覧が書いてある面を撮影します
+              </div>
             </div>
           </button>
 
@@ -186,7 +397,7 @@ export default function IdentifyStep({
             accept="image/*"
             capture="environment"
             onChange={handleFallbackFile}
-            className="hidden"
+            style={{ display: "none" }}
           />
         </div>
       )}
@@ -194,16 +405,39 @@ export default function IdentifyStep({
       {/* Multi-product bottom sheet */}
       {multiProducts && multiProducts.length > 0 && (
         <BottomSheet open={!!showMultiSheet} onClose={onCloseMultiSheet || (() => {})}>
-          <div className="space-y-3 pb-4">
-            <div className="text-center mb-4">
-              <div className="w-14 h-14 rounded-[18px] mx-auto mb-3 flex items-center justify-center
-                              bg-gradient-to-br from-bo-accent-soft to-[#D4F5EF]">
-                <span className="text-2xl">📦</span>
+          <div style={{ display: "flex", flexDirection: "column", gap: 12, paddingBottom: 8 }}>
+            <div style={{ textAlign: "center", marginBottom: 12 }}>
+              <div
+                className="hd-mono hd-caps"
+                style={{
+                  fontSize: 9,
+                  color: "var(--hd-ink-40)",
+                  letterSpacing: "0.14em",
+                  marginBottom: 8,
+                }}
+              >
+                Detected · {multiProducts.length} items
               </div>
-              <div className="text-lg font-bold text-bo-ink font-sans">
-                {multiProducts.length}つのコスメを検出
+              <div
+                className="hd-serif"
+                style={{
+                  fontSize: 20,
+                  color: "var(--hd-ink)",
+                  letterSpacing: "-0.01em",
+                }}
+              >
+                コスメを選んでください
               </div>
-              <div className="text-xs mt-1 text-bo-ink-muted font-sans">確認したいコスメを選んでください</div>
+              <div
+                style={{
+                  marginTop: 6,
+                  fontSize: 12,
+                  color: "var(--hd-ink-60)",
+                  fontFamily: "var(--hd-sans)",
+                }}
+              >
+                確認したいコスメを 1 つ選びます
+              </div>
             </div>
 
             {multiProducts.map((p, i) => {
@@ -212,30 +446,64 @@ export default function IdentifyStep({
               return (
                 <div
                   key={i}
-                  className="bg-white rounded-r2 p-4 shadow-bo1 animate-spring-in"
-                  style={{ animationDelay: `${i * 80}ms` }}
+                  style={{
+                    background: "var(--hd-surface)",
+                    border: "1px solid var(--hd-hair)",
+                    padding: "14px 16px",
+                  }}
                 >
-                  <div className="font-bold text-sm text-bo-ink font-sans">{p.productName}</div>
-                  <div className="text-xs mt-0.5 text-bo-ink-muted font-sans">{p.brand} · {p.productType}</div>
-                  <div className="flex gap-2 mt-3">
+                  <div
+                    className="hd-serif"
+                    style={{
+                      fontSize: 15,
+                      color: "var(--hd-ink)",
+                      letterSpacing: "-0.01em",
+                    }}
+                  >
+                    {p.productName || "(商品名なし)"}
+                  </div>
+                  <div
+                    className="hd-mono"
+                    style={{
+                      marginTop: 4,
+                      fontSize: 10,
+                      color: "var(--hd-ink-40)",
+                      letterSpacing: "0.06em",
+                    }}
+                  >
+                    {(p.brand || "—")} · {p.productType}
+                  </div>
+                  <div style={{ display: "flex", gap: 8, marginTop: 14 }}>
                     <button
                       onClick={() => onSelectProduct?.(p, i)}
                       disabled={isResolving}
-                      className="flex-1 py-3 rounded-r1 text-xs font-bold text-white font-sans
-                                 bg-bo-accent shadow-bo-accent pressable border-none cursor-pointer"
+                      className="hd-cta"
+                      style={{
+                        flex: 1,
+                        padding: "11px 14px",
+                        fontSize: 12,
+                        cursor: isResolving ? "not-allowed" : "pointer",
+                        opacity: isResolving ? 0.5 : 1,
+                      }}
                     >
-                      {isResolving ? "検索中..." : "詳細を見る"}
+                      {isResolving ? "検索中…" : "詳細を見る"}
                     </button>
                     <button
                       onClick={() => onSaveMulti?.(p, i)}
                       disabled={isSaved || isResolving}
-                      className={`flex-1 py-3 rounded-r1 text-xs font-bold font-sans pressable border-none cursor-pointer ${
-                        isSaved || isResolving
-                          ? "bg-bo-parchment text-bo-ink-muted"
-                          : "bg-white text-bo-accent border border-bo-accent/30 shadow-bo1"
-                      }`}
+                      style={{
+                        flex: 1,
+                        padding: "11px 14px",
+                        fontSize: 12,
+                        fontWeight: 500,
+                        fontFamily: "var(--hd-sans)",
+                        background: "transparent",
+                        color: isSaved || isResolving ? "var(--hd-ink-40)" : "var(--hd-ink)",
+                        border: "1px solid var(--hd-line)",
+                        cursor: isSaved || isResolving ? "not-allowed" : "pointer",
+                      }}
                     >
-                      {isSaved ? "✓ 保存済み" : isResolving ? "検索中..." : "保存する"}
+                      {isSaved ? "✓ 保存済み" : isResolving ? "検索中…" : "保存する"}
                     </button>
                   </div>
                 </div>

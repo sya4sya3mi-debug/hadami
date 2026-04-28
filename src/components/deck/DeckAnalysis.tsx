@@ -407,28 +407,29 @@ export default function DeckAnalysis({
                   key={cat.key}
                   style={{
                     padding: 16,
-                    background: cat.color + "0A",
-                    border: `1px solid ${cat.color}30`,
+                    background: "var(--hd-bg)",
+                    border: "1px solid var(--hd-hair)",
                   }}
                 >
-                  <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 10 }}>
-                    <span style={{ color: cat.color }}>
-                      <ActiveCategoryIcon category={cat.key} size={16} />
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
+                    <span style={{ color: "var(--hd-ink-60)" }}>
+                      <ActiveCategoryIcon category={cat.key} size={14} />
                     </span>
                     <span
                       className="hd-serif"
-                      style={{ fontSize: 13, color: cat.color }}
+                      style={{ fontSize: 14, color: "var(--hd-ink)", letterSpacing: "-0.01em" }}
                     >
                       {cat.label}
                     </span>
                     <span
+                      className="hd-mono hd-caps"
                       style={{
-                        fontFamily: "var(--hd-mono)",
                         fontSize: 9,
+                        letterSpacing: "0.14em",
                         color: "var(--hd-ink-40)",
                       }}
                     >
-                      ({ings.length}種)
+                      {ings.length} items
                     </span>
                   </div>
                   <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
@@ -436,15 +437,15 @@ export default function DeckAnalysis({
                       <Link
                         key={ing.id}
                         href={`/ingredient/${ing.id}`}
+                        className="hd-serif"
                         style={{
-                          fontFamily: "var(--hd-sans)",
-                          fontSize: 11,
-                          fontWeight: 600,
-                          padding: "4px 10px",
-                          borderRadius: 999,
+                          fontSize: 12,
+                          padding: "5px 10px",
                           textDecoration: "none",
-                          background: cat.color + "20",
-                          color: cat.color,
+                          background: "transparent",
+                          color: "var(--hd-ink)",
+                          border: "1px solid var(--hd-line)",
+                          letterSpacing: "-0.01em",
                         }}
                       >
                         {ing.nameJa}

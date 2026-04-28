@@ -18,6 +18,8 @@ import { getProductImagePath, getProductImageThumbPath } from "@/lib/productImag
 import { getSignedImageUrls } from "@/lib/storage";
 import { ActiveCategoryIcon, ProductGenreIcon } from "@/components/ui/CosmeticIcons";
 import { StarIcon } from "@/components/ui/Icons";
+import { ACTIVE_CATEGORIES } from "@/lib/ingredients";
+import ProductShareCardSheet from "@/components/product/ProductShareCardSheet";
 
 function readFileAsDataUrl(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -53,6 +55,7 @@ export default function ProductDetailPage() {
   const [isUpdatingPhoto, setIsUpdatingPhoto] = useState(false);
   const [photoError, setPhotoError] = useState<string | null>(null);
   const [photoMessage, setPhotoMessage] = useState<string | null>(null);
+  const [shareCardOpen, setShareCardOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const router = useRouter();
 
@@ -101,6 +104,25 @@ export default function ProductDetailPage() {
     .filter((i) => i !== undefined);
 
   const activeIngredients = allIngredients.filter((i) => i.activeIngredient);
+
+  // For share card
+  const shareCardInitials = (() => {
+    const words = product.name.replace(/[^\w\s]/g, " ").split(/\s+/).filter(Boolean);
+    if (words.length >= 2) return (words[0][0] + words[1][0]).toUpperCase();
+    return product.name.slice(0, 2).toUpperCase();
+  })();
+  const shareCardEffects = ACTIVE_CATEGORIES
+    .map((cat) => ({
+      label: cat.label,
+      score: Math.min(
+        allIngredients.filter(
+          (ing) => ing.activeIngredient && ing.categories.includes(cat.key)
+        ).length * 2,
+        10
+      ),
+    }))
+    .filter((e) => e.score > 0)
+    .slice(0, 4);
   const ingredientNames = allIngredients.map((i) => i.nameJa);
   const combinations = findCombinations(ingredientNames);
 
@@ -638,6 +660,22 @@ export default function ProductDetailPage() {
                 </span>
               </button>
             </div>
+            <button
+              type="button"
+              onClick={() => setShareCardOpen(true)}
+              style={{
+                width: "100%", marginTop: 10, padding: "13px 0",
+                background: "transparent",
+                border: "1px solid var(--hd-ink)",
+                color: "var(--hd-ink)",
+                fontSize: 13, fontWeight: 600, fontFamily: "var(--hd-sans)",
+                cursor: "pointer",
+                display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+              }}
+            >
+              <span>シェアカード</span>
+              <span style={{ fontFamily: "var(--hd-mono)", fontSize: 9, letterSpacing: "0.2em", opacity: 0.5 }}>SHARE →</span>
+            </button>
 
             <div style={{ marginTop: 24 }}>
               <Disclaimer />
@@ -645,6 +683,16 @@ export default function ProductDetailPage() {
           </div>
         </div>
       </div>
+
+      <ProductShareCardSheet
+        open={shareCardOpen}
+        onClose={() => setShareCardOpen(false)}
+        name={product.name}
+        brand={product.brand}
+        productType={getGenreByKey(product.productType)?.label ?? product.productType}
+        initials={shareCardInitials}
+        effects={shareCardEffects}
+      />
     </AuthGuard>
   );
 }

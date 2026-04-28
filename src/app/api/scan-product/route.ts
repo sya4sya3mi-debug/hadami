@@ -17,7 +17,10 @@ import {
 import { MASTER_INGREDIENTS, getIngredientByName, getIngredientByInci } from "@/lib/ingredients";
 import { resolveActiveIngredient } from "@/lib/mhlwActiveIngredients";
 import { normalizeIngredientName } from "@/lib/normalize";
-import { ocrSpaceExtract } from "@/lib/ocrSpace";
+import {
+  geminiVisionIdentifyProduct,
+  type VisionIdentifiedProduct,
+} from "@/lib/geminiVision";
 import { createScanResolveToken, verifyScanResolveToken } from "@/lib/scanResolveToken";
 import {
   clearScanReservationCookie,
@@ -26,7 +29,6 @@ import {
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 
 const client = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
-const IDENTIFY_MODEL = process.env.GEMINI_IDENTIFY_MODEL || "gemini-2.5-flash-lite";
 const SEARCH_MODEL_LEGACY = process.env.GEMINI_SEARCH_MODEL;
 const SEARCH_MODEL_PRIMARY =
   process.env.GEMINI_SEARCH_MODEL_PRIMARY ||
@@ -83,7 +85,6 @@ function resolveIngredientNames(names: string[]): {
     const trimmed = name.trim();
     if (!trimmed) continue;
 
-    // MHLW辞書 → マスターDB名前 → INCI名の順で解決
     const mhlw = resolveActiveIngredient(trimmed);
     const match = mhlw
       ? { id: mhlw.masterDbId }
@@ -112,7 +113,6 @@ function matchIngredientsLocally(rawText: string): {
   for (const ingredient of MASTER_INGREDIENTS) {
     if (seen.has(ingredient.id)) continue;
 
-    // nameJa でマッチ
     if (rawText.includes(ingredient.nameJa) ||
         normalizedText.includes(normalizeIngredientName(ingredient.nameJa))) {
       seen.add(ingredient.id);
@@ -121,7 +121,6 @@ function matchIngredientsLocally(rawText: string): {
       continue;
     }
 
-    // INCI名でマッチ (大文字小文字無視)
     if (normalizedText.includes(normalizeIngredientName(ingredient.nameInci))) {
       seen.add(ingredient.id);
       ids.push(ingredient.id);
@@ -129,7 +128,6 @@ function matchIngredientsLocally(rawText: string): {
       continue;
     }
 
-    // aliases でマッチ
     if (ingredient.aliases) {
       const aliasMatch = ingredient.aliases.some(
         (alias) =>
@@ -147,122 +145,23 @@ function matchIngredientsLocally(rawText: string): {
   return { ingredientIds: ids, ingredientNames: names };
 }
 
-// ── STEP 1: 商品識別 ──
+// ── STEP 1: 商品識別 (Gemini Vision) ──
 
-interface IdentifiedProduct {
-  product: string;
-  brand: string;
-  lang: string;
-  type: string;
-}
+type IdentifiedProduct = VisionIdentifiedProduct;
 
-function extractField(text: string, field: string, suffix?: string): string {
-  const sfx = suffix || "";
-  const patterns = [
-    new RegExp(`\\*{0,2}${field}${sfx}\\*{0,2}\\s*[:\uFF1A]\\s*(.+)`, "im"),
-    new RegExp(`[-\u30FB]\\s*${field}${sfx}\\s*[:\uFF1A]\\s*(.+)`, "im"),
-  ];
-  for (const pattern of patterns) {
-    const match = text.match(pattern);
-    if (match?.[1]) {
-      return match[1].replace(/\*+$/g, "").replace(/^["']+|["']+$/g, "").trim();
-    }
-  }
-  return "";
-}
-
-function parseIdentifiedProducts(text: string): IdentifiedProduct[] {
-  const products: IdentifiedProduct[] = [];
-
-  const multiCheck = text.match(/PRODUCT\d+\s*[:\uFF1A]/gi);
-  if (multiCheck && multiCheck.length > 1) {
-    for (let i = 1; i <= multiCheck.length; i += 1) {
-      const product = extractField(text, "PRODUCT", String(i));
-      const brand = extractField(text, "BRAND", String(i));
-      const lang = extractField(text, "LANG", String(i)).toLowerCase() || "ja";
-      const type = extractField(text, "TYPE", String(i)) || "other";
-      if (product || brand) {
-        products.push({ product, brand, lang, type });
-      }
-    }
-  }
-
-  if (products.length === 0) {
-    const product = extractField(text, "PRODUCT");
-    const brand = extractField(text, "BRAND");
-    const lang = extractField(text, "LANG").toLowerCase() || "ja";
-    const type = extractField(text, "TYPE") || "other";
-    if (product || brand) {
-      products.push({ product, brand, lang, type });
-    }
-  }
-
-  return products;
-}
-
-function buildIdentifyPrompt(ocrText: string): string {
-  return [
-    "以下のOCRテキストは化粧品パッケージから読み取ったものです。",
-    "製品情報を特定してください。",
-    "",
-    "OCRテキスト:",
-    ocrText,
-    "",
-    "回答フォーマット:",
-    "PRODUCT: product name",
-    "BRAND: brand name",
-    "LANG: ja|ko|en",
-    "TYPE: cleansing / face_wash / toner / serum / emulsion / cream / sunscreen / mask_pack / eye_care / oil / mist / other",
-    "",
-    "For multiple products use PRODUCT1/BRAND1/LANG1/TYPE1 format.",
-    "Always return at least one PRODUCT line.",
-  ].join("\n");
-}
-
-async function identifyProducts(
-  base64Data: string,
-  enhancedData?: string,
-): Promise<IdentifiedProduct[]> {
-  // OCR.space でテキスト抽出（強調画像優先）
-  let ocrText = await ocrSpaceExtract(enhancedData || base64Data);
-
-  // 空ならカラー画像でリトライ
-  if (!ocrText && enhancedData) {
-    logScanInfo("ocr_retry_with_color_image");
-    ocrText = await ocrSpaceExtract(base64Data);
-  }
-
-  if (!ocrText) {
-    logScanInfo("ocr_returned_empty_text");
-    return [];
-  }
-
-  logScanInfo("ocr_text_extracted", {
-    textLength: ocrText.length,
-  });
-
-  // Gemini（テキストのみ）で商品情報を解析
-  const response = await withTimeout(
-    client.models.generateContent({
-      model: IDENTIFY_MODEL,
-      contents: [{ role: "user", parts: [{ text: buildIdentifyPrompt(ocrText) }] }],
-      config: {
-        maxOutputTokens: 1024,
-        thinkingConfig: { thinkingBudget: 0 },
-      },
-    }),
-    15000,
-    "Timed out while identifying product",
-  ).catch(() => null);
-
-  const text = response?.text ?? "";
-  const identifiedProducts = parseIdentifiedProducts(text);
+async function identifyProducts(base64Data: string): Promise<IdentifiedProduct[]> {
+  const products = await geminiVisionIdentifyProduct(base64Data);
   logScanInfo("identify_completed", {
-    outputLength: text.length,
-    productCount: identifiedProducts.length,
+    productCount: products.length,
   });
-
-  return identifiedProducts;
+  for (const p of products) {
+    logScanInfo("identified_product", {
+      product: p.product,
+      brand: p.brand,
+      type: p.type,
+    });
+  }
+  return products;
 }
 
 // ── STEP 2: 有効成分検索 (Gemini + Google Search) ──
@@ -407,6 +306,12 @@ async function resolveScannedProduct(
     identified.brand,
   );
 
+  logScanInfo("ingredient_cache_lookup", {
+    product: identified.product,
+    brand: identified.brand,
+    hit: Boolean(cached?.ingredients),
+  });
+
   if (cached?.ingredients) {
     logScanInfo("ingredient_cache_hit");
     const activeNames = (cached.activeIngredients || "")
@@ -526,7 +431,6 @@ export async function POST(req: NextRequest) {
   // 4. ペイロード検証
   let body: {
     imageBase64?: unknown;
-    enhancedBase64?: unknown;
     productName?: unknown;
     brand?: unknown;
     productType?: unknown;
@@ -587,13 +491,6 @@ export async function POST(req: NextRequest) {
   const validation = validateImagePayload(body);
   if (!validation.valid) return validation.response;
 
-  let enhancedData: string | undefined;
-  if (typeof body.enhancedBase64 === "string" && body.enhancedBase64) {
-    enhancedData = body.enhancedBase64.includes(",")
-      ? body.enhancedBase64.split(",")[1]
-      : body.enhancedBase64;
-  }
-
   // 5. スキャン枠予約
   const userMonthlyLimit = await getUserMonthlyScanLimit(supabaseAdmin, auth.user.id);
   const reserved = await tryReserveScan(
@@ -643,7 +540,7 @@ export async function POST(req: NextRequest) {
 
   try {
     // ── STEP 1: 商品識別 (Gemini Vision) ──
-    const identifiedProducts = await identifyProducts(validation.base64Data, enhancedData);
+    const identifiedProducts = await identifyProducts(validation.base64Data);
 
     if (identifiedProducts.length === 0) {
       shouldRollbackReservation = false;

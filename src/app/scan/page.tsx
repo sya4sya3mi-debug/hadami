@@ -118,7 +118,6 @@ function ScanPageInner() {
   const [step, setStep] = useState<WizardStep>(1);
   // Image data
   const [packageImage, setPackageImage] = useState("");
-  const [packageImageColor, setPackageImageColor] = useState("");
 
   // Progress (Step 2)
   const [progress, setProgress] = useState(0);
@@ -484,7 +483,7 @@ function ScanPageInner() {
 
   // Step 1 → Step 2: パッケージ撮影 → ネット検索
   const handlePackageCapture = useCallback(
-    async (imageData: string, colorImage?: string) => {
+    async (imageData: string) => {
       const allowed = await checkScanLimit();
       if (!allowed) return;
 
@@ -500,7 +499,6 @@ function ScanPageInner() {
       }
 
       setPackageImage(imageData);
-      setPackageImageColor(colorImage || imageData);
       setStep(2);
       setProgress(10);
       setProgressMsg("コスメを特定しています...");
@@ -514,8 +512,7 @@ function ScanPageInner() {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            imageBase64: colorImage || imageData,
-            enhancedBase64: imageData,
+            imageBase64: imageData,
           }),
         });
 
@@ -741,7 +738,7 @@ function ScanPageInner() {
         productType: normalizeGenreFromScan(resolvedProduct.productType || ""),
         ingredientIds: foundIngs.map((f) => f.ingredient.id),
         unknownIngredients: result0.unknown,
-        packageImageBase64: packageImageColor || packageImage || undefined,
+        packageImageBase64: packageImage || undefined,
         isQuasiDrug: resolvedProduct.isQuasiDrug,
         activeIngredientIds,
       });
@@ -784,7 +781,7 @@ function ScanPageInner() {
 
       setMultiSavedIndexes((prev) => new Set(prev).add(index));
     },
-    [user, supabase, addProduct, discover, packageImage, packageImageColor, multiSavedIndexes, resolveActiveIngredientIds, resolveSelectedProduct, resolveUploadedImage]
+    [user, supabase, addProduct, discover, packageImage, multiSavedIndexes, resolveActiveIngredientIds, resolveSelectedProduct, resolveUploadedImage]
   );
 
   // Step 3 → Step 4
@@ -817,7 +814,7 @@ function ScanPageInner() {
         productType,
         ingredientIds: foundIngredients.map((f) => f.ingredient.id),
         unknownIngredients,
-        packageImageBase64: packageImageColor || packageImage || undefined,
+        packageImageBase64: packageImage || undefined,
         isQuasiDrug,
         activeIngredientIds: resolvedActiveIngredients.map((ingredient) => ingredient.ingredientId),
       });
@@ -877,13 +874,12 @@ function ScanPageInner() {
       isSavingRef.current = false;
       setSaveError("保存に失敗しました。もう一度お試しください。");
     }
-  }, [user, supabase, addProduct, productName, brand, productType, packageImage, packageImageColor, foundIngredients, unknownIngredients, userLimit, saved, setRecentlyFound, isQuasiDrug, resolvedActiveIngredients, resolveUploadedImage]);
+  }, [user, supabase, addProduct, productName, brand, productType, packageImage, foundIngredients, unknownIngredients, userLimit, saved, setRecentlyFound, isQuasiDrug, resolvedActiveIngredients, resolveUploadedImage]);
 
   const doReset = useCallback(() => {
     isSavingRef.current = false;
     setStep(1);
     setPackageImage("");
-    setPackageImageColor("");
     setProgress(0);
     setProgressMsg("");
     setProductName("");
@@ -1112,7 +1108,7 @@ function ScanPageInner() {
               <IdentifyStep
                 progress={progress}
                 message={progressMsg}
-                imagePreview={packageImageColor || packageImage}
+                imagePreview={packageImage}
                 showFallback={showFallback}
                 onFallbackCapture={handleFallbackCapture}
                 multiProducts={multiProducts}
@@ -1130,7 +1126,7 @@ function ScanPageInner() {
                 productName={productName}
                 brand={brand}
                 productType={productType}
-                imagePreview={packageImageColor || packageImage}
+                imagePreview={packageImage}
                 onProductNameChange={setProductName}
                 onBrandChange={setBrand}
                 onProductTypeChange={setProductType}
@@ -1185,7 +1181,7 @@ function ScanPageInner() {
                   combinations={combinations}
                   onSave={handleSave}
                   saved={saved}
-                  imagePreview={packageImageColor || packageImage}
+                  imagePreview={packageImage}
                   newDiscoveryIds={new Set(newDiscoveries.map((i) => i.id))}
                 />
               </>

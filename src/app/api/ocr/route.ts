@@ -1,4 +1,3 @@
-import { GoogleGenAI } from "@google/genai";
 import { NextRequest, NextResponse } from "next/server";
 import { authenticateRequest, validateImagePayload } from "@/lib/apiAuth";
 import {
@@ -9,7 +8,7 @@ import {
   rollbackScan,
 } from "@/lib/db";
 import { rateLimit, getClientIp } from "@/lib/rateLimit";
-import { ocrSpaceExtract } from "@/lib/ocrSpace";
+import { geminiVisionExtractIngredients } from "@/lib/geminiVision";
 import {
   SCAN_RESERVATION_COOKIE_NAME,
   clearScanReservationCookie,
@@ -17,27 +16,7 @@ import {
 } from "@/lib/scanReservationToken";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 
-const client = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 const RESERVATION_COMPAT_LIMIT_OVERRIDE = 1_000_000;
-
-function buildOcrParsePrompt(ocrText: string): string {
-  return `The following OCR text was extracted from a cosmetic ingredient label.
-Extract the ingredient list and return only the format below.
-
-QUASI_DRUG: true|false
-ACTIVE: ingredient 1, ingredient 2
-OTHER: ingredient 1, ingredient 2, ingredient 3
-
-Rules:
-- Set QUASI_DRUG to true only when the text explicitly indicates quasi-drug / 医薬部外品.
-- ACTIVE must include only explicitly labeled active ingredients / 有効成分.
-- OTHER must include all remaining ingredients.
-- If there are no active ingredients, leave ACTIVE blank.
-- If the ingredient list cannot be identified, return QUASI_DRUG: false, ACTIVE:, OTHER:.
-
-OCR TEXT:
-${ocrText}`;
-}
 
 export async function POST(req: NextRequest) {
   const ip = getClientIp(req);
@@ -126,13 +105,15 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const ocrText = await ocrSpaceExtract(validation.base64Data);
+    const { isQuasiDrug, activeIngredients, otherIngredients } =
+      await geminiVisionExtractIngredients(validation.base64Data);
 
-    if (!ocrText) {
+    const text = [...activeIngredients, ...otherIngredients].join(", ");
+
+    if (!text.trim()) {
       if (reservedForThisRequest) {
         await rollbackScan(auth.supabase, auth.user.id, auth.user.email!);
       }
-
       return NextResponse.json({
         text: "",
         isQuasiDrug: false,
@@ -141,37 +122,6 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    const response = await client.models.generateContent({
-      model: process.env.GEMINI_IDENTIFY_MODEL || "gemini-2.5-flash-lite",
-      contents: [
-        {
-          role: "user",
-          parts: [{ text: buildOcrParsePrompt(ocrText) }],
-        },
-      ],
-      config: {
-        maxOutputTokens: 1024,
-        thinkingConfig: { thinkingBudget: 0 },
-      },
-    });
-
-    const rawText = response.text ?? "";
-    const isQuasiDrug = /QUASI_DRUG:\s*true/i.test(rawText);
-
-    const activeIngredients =
-      rawText.match(/ACTIVE:\s*(.*)/i)?.[1]
-        ?.split(/[,、]/)
-        .map((value) => value.trim())
-        .filter(Boolean) ?? [];
-
-    const otherIngredients =
-      rawText.match(/OTHER:\s*([\s\S]*?)(?:\n\n|$)/i)?.[1]
-        ?.replace(/\n/g, ",")
-        .split(/[,、]/)
-        .map((value) => value.trim())
-        .filter(Boolean) ?? [];
-
-    const text = [...activeIngredients, ...otherIngredients].join(", ");
     const result = NextResponse.json({
       text,
       isQuasiDrug,
@@ -179,11 +129,7 @@ export async function POST(req: NextRequest) {
       otherIngredients,
     });
 
-    if (!text.trim() && reservedForThisRequest) {
-      await rollbackScan(auth.supabase, auth.user.id, auth.user.email!);
-    }
-
-    if (text.trim() && hasExistingReservation) {
+    if (hasExistingReservation) {
       return clearScanReservationCookie(result);
     }
 

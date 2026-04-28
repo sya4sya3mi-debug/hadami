@@ -50,11 +50,9 @@ export default function ScanResult({
 
   const genre = getGenreByKey(productType);
 
-  // 有効成分とその他を分離
   const activeIngredients = foundIngredients.filter((f) => isActiveIngredient(f.ingredient.id));
   const otherIngredients = foundIngredients.filter((f) => !isActiveIngredient(f.ingredient.id));
 
-  // Group active ingredients by effect category
   const grouped = new Map<string, { ingredient: Ingredient; orderIndex: number }[]>();
   for (const item of activeIngredients) {
     const catKey = item.ingredient.categories[0] || "_other";
@@ -99,104 +97,197 @@ export default function ScanResult({
     setShareModalOpen(true);
   }, [productName, brand, productType, imagePreview, foundIngredients]);
 
-  const contentPaddingClass = saved ? "pb-36" : "pb-24";
-
   return (
-    <div className={`space-y-5 animate-fade-up ${contentPaddingClass}`}>
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        gap: 18,
+        paddingBottom: saved ? 144 : 96,
+      }}
+    >
       {/* Product header card */}
-      <div className="bg-white dark:bg-gray-800 rounded-r3 overflow-hidden shadow-bo2">
-        <div className="h-1 bg-gradient-to-r from-bo-accent via-bo-safe to-[#6BC4A0]" />
-        <div className="p-5">
-          <div className="flex items-center gap-3.5">
-            {imagePreview ? (
-              <div className="w-16 h-16 rounded-r1 overflow-hidden shrink-0 shadow-bo1">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={imagePreview} alt="" className="w-full h-full object-cover" />
-              </div>
-            ) : (
-              <div className="w-16 h-16 rounded-r1 shrink-0 flex items-center justify-center text-2xl
-                              bg-gradient-to-br from-bo-accent-soft to-bo-parchment">
-                {genre?.icon || "📦"}
-              </div>
-            )}
-            <div className="flex-1 min-w-0">
-              <div className="font-extrabold text-base font-serif truncate text-bo-ink dark:text-white">{productName}</div>
-              <div className="text-xs mt-0.5 truncate text-bo-ink-muted dark:text-gray-400 font-sans tracking-wide">{brand}</div>
-            </div>
-            {genre && (
-              <span
-                className="inline-flex items-center gap-1 text-[10px] px-2.5 py-1.5 rounded-r1 font-semibold shrink-0 font-sans"
-                style={{ background: genre.color + "18", color: genre.color }}
-              >
-                <ProductGenreIcon genre={genre.key} size={12} />
-                {genre.label}
-              </span>
-            )}
-          </div>
-
-          {/* Stats row */}
-          <div className="flex items-center justify-center gap-3 mt-4 pt-4 border-t border-bo-parchment dark:border-gray-700">
-            <div className="flex-1 text-center">
-              <div className="text-lg font-black text-bo-accent font-sans">{activeIngredients.length}</div>
-              <div className="text-[10px] text-bo-ink-muted dark:text-gray-400 font-sans mt-0.5">美容成分</div>
-            </div>
-            {otherIngredients.length > 0 && (
-              <div className="flex-1 text-center border-l border-bo-parchment dark:border-gray-700">
-                <div className="text-lg font-black text-bo-ink-muted dark:text-gray-300 font-sans">{otherIngredients.length}</div>
-                <div className="text-[10px] text-bo-ink-muted dark:text-gray-400 font-sans mt-0.5">その他の成分</div>
-              </div>
-            )}
-            {combinations.length > 0 && (
-              <div className="flex-1 text-center border-l border-bo-parchment dark:border-gray-700">
-                <div className="text-lg font-black text-bo-accent font-sans">{combinations.length}</div>
-                <div className="text-[10px] text-bo-ink-muted dark:text-gray-400 font-sans mt-0.5">組み合わせ</div>
-              </div>
-            )}
-          </div>
-
-          {/* Save button — inline in header card */}
-          {!saved && onSave && (
-            <button
-              onClick={handleSave}
-              disabled={isSaving}
-              className="w-full mt-4 py-3.5 rounded-r2 font-bold text-[15px] font-sans border-none cursor-pointer
-                         bg-bo-accent text-white shadow-bo-accent pressable
-                         flex items-center justify-center gap-2
-                         disabled:opacity-60 disabled:cursor-wait"
+      <div
+        style={{
+          background: "var(--hd-surface)",
+          border: "1px solid var(--hd-hair)",
+          padding: 18,
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+          {imagePreview ? (
+            <div
+              style={{
+                width: 64,
+                height: 64,
+                flexShrink: 0,
+                overflow: "hidden",
+                border: "1px solid var(--hd-hair)",
+              }}
             >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-                <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/>
-                <polyline points="17 21 17 13 7 13 7 21"/>
-                <polyline points="7 3 7 8 15 8"/>
-              </svg>
-              {isSaving ? "保存中..." : "マイコスメに保存する"}
-            </button>
-          )}
-          {saved && (
-            <div className="flex items-center gap-2 mt-4 px-3 py-2.5 rounded-r2 bg-bo-accent-soft/60">
-              <div className="w-5 h-5 rounded-full bg-bo-accent flex items-center justify-center shrink-0">
-                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3.5" strokeLinecap="round">
-                  <path d="M20 6L9 17l-5-5"/>
-                </svg>
-              </div>
-              <span className="text-xs font-bold text-bo-accent font-sans">保存しました</span>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={imagePreview}
+                alt=""
+                style={{ width: "100%", height: "100%", objectFit: "cover" }}
+              />
             </div>
+          ) : (
+            <div
+              style={{
+                width: 64,
+                height: 64,
+                flexShrink: 0,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                background: "var(--hd-bg)",
+                border: "1px solid var(--hd-hair)",
+                fontSize: 22,
+              }}
+            >
+              {genre?.icon || "📦"}
+            </div>
+          )}
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div
+              className="hd-serif"
+              style={{
+                fontSize: 17,
+                color: "var(--hd-ink)",
+                letterSpacing: "-0.01em",
+                whiteSpace: "nowrap",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+              }}
+            >
+              {productName}
+            </div>
+            <div
+              className="hd-mono"
+              style={{
+                marginTop: 4,
+                fontSize: 10,
+                color: "var(--hd-ink-40)",
+                letterSpacing: "0.08em",
+                whiteSpace: "nowrap",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+              }}
+            >
+              {brand}
+            </div>
+          </div>
+          {genre && (
+            <span
+              className="hd-mono hd-caps"
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 4,
+                fontSize: 9,
+                padding: "4px 8px",
+                color: "var(--hd-ink-60)",
+                border: "1px solid var(--hd-line)",
+                letterSpacing: "0.12em",
+                flexShrink: 0,
+              }}
+            >
+              <ProductGenreIcon genre={genre.key} size={11} />
+              {genre.label}
+            </span>
           )}
         </div>
+
+        {/* Stats */}
+        <div
+          style={{
+            display: "flex",
+            marginTop: 16,
+            paddingTop: 14,
+            borderTop: "1px solid var(--hd-hair)",
+          }}
+        >
+          <Stat value={activeIngredients.length} label="美容成分" />
+          {otherIngredients.length > 0 && (
+            <Stat value={otherIngredients.length} label="その他" muted divider />
+          )}
+          {combinations.length > 0 && (
+            <Stat value={combinations.length} label="組み合わせ" divider />
+          )}
+        </div>
+
+        {/* Save state */}
+        {!saved && onSave && (
+          <button
+            onClick={handleSave}
+            disabled={isSaving}
+            className="hd-cta"
+            style={{
+              width: "100%",
+              marginTop: 16,
+              padding: "13px 22px",
+              fontSize: 14,
+              cursor: isSaving ? "wait" : "pointer",
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 8,
+              opacity: isSaving ? 0.6 : 1,
+            }}
+          >
+            {isSaving ? "保存中…" : "マイコスメに保存する"}
+          </button>
+        )}
+        {saved && (
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+              marginTop: 16,
+              padding: "10px 12px",
+              background: "var(--hd-bg)",
+              border: "1px solid var(--hd-hair)",
+            }}
+          >
+            <span
+              style={{
+                width: 16,
+                height: 16,
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+                background: "var(--hd-ink)",
+                color: "var(--hd-bg)",
+                fontSize: 9,
+                fontWeight: 700,
+              }}
+              aria-hidden="true"
+            >
+              ✓
+            </span>
+            <span
+              className="hd-mono hd-caps"
+              style={{
+                fontSize: 10,
+                color: "var(--hd-ink-60)",
+                letterSpacing: "0.14em",
+              }}
+            >
+              Saved to my cosme
+            </span>
+          </div>
+        )}
       </div>
 
-      {/* レコメンドセクション（保存後に表示） */}
+      {/* レコメンド */}
       {saved && <RecommendSection enabled={saved} />}
 
       {/* 検出成分セクション */}
-      <div>
-        <h3 className="font-bold text-sm mb-3 flex items-center gap-2 text-bo-ink dark:text-white font-sans">
-          <span className="w-1.5 h-5 rounded-full inline-block bg-bo-accent" />
-          検出成分
-        </h3>
-
+      <Section title="検出成分" caption="Ingredients">
         {activeIngredients.length > 8 ? (
-          <div className="space-y-2.5">
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
             {Array.from(grouped.entries()).map(([catKey, items]) => {
               const catInfo = ACTIVE_CATEGORIES.find((c) => c.key === catKey);
               const isOpen = expandedCategories.has(catKey);
@@ -204,41 +295,62 @@ export default function ScanResult({
                 <div key={catKey}>
                   <button
                     onClick={() => toggleCategory(catKey)}
-                    className="w-full flex items-center justify-between rounded-r2 px-4 py-3 text-sm
-                               bg-white dark:bg-gray-800 shadow-bo1 border-none cursor-pointer pressable"
+                    style={{
+                      width: "100%",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      padding: "12px 14px",
+                      background: "var(--hd-surface)",
+                      border: "1px solid var(--hd-hair)",
+                      cursor: "pointer",
+                      fontFamily: "var(--hd-sans)",
+                    }}
                   >
-                    <div className="flex items-center gap-2.5">
-                      {catInfo ? (
-                        <div
-                          className="w-8 h-8 rounded-[10px] flex items-center justify-center"
-                          style={{ background: catInfo.color + "15" }}
-                        >
-                          <ActiveCategoryIcon category={catInfo.key} size={16} />
-                        </div>
-                      ) : (
-                        <span className="text-base">📋</span>
-                      )}
-                      <span className="font-bold text-sm font-sans dark:brightness-125" style={{ color: catInfo?.color || "#212121" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                      <ActiveCategoryIcon category={catInfo?.key} size={16} />
+                      <span
+                        style={{
+                          fontWeight: 600,
+                          fontSize: 13,
+                          color: "var(--hd-ink)",
+                        }}
+                      >
                         {catInfo?.label || "その他"}
                       </span>
-                      <span className="text-xs text-bo-ink-faint font-sans">({items.length})</span>
+                      <span
+                        className="hd-mono"
+                        style={{
+                          fontSize: 10,
+                          color: "var(--hd-ink-40)",
+                        }}
+                      >
+                        {items.length}
+                      </span>
                     </div>
                     <svg
-                      width="16" height="16" viewBox="0 0 24 24" fill="none"
-                      stroke="#9E9E9E" strokeWidth="2" strokeLinecap="round"
-                      className={`transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}
+                      width="14"
+                      height="14"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="var(--hd-ink-40)"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      style={{
+                        transition: "transform 0.2s",
+                        transform: isOpen ? "rotate(180deg)" : "none",
+                      }}
                     >
-                      <path d="M6 9l6 6 6-6"/>
+                      <path d="M6 9l6 6 6-6" />
                     </svg>
                   </button>
                   {isOpen && (
-                    <div className="space-y-2 mt-2">
-                      {items.map(({ ingredient, orderIndex }, idx) => (
+                    <div style={{ display: "flex", flexDirection: "column", gap: 6, marginTop: 6 }}>
+                      {items.map(({ ingredient, orderIndex }) => (
                         <IngredientRow
                           key={ingredient.id}
                           ingredient={ingredient}
                           orderIndex={orderIndex}
-                          delay={Math.min(idx, 10) * 50}
                           isNew={newDiscoveryIds?.has(ingredient.id)}
                           onSelect={setSelectedIngredient}
                         />
@@ -250,13 +362,12 @@ export default function ScanResult({
             })}
           </div>
         ) : (
-          <div className="space-y-2">
-            {activeIngredients.map(({ ingredient, orderIndex }, idx) => (
+          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+            {activeIngredients.map(({ ingredient, orderIndex }) => (
               <IngredientRow
                 key={ingredient.id}
                 ingredient={ingredient}
                 orderIndex={orderIndex}
-                delay={Math.min(idx, 10) * 50}
                 isNew={newDiscoveryIds?.has(ingredient.id)}
                 onSelect={setSelectedIngredient}
               />
@@ -265,37 +376,64 @@ export default function ScanResult({
         )}
 
         {activeIngredients.length === 0 && (
-          <div className="text-center py-10 rounded-r2 bg-white shadow-bo1">
-            <div className="text-3xl mb-3">🔍</div>
-            <p className="text-sm text-bo-ink-muted font-sans">美容成分が検出されませんでした</p>
+          <div
+            style={{
+              textAlign: "center",
+              padding: "32px 20px",
+              background: "var(--hd-surface)",
+              border: "1px solid var(--hd-hair)",
+              color: "var(--hd-ink-60)",
+              fontFamily: "var(--hd-sans)",
+              fontSize: 13,
+            }}
+          >
+            美容成分が検出されませんでした
           </div>
         )}
-      </div>
+      </Section>
 
-      {/* その他の成分（折りたたみ） */}
+      {/* その他の成分 */}
       {otherIngredients.length > 0 && (
         <div>
           <button
             onClick={() => setShowUnknown(!showUnknown)}
-            className="flex items-center gap-2 text-sm text-bo-ink-muted dark:text-gray-400 font-sans bg-transparent border-none cursor-pointer pressable"
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+              padding: 0,
+              background: "transparent",
+              border: "none",
+              cursor: "pointer",
+              color: "var(--hd-ink-60)",
+              fontFamily: "var(--hd-sans)",
+              fontSize: 13,
+            }}
           >
             <span>その他の成分（{otherIngredients.length}種）</span>
             <svg
-              width="14" height="14" viewBox="0 0 24 24" fill="none"
-              stroke="currentColor" strokeWidth="2" strokeLinecap="round"
-              className={`transition-transform duration-200 ${showUnknown ? "rotate-180" : ""}`}
+              width="13"
+              height="13"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              style={{
+                transition: "transform 0.2s",
+                transform: showUnknown ? "rotate(180deg)" : "none",
+              }}
             >
-              <path d="M6 9l6 6 6-6"/>
+              <path d="M6 9l6 6 6-6" />
             </svg>
           </button>
           {showUnknown && (
-            <div className="mt-2 space-y-2">
-              {otherIngredients.map(({ ingredient, orderIndex }, idx) => (
+            <div style={{ marginTop: 8, display: "flex", flexDirection: "column", gap: 6 }}>
+              {otherIngredients.map(({ ingredient, orderIndex }) => (
                 <IngredientRow
                   key={ingredient.id}
                   ingredient={ingredient}
                   orderIndex={orderIndex}
-                  delay={Math.min(idx, 10) * 30}
                   onSelect={setSelectedIngredient}
                 />
               ))}
@@ -306,54 +444,87 @@ export default function ScanResult({
 
       {/* 未登録成分 */}
       {unknownIngredients.length > 0 && (
-        <div>
-          <div className="text-xs text-bo-ink-faint dark:text-gray-500 font-sans">
-            未登録成分（{unknownIngredients.length}種）：{unknownIngredients.join("、")}
-          </div>
+        <div
+          style={{
+            fontSize: 11,
+            color: "var(--hd-ink-40)",
+            fontFamily: "var(--hd-sans)",
+            lineHeight: 1.7,
+          }}
+        >
+          未登録成分（{unknownIngredients.length}種）：{unknownIngredients.join("、")}
         </div>
       )}
 
       {/* Combinations */}
       {combinations.length > 0 && (
-        <div>
-          <h3 className="font-bold text-sm mb-3 flex items-center gap-2 text-bo-ink dark:text-white font-sans">
-            <span className="w-1.5 h-5 rounded-full inline-block bg-bo-accent" />
-            組み合わせ情報
-          </h3>
-          <div className="space-y-2.5">
+        <Section title="組み合わせ" caption="Combinations">
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
             {combinations.map((combo, i) => {
               const isGood = combo.type === "recommended";
               return (
                 <div
                   key={i}
-                  className="rounded-r2 overflow-hidden bg-white dark:bg-gray-800 shadow-bo1"
+                  style={{
+                    background: "var(--hd-surface)",
+                    border: "1px solid var(--hd-hair)",
+                    borderLeft: `2px solid ${isGood ? "var(--hd-ink)" : "oklch(0.55 0.18 25)"}`,
+                    padding: "14px 16px",
+                  }}
                 >
-                  {/* Left color accent via top bar */}
-                  <div className={`h-0.5 ${isGood ? "bg-bo-safe" : "bg-bo-danger"}`} />
-                  <div className="p-4 flex gap-3">
-                    <div
-                      className={`w-10 h-10 rounded-[12px] flex items-center justify-center text-lg shrink-0 ${
-                        isGood ? "bg-[#E8F5EE]" : "bg-red-50"
-                      }`}
-                    >
-                      {isGood ? "✨" : "⚠️"}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="font-bold text-sm text-bo-ink dark:text-white font-sans">{combo.label}</div>
-                      <p className="text-xs mt-1 text-bo-ink-muted dark:text-gray-400 font-sans leading-relaxed">{combo.desc}</p>
-                      <p className="text-[10px] mt-1.5 text-bo-ink-faint dark:text-gray-500 font-sans">出典: {combo.source}</p>
-                    </div>
+                  <div
+                    className="hd-mono hd-caps"
+                    style={{
+                      fontSize: 9,
+                      color: isGood ? "var(--hd-ink-60)" : "oklch(0.55 0.18 25)",
+                      letterSpacing: "0.14em",
+                      marginBottom: 6,
+                    }}
+                  >
+                    {isGood ? "Recommended" : "Caution"}
                   </div>
+                  <div
+                    style={{
+                      fontSize: 13,
+                      fontWeight: 600,
+                      color: "var(--hd-ink)",
+                      fontFamily: "var(--hd-sans)",
+                      marginBottom: 4,
+                    }}
+                  >
+                    {combo.label}
+                  </div>
+                  <p
+                    style={{
+                      margin: 0,
+                      fontSize: 12,
+                      color: "var(--hd-ink-60)",
+                      fontFamily: "var(--hd-sans)",
+                      lineHeight: 1.7,
+                    }}
+                  >
+                    {combo.desc}
+                  </p>
+                  <p
+                    className="hd-mono"
+                    style={{
+                      margin: "8px 0 0",
+                      fontSize: 9,
+                      color: "var(--hd-ink-40)",
+                      letterSpacing: "0.08em",
+                    }}
+                  >
+                    SOURCE · {combo.source}
+                  </p>
                 </div>
               );
             })}
           </div>
-        </div>
+        </Section>
       )}
 
       <Disclaimer />
 
-      {/* 成分詳細シート（Portal経由で最前面に表示） */}
       {selectedIngredient && typeof document !== "undefined" && createPortal(
         <IngredientDetailSheet
           ingredient={selectedIngredient}
@@ -362,7 +533,6 @@ export default function ScanResult({
         document.body,
       )}
 
-      {/* Share modal */}
       {shareModalOpen && typeof document !== "undefined" && createPortal(
         <ShareModal
           text={`【コスメチェック】${productName}（${brand}）\n注目成分：${activeIngredients.slice(0, 3).map((f) => f.ingredient.nameJa).join(" / ")}\n\n#HADAMI #成分チェック`}
@@ -371,7 +541,91 @@ export default function ScanResult({
         />,
         document.body,
       )}
+    </div>
+  );
+}
 
+function Stat({
+  value,
+  label,
+  muted,
+  divider,
+}: {
+  value: number;
+  label: string;
+  muted?: boolean;
+  divider?: boolean;
+}) {
+  return (
+    <div
+      style={{
+        flex: 1,
+        textAlign: "center",
+        borderLeft: divider ? "1px solid var(--hd-hair)" : undefined,
+      }}
+    >
+      <div
+        className="hd-serif"
+        style={{
+          fontSize: 22,
+          color: muted ? "var(--hd-ink-60)" : "var(--hd-ink)",
+          letterSpacing: "-0.02em",
+        }}
+      >
+        {value}
+      </div>
+      <div
+        className="hd-mono hd-caps"
+        style={{
+          marginTop: 2,
+          fontSize: 9,
+          color: "var(--hd-ink-40)",
+          letterSpacing: "0.12em",
+        }}
+      >
+        {label}
+      </div>
+    </div>
+  );
+}
+
+function Section({
+  title,
+  caption,
+  children,
+}: {
+  title: string;
+  caption?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div>
+      <div style={{ marginBottom: 12 }}>
+        {caption && (
+          <div
+            className="hd-mono hd-caps"
+            style={{
+              fontSize: 9,
+              color: "var(--hd-ink-40)",
+              letterSpacing: "0.14em",
+              marginBottom: 4,
+            }}
+          >
+            {caption}
+          </div>
+        )}
+        <div
+          className="hd-serif"
+          style={{
+            fontSize: 18,
+            color: "var(--hd-ink)",
+            letterSpacing: "-0.01em",
+          }}
+        >
+          {title}
+        </div>
+      </div>
+      {children}
     </div>
   );
 }
@@ -379,62 +633,116 @@ export default function ScanResult({
 function IngredientRow({
   ingredient,
   orderIndex,
-  delay,
   isNew,
   onSelect,
 }: {
   ingredient: Ingredient;
   orderIndex: number;
-  delay: number;
   isNew?: boolean;
   onSelect: (ingredient: Ingredient) => void;
 }) {
+  const c = getIngredientCategoryInfo(ingredient);
   return (
     <button
       onClick={() => onSelect(ingredient)}
-      className={`w-full text-left flex items-center gap-3 rounded-r2 p-3.5 animate-stagger-in pressable border-none cursor-pointer ${
-        isNew
-          ? "border-2 border-bo-accent shadow-[0_2px_12px_rgba(58,143,122,0.18)] bg-bo-accent-soft/30 dark:bg-bo-accent/10"
-          : "bg-white dark:bg-gray-800 shadow-bo1"
-      }`}
-      style={{ animationDelay: `${delay}ms` }}
+      style={{
+        width: "100%",
+        textAlign: "left",
+        display: "flex",
+        alignItems: "center",
+        gap: 12,
+        padding: "12px 14px",
+        background: "var(--hd-surface)",
+        border: `1px solid ${isNew ? "var(--hd-ink)" : "var(--hd-hair)"}`,
+        cursor: "pointer",
+        fontFamily: "var(--hd-sans)",
+      }}
     >
-      <span className="inline-flex items-center gap-px">
+      <span style={{ display: "inline-flex", gap: 1 }}>
         {Array.from({ length: RARITY[ingredient.rarity].star }).map((_, i) => (
-          <StarIcon key={i} color={RARITY[ingredient.rarity].color} size={14} />
+          <StarIcon key={i} color={RARITY[ingredient.rarity].color} size={13} />
         ))}
       </span>
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2 flex-wrap">
-          <span className="font-bold text-sm text-bo-ink dark:text-white font-sans">{ingredient.nameJa}</span>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+          <span
+            style={{
+              fontSize: 13,
+              fontWeight: 600,
+              color: "var(--hd-ink)",
+            }}
+          >
+            {ingredient.nameJa}
+          </span>
           <Badge rarity={ingredient.rarity} size="sm" />
           {isNew && (
-            <span className="text-[9px] px-2 py-0.5 rounded-full font-bold bg-bo-accent text-white shadow-bo-accent">
-              NEW
+            <span
+              className="hd-mono hd-caps"
+              style={{
+                fontSize: 8,
+                padding: "2px 6px",
+                background: "var(--hd-ink)",
+                color: "var(--hd-bg)",
+                letterSpacing: "0.14em",
+                fontWeight: 700,
+              }}
+            >
+              New
             </span>
           )}
         </div>
-        <div className="text-[11px] mt-0.5 text-bo-ink-muted dark:text-gray-400 font-sans">{ingredient.nameInci}</div>
-        {(() => {
-          const c = getIngredientCategoryInfo(ingredient);
-          return c ? (
-            <div className="flex gap-1 mt-1.5">
-              <span
-                className="inline-flex items-center gap-1 text-[9px] px-2 py-0.5 rounded-full font-medium font-sans"
-                style={{ background: c.color + "18", color: c.color }}
-              >
-                <ActiveCategoryIcon category={c.key} size={11} />
-                {c.label}
-              </span>
-            </div>
-          ) : null;
-        })()}
+        <div
+          className="hd-mono"
+          style={{
+            marginTop: 2,
+            fontSize: 10,
+            color: "var(--hd-ink-40)",
+            letterSpacing: "0.04em",
+          }}
+        >
+          {ingredient.nameInci}
+        </div>
+        {c && (
+          <div style={{ marginTop: 6 }}>
+            <span
+              className="hd-mono hd-caps"
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 4,
+                fontSize: 9,
+                padding: "2px 6px",
+                color: "var(--hd-ink-60)",
+                border: "1px solid var(--hd-hair)",
+                letterSpacing: "0.1em",
+              }}
+            >
+              <ActiveCategoryIcon category={c.key} size={10} />
+              {c.label}
+            </span>
+          </div>
+        )}
       </div>
-      {/* Order number + chevron */}
-      <div className="flex items-center gap-1.5 shrink-0">
-        <span className="text-[10px] font-medium text-bo-ink-faint font-sans">#{orderIndex + 1}</span>
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#BDBDBD" strokeWidth="2" strokeLinecap="round">
-          <path d="M9 18l6-6-6-6"/>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 6,
+          flexShrink: 0,
+        }}
+      >
+        <span
+          className="hd-mono"
+          style={{
+            fontSize: 10,
+            color: "var(--hd-ink-40)",
+            letterSpacing: "0.06em",
+          }}
+        >
+          #{orderIndex + 1}
+        </span>
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--hd-ink-40)" strokeWidth="2" strokeLinecap="round">
+          <path d="M9 18l6-6-6-6" />
         </svg>
       </div>
     </button>
@@ -455,54 +763,123 @@ function IngredientDetailSheet({
 
   return (
     <BottomSheet open={true} onClose={onClose} title={ingredient.nameJa}>
-      <div className="pb-6 space-y-3">
-        {/* Header */}
-        <div className="flex flex-col items-center gap-2 py-3">
+      <div style={{ display: "flex", flexDirection: "column", gap: 12, paddingBottom: 16 }}>
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            gap: 8,
+            padding: "16px 0 8px",
+          }}
+        >
           <div
-            className="w-14 h-14 rounded-full flex items-center justify-center"
-            style={{ background: `linear-gradient(135deg, ${catInfo?.color || ingredient.color}20, ${catInfo?.color || ingredient.color}08)` }}
+            style={{
+              width: 52,
+              height: 52,
+              borderRadius: 999,
+              background: "var(--hd-bg)",
+              border: "1px solid var(--hd-hair)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
           >
-            <ActiveCategoryIcon category={catInfo?.key} size={24} />
+            <ActiveCategoryIcon category={catInfo?.key} size={22} />
           </div>
-          <p className="text-xs text-bo-ink-muted font-sans">{ingredient.nameInci}</p>
-          <div className="flex items-center gap-2 flex-wrap justify-center">
+          <div
+            className="hd-mono"
+            style={{
+              fontSize: 11,
+              color: "var(--hd-ink-40)",
+              letterSpacing: "0.06em",
+            }}
+          >
+            {ingredient.nameInci}
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap", justifyContent: "center" }}>
             <Badge rarity={ingredient.rarity} size="sm" />
-            {allCats.map((c) => (
+            {allCats.map((cat) => (
               <span
-                key={c.key}
-                className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full font-medium font-sans"
-                style={{ background: c.color + "18", color: c.color }}
+                key={cat.key}
+                className="hd-mono hd-caps"
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 4,
+                  fontSize: 9,
+                  padding: "2px 6px",
+                  color: "var(--hd-ink-60)",
+                  border: "1px solid var(--hd-hair)",
+                  letterSpacing: "0.1em",
+                }}
               >
-                <ActiveCategoryIcon category={c.key} size={12} />
-                {c.label}
+                <ActiveCategoryIcon category={cat.key} size={11} />
+                {cat.label}
               </span>
             ))}
           </div>
         </div>
 
-        {/* Note */}
-        <div className="bg-white rounded-r2 p-3.5 shadow-bo1 border border-bo-parchment">
-          <h2 className="font-bold text-xs mb-1.5 text-bo-ink font-sans">📌 一般的な分類の説明</h2>
-          <p className="text-xs leading-relaxed text-bo-ink-soft font-sans">{ingredient.note}</p>
-        </div>
-
-        {/* Fun fact */}
+        <DetailBlock caption="Note" body={ingredient.note} />
         {ingredient.funFact && (
-          <div className="rounded-r2 p-3.5 bg-bo-accent-soft border border-bo-accent/20">
-            <h2 className="font-bold text-xs mb-1.5 text-bo-accent font-sans">💡 トリビア</h2>
-            <p className="text-xs leading-relaxed text-bo-ink-soft font-sans">{ingredient.funFact}</p>
-          </div>
+          <DetailBlock caption="Trivia" body={ingredient.funFact} accent />
         )}
-
-        {/* Caution */}
         {ingredient.caution && (
-          <div className="rounded-r2 p-3.5 bg-bo-danger-bg border border-bo-danger/20">
-            <h2 className="font-bold text-xs mb-1.5 text-bo-danger font-sans">📋 一般的な注意事項</h2>
-            <p className="text-xs leading-relaxed text-bo-ink-soft font-sans">{ingredient.caution}</p>
-          </div>
+          <DetailBlock caption="Caution" body={ingredient.caution} warn />
         )}
-
       </div>
     </BottomSheet>
+  );
+}
+
+function DetailBlock({
+  caption,
+  body,
+  accent,
+  warn,
+}: {
+  caption: string;
+  body: string;
+  accent?: boolean;
+  warn?: boolean;
+}) {
+  const borderColor = warn
+    ? "oklch(0.55 0.18 25)"
+    : accent
+    ? "var(--hd-ink)"
+    : "var(--hd-hair)";
+  return (
+    <div
+      style={{
+        background: "var(--hd-surface)",
+        border: "1px solid var(--hd-hair)",
+        borderLeft: `2px solid ${borderColor}`,
+        padding: "12px 14px",
+      }}
+    >
+      <div
+        className="hd-mono hd-caps"
+        style={{
+          fontSize: 9,
+          color: "var(--hd-ink-40)",
+          letterSpacing: "0.14em",
+          marginBottom: 6,
+        }}
+      >
+        {caption}
+      </div>
+      <p
+        style={{
+          margin: 0,
+          fontSize: 12,
+          lineHeight: 1.75,
+          color: "var(--hd-ink-60)",
+          fontFamily: "var(--hd-sans)",
+        }}
+      >
+        {body}
+      </p>
+    </div>
   );
 }
