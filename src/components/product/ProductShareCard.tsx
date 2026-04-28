@@ -16,6 +16,7 @@ export interface ProductShareCardProps {
   productType: string;
   initials: string;
   bgColor?: string;
+  imageUrl?: string;
   no?: number;
   effects: ProductShareCardEffect[];
   rating?: number; // 0-5
@@ -31,6 +32,7 @@ export default function ProductShareCard({
   productType,
   initials,
   bgColor = "#b5c4b1",
+  imageUrl,
   no,
   effects,
   rating = 0,
@@ -56,43 +58,56 @@ export default function ProductShareCard({
     >
       {/* Left — product portrait */}
       <div style={{ position: "relative", overflow: "hidden" }}>
-        {/* Base color */}
-        <div style={{ position: "absolute", inset: 0, background: bgColor }} />
-        {/* Linen texture */}
-        <div
-          style={{
-            position: "absolute",
-            inset: 0,
-            background: `repeating-linear-gradient(45deg, rgba(255,255,255,0.07) 0 2px, transparent 2px 8px),
-                         repeating-linear-gradient(-45deg, rgba(0,0,0,0.03) 0 1px, transparent 1px 6px)`,
-          }}
-        />
-        {/* Highlight */}
-        <div
-          style={{
-            position: "absolute",
-            inset: 0,
-            background:
-              "linear-gradient(135deg, rgba(255,255,255,0.5) 0%, transparent 45%, rgba(0,0,0,0.12) 100%)",
-          }}
-        />
-        {/* Initials */}
-        <div
-          style={{
-            position: "absolute",
-            inset: 0,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            fontFamily: "var(--hd-serif)",
-            fontSize: 56,
-            fontStyle: "italic",
-            color: "rgba(255,255,255,0.85)",
-            letterSpacing: "-0.03em",
-          }}
-        >
-          {initials}
-        </div>
+        {imageUrl ? (
+          /* Actual product photo */
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={imageUrl}
+            alt=""
+            style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }}
+            crossOrigin="anonymous"
+          />
+        ) : (
+          <>
+            {/* Base color */}
+            <div style={{ position: "absolute", inset: 0, background: bgColor }} />
+            {/* Linen texture */}
+            <div
+              style={{
+                position: "absolute",
+                inset: 0,
+                background: `repeating-linear-gradient(45deg, rgba(255,255,255,0.07) 0 2px, transparent 2px 8px),
+                             repeating-linear-gradient(-45deg, rgba(0,0,0,0.03) 0 1px, transparent 1px 6px)`,
+              }}
+            />
+            {/* Highlight */}
+            <div
+              style={{
+                position: "absolute",
+                inset: 0,
+                background:
+                  "linear-gradient(135deg, rgba(255,255,255,0.5) 0%, transparent 45%, rgba(0,0,0,0.12) 100%)",
+              }}
+            />
+            {/* Initials */}
+            <div
+              style={{
+                position: "absolute",
+                inset: 0,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontFamily: "var(--hd-serif)",
+                fontSize: 56,
+                fontStyle: "italic",
+                color: "rgba(255,255,255,0.85)",
+                letterSpacing: "-0.03em",
+              }}
+            >
+              {initials}
+            </div>
+          </>
+        )}
         {/* Side label (vertical) */}
         <div
           style={{
@@ -111,7 +126,8 @@ export default function ProductShareCard({
               fontSize: 9,
               letterSpacing: "0.28em",
               textTransform: "uppercase",
-              color: "rgba(255,255,255,0.7)",
+              color: imageUrl ? "rgba(255,255,255,0.9)" : "rgba(255,255,255,0.7)",
+              textShadow: imageUrl ? "0 1px 3px rgba(0,0,0,0.5)" : undefined,
             }}
           >
             {productType} · {brand}

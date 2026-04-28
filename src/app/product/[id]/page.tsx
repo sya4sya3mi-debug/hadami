@@ -703,6 +703,7 @@ export default function ProductDetailPage() {
         brand={product.brand}
         productType={getGenreByKey(product.productType)?.label ?? product.productType}
         initials={shareCardInitials}
+        imageUrl={product.packageImage ?? undefined}
         effects={shareCardEffects}
       />
     </AuthGuard>
