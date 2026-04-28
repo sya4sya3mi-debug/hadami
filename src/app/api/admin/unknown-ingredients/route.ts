@@ -22,11 +22,29 @@ async function getAuthUserId(request: NextRequest): Promise<string | null> {
   return user?.id ?? null;
 }
 
-/** GET: 未識別成分の集計一覧 + 無視済みリスト */
+function slugify(name: string): string {
+  return name
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, "_")
+    .replace(/[^\w぀-ゟ゠-ヿ一-鿿]/g, "_")
+    .replace(/_+/g, "_")
+    .replace(/^_|_$/g, "");
+}
+
+/** GET: 未識別成分の集計一覧 + 無視済みリスト。?registered=1 の場合は登録済み成分名一覧を返す */
 export async function GET(request: NextRequest) {
   const userId = await getAuthUserId(request);
   if (!userId || !isAdmin(userId)) {
     return NextResponse.json({ error: "権限がありません" }, { status: 403 });
+  }
+
+  const { searchParams } = new URL(request.url);
+  if (searchParams.get("registered") === "1") {
+    const { data } = await supabaseAdmin
+      .from("custom_ingredients")
+      .select("name_ja");
+    return NextResponse.json({ names: (data ?? []).map((r: { name_ja: string }) => r.name_ja) });
   }
 
   const [productsResult, dismissedResult] = await Promise.all([
@@ -39,7 +57,6 @@ export async function GET(request: NextRequest) {
       .select("name, dismissed_at"),
   ]);
 
-  // 全unknown_ingredientsをフラットに集計
   const countMap: Record<string, number> = {};
   for (const row of productsResult.data ?? []) {
     const arr: string[] = row.unknown_ingredients ?? [];
@@ -86,6 +103,48 @@ export async function POST(request: NextRequest) {
   const { error } = await supabaseAdmin
     .from("dismissed_unknowns")
     .upsert({ name: name.trim() }, { onConflict: "name" });
+
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  return NextResponse.json({ success: true });
+}
+
+/** PATCH: 未識別成分をカスタム成分マスタへ登録 */
+export async function PATCH(request: NextRequest) {
+  const userId = await getAuthUserId(request);
+  if (!userId || !isAdmin(userId)) {
+    return NextResponse.json({ error: "権限がありません" }, { status: 403 });
+  }
+
+  const payload = (await request.json()) as {
+    nameJa: string;
+    nameInci?: string;
+    categories?: string[];
+    genre?: string;
+    color?: string;
+    note?: string;
+  };
+
+  if (!payload.nameJa?.trim()) {
+    return NextResponse.json({ error: "nameJa が必要です" }, { status: 400 });
+  }
+
+  const { error } = await supabaseAdmin
+    .from("custom_ingredients")
+    .upsert(
+      {
+        id: slugify(payload.nameJa),
+        name_ja: payload.nameJa.trim(),
+        name_inci: payload.nameInci?.trim() ?? "",
+        categories: payload.categories ?? [],
+        genre: payload.genre ?? "base",
+        color: payload.color ?? "#9E9E9E",
+        note: payload.note?.trim() ?? "",
+      },
+      { onConflict: "id" }
+    );
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });

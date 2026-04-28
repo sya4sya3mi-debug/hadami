@@ -29,6 +29,42 @@ import {
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 
 const client = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+
+// ── カスタム成分キャッシュ（5分TTL）──
+interface CustomIngredientRow { id: string; name_ja: string; name_inci: string; aliases: string[] }
+let _customCache: CustomIngredientRow[] = [];
+let _customCacheTime = 0;
+async function getCustomIngredients(): Promise<CustomIngredientRow[]> {
+  const now = Date.now();
+  if (now - _customCacheTime < 5 * 60 * 1000) return _customCache;
+  const { data } = await supabaseAdmin
+    .from("custom_ingredients")
+    .select("id, name_ja, name_inci, aliases");
+  _customCache = (data ?? []) as CustomIngredientRow[];
+  _customCacheTime = now;
+  return _customCache;
+}
+async function matchCustomIngredients(rawText: string): Promise<{ ingredientIds: string[]; ingredientNames: string[] }> {
+  const customs = await getCustomIngredients();
+  const ids: string[] = [];
+  const names: string[] = [];
+  const seen = new Set<string>();
+  const normalizedText = normalizeIngredientName(rawText);
+  for (const c of customs) {
+    if (seen.has(c.id)) continue;
+    const hit =
+      rawText.includes(c.name_ja) ||
+      normalizedText.includes(normalizeIngredientName(c.name_ja)) ||
+      (c.name_inci && normalizedText.includes(normalizeIngredientName(c.name_inci))) ||
+      (c.aliases ?? []).some((a) => rawText.includes(a) || normalizedText.includes(normalizeIngredientName(a)));
+    if (hit) {
+      seen.add(c.id);
+      ids.push(`custom:${c.id}`);
+      names.push(c.name_ja);
+    }
+  }
+  return { ingredientIds: ids, ingredientNames: names };
+}
 const SEARCH_MODEL_LEGACY = process.env.GEMINI_SEARCH_MODEL;
 const SEARCH_MODEL_PRIMARY =
   process.env.GEMINI_SEARCH_MODEL_PRIMARY ||
@@ -386,7 +422,10 @@ async function searchKeyIngredients(
   if (!raw) return emptyResult;
 
   // STEP 2b: ローカルでマスターDB照合（nameJa, INCI, aliases すべて使用）
-  const { ingredientIds, ingredientNames } = matchIngredientsLocally(raw.rawText);
+  const { ingredientIds: masterIds, ingredientNames: masterNames } = matchIngredientsLocally(raw.rawText);
+  const { ingredientIds: customIds, ingredientNames: customNames } = await matchCustomIngredients(raw.rawText);
+  const ingredientIds = [...masterIds, ...customIds];
+  const ingredientNames = [...masterNames, ...customNames];
   logScanInfo("local_match_completed", {
     matchedIngredientCount: ingredientIds.length,
     rawTextLength: raw.rawText.length,

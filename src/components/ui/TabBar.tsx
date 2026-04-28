@@ -36,6 +36,7 @@ export default function TabBar() {
 
   if (isAuthPath) return null;
   if (pathname.startsWith("/redesign")) return null;
+  if (pathname.startsWith("/admin")) return null;
   if (!loading && !user) return null;
 
   const isActive = (href: string) =>
