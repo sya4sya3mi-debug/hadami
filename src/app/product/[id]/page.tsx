@@ -18,8 +18,7 @@ import { getProductImagePath, getProductImageThumbPath } from "@/lib/productImag
 import { getSignedImageUrls } from "@/lib/storage";
 import { ActiveCategoryIcon, ProductGenreIcon } from "@/components/ui/CosmeticIcons";
 import { StarIcon } from "@/components/ui/Icons";
-import { ACTIVE_CATEGORIES } from "@/lib/ingredients";
-import ProductShareCardSheet from "@/components/product/ProductShareCardSheet";
+import { shareMyCosmetic } from "@/lib/share";
 
 function readFileAsDataUrl(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -55,7 +54,6 @@ export default function ProductDetailPage() {
   const [isUpdatingPhoto, setIsUpdatingPhoto] = useState(false);
   const [photoError, setPhotoError] = useState<string | null>(null);
   const [photoMessage, setPhotoMessage] = useState<string | null>(null);
-  const [shareCardOpen, setShareCardOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const router = useRouter();
 
@@ -105,25 +103,8 @@ export default function ProductDetailPage() {
 
   const activeIngredients = allIngredients.filter((i) => i.activeIngredient);
 
-  // For share card
-  const shareCardInitials = (() => {
-    const words = product.name.replace(/[^\w\s]/g, " ").split(/\s+/).filter(Boolean);
-    if (words.length >= 2) return (words[0][0] + words[1][0]).toUpperCase();
-    return product.name.slice(0, 2).toUpperCase();
-  })();
-  const shareCardEffects = ACTIVE_CATEGORIES
-    .map((cat) => ({
-      label: cat.label,
-      score: Math.min(
-        allIngredients.filter(
-          (ing) => ing.activeIngredient && ing.categories.includes(cat.key)
-        ).length * 2,
-        10
-      ),
-    }))
-    .filter((e) => e.score > 0)
-    .slice(0, 4);
   const ingredientNames = allIngredients.map((i) => i.nameJa);
+  const xShareUrl = `https://x.com/intent/tweet?text=${encodeURIComponent(shareMyCosmetic(product, ingredientNames))}`;
   const combinations = findCombinations(ingredientNames);
 
   const handleToggleFavorite = async () => {
@@ -660,22 +641,28 @@ export default function ProductDetailPage() {
                 </span>
               </button>
             </div>
-            <button
-              type="button"
-              onClick={() => setShareCardOpen(true)}
+            <a
+              href={xShareUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Xに投稿する"
               style={{
                 width: "100%", marginTop: 10, padding: "13px 0",
-                background: "transparent",
+                background: "var(--hd-ink)",
                 border: "1px solid var(--hd-ink)",
-                color: "var(--hd-ink)",
+                color: "var(--hd-bg)",
                 fontSize: 13, fontWeight: 600, fontFamily: "var(--hd-sans)",
                 cursor: "pointer",
-                display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+                display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
+                textDecoration: "none",
               }}
             >
-              <span>シェアカード</span>
-              <span style={{ fontFamily: "var(--hd-mono)", fontSize: 9, letterSpacing: "0.2em", opacity: 0.5 }}>SHARE →</span>
-            </button>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+              </svg>
+              <span>Xに投稿する</span>
+              <span style={{ fontFamily: "var(--hd-mono)", fontSize: 9, letterSpacing: "0.2em", opacity: 0.6 }}>POST →</span>
+            </a>
 
             <div style={{ marginTop: 24 }}>
               <Disclaimer />
@@ -683,16 +670,6 @@ export default function ProductDetailPage() {
           </div>
         </div>
       </div>
-
-      <ProductShareCardSheet
-        open={shareCardOpen}
-        onClose={() => setShareCardOpen(false)}
-        name={product.name}
-        brand={product.brand}
-        productType={getGenreByKey(product.productType)?.label ?? product.productType}
-        initials={shareCardInitials}
-        effects={shareCardEffects}
-      />
     </AuthGuard>
   );
 }

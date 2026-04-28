@@ -25,9 +25,6 @@ import {
   updateProductNameInDb,
 } from "@/lib/db";
 import { PRODUCT_GENRES, getGenreByKey } from "@/lib/productGenres";
-import ShareModal from "@/components/ui/ShareModal";
-import { shareMyCosmetic } from "@/lib/share";
-import { generateProductShareImage } from "@/lib/generateShareImage";
 import { getSignedImageUrls } from "@/lib/storage";
 import { getProductImagePath, getProductImageThumbPath } from "@/lib/productImages";
 import { ProductGenre } from "@/types";
@@ -89,7 +86,6 @@ interface CoverCardProps {
   onNavigate: () => void;
   onFav: (e: React.MouseEvent) => void;
   onSelect: () => void;
-  onShare: (e: React.MouseEvent) => void;
 }
 
 function CoverCard({
@@ -108,7 +104,6 @@ function CoverCard({
   onNavigate,
   onFav,
   onSelect,
-  onShare,
 }: CoverCardProps) {
   const genre = getGenreByKey(p.productType || "other");
   const hasImage = p.packageImage && !failedImageIds.has(p.id);
@@ -222,28 +217,7 @@ function CoverCard({
         </button>
       )}
 
-      {/* Share button */}
-      {!editMode && (
-        <button
-          onClick={onShare}
-          aria-label="Xに投稿"
-          style={{
-            position: "absolute", bottom: 40, right: 8,
-            width: favSize, height: favSize, borderRadius: 999,
-            background: "rgba(255,255,255,0.15)",
-            border: "1px solid rgba(255,255,255,0.5)",
-            color: "#fff",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            cursor: "pointer",
-          }}
-        >
-          <svg width={favSize * 0.45} height={favSize * 0.45} viewBox="0 0 24 24" fill="currentColor">
-            <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
-          </svg>
-        </button>
-      )}
-
-      {/* Bottom text overlay */}
+{/* Bottom text overlay */}
       <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: "8px 10px" }}>
         {showFeatured && (
           <div
@@ -366,8 +340,6 @@ export default function HistoryPage() {
   const [editingNameId, setEditingNameId] = useState<string | null>(null);
   const [editNameValue, setEditNameValue] = useState("");
   const captureRef = useRef<HTMLDivElement>(null);
-  const [shareProduct, setShareProduct] = useState<Product | null>(null);
-  const [shareImageBase64, setShareImageBase64] = useState<string | undefined>(undefined);
   const [failedImageIds, setFailedImageIds] = useState<Set<string>>(new Set());
 
   const { favCount, filtered, activeGenres } = useMemo(() => {
@@ -485,12 +457,6 @@ export default function HistoryPage() {
     });
   };
 
-  const openShare = (p: Product) => {
-    setShareImageBase64(undefined);
-    setShareProduct(p);
-    generateProductShareImage(p).then(setShareImageBase64).catch(() => {});
-  };
-
   const layoutLabels: Record<LayoutMode, string> = { magazine: "Magazine", mosaic: "Mosaic", list: "List" };
 
   // ── Shared cover card props helper ────────────────────────
@@ -503,7 +469,6 @@ export default function HistoryPage() {
     onNavigate: () => router.push(`/product/${p.id}`),
     onFav: (e: React.MouseEvent) => { e.stopPropagation(); handleToggleFavorite(p.id, p.isFavorite); },
     onSelect: () => toggleSelect(p.id),
-    onShare: (e: React.MouseEvent) => { e.stopPropagation(); openShare(p); },
   });
 
   // ── Overflow section — cycles through layout patterns ─────
@@ -516,7 +481,7 @@ export default function HistoryPage() {
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
           {ps.map((p, i) => (
             <div key={p.id} style={{ aspectRatio: "2/3", opacity: deletingId === p.id ? 0.5 : 1 }}>
-              <CoverCard {...coverCardProps(p, base + i)} style={{ width: "100%", height: "100%", borderRadius: 12 }} nameSize={11} favSize={22} />
+              <CoverCard {...coverCardProps(p, base + i)} style={{ width: "100%", height: "100%", borderRadius: 0 }} nameSize={11} favSize={22} />
             </div>
           ))}
         </div>
@@ -529,7 +494,7 @@ export default function HistoryPage() {
         <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 8 }}>
           {ps.map((p, i) => (
             <div key={p.id} style={{ aspectRatio: "1/1.3", opacity: deletingId === p.id ? 0.5 : 1 }}>
-              <CoverCard {...coverCardProps(p, base + i)} style={{ width: "100%", height: "100%", borderRadius: 10 }} nameSize={9} favSize={18} />
+              <CoverCard {...coverCardProps(p, base + i)} style={{ width: "100%", height: "100%", borderRadius: 0 }} nameSize={9} favSize={18} />
             </div>
           ))}
         </div>
@@ -541,11 +506,11 @@ export default function HistoryPage() {
       render: (ps, base) => (
         <div style={{ display: "grid", gridTemplateColumns: "1.6fr 1fr", gap: 8, alignItems: "start" }}>
           <div style={{ aspectRatio: "2/2.8", opacity: deletingId === ps[0]?.id ? 0.5 : 1 }}>
-            <CoverCard {...coverCardProps(ps[0], base)} style={{ width: "100%", height: "100%", borderRadius: 14 }} nameSize={12} favSize={24} />
+            <CoverCard {...coverCardProps(ps[0], base)} style={{ width: "100%", height: "100%", borderRadius: 0 }} nameSize={12} favSize={24} />
           </div>
           {ps[1] && (
             <div style={{ aspectRatio: "2/2.8", opacity: deletingId === ps[1].id ? 0.5 : 1 }}>
-              <CoverCard {...coverCardProps(ps[1], base + 1)} style={{ width: "100%", height: "100%", borderRadius: 12 }} nameSize={10} favSize={20} />
+              <CoverCard {...coverCardProps(ps[1], base + 1)} style={{ width: "100%", height: "100%", borderRadius: 0 }} nameSize={10} favSize={20} />
             </div>
           )}
         </div>
@@ -556,7 +521,7 @@ export default function HistoryPage() {
       count: 1,
       render: (ps, base) => (
         <div style={{ aspectRatio: "16/7", opacity: deletingId === ps[0]?.id ? 0.5 : 1 }}>
-          <CoverCard {...coverCardProps(ps[0], base)} style={{ width: "100%", height: "100%", borderRadius: 14 }} nameSize={14} brandSize={8} favSize={26} gradientStop="oklch(0.18 0.02 90 / 0.65)" />
+          <CoverCard {...coverCardProps(ps[0], base)} style={{ width: "100%", height: "100%", borderRadius: 0 }} nameSize={14} brandSize={8} favSize={26} gradientStop="oklch(0.18 0.02 90 / 0.65)" />
         </div>
       ),
     },
@@ -566,12 +531,12 @@ export default function HistoryPage() {
       render: (ps, base) => (
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, alignItems: "start" }}>
           <div style={{ aspectRatio: "2/3", opacity: deletingId === ps[0]?.id ? 0.5 : 1 }}>
-            <CoverCard {...coverCardProps(ps[0], base)} style={{ width: "100%", height: "100%", borderRadius: 14 }} nameSize={12} favSize={22} />
+            <CoverCard {...coverCardProps(ps[0], base)} style={{ width: "100%", height: "100%", borderRadius: 0 }} nameSize={12} favSize={22} />
           </div>
           <div style={{ display: "flex", flexDirection: "column", gap: 8, alignSelf: "stretch" }}>
             {ps.slice(1).map((p, i) => (
-              <div key={p.id} style={{ flex: 1, minHeight: 0, overflow: "hidden", borderRadius: 12, opacity: deletingId === p.id ? 0.5 : 1 }}>
-                <CoverCard {...coverCardProps(p, base + 1 + i)} style={{ width: "100%", height: "100%", borderRadius: 12 }} nameSize={10} favSize={19} />
+              <div key={p.id} style={{ flex: 1, minHeight: 0, overflow: "hidden", borderRadius: 0, opacity: deletingId === p.id ? 0.5 : 1 }}>
+                <CoverCard {...coverCardProps(p, base + 1 + i)} style={{ width: "100%", height: "100%", borderRadius: 0 }} nameSize={10} favSize={19} />
               </div>
             ))}
           </div>
@@ -619,7 +584,7 @@ export default function HistoryPage() {
             <div style={{ aspectRatio: "2/3", opacity: deletingId === hero.id ? 0.5 : 1 }}>
               <CoverCard
                 {...coverCardProps(hero, 0, true)}
-                style={{ width: "100%", height: "100%", borderRadius: 18 }}
+                style={{ width: "100%", height: "100%", borderRadius: 0 }}
                 nameSize={15}
                 brandSize={9}
                 showFeatured
@@ -631,10 +596,10 @@ export default function HistoryPage() {
           {/* Right stack — flex:1 items share the hero's height */}
           <div style={{ display: "flex", flexDirection: "column", gap: 10, alignSelf: "stretch" }}>
             {right.map((p, i) => (
-              <div key={p.id} style={{ flex: 1, minHeight: 0, overflow: "hidden", borderRadius: 12, opacity: deletingId === p.id ? 0.5 : 1 }}>
+              <div key={p.id} style={{ flex: 1, minHeight: 0, overflow: "hidden", borderRadius: 0, opacity: deletingId === p.id ? 0.5 : 1 }}>
                 <CoverCard
                   {...coverCardProps(p, i + 1, i === 0)}
-                  style={{ width: "100%", height: "100%", borderRadius: 12 }}
+                  style={{ width: "100%", height: "100%", borderRadius: 0 }}
                   nameSize={11}
                   favSize={22}
                 />
@@ -649,7 +614,7 @@ export default function HistoryPage() {
               <div key={p.id} style={{ aspectRatio: "1/1.3", opacity: deletingId === p.id ? 0.5 : 1 }}>
                 <CoverCard
                   {...coverCardProps(p, i + 3)}
-                  style={{ width: "100%", height: "100%", borderRadius: 12 }}
+                  style={{ width: "100%", height: "100%", borderRadius: 0 }}
                   nameSize={10}
                   favSize={20}
                 />
@@ -679,7 +644,7 @@ export default function HistoryPage() {
             <div style={{ aspectRatio: "2/2.8", opacity: deletingId === left.id ? 0.5 : 1 }}>
               <CoverCard
                 {...coverCardProps(left, 0, true)}
-                style={{ width: "100%", height: "100%", borderRadius: 16 }}
+                style={{ width: "100%", height: "100%", borderRadius: 0 }}
                 nameSize={12}
                 favSize={24}
               />
@@ -688,10 +653,10 @@ export default function HistoryPage() {
           {/* Right stack — flex:1 so 3 items share the left card's height */}
           <div style={{ display: "flex", flexDirection: "column", gap: 8, alignSelf: "stretch" }}>
             {rightStack.map((p, i) => (
-              <div key={p.id} style={{ flex: 1, minHeight: 0, overflow: "hidden", borderRadius: 12, opacity: deletingId === p.id ? 0.5 : 1 }}>
+              <div key={p.id} style={{ flex: 1, minHeight: 0, overflow: "hidden", borderRadius: 0, opacity: deletingId === p.id ? 0.5 : 1 }}>
                 <CoverCard
                   {...coverCardProps(p, i + 1)}
-                  style={{ width: "100%", height: "100%", borderRadius: 12 }}
+                  style={{ width: "100%", height: "100%", borderRadius: 0 }}
                   nameSize={10}
                   favSize={20}
                 />
@@ -704,7 +669,7 @@ export default function HistoryPage() {
           <div style={{ aspectRatio: "16/6", opacity: deletingId === wide.id ? 0.5 : 1 }}>
             <CoverCard
               {...coverCardProps(wide, 4)}
-              style={{ width: "100%", height: "100%", borderRadius: 16 }}
+              style={{ width: "100%", height: "100%", borderRadius: 0 }}
               nameSize={14}
               brandSize={7.5}
               favSize={24}
@@ -734,7 +699,7 @@ export default function HistoryPage() {
                     key={g.key}
                     onClick={() => { handleGenreChange(p.id, g.key); setEditingGenreId(null); }}
                     style={{
-                      fontSize: 9, padding: "4px 10px", borderRadius: 999,
+                      fontSize: 9, padding: "4px 10px", borderRadius: 0,
                       background: p.productType === g.key ? "var(--hd-moss)" : "transparent",
                       color: p.productType === g.key ? "#fff" : "var(--hd-ink-60)",
                       border: p.productType === g.key ? "none" : "1px solid var(--hd-hair)",
@@ -760,7 +725,7 @@ export default function HistoryPage() {
                   key={id}
                   onClick={(e) => { e.stopPropagation(); setEditingGenreId(editingGenreId === id ? null : id); }}
                   style={{
-                    fontSize: 9, padding: "5px 10px", borderRadius: 999,
+                    fontSize: 9, padding: "5px 10px", borderRadius: 0,
                     border: "none", background: "var(--hd-surface-2)", color: "var(--hd-ink-60)",
                     cursor: "pointer", fontFamily: "var(--hd-sans)",
                   }}
@@ -826,7 +791,7 @@ export default function HistoryPage() {
                 {/* Thumbnail */}
                 <div
                   style={{
-                    width: 70, height: 86, borderRadius: 12,
+                    width: 70, height: 86, borderRadius: 0,
                     overflow: "hidden", flexShrink: 0, position: "relative",
                   }}
                 >
@@ -1009,7 +974,7 @@ export default function HistoryPage() {
                       key={g.key}
                       onClick={() => { handleGenreChange(p.id, g.key); setEditingGenreId(null); }}
                       style={{
-                        fontSize: 9, padding: "4px 10px", borderRadius: 999,
+                        fontSize: 9, padding: "4px 10px", borderRadius: 0,
                         background: p.productType === g.key ? "var(--hd-moss)" : "transparent",
                         color: p.productType === g.key ? "#fff" : "var(--hd-ink-60)",
                         border: p.productType === g.key ? "none" : "1px solid var(--hd-hair)",
@@ -1033,7 +998,7 @@ export default function HistoryPage() {
   // ── Filter pill style ──────────────────────────────────────
   const pillStyle = (on: boolean): React.CSSProperties => ({
     display: "inline-flex", alignItems: "center", gap: 5, flexShrink: 0,
-    padding: "7px 13px", borderRadius: 999, cursor: "pointer", border: "none",
+    padding: "7px 13px", borderRadius: 0, cursor: "pointer", border: "none",
     background: on ? "var(--hd-ink)" : "var(--hd-surface-2)",
     color: on ? "var(--hd-bg)" : "var(--hd-ink-60)",
     fontFamily: "var(--hd-serif)", fontSize: 12,
@@ -1081,7 +1046,7 @@ export default function HistoryPage() {
                   <div
                     style={{
                       display: "inline-flex", alignItems: "center",
-                      marginTop: 6, padding: "3px 10px", borderRadius: 999,
+                      marginTop: 6, padding: "3px 10px", borderRadius: 0,
                       background: "var(--hd-mint-bg)", border: "1px solid var(--hd-mint-bg)",
                       fontFamily: "var(--hd-serif)", fontSize: 12,
                       fontStyle: "italic", color: "var(--hd-moss)",
@@ -1097,7 +1062,7 @@ export default function HistoryPage() {
                   <div
                     style={{
                       display: "flex", gap: 4, padding: 3,
-                      background: "var(--hd-surface-2)", borderRadius: 999,
+                      background: "var(--hd-surface-2)", borderRadius: 0,
                     }}
                   >
                     {(["magazine", "mosaic", "list"] as LayoutMode[]).map((m) => {
@@ -1108,7 +1073,7 @@ export default function HistoryPage() {
                           onClick={() => setLayout(m)}
                           title={layoutLabels[m]}
                           style={{
-                            padding: "6px 8px", borderRadius: 999, border: "none",
+                            padding: "6px 8px", borderRadius: 0, border: "none",
                             background: on ? "var(--hd-ink)" : "transparent",
                             color: on ? "var(--hd-bg)" : "var(--hd-ink-40)",
                             cursor: "pointer", display: "flex", alignItems: "center",
@@ -1248,20 +1213,6 @@ export default function HistoryPage() {
             </div>
           </div>
         </div>
-
-        {shareProduct && (
-          <ShareModal
-            text={shareMyCosmetic(
-              shareProduct,
-              shareProduct.ingredients
-                .sort((a, b) => a.orderIndex - b.orderIndex)
-                .map((pi) => getIngredientById(pi.ingredientId)?.nameJa)
-                .filter((n): n is string => !!n)
-            )}
-            onClose={() => { setShareProduct(null); setShareImageBase64(undefined); }}
-            imageBase64={shareImageBase64}
-          />
-        )}
 
         <ScrollToTop />
       </div>
