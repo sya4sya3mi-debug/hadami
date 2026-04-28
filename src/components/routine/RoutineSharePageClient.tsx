@@ -657,24 +657,6 @@ export default function RoutineSharePageClient({
                       </button>
                     </div>
                   ))}
-                  <button
-                    onClick={addStep}
-                    style={{
-                      width: "100%",
-                      padding: "12px 0",
-                      background: "transparent",
-                      border: "1px dashed var(--hd-line)",
-                      cursor: "pointer",
-                      color: "var(--hd-ink-60)",
-                      fontFamily: "var(--hd-mono)",
-                      fontSize: 11,
-                      letterSpacing: "0.18em",
-                      textTransform: "uppercase",
-                      marginTop: 4,
-                    }}
-                  >
-                    + Add Step · ステップを追加
-                  </button>
                 </div>
               </Section>
 
