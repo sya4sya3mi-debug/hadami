@@ -46,6 +46,52 @@ export default function ClassifyStep({
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+      {/* Top action bar — primary CTA at top so it's always visible */}
+      <div style={{ display: "flex", gap: 8 }}>
+        {onBack && (
+          <button
+            onClick={onBack}
+            style={{
+              padding: "13px 18px",
+              background: "transparent",
+              color: "var(--hd-ink-60)",
+              border: "1px solid var(--hd-line)",
+              cursor: "pointer",
+              fontFamily: "var(--hd-sans)",
+              fontSize: 13,
+              fontWeight: 500,
+              display: "flex",
+              alignItems: "center",
+              gap: 6,
+            }}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" aria-hidden="true">
+              <path d="M15 18l-6-6 6-6" />
+            </svg>
+            戻る
+          </button>
+        )}
+        <button
+          onClick={onContinue}
+          className="hd-cta"
+          style={{
+            flex: 1,
+            padding: "13px 22px",
+            fontSize: 14,
+            cursor: "pointer",
+            display: "inline-flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 8,
+          }}
+        >
+          成分を確認する
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" aria-hidden="true">
+            <path d="M9 18l6-6-6-6" />
+          </svg>
+        </button>
+      </div>
+
       {/* Hero */}
       {imagePreview ? (
         <div
@@ -223,51 +269,6 @@ export default function ClassifyStep({
         </div>
       </div>
 
-      {/* Buttons */}
-      <div style={{ display: "flex", gap: 8, marginTop: 4 }}>
-        {onBack && (
-          <button
-            onClick={onBack}
-            style={{
-              padding: "13px 18px",
-              background: "transparent",
-              color: "var(--hd-ink-60)",
-              border: "1px solid var(--hd-line)",
-              cursor: "pointer",
-              fontFamily: "var(--hd-sans)",
-              fontSize: 13,
-              fontWeight: 500,
-              display: "flex",
-              alignItems: "center",
-              gap: 6,
-            }}
-          >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" aria-hidden="true">
-              <path d="M15 18l-6-6 6-6" />
-            </svg>
-            戻る
-          </button>
-        )}
-        <button
-          onClick={onContinue}
-          className="hd-cta"
-          style={{
-            flex: 1,
-            padding: "13px 22px",
-            fontSize: 14,
-            cursor: "pointer",
-            display: "inline-flex",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: 8,
-          }}
-        >
-          成分を確認する
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" aria-hidden="true">
-            <path d="M9 18l6-6-6-6" />
-          </svg>
-        </button>
-      </div>
     </div>
   );
 }

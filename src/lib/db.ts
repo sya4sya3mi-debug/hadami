@@ -8,7 +8,7 @@ import { r2Delete } from "@/lib/r2";
 const USER_LIMIT = 30;
 const LEGACY_SCAN_LIMIT_MARKER = "__limit__";
 const MAX_PRODUCT_IMAGE_BYTES = 8 * 1024 * 1024;
-const UPLOAD_MAX_DIMENSION = 2048;
+const UPLOAD_MAX_DIMENSION = 1600;
 const UPLOAD_WEBP_QUALITY = 0.95;
 
 function validateImageSize(base64Data: string): boolean {
@@ -37,7 +37,20 @@ function compressImage(base64Full: string): Promise<string> {
       }
 
       ctx.drawImage(img, 0, 0, width, height);
-      resolve(canvas.toDataURL("image/webp", UPLOAD_WEBP_QUALITY));
+      const dataUrl = canvas.toDataURL("image/webp", UPLOAD_WEBP_QUALITY);
+      // iOS Safari can silently return an empty data URL when the canvas
+      // exceeds the device memory budget. Fall back to JPEG, then to the
+      // original input so the upload still succeeds.
+      if (!dataUrl || dataUrl.length < "data:image/webp;base64,".length + 32) {
+        const jpegFallback = canvas.toDataURL("image/jpeg", 0.9);
+        if (jpegFallback && jpegFallback.length > "data:image/jpeg;base64,".length + 32) {
+          resolve(jpegFallback);
+        } else {
+          reject(new Error("Canvas encoding produced empty data"));
+        }
+        return;
+      }
+      resolve(dataUrl);
     };
     img.onerror = () => reject(new Error("Image load failed"));
     img.src = base64Full;

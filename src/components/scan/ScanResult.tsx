@@ -239,8 +239,8 @@ export default function ScanResult({
               background: "var(--hd-moss)",
               color: "#fff",
               border: "none",
-              borderRadius: 999,
-              boxShadow: "0 6px 18px oklch(0.38 0.05 155 / 0.28)",
+              borderRadius: 0,
+              boxShadow: "0 4px 14px oklch(0.38 0.05 155 / 0.22)",
             }}
           >
             {!isSaving && (
