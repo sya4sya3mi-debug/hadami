@@ -3,6 +3,8 @@
 import { useRef, useState } from "react";
 import BottomSheet from "@/components/scan/BottomSheet";
 import ProductShareCard, {
+  CARD_COLORS,
+  type CardPattern,
   type ProductShareCardProps,
 } from "./ProductShareCard";
 import { downloadShareImage } from "@/lib/downloadImage";
@@ -25,6 +27,12 @@ interface ProductShareCardSheetProps extends ProductShareCardProps {
   onClose: () => void;
 }
 
+const PATTERNS: { key: CardPattern; label: string; desc: string }[] = [
+  { key: "A", label: "A", desc: "写真＋データ" },
+  { key: "B", label: "B", desc: "ポスター" },
+  { key: "C", label: "C", desc: "タイポ" },
+];
+
 export default function ProductShareCardSheet({
   open,
   onClose,
@@ -33,6 +41,8 @@ export default function ProductShareCardSheet({
   const captureRef = useRef<HTMLDivElement>(null);
   const [isDownloading, setIsDownloading] = useState(false);
   const [status, setStatus] = useState<"idle" | "shared" | "downloaded">("idle");
+  const [pattern, setPattern] = useState<CardPattern>("A");
+  const [accentColor, setAccentColor] = useState<string>(CARD_COLORS[0].value);
 
   const handleSave = async () => {
     if (!captureRef.current || isDownloading) return;
@@ -109,7 +119,91 @@ export default function ProductShareCardSheet({
   return (
     <BottomSheet open={open} onClose={onClose} title="シェアカード">
       <div style={{ paddingBottom: 24 }}>
-        {/* Card preview — centered, scaled to fit */}
+
+        {/* ── Pattern selector ── */}
+        <div style={{ marginBottom: 16 }}>
+          <div
+            className="hd-mono hd-caps"
+            style={{ fontSize: 9, color: "var(--hd-ink-40)", letterSpacing: "0.14em", marginBottom: 8 }}
+          >
+            Pattern
+          </div>
+          <div style={{ display: "flex", gap: 8 }}>
+            {PATTERNS.map((p) => {
+              const active = pattern === p.key;
+              return (
+                <button
+                  key={p.key}
+                  onClick={() => setPattern(p.key)}
+                  style={{
+                    flex: 1,
+                    padding: "10px 6px",
+                    background: active ? "var(--hd-ink)" : "var(--hd-surface)",
+                    color: active ? "var(--hd-bg)" : "var(--hd-ink)",
+                    border: active ? "1px solid var(--hd-ink)" : "1px solid var(--hd-line)",
+                    cursor: "pointer",
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    gap: 4,
+                  }}
+                >
+                  <span
+                    className="hd-serif"
+                    style={{ fontSize: 18, letterSpacing: "-0.01em", fontStyle: "italic" }}
+                  >
+                    {p.label}
+                  </span>
+                  <span
+                    className="hd-mono hd-caps"
+                    style={{
+                      fontSize: 8,
+                      letterSpacing: "0.1em",
+                      opacity: active ? 0.7 : 0.5,
+                    }}
+                  >
+                    {p.desc}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* ── Color swatches ── */}
+        <div style={{ marginBottom: 20 }}>
+          <div
+            className="hd-mono hd-caps"
+            style={{ fontSize: 9, color: "var(--hd-ink-40)", letterSpacing: "0.14em", marginBottom: 8 }}
+          >
+            Accent Color
+          </div>
+          <div style={{ display: "flex", gap: 10 }}>
+            {CARD_COLORS.map((c) => {
+              const active = accentColor === c.value;
+              return (
+                <button
+                  key={c.value}
+                  onClick={() => setAccentColor(c.value)}
+                  title={c.label}
+                  style={{
+                    width: 32,
+                    height: 32,
+                    background: c.value,
+                    border: active ? "2px solid var(--hd-ink)" : "2px solid transparent",
+                    outline: active ? "2px solid var(--hd-bg)" : "none",
+                    outlineOffset: -4,
+                    cursor: "pointer",
+                    padding: 0,
+                    flexShrink: 0,
+                  }}
+                />
+              );
+            })}
+          </div>
+        </div>
+
+        {/* ── Card preview ── */}
         <div
           style={{
             display: "flex",
@@ -120,12 +214,16 @@ export default function ProductShareCardSheet({
         >
           <div style={{ transform: "scale(0.54)", transformOrigin: "top center", height: 292 }}>
             <div ref={captureRef}>
-              <ProductShareCard {...cardProps} />
+              <ProductShareCard
+                {...cardProps}
+                pattern={pattern}
+                accentColor={accentColor}
+              />
             </div>
           </div>
         </div>
 
-        {/* Save button */}
+        {/* ── Save button ── */}
         <button
           onClick={handleSave}
           disabled={isDownloading}

@@ -5,6 +5,17 @@ import "@/styles/hadami-tokens.css";
 const SC_W = 540;
 const SC_H = 540;
 
+export type CardPattern = "A" | "B" | "C";
+
+export const CARD_COLORS = [
+  { label: "Moss",       value: "#5c7a5e" },
+  { label: "Amber",      value: "#a07830" },
+  { label: "Rose",       value: "#9b5060" },
+  { label: "Ocean",      value: "#3a6b8a" },
+  { label: "Charcoal",   value: "#444444" },
+  { label: "Terracotta", value: "#9b5a3a" },
+] as const;
+
 export interface ProductShareCardEffect {
   label: string;
   score: number; // 0-10
@@ -19,24 +30,128 @@ export interface ProductShareCardProps {
   imageUrl?: string;
   no?: number;
   effects: ProductShareCardEffect[];
-  rating?: number; // 0-5
+  rating?: number;
+  pattern?: CardPattern;
+  accentColor?: string;
 }
 
-function starPath() {
-  return "M6 1l1.4 3 3.3.4-2.4 2.3.7 3.2L6 8.5l-3 1.4.7-3.2L1.3 4.4l3.3-.4z";
-}
+// ── shared helpers ────────────────────────────────────────────────────────────
 
-export default function ProductShareCard({
-  name,
-  brand,
-  productType,
-  initials,
-  bgColor = "#b5c4b1",
+function PhotoPanel({
   imageUrl,
-  no,
+  bgColor,
+  initials,
+  style,
+}: {
+  imageUrl?: string;
+  bgColor: string;
+  initials: string;
+  style?: React.CSSProperties;
+}) {
+  return (
+    <div style={{ position: "relative", overflow: "hidden", ...style }}>
+      {imageUrl ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={imageUrl}
+          alt=""
+          crossOrigin="anonymous"
+          style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }}
+        />
+      ) : (
+        <>
+          <div style={{ position: "absolute", inset: 0, background: bgColor }} />
+          <div
+            style={{
+              position: "absolute",
+              inset: 0,
+              background: `repeating-linear-gradient(45deg,rgba(255,255,255,0.07) 0 2px,transparent 2px 8px),
+                           repeating-linear-gradient(-45deg,rgba(0,0,0,0.03) 0 1px,transparent 1px 6px)`,
+            }}
+          />
+          <div
+            style={{
+              position: "absolute",
+              inset: 0,
+              background: "linear-gradient(135deg,rgba(255,255,255,0.5) 0%,transparent 45%,rgba(0,0,0,0.12) 100%)",
+            }}
+          />
+          <div
+            style={{
+              position: "absolute",
+              inset: 0,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              fontFamily: "var(--hd-serif)",
+              fontSize: 56,
+              fontStyle: "italic",
+              color: "rgba(255,255,255,0.85)",
+              letterSpacing: "-0.03em",
+            }}
+          >
+            {initials}
+          </div>
+        </>
+      )}
+      {/* top rule */}
+      <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 3, background: "var(--hd-ink)" }} />
+    </div>
+  );
+}
+
+function EffectBars({
   effects,
-  rating = 0,
-}: ProductShareCardProps) {
+  accent,
+}: {
+  effects: ProductShareCardEffect[];
+  accent: string;
+}) {
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 9 }}>
+      {effects.map((e) => (
+        <div key={e.label} style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <div
+            className="hd-serif"
+            style={{ fontSize: 12, width: 44, letterSpacing: "-0.01em", flexShrink: 0 }}
+          >
+            {e.label}
+          </div>
+          <div style={{ flex: 1, height: 2, background: "var(--hd-hair)", position: "relative" }}>
+            <div
+              style={{
+                position: "absolute",
+                left: 0,
+                top: 0,
+                height: "100%",
+                width: `${(e.score / 10) * 100}%`,
+                background: accent,
+              }}
+            />
+          </div>
+          <div
+            style={{
+              fontFamily: "var(--hd-mono)",
+              fontSize: 9,
+              color: "var(--hd-ink-40)",
+              width: 28,
+              textAlign: "right",
+              flexShrink: 0,
+            }}
+          >
+            {e.score}/10
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ── Pattern A: left photo + right data ───────────────────────────────────────
+
+function PatternA({
+  name, brand, productType, initials, bgColor, imageUrl, no, effects, accent,
+}: Omit<ProductShareCardProps, "pattern" | "accentColor" | "rating"> & { accent: string }) {
   const noLabel = no != null ? `No. ${String(no).padStart(3, "0")}` : "No. —";
   const displayEffects = effects.slice(0, 4);
 
@@ -56,59 +171,9 @@ export default function ProductShareCard({
         fontFamily: "var(--hd-sans)",
       }}
     >
-      {/* Left — product portrait */}
+      {/* Left */}
       <div style={{ position: "relative", overflow: "hidden" }}>
-        {imageUrl ? (
-          /* Actual product photo */
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={imageUrl}
-            alt=""
-            style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }}
-            crossOrigin="anonymous"
-          />
-        ) : (
-          <>
-            {/* Base color */}
-            <div style={{ position: "absolute", inset: 0, background: bgColor }} />
-            {/* Linen texture */}
-            <div
-              style={{
-                position: "absolute",
-                inset: 0,
-                background: `repeating-linear-gradient(45deg, rgba(255,255,255,0.07) 0 2px, transparent 2px 8px),
-                             repeating-linear-gradient(-45deg, rgba(0,0,0,0.03) 0 1px, transparent 1px 6px)`,
-              }}
-            />
-            {/* Highlight */}
-            <div
-              style={{
-                position: "absolute",
-                inset: 0,
-                background:
-                  "linear-gradient(135deg, rgba(255,255,255,0.5) 0%, transparent 45%, rgba(0,0,0,0.12) 100%)",
-              }}
-            />
-            {/* Initials */}
-            <div
-              style={{
-                position: "absolute",
-                inset: 0,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                fontFamily: "var(--hd-serif)",
-                fontSize: 56,
-                fontStyle: "italic",
-                color: "rgba(255,255,255,0.85)",
-                letterSpacing: "-0.03em",
-              }}
-            >
-              {initials}
-            </div>
-          </>
-        )}
-        {/* Side label (vertical) */}
+        <PhotoPanel imageUrl={imageUrl} bgColor={bgColor ?? "#b5c4b1"} initials={initials} style={{ position: "absolute", inset: 0 }} />
         <div
           style={{
             position: "absolute",
@@ -133,20 +198,9 @@ export default function ProductShareCard({
             {productType} · {brand}
           </div>
         </div>
-        {/* Top frame rule */}
-        <div
-          style={{
-            position: "absolute",
-            top: 0,
-            left: 0,
-            right: 0,
-            height: 3,
-            background: "var(--hd-ink)",
-          }}
-        />
       </div>
 
-      {/* Right — data sheet */}
+      {/* Right */}
       <div
         style={{
           padding: "28px 30px 24px",
@@ -155,184 +209,191 @@ export default function ProductShareCard({
           borderTop: "3px solid var(--hd-ink)",
         }}
       >
-        {/* Brand + name block */}
-        <div
-          style={{
-            paddingBottom: 16,
-            borderBottom: "1px solid var(--hd-ink)",
-          }}
-        >
-          <div
-            style={{
-              fontFamily: "var(--hd-mono)",
-              fontSize: 9,
-              letterSpacing: "0.22em",
-              textTransform: "uppercase",
-              color: "var(--hd-ink-40)",
-            }}
-          >
+        <div style={{ paddingBottom: 16, borderBottom: "1px solid var(--hd-ink)" }}>
+          <div style={{ fontFamily: "var(--hd-mono)", fontSize: 9, letterSpacing: "0.22em", textTransform: "uppercase", color: "var(--hd-ink-40)" }}>
             {noLabel}
           </div>
-          <div
-            style={{
-              fontFamily: "var(--hd-mono)",
-              fontSize: 10,
-              letterSpacing: "0.12em",
-              color: "var(--hd-moss)",
-              marginTop: 6,
-              textTransform: "uppercase",
-            }}
-          >
+          <div style={{ fontFamily: "var(--hd-mono)", fontSize: 10, letterSpacing: "0.12em", color: accent, marginTop: 6, textTransform: "uppercase" }}>
             {brand}
           </div>
-          <div
-            className="hd-serif"
-            style={{
-              fontSize: 18,
-              lineHeight: 1.2,
-              marginTop: 6,
-              letterSpacing: "-0.015em",
-            }}
-          >
+          <div className="hd-serif" style={{ fontSize: 18, lineHeight: 1.2, marginTop: 6, letterSpacing: "-0.015em" }}>
             {name}
           </div>
-          {/* Stars */}
-          {rating > 0 && (
-            <div style={{ display: "flex", gap: 3, marginTop: 10, alignItems: "center" }}>
-              {[1, 2, 3, 4, 5].map((i) => (
-                <svg key={i} width={11} height={11} viewBox="0 0 12 12">
-                  <path
-                    d={starPath()}
-                    fill={i <= Math.round(rating) ? "var(--hd-moss)" : "var(--hd-hair)"}
-                  />
-                </svg>
-              ))}
-              <span
-                style={{
-                  fontFamily: "var(--hd-mono)",
-                  fontSize: 9,
-                  color: "var(--hd-ink-40)",
-                  marginLeft: 4,
-                }}
-              >
-                {rating.toFixed(1)}
-              </span>
-            </div>
-          )}
         </div>
 
-        {/* Effect bars */}
         <div style={{ marginTop: 16, flex: 1 }}>
-          <div
-            style={{
-              fontFamily: "var(--hd-mono)",
-              fontSize: 9,
-              letterSpacing: "0.22em",
-              textTransform: "uppercase",
-              color: "var(--hd-ink-40)",
-              marginBottom: 12,
-            }}
-          >
+          <div style={{ fontFamily: "var(--hd-mono)", fontSize: 9, letterSpacing: "0.22em", textTransform: "uppercase", color: "var(--hd-ink-40)", marginBottom: 12 }}>
             Active Effects
           </div>
-          {displayEffects.length > 0 ? (
-            <div style={{ display: "flex", flexDirection: "column", gap: 9 }}>
-              {displayEffects.map((e) => (
-                <div
-                  key={e.label}
-                  style={{ display: "flex", alignItems: "center", gap: 10 }}
-                >
-                  <div
-                    className="hd-serif"
-                    style={{
-                      fontSize: 12,
-                      width: 44,
-                      letterSpacing: "-0.01em",
-                      flexShrink: 0,
-                    }}
-                  >
-                    {e.label}
-                  </div>
-                  <div
-                    style={{
-                      flex: 1,
-                      height: 2,
-                      background: "var(--hd-hair)",
-                      position: "relative",
-                    }}
-                  >
-                    <div
-                      style={{
-                        position: "absolute",
-                        left: 0,
-                        top: 0,
-                        height: "100%",
-                        width: `${(e.score / 10) * 100}%`,
-                        background: "var(--hd-moss)",
-                      }}
-                    />
-                  </div>
-                  <div
-                    style={{
-                      fontFamily: "var(--hd-mono)",
-                      fontSize: 9,
-                      color: "var(--hd-ink-40)",
-                      width: 28,
-                      textAlign: "right",
-                      flexShrink: 0,
-                    }}
-                  >
-                    {e.score}/10
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div
-              style={{
-                fontFamily: "var(--hd-mono)",
-                fontSize: 9,
-                color: "var(--hd-ink-40)",
-                letterSpacing: "0.1em",
-              }}
-            >
-              ——
-            </div>
-          )}
+          {displayEffects.length > 0
+            ? <EffectBars effects={displayEffects} accent={accent} />
+            : <div style={{ fontFamily: "var(--hd-mono)", fontSize: 9, color: "var(--hd-ink-40)", letterSpacing: "0.1em" }}>——</div>
+          }
         </div>
 
-        {/* Footer */}
-        <div
-          style={{
-            paddingTop: 16,
-            borderTop: "1px solid var(--hd-hair)",
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "flex-end",
-          }}
-        >
-          <div
-            style={{
-              fontFamily: "var(--hd-mono)",
-              fontSize: 8,
-              color: "var(--hd-ink-40)",
-              letterSpacing: "0.14em",
-            }}
-          >
+        <div style={{ paddingTop: 16, borderTop: "1px solid var(--hd-hair)", display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
+          <div style={{ fontFamily: "var(--hd-mono)", fontSize: 8, color: "var(--hd-ink-40)", letterSpacing: "0.14em" }}>
             #マイコスメ #スキンケア
           </div>
-          <div
-            className="hd-serif"
-            style={{
-              fontSize: 18,
-              fontStyle: "italic",
-              color: "var(--hd-moss)",
-            }}
-          >
+          <div className="hd-serif" style={{ fontSize: 18, fontStyle: "italic", color: accent }}>
             HADAMI
           </div>
         </div>
       </div>
     </div>
   );
+}
+
+// ── Pattern B: full-width photo top + data below ─────────────────────────────
+
+function PatternB({
+  name, brand, productType, initials, bgColor, imageUrl, effects, accent,
+}: Omit<ProductShareCardProps, "pattern" | "accentColor" | "rating" | "no"> & { accent: string }) {
+  const displayEffects = effects.slice(0, 3);
+
+  return (
+    <div
+      className="hd-root hd-softa"
+      data-density="compact"
+      style={{
+        width: SC_W,
+        height: SC_H,
+        background: "var(--hd-bg)",
+        color: "var(--hd-ink)",
+        display: "flex",
+        flexDirection: "column",
+        boxSizing: "border-box",
+        overflow: "hidden",
+        fontFamily: "var(--hd-sans)",
+      }}
+    >
+      {/* Photo top */}
+      <div style={{ position: "relative", height: 220, flexShrink: 0, overflow: "hidden" }}>
+        <PhotoPanel imageUrl={imageUrl} bgColor={bgColor ?? "#b5c4b1"} initials={initials} style={{ position: "absolute", inset: 0 }} />
+        {/* bottom gradient overlay */}
+        <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(0,0,0,0.45) 0%, transparent 55%)" }} />
+        {/* bottom-left brand */}
+        <div style={{ position: "absolute", bottom: 16, left: 20 }}>
+          <div style={{ fontFamily: "var(--hd-mono)", fontSize: 9, letterSpacing: "0.24em", textTransform: "uppercase", color: "rgba(255,255,255,0.7)" }}>
+            {productType}
+          </div>
+          <div style={{ fontFamily: "var(--hd-mono)", fontSize: 11, letterSpacing: "0.12em", textTransform: "uppercase", color: "rgba(255,255,255,0.95)", marginTop: 3, fontWeight: 600 }}>
+            {brand}
+          </div>
+        </div>
+      </div>
+
+      {/* Data bottom */}
+      <div style={{ flex: 1, padding: "22px 28px 20px", display: "flex", flexDirection: "column", borderTop: "3px solid var(--hd-ink)" }}>
+        <div className="hd-serif" style={{ fontSize: 22, lineHeight: 1.15, letterSpacing: "-0.02em", marginBottom: 18 }}>
+          {name}
+        </div>
+
+        {displayEffects.length > 0 && (
+          <div style={{ flex: 1 }}>
+            <div style={{ fontFamily: "var(--hd-mono)", fontSize: 9, letterSpacing: "0.22em", textTransform: "uppercase", color: "var(--hd-ink-40)", marginBottom: 10 }}>
+              Active Effects
+            </div>
+            <EffectBars effects={displayEffects} accent={accent} />
+          </div>
+        )}
+
+        <div style={{ marginTop: "auto", paddingTop: 14, borderTop: "1px solid var(--hd-hair)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <div style={{ fontFamily: "var(--hd-mono)", fontSize: 8, color: "var(--hd-ink-40)", letterSpacing: "0.14em" }}>
+            #マイコスメ #スキンケア
+          </div>
+          <div className="hd-serif" style={{ fontSize: 16, fontStyle: "italic", color: accent }}>
+            HADAMI
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Pattern C: minimal typographic ───────────────────────────────────────────
+
+function PatternC({
+  name, brand, productType, effects, accent,
+}: Pick<ProductShareCardProps, "name" | "brand" | "productType" | "effects"> & { accent: string }) {
+  const displayEffects = effects.slice(0, 4);
+
+  return (
+    <div
+      className="hd-root hd-softa"
+      data-density="compact"
+      style={{
+        width: SC_W,
+        height: SC_H,
+        background: "var(--hd-bg)",
+        color: "var(--hd-ink)",
+        display: "flex",
+        flexDirection: "column",
+        boxSizing: "border-box",
+        overflow: "hidden",
+        fontFamily: "var(--hd-sans)",
+        padding: "44px 52px 36px",
+      }}
+    >
+      {/* Top rule */}
+      <div style={{ height: 3, background: "var(--hd-ink)", marginBottom: 28 }} />
+
+      {/* Type block */}
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center" }}>
+        <div style={{ fontFamily: "var(--hd-mono)", fontSize: 9, letterSpacing: "0.3em", textTransform: "uppercase", color: "var(--hd-ink-40)", marginBottom: 10 }}>
+          {productType}
+        </div>
+        <div style={{ fontFamily: "var(--hd-mono)", fontSize: 11, letterSpacing: "0.14em", textTransform: "uppercase", color: accent, marginBottom: 10, fontWeight: 600 }}>
+          {brand}
+        </div>
+        <div className="hd-serif" style={{ fontSize: 34, lineHeight: 1.1, letterSpacing: "-0.025em", marginBottom: 28 }}>
+          {name}
+        </div>
+
+        {/* Divider */}
+        <div style={{ height: 1, background: "var(--hd-line)", marginBottom: 24 }} />
+
+        {/* Effects */}
+        {displayEffects.length > 0 && (
+          <div>
+            <div style={{ fontFamily: "var(--hd-mono)", fontSize: 9, letterSpacing: "0.22em", textTransform: "uppercase", color: "var(--hd-ink-40)", marginBottom: 14 }}>
+              Active Effects
+            </div>
+            <EffectBars effects={displayEffects} accent={accent} />
+          </div>
+        )}
+      </div>
+
+      {/* Bottom rule + footer */}
+      <div>
+        <div style={{ height: 1, background: "var(--hd-line)", marginBottom: 14 }} />
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
+          <div style={{ fontFamily: "var(--hd-mono)", fontSize: 8, color: "var(--hd-ink-40)", letterSpacing: "0.14em" }}>
+            #マイコスメ #スキンケア
+          </div>
+          <div className="hd-serif" style={{ fontSize: 18, fontStyle: "italic", color: accent }}>
+            HADAMI
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Main export ───────────────────────────────────────────────────────────────
+
+export default function ProductShareCard({
+  pattern = "A",
+  accentColor = CARD_COLORS[0].value,
+  ...props
+}: ProductShareCardProps) {
+  const accent = accentColor;
+
+  if (pattern === "B") {
+    return <PatternB {...props} accent={accent} />;
+  }
+  if (pattern === "C") {
+    return <PatternC {...props} accent={accent} />;
+  }
+  return <PatternA {...props} accent={accent} />;
 }
