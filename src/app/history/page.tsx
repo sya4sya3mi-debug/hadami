@@ -1,7 +1,7 @@
 "use client";
 
 import "@/styles/hadami-tokens.css";
-import React, { useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
@@ -122,10 +122,12 @@ function CoverCard({
 
   return (
     <div
+      className={editMode ? "hd-no-press" : undefined}
       style={{
         position: "relative",
         overflow: "hidden",
         cursor: "pointer",
+        WebkitTapHighlightColor: editMode ? "transparent" : undefined,
         ...style,
       }}
       onClick={() => (editMode ? onSelect() : onNavigate())}
@@ -344,7 +346,15 @@ export default function HistoryPage() {
   const pendingProductIdRef = useRef<string | null>(null);
 
   const [activeFilter, setActiveFilter] = useState<FilterKey>("all");
-  const [layout, setLayout] = useState<LayoutMode>("magazine");
+  const [layout, setLayout] = useState<LayoutMode>(() => {
+    if (typeof window === "undefined") return "magazine";
+    const saved = window.localStorage.getItem("hadami.mine.layout");
+    return saved === "magazine" || saved === "mosaic" || saved === "list" ? saved : "magazine";
+  });
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    window.localStorage.setItem("hadami.mine.layout", layout);
+  }, [layout]);
   const router = useRouter();
   const [editMode, setEditMode] = useState(false);
   const [editingGenreId, setEditingGenreId] = useState<string | null>(null);
@@ -991,12 +1001,14 @@ export default function HistoryPage() {
           return (
             <div key={p.id} style={{ opacity: deletingId === p.id ? 0.5 : 1 }}>
               <div
+                className={editMode ? "hd-no-press" : undefined}
                 onClick={() => editMode ? toggleSelect(p.id) : router.push(`/product/${p.id}`)}
                 style={{
                   display: "flex", alignItems: "stretch", gap: 14,
                   padding: "14px 0",
                   borderBottom: idx < filtered.length - 1 ? "1px solid var(--hd-hair)" : "none",
                   cursor: "pointer",
+                  WebkitTapHighlightColor: editMode ? "transparent" : undefined,
                 }}
               >
                 {/* Edit select */}
@@ -1390,7 +1402,7 @@ export default function HistoryPage() {
             {products.length === 0 ? (
               <EmptyState />
             ) : (
-              <div className="hd-stagger">
+              <div className={editMode ? undefined : "hd-stagger"}>
                 {layout === "magazine" && <MagazineGrid />}
                 {layout === "mosaic" && <MosaicGrid />}
                 {layout === "list" && <ListLayout />}

@@ -88,7 +88,7 @@ export default function EditorialCard({
     padding: 0,
     cursor: "pointer",
     transform: `rotate(${rotation}deg)`,
-    transition: "transform 240ms ease, box-shadow 200ms ease",
+    transition: editMode ? "box-shadow 200ms ease" : "transform 240ms ease, box-shadow 200ms ease",
     transformOrigin: "center center",
     willChange: rotation !== 0 ? "transform" : undefined,
   };
@@ -277,7 +277,7 @@ export default function EditorialCard({
     <button
       type="button"
       onClick={onClick}
-      className="hd-editorial-card"
+      className={editMode ? "hd-editorial-card hd-no-press" : "hd-editorial-card"}
       style={buttonStyle}
       aria-label={`${product.brand ? product.brand + " " : ""}${product.name}`}
     >
