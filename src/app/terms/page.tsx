@@ -104,10 +104,13 @@ const sections = [
   },
   {
     title: "第12条（お問い合わせ）",
-    paragraphs: ["本規約に関するお問い合わせは、以下までご連絡ください。"],
+    paragraphs: ["本規約に関するお問い合わせは、以下のいずれかよりご連絡ください。"],
     contact: {
       service: "HADAMI（ハダミ）",
-      email: "miomio30beauty@gmail.com",
+      links: [
+        { label: "X（@miomio_beauty）DM", href: "https://x.com/miomio_beauty" },
+        { label: "みおのミハダノート お問い合わせフォーム", href: "https://blog-engine.com/contact/" },
+      ],
     },
   },
 ];
@@ -283,19 +286,26 @@ export default function TermsPage() {
                     >
                       {section.contact.service}
                     </p>
-                    <a
-                      href={`mailto:${section.contact.email}`}
-                      className="hd-mono"
-                      style={{
-                        fontSize: 12,
-                        color: "var(--hd-ink)",
-                        textDecoration: "underline",
-                        textUnderlineOffset: 3,
-                        letterSpacing: "0.02em",
-                      }}
-                    >
-                      {section.contact.email}
-                    </a>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                      {section.contact.links.map((l) => (
+                        <a
+                          key={l.href}
+                          href={l.href}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="hd-mono"
+                          style={{
+                            fontSize: 12,
+                            color: "var(--hd-ink)",
+                            textDecoration: "underline",
+                            textUnderlineOffset: 3,
+                            letterSpacing: "0.02em",
+                          }}
+                        >
+                          {l.label}
+                        </a>
+                      ))}
+                    </div>
                   </div>
                 )}
               </section>

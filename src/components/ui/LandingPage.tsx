@@ -2356,7 +2356,9 @@ export default function LandingPage() {
                   プライバシー
                 </Link>
                 <a
-                  href="mailto:miomio30beauty@gmail.com"
+                  href="https://blog-engine.com/contact/"
+                  target="_blank"
+                  rel="noopener noreferrer"
                   style={{
                     color: DARK_TEXT,
                     textDecoration: "none",
