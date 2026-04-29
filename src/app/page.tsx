@@ -69,6 +69,15 @@ const TIPS = [
   { text: "パンテノール（ビタミンB5）は保湿と修復の両方を担う万能成分。朝晩どちらでも効果的です。" },
   { text: "ツボクサエキス（CICA）は★3のレア成分。韓国では「鎮静の王様」と呼ばれています。" },
   { text: "ヒアルロン酸Naは1gで6Lの水分を保持。乾燥肌の救世主です。" },
+  { text: "ナイアシンアミド（ビタミンB3）は美白・シワ・毛穴に効くマルチタスカー。2〜5%が標準濃度です。" },
+  { text: "セラミドは肌のバリア機能の主役。NP/AP/EOPなど構成比のバランスが重要です。" },
+  { text: "アスコルビン酸（純粋ビタミンC）は10〜20%が高効果濃度。朝使用＋日焼け止めが鉄則。" },
+  { text: "レチノール（ビタミンA）はターンオーバー促進の王道。夜のみ＋低濃度から始めるのが正解。" },
+  { text: "アゼライン酸は肌のトーン補正と毛穴詰まり予防の両立。敏感肌でも使いやすい有効成分。" },
+  { text: "グリセリンはあらゆる肌タイプの基本保湿剤。ヒアルロン酸との併用で吸引力が増します。" },
+  { text: "アラントインは創傷治癒成分。CICAやマデカッソシドと組み合わせると相乗効果あり。" },
+  { text: "サリチル酸（BHA）は油溶性で毛穴の奥まで届く角質ケア。週2〜3回がベスト。" },
+  { text: "乳酸（AHA）は古い角質を優しく剥がす低刺激ピーリング。乾燥肌にもおすすめ。" },
 ];
 
 const ROUTINE_CHECK_KEY = "hadami-routine-checks";
@@ -391,7 +400,26 @@ export default function HomePage() {
     }
   };
 
-  const todayTip = TIPS[new Date().getDate() % TIPS.length];
+  // TODAY'S INGREDIENT: ランダム初期 + 7秒ごと自動ローテーション、フェード遷移
+  const [tipIndex, setTipIndex] = useState(() => Math.floor(Math.random() * TIPS.length));
+  const [tipFading, setTipFading] = useState(false);
+  useEffect(() => {
+    const cycle = setInterval(() => {
+      setTipFading(true);
+      window.setTimeout(() => {
+        setTipIndex((i) => {
+          if (TIPS.length <= 1) return 0;
+          // 直前と異なるランダムインデックス
+          let next = Math.floor(Math.random() * TIPS.length);
+          if (next === i) next = (i + 1) % TIPS.length;
+          return next;
+        });
+        setTipFading(false);
+      }, 320);
+    }, 7000);
+    return () => clearInterval(cycle);
+  }, []);
+  const todayTip = TIPS[tipIndex];
   const greeting = (() => {
     const h = new Date().getHours();
     if (h < 12) return "Good morning";
@@ -416,14 +444,27 @@ export default function HomePage() {
         className="hd hd-page"
         style={{ minHeight: "100vh", background: "var(--hd-bg)" }}
       >
-        <div style={{ padding: "16px 20px 96px" }}>
-          {/* Header — A pure */}
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 24 }}>
+        <div style={{ padding: "0 20px 96px" }}>
+          {/* Header — sticky band */}
+          <div
+            style={{
+              position: "sticky",
+              top: "env(safe-area-inset-top, 0px)",
+              zIndex: 30,
+              background: "var(--hd-bg)",
+              margin: "0 -20px 24px",
+              padding: "16px 20px 14px",
+              borderBottom: "1px solid var(--hd-hair)",
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "flex-start",
+            }}
+          >
             <div>
-              <div className="hd-mono hd-caps" style={{ color: "var(--hd-ink-40)", marginBottom: 10 }}>
+              <div className="hd-mono hd-caps" style={{ color: "var(--hd-ink-40)", marginBottom: 8 }}>
                 {dateStr}
               </div>
-              <div className="hd-serif" style={{ lineHeight: 1.0, letterSpacing: "-0.02em", fontSize: 30 }}>
+              <div className="hd-serif" style={{ lineHeight: 1.0, letterSpacing: "-0.02em", fontSize: 26 }}>
                 {greeting},<br />
                 <span style={{ fontStyle: "italic" }}>{profile?.display_name || "HADAMI"}.</span>
               </div>
@@ -431,10 +472,11 @@ export default function HomePage() {
             <div
               onClick={() => router.push("/settings")}
               style={{
-                width: 44, height: 44, borderRadius: 999,
+                width: 40, height: 40, borderRadius: 999,
                 background: "var(--hd-moss)", color: "#fff",
                 display: "flex", alignItems: "center", justifyContent: "center",
-                fontFamily: "var(--hd-serif)", fontSize: 19, cursor: "pointer",
+                fontFamily: "var(--hd-serif)", fontSize: 17, cursor: "pointer",
+                flexShrink: 0,
               }}
             >
               {profile?.display_name?.charAt(0) || "？"}
@@ -549,14 +591,56 @@ export default function HomePage() {
             ))}
           </div>
 
-          {/* Today's tip — A pure editorial */}
+          {/* Today's Ingredient — auto-rotating editorial tip */}
           <div style={{ padding: "32px 0 24px", marginBottom: 24 }}>
-            <div className="hd-mono hd-caps" style={{ color: "var(--hd-ink-40)" }}>
-              Today&apos;s Ingredient · No. {String(new Date().getDate() % TIPS.length + 1).padStart(2, "0")}
+            <div
+              className="hd-mono hd-caps"
+              style={{
+                color: "var(--hd-ink-40)",
+                display: "flex",
+                alignItems: "center",
+                gap: 10,
+              }}
+            >
+              <span>Today&apos;s Ingredient · No. {String(tipIndex + 1).padStart(2, "0")}</span>
+              {/* progress dots */}
+              <span
+                aria-hidden
+                style={{
+                  display: "inline-flex",
+                  gap: 4,
+                  marginLeft: 4,
+                }}
+              >
+                {TIPS.slice(0, Math.min(TIPS.length, 8)).map((_, i) => (
+                  <span
+                    key={i}
+                    style={{
+                      width: 4,
+                      height: 4,
+                      borderRadius: 999,
+                      background:
+                        i === tipIndex % Math.min(TIPS.length, 8)
+                          ? "var(--hd-ink)"
+                          : "var(--hd-ink-20)",
+                      transition: "background 200ms ease",
+                    }}
+                  />
+                ))}
+              </span>
             </div>
             <div
               className="hd-serif"
-              style={{ fontSize: 22, lineHeight: 1.25, marginTop: 14, letterSpacing: "-0.01em" }}
+              style={{
+                fontSize: 22,
+                lineHeight: 1.25,
+                marginTop: 14,
+                letterSpacing: "-0.01em",
+                minHeight: 110,
+                opacity: tipFading ? 0 : 1,
+                transform: tipFading ? "translateY(4px)" : "translateY(0)",
+                transition: "opacity 280ms ease, transform 280ms ease",
+              }}
             >
               {todayTip.text}
             </div>

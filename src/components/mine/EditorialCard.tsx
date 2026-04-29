@@ -54,12 +54,14 @@ export default function EditorialCard({
   onToggleFavorite,
   showFeaturedBadge = false,
   serial,
-  enableRotation = true,
+  enableRotation,
 }: EditorialCardProps) {
   const router = useRouter();
   const variant: FrameVariant =
     forceVariant ?? getFrameVariant(product.id);
-  const rotation = enableRotation ? getRotation(product.id) : 0;
+  // EDIT モード中はタップごとの :active flatten を抑止するため回転を切る
+  const rotationActive = enableRotation ?? !editMode;
+  const rotation = rotationActive ? getRotation(product.id) : 0;
   const genre = getGenreByKey(product.productType || "other");
   const genreInfo = genre ? { key: genre.key, color: genre.color } : null;
   const dateLabel =
