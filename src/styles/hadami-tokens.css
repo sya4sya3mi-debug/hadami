@@ -227,6 +227,17 @@
   letter-spacing: 0.01em !important;
 }
 
+/* Editorial card — hover/active "lays flat" interaction */
+.hd-editorial-card:hover,
+.hd-editorial-card:active,
+.hd-editorial-card:focus-visible {
+  transform: rotate(0deg) !important;
+}
+.hd-editorial-card:focus-visible {
+  outline: 2px solid var(--hd-moss);
+  outline-offset: 2px;
+}
+
 /* Respect reduced-motion preference */
 @media (prefers-reduced-motion: reduce) {
   .hd-root .hd-page,
@@ -237,6 +248,11 @@
   .hd-root .hd button,
   .hd-root .hd a[role="button"],
   .hd-root .hd .hd-press {
+    transition: none !important;
+  }
+  /* No card rotation under reduced-motion */
+  .hd-editorial-card {
+    transform: none !important;
     transition: none !important;
   }
 }

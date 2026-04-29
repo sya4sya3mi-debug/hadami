@@ -31,6 +31,15 @@ import {
   getProductImageSharePath,
 } from "@/lib/productImages";
 import { ProductGenre } from "@/types";
+import EditorialCard from "@/components/mine/EditorialCard";
+import SectionDivider from "@/components/mine/SectionDivider";
+import {
+  getCollectionSummary,
+  getIssueLabel,
+  pickHero,
+  pickSatellites,
+  pickStaffPicks,
+} from "@/lib/mineLayout";
 
 type LayoutMode = "magazine" | "mosaic" | "list";
 type FilterKey = "all" | "fav" | ProductGenre;
@@ -484,6 +493,19 @@ export default function HistoryPage() {
     onSelect: () => toggleSelect(p.id),
   });
 
+  // EditorialCard 用プロップ生成
+  const editorialCardProps = (p: Product, idx: number, pri = false) => ({
+    product: p,
+    index: idx,
+    hasImage: Boolean(p.packageImage) && !failedImageIds.has(p.id),
+    priority: pri,
+    onImageError: () => setFailedImageIds((s) => new Set(s).add(p.id)),
+    editMode,
+    selected: selectedIds.has(p.id),
+    onSelect: () => toggleSelect(p.id),
+    onToggleFavorite: () => handleToggleFavorite(p.id, p.isFavorite),
+  });
+
   // ── Overflow section — cycles through layout patterns ─────
 
   const chunkPatterns: { count: number; render: (ps: Product[], base: number) => React.ReactNode }[] = [
@@ -581,62 +603,254 @@ export default function HistoryPage() {
     return <>{chunks}</>;
   }
 
-  // ── Magazine grid ─────────────────────────────────────────
-  function MagazineGrid() {
-    if (filtered.length === 0) return <NoResults />;
-    const hero = filtered[0];
-    const right = filtered.slice(1, 3);
-    const bottom = filtered.slice(3, 6);
-    const rest = filtered.slice(6);
-    return (
-      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-        {/* Top row */}
-        <div style={{ display: "grid", gridTemplateColumns: "1.6fr 1fr", gap: 10, alignItems: "start" }}>
-          {/* Hero */}
-          {hero && (
-            <div style={{ aspectRatio: "2/3", opacity: deletingId === hero.id ? 0.5 : 1 }}>
-              <CoverCard
-                {...coverCardProps(hero, 0, true)}
-                style={{ width: "100%", height: "100%", borderRadius: 0 }}
-                nameSize={15}
-                brandSize={9}
-                showFeatured
-                favSize={28}
-                gradientStop="oklch(0.18 0.02 90 / 0.7)"
-              />
+  // Magazine ARCHIVE 用 — 既存パターンサイクルを EditorialCard で描画
+  const editorialPatterns: { count: number; render: (ps: Product[], base: number) => React.ReactNode }[] = [
+    {
+      count: 2,
+      render: (ps, base) => (
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, alignItems: "start" }}>
+          {ps.map((p, i) => (
+            <div key={p.id} style={{ opacity: deletingId === p.id ? 0.5 : 1 }}>
+              <EditorialCard {...editorialCardProps(p, base + i)} aspectRatio="2/3" />
+            </div>
+          ))}
+        </div>
+      ),
+    },
+    {
+      count: 3,
+      render: (ps, base) => (
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 12, alignItems: "start" }}>
+          {ps.map((p, i) => (
+            <div key={p.id} style={{ opacity: deletingId === p.id ? 0.5 : 1 }}>
+              <EditorialCard {...editorialCardProps(p, base + i)} aspectRatio="1/1.3" />
+            </div>
+          ))}
+        </div>
+      ),
+    },
+    {
+      count: 2,
+      render: (ps, base) => (
+        <div style={{ display: "grid", gridTemplateColumns: "1.6fr 1fr", gap: 14, alignItems: "start" }}>
+          {ps[0] && (
+            <div style={{ opacity: deletingId === ps[0].id ? 0.5 : 1 }}>
+              <EditorialCard {...editorialCardProps(ps[0], base)} aspectRatio="2/2.8" />
             </div>
           )}
-          {/* Right stack — flex:1 items share the hero's height */}
-          <div style={{ display: "flex", flexDirection: "column", gap: 10, alignSelf: "stretch" }}>
-            {right.map((p, i) => (
-              <div key={p.id} style={{ flex: 1, minHeight: 0, overflow: "hidden", borderRadius: 0, opacity: deletingId === p.id ? 0.5 : 1 }}>
-                <CoverCard
-                  {...coverCardProps(p, i + 1, i === 0)}
-                  style={{ width: "100%", height: "100%", borderRadius: 0 }}
-                  nameSize={11}
-                  favSize={22}
-                />
+          {ps[1] && (
+            <div style={{ opacity: deletingId === ps[1].id ? 0.5 : 1 }}>
+              <EditorialCard {...editorialCardProps(ps[1], base + 1)} aspectRatio="2/2.8" />
+            </div>
+          )}
+        </div>
+      ),
+    },
+    {
+      count: 1,
+      render: (ps, base) => (
+        <div style={{ opacity: deletingId === ps[0]?.id ? 0.5 : 1 }}>
+          <EditorialCard
+            {...editorialCardProps(ps[0], base)}
+            aspectRatio="16/7"
+            forceVariant="clean"
+            nameSize={14}
+            brandSize={9}
+            favSize={26}
+          />
+        </div>
+      ),
+    },
+    {
+      count: 3,
+      render: (ps, base) => (
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, alignItems: "stretch" }}>
+          {ps[0] && (
+            <div style={{ opacity: deletingId === ps[0].id ? 0.5 : 1 }}>
+              <EditorialCard {...editorialCardProps(ps[0], base)} aspectRatio="2/3" />
+            </div>
+          )}
+          <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+            {ps.slice(1).map((p, i) => (
+              <div key={p.id} style={{ flex: 1, opacity: deletingId === p.id ? 0.5 : 1 }}>
+                <EditorialCard {...editorialCardProps(p, base + 1 + i)} aspectRatio="2/1.4" />
               </div>
             ))}
           </div>
         </div>
-        {/* Bottom row */}
-        {bottom.length > 0 && (
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 8 }}>
-            {bottom.map((p, i) => (
-              <div key={p.id} style={{ aspectRatio: "1/1.3", opacity: deletingId === p.id ? 0.5 : 1 }}>
-                <CoverCard
-                  {...coverCardProps(p, i + 3)}
-                  style={{ width: "100%", height: "100%", borderRadius: 0 }}
-                  nameSize={10}
-                  favSize={20}
+      ),
+    },
+  ];
+
+  function EditorialOverflowSection({ items, startIdx }: { items: Product[]; startIdx: number }) {
+    if (items.length === 0) return null;
+    const chunks: React.ReactNode[] = [];
+    let pos = 0;
+    let cycleIdx = 0;
+    while (pos < items.length) {
+      const pattern = editorialPatterns[PATTERN_CYCLE[cycleIdx % PATTERN_CYCLE.length]];
+      const slice = items.slice(pos, pos + pattern.count);
+      if (slice.length === 0) break;
+      chunks.push(
+        <React.Fragment key={startIdx + pos}>
+          {pattern.render(slice, startIdx + pos)}
+        </React.Fragment>
+      );
+      pos += pattern.count;
+      cycleIdx++;
+    }
+    return <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>{chunks}</div>;
+  }
+
+  // ── Magazine grid (Beauty Editorial Anthology) ─────────────
+  function MagazineGrid() {
+    if (filtered.length === 0) return <NoResults />;
+
+    const hero = pickHero(filtered);
+    const heroExclude = hero ? [hero] : [];
+    const satellites = pickSatellites(filtered, 2, heroExclude);
+    const featuredItems = [...heroExclude, ...satellites];
+    const staffPicks = pickStaffPicks(filtered, 3, featuredItems);
+    const archiveExclude = new Set(
+      [...featuredItems, ...staffPicks].map((p) => p.id)
+    );
+    const archive = filtered.filter((p) => !archiveExclude.has(p.id));
+    const summary = getCollectionSummary(filtered);
+    const issueLabel = getIssueLabel(undefined);
+
+    return (
+      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+        {/* Issue masthead */}
+        <div style={{ paddingBottom: 6 }}>
+          <div
+            className="hd-mono hd-caps"
+            style={{
+              fontSize: 10,
+              letterSpacing: "0.24em",
+              color: "var(--hd-ink-60)",
+              marginBottom: 4,
+            }}
+          >
+            {issueLabel}
+          </div>
+          <div
+            className="hd-mono hd-caps"
+            style={{
+              fontSize: 9,
+              letterSpacing: "0.18em",
+              color: "var(--hd-ink-40)",
+            }}
+          >
+            COLLECTED {String(summary.count).padStart(2, "0")}
+            {" · "}
+            {summary.genreCount} GENRES
+            {" · "}
+            {summary.brandCount} BRANDS
+          </div>
+        </div>
+
+        {/* IN THIS EDITION — Hero + 2 satellites */}
+        {hero && (
+          <>
+            <SectionDivider
+              title="IN THIS EDITION"
+              count={`${String(featuredItems.length).padStart(2, "0")} ITEMS`}
+              marginTop={8}
+              marginBottom={14}
+            />
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "1.4fr 1fr",
+                gap: 14,
+                alignItems: "stretch",
+              }}
+            >
+              <div style={{ opacity: deletingId === hero.id ? 0.5 : 1 }}>
+                <EditorialCard
+                  {...editorialCardProps(hero, 0, true)}
+                  aspectRatio="2/3"
+                  forceVariant="polaroid"
+                  showFeaturedBadge
+                  favSize={26}
                 />
               </div>
-            ))}
-          </div>
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 14,
+                }}
+              >
+                {satellites.map((p, i) => (
+                  <div
+                    key={p.id}
+                    style={{
+                      flex: 1,
+                      opacity: deletingId === p.id ? 0.5 : 1,
+                    }}
+                  >
+                    <EditorialCard
+                      {...editorialCardProps(p, i + 1, i === 0)}
+                      aspectRatio="2/1.6"
+                      forceVariant={i === 0 ? "clean" : "bordered"}
+                      favSize={20}
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+          </>
         )}
-        {/* Remaining items */}
-        <OverflowSection items={rest} startIdx={6} />
+
+        {/* STAFF PICKS — favorited */}
+        {staffPicks.length > 0 && (
+          <>
+            <SectionDivider
+              title="STAFF PICKS"
+              count={String(staffPicks.length).padStart(2, "0")}
+              marginTop={28}
+              marginBottom={14}
+            />
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: `repeat(${Math.min(staffPicks.length, 3)},1fr)`,
+                gap: 14,
+              }}
+            >
+              {staffPicks.map((p, i) => (
+                <div
+                  key={p.id}
+                  style={{ opacity: deletingId === p.id ? 0.5 : 1 }}
+                >
+                  <EditorialCard
+                    {...editorialCardProps(p, featuredItems.length + i)}
+                    aspectRatio="1/1.25"
+                    favSize={20}
+                  />
+                </div>
+              ))}
+            </div>
+          </>
+        )}
+
+        {/* ARCHIVE — rest */}
+        {archive.length > 0 && (
+          <>
+            <SectionDivider
+              title="ARCHIVE"
+              count={`${String(archive.length).padStart(2, "0")} ITEMS`}
+              marginTop={28}
+              marginBottom={14}
+            />
+            <EditorialOverflowSection
+              items={archive}
+              startIdx={featuredItems.length + staffPicks.length}
+            />
+          </>
+        )}
+
         {editMode && <EditGenrePanels />}
       </div>
     );
