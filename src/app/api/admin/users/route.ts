@@ -230,8 +230,8 @@ export async function PATCH(request: NextRequest) {
 
   if (typeof body?.monthlyScanLimit === "number") {
     const monthlyScanLimit = Math.trunc(body.monthlyScanLimit);
-    if (!Number.isFinite(monthlyScanLimit) || monthlyScanLimit < 1 || monthlyScanLimit > 9999) {
-      return NextResponse.json({ error: "上限は1〜9999で指定してください" }, { status: 400 });
+    if (!Number.isFinite(monthlyScanLimit) || monthlyScanLimit < 1 || monthlyScanLimit > 100) {
+      return NextResponse.json({ error: "上限は1〜100で指定してください" }, { status: 400 });
     }
 
     if (monthlyScanLimit === DEFAULT_MONTHLY_SCAN_LIMIT) {
@@ -283,6 +283,32 @@ export async function PATCH(request: NextRequest) {
   const { error } = await supabaseAdmin.auth.admin.updateUserById(id, {
     ban_duration: body.ban ? "87600h" : "none",
   });
+
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  return NextResponse.json({ success: true });
+}
+
+export async function DELETE(request: NextRequest) {
+  const userId = await getAuthUserId(request);
+  if (!userId || !isAdmin(userId)) {
+    return NextResponse.json({ error: "権限がありません" }, { status: 403 });
+  }
+
+  const body = (await request.json().catch(() => null)) as { id?: string } | null;
+  const id = body?.id;
+
+  if (!id || typeof id !== "string") {
+    return NextResponse.json({ error: "IDが必要です" }, { status: 400 });
+  }
+
+  if (id === userId) {
+    return NextResponse.json({ error: "自分自身を削除することはできません" }, { status: 400 });
+  }
+
+  const { error } = await supabaseAdmin.auth.admin.deleteUser(id);
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });

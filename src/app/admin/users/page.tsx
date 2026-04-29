@@ -47,6 +47,8 @@ const stepBtnStyle: React.CSSProperties = {
   fontFamily: "var(--hd-sans)",
 };
 
+const SCAN_LIMIT_MAX = 100;
+
 export default function AdminUsersPage() {
   const { user } = useUser();
   const [users, setUsers] = useState<AdminUser[]>([]);
@@ -54,7 +56,9 @@ export default function AdminUsersPage() {
   const [error, setError] = useState("");
   const [search, setSearch] = useState("");
   const [banningId, setBanningId] = useState<string | null>(null);
-  const [limitDrafts, setLimitDrafts] = useState<Record<string, number>>({});
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  // 入力中の空欄を許容するため string で保持。保存時に数値検証する。
+  const [limitDrafts, setLimitDrafts] = useState<Record<string, string>>({});
   const [savingLimitId, setSavingLimitId] = useState<string | null>(null);
 
   const fetchUsers = useCallback(async () => {
@@ -66,7 +70,7 @@ export default function AdminUsersPage() {
       const loadedUsers = (data.users ?? []) as AdminUser[];
       setUsers(loadedUsers);
       setLimitDrafts(
-        Object.fromEntries(loadedUsers.map((u) => [u.id, u.monthlyScanLimit]))
+        Object.fromEntries(loadedUsers.map((u) => [u.id, String(u.monthlyScanLimit)]))
       );
     } catch {
       setError("データの取得に失敗しました。");
@@ -106,14 +110,25 @@ export default function AdminUsersPage() {
 
   const adjustLimitDraft = (targetUserId: string, delta: number) => {
     setLimitDrafts((prev) => {
-      const base = prev[targetUserId] ?? 30;
-      const next = Math.min(9999, Math.max(1, base + delta));
-      return { ...prev, [targetUserId]: next };
+      const raw = prev[targetUserId];
+      const parsed = raw === "" || raw === undefined ? 30 : Number.parseInt(raw, 10);
+      const base = Number.isFinite(parsed) ? parsed : 30;
+      const next = Math.min(SCAN_LIMIT_MAX, Math.max(1, base + delta));
+      return { ...prev, [targetUserId]: String(next) };
     });
   };
 
   const handleSaveLimit = async (targetUser: AdminUser) => {
-    const nextLimit = limitDrafts[targetUser.id] ?? targetUser.monthlyScanLimit;
+    const raw = limitDrafts[targetUser.id] ?? "";
+    if (raw === "") {
+      setError("スキャン上限を入力してください。");
+      return;
+    }
+    const nextLimit = Number.parseInt(raw, 10);
+    if (!Number.isFinite(nextLimit) || nextLimit < 1 || nextLimit > SCAN_LIMIT_MAX) {
+      setError(`スキャン上限は1〜${SCAN_LIMIT_MAX}で指定してください。`);
+      return;
+    }
     if (nextLimit === targetUser.monthlyScanLimit) return;
     setSavingLimitId(targetUser.id);
     setError("");
@@ -132,9 +147,31 @@ export default function AdminUsersPage() {
       );
     } catch (e) {
       setError(e instanceof Error ? e.message : "上限の更新に失敗しました。");
-      setLimitDrafts((prev) => ({ ...prev, [targetUser.id]: targetUser.monthlyScanLimit }));
+      setLimitDrafts((prev) => ({ ...prev, [targetUser.id]: String(targetUser.monthlyScanLimit) }));
     } finally {
       setSavingLimitId(null);
+    }
+  };
+
+  const handleDelete = async (targetUser: AdminUser) => {
+    if (!confirm(`${targetUser.email} を削除します。\nこの操作は取り消せません。本当によろしいですか？`)) return;
+    setDeletingId(targetUser.id);
+    setError("");
+    try {
+      const res = await fetch("/api/admin/users", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: targetUser.id }),
+      });
+      if (!res.ok) {
+        const d = await res.json();
+        throw new Error(d.error ?? "削除失敗");
+      }
+      setUsers((prev) => prev.filter((u) => u.id !== targetUser.id));
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "削除に失敗しました。");
+    } finally {
+      setDeletingId(null);
     }
   };
 
@@ -276,24 +313,42 @@ export default function AdminUsersPage() {
                     <span>SEEN {formatDate(u.lastSignIn)}</span>
                   </div>
                 </div>
-                <button
-                  onClick={() => handleBanToggle(u)}
-                  disabled={banningId === u.id}
-                  className="hd-mono"
-                  style={{
-                    flexShrink: 0,
-                    padding: "6px 10px",
-                    background: "transparent",
-                    color: u.isBanned ? "var(--hd-ink)" : "var(--hd-terra)",
-                    border: `1px solid ${u.isBanned ? "var(--hd-ink)" : "var(--hd-terra)"}`,
-                    cursor: "pointer",
-                    fontSize: 9,
-                    letterSpacing: "0.2em",
-                    opacity: banningId === u.id ? 0.5 : 1,
-                  }}
-                >
-                  {banningId === u.id ? "..." : u.isBanned ? "UNBAN" : "BAN"}
-                </button>
+                <div style={{ display: "flex", gap: 6, flexShrink: 0 }}>
+                  <button
+                    onClick={() => handleBanToggle(u)}
+                    disabled={banningId === u.id || deletingId === u.id}
+                    className="hd-mono"
+                    style={{
+                      padding: "6px 10px",
+                      background: "transparent",
+                      color: u.isBanned ? "var(--hd-ink)" : "var(--hd-terra)",
+                      border: `1px solid ${u.isBanned ? "var(--hd-ink)" : "var(--hd-terra)"}`,
+                      cursor: "pointer",
+                      fontSize: 9,
+                      letterSpacing: "0.2em",
+                      opacity: banningId === u.id ? 0.5 : 1,
+                    }}
+                  >
+                    {banningId === u.id ? "..." : u.isBanned ? "UNBAN" : "BAN"}
+                  </button>
+                  <button
+                    onClick={() => handleDelete(u)}
+                    disabled={banningId === u.id || deletingId === u.id}
+                    className="hd-mono"
+                    style={{
+                      padding: "6px 10px",
+                      background: "var(--hd-terra)",
+                      color: "var(--hd-bg)",
+                      border: "1px solid var(--hd-terra)",
+                      cursor: "pointer",
+                      fontSize: 9,
+                      letterSpacing: "0.2em",
+                      opacity: deletingId === u.id ? 0.5 : 1,
+                    }}
+                  >
+                    {deletingId === u.id ? "..." : "DELETE"}
+                  </button>
+                </div>
               </div>
 
               {/* Stats */}
@@ -346,14 +401,19 @@ export default function AdminUsersPage() {
                   <input
                     type="number"
                     min={1}
-                    max={9999}
-                    value={limitDrafts[u.id] ?? u.monthlyScanLimit}
+                    max={SCAN_LIMIT_MAX}
+                    value={limitDrafts[u.id] ?? ""}
                     onChange={(e) => {
-                      const value = Number.parseInt(e.target.value, 10);
-                      setLimitDrafts((prev) => ({
-                        ...prev,
-                        [u.id]: Number.isFinite(value) && value > 0 ? Math.min(9999, value) : 1,
-                      }));
+                      const raw = e.target.value;
+                      // 空文字はそのまま許容（保存時に検証）
+                      if (raw === "") {
+                        setLimitDrafts((prev) => ({ ...prev, [u.id]: "" }));
+                        return;
+                      }
+                      const value = Number.parseInt(raw, 10);
+                      if (!Number.isFinite(value)) return;
+                      const clamped = Math.min(SCAN_LIMIT_MAX, Math.max(0, value));
+                      setLimitDrafts((prev) => ({ ...prev, [u.id]: String(clamped) }));
                     }}
                     className="hd-mono"
                     style={{
@@ -375,30 +435,32 @@ export default function AdminUsersPage() {
                   >
                     +
                   </button>
-                  <button
-                    onClick={() => handleSaveLimit(u)}
-                    disabled={
-                      savingLimitId === u.id ||
-                      (limitDrafts[u.id] ?? u.monthlyScanLimit) === u.monthlyScanLimit
-                    }
-                    className="hd-mono"
-                    style={{
-                      padding: "5px 10px",
-                      background: "var(--hd-ink)",
-                      color: "var(--hd-bg)",
-                      border: "1px solid var(--hd-ink)",
-                      cursor: "pointer",
-                      fontSize: 9,
-                      letterSpacing: "0.2em",
-                      opacity:
-                        savingLimitId === u.id ||
-                        (limitDrafts[u.id] ?? u.monthlyScanLimit) === u.monthlyScanLimit
-                          ? 0.4
-                          : 1,
-                    }}
-                  >
-                    {savingLimitId === u.id ? "..." : "SAVE"}
-                  </button>
+                  {(() => {
+                    const draft = limitDrafts[u.id] ?? "";
+                    const parsed = draft === "" ? NaN : Number.parseInt(draft, 10);
+                    const unchanged = Number.isFinite(parsed) && parsed === u.monthlyScanLimit;
+                    const isSaving = savingLimitId === u.id;
+                    const disabled = isSaving || unchanged;
+                    return (
+                      <button
+                        onClick={() => handleSaveLimit(u)}
+                        disabled={disabled}
+                        className="hd-mono"
+                        style={{
+                          padding: "5px 10px",
+                          background: "var(--hd-ink)",
+                          color: "var(--hd-bg)",
+                          border: "1px solid var(--hd-ink)",
+                          cursor: disabled ? "default" : "pointer",
+                          fontSize: 9,
+                          letterSpacing: "0.2em",
+                          opacity: disabled ? 0.4 : 1,
+                        }}
+                      >
+                        {isSaving ? "..." : "SAVE"}
+                      </button>
+                    );
+                  })()}
                 </div>
               </div>
             </div>
