@@ -464,7 +464,10 @@ function PhoneMock({ maxWidth = 300 }: { maxWidth?: number } = {}) {
           <span style={{ opacity: 0 }}>·</span>
           <span style={{ fontSize: 9 }}>●●●</span>
         </div>
-        <div style={{ height: "calc(100% - 80px)", overflow: "hidden" }}>{screens[phase]}</div>
+        {/* screens 領域: 上の status bar (~28px) + 下の固定ナビ (64px) を引いた残り。
+            従来 80px は固定ナビ 64px に対して引きすぎ/足りずで、画面コンテンツの下端が
+            ナビと重なって貫通して見えていた。96px に拡張して完全に独立させる。 */}
+        <div style={{ height: "calc(100% - 96px)", overflow: "hidden" }}>{screens[phase]}</div>
         <div
           style={{
             position: "absolute",
