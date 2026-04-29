@@ -148,7 +148,7 @@ export default function DeckPage() {
   };
 
   const handleAutoRecommend = () => {
-    const result = recommendDeck(allProducts, getIngredientById);
+    const result = recommendDeck(allProducts, getIngredientById, routine);
     setAutoResult(result);
     setShowAutoRecommend(true);
   };

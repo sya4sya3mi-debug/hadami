@@ -1,5 +1,6 @@
-import { Product, Ingredient, IngredientGenre, RecommendationResult, Combination } from "@/types";
+import { Product, Ingredient, IngredientGenre, RecommendationResult, Combination, RoutineType } from "@/types";
 import { findCombinations } from "@/lib/combinations";
+import { getSlotConfigForRoutine } from "@/lib/productGenres";
 
 
 interface ProductProfile {
@@ -70,9 +71,22 @@ function computeScore(profiles: ProductProfile[]): {
 
 export function recommendDeck(
   products: Product[],
-  getIngredient: (id: string) => Ingredient | undefined
+  getIngredient: (id: string) => Ingredient | undefined,
+  routine: RoutineType = "morning",
 ): RecommendationResult {
-  if (products.length === 0) {
+  // ルーティン別のスロット制約を取得（AM=4枠, PM=4枠, 各ジャンル1枠ずつ）
+  const slotRoutine: "morning" | "night" =
+    routine === "night" ? "night" : "morning";
+  const slotConfig = getSlotConfigForRoutine(slotRoutine);
+  const allowedGenres = new Set<string>(slotConfig.map((s) => s.genre));
+  const maxSlots = slotConfig.length;
+
+  // ルーティンで使うジャンルに合致する商品のみを候補にする
+  const eligibleProducts = products.filter((p) =>
+    allowedGenres.has(p.productType ?? ""),
+  );
+
+  if (eligibleProducts.length === 0) {
     return {
       productIds: [],
       score: 0,
@@ -83,29 +97,22 @@ export function recommendDeck(
     };
   }
 
-  const profiles = products.map((p) => buildProfile(p, getIngredient));
+  const profiles = eligibleProducts.map((p) => buildProfile(p, getIngredient));
 
-  if (products.length <= 2) {
-    const result = computeScore(profiles);
-    return {
-      productIds: profiles.map((p) => p.product.id),
-      score: result.score,
-      recommendedCombinations: result.recommended,
-      cautionCombinations: result.cautions,
-      genreCoverage: result.genreCoverage,
-      coveredGenreCount: result.coveredCount,
-    };
-  }
-
-  // --- Greedy selection ---
+  // --- Greedy selection（ジャンル重複禁止 + maxSlots 上限）---
   const selected: ProductProfile[] = [];
-  let remaining = [...profiles];
+  const usedGenres = new Set<string>();
+  let remaining = profiles.filter(
+    (p) => !usedGenres.has(p.product.productType ?? ""),
+  );
 
-  while (remaining.length > 0) {
+  while (remaining.length > 0 && selected.length < maxSlots) {
     let bestIndex = -1;
     let bestScore = -Infinity;
 
     for (let j = 0; j < remaining.length; j++) {
+      const candidateGenre = remaining[j].product.productType ?? "";
+      if (usedGenres.has(candidateGenre)) continue;
       const trial = [...selected, remaining[j]];
       const { score } = computeScore(trial);
       if (score > bestScore) {
@@ -119,27 +126,35 @@ export function recommendDeck(
     const currentScore = selected.length > 0 ? computeScore(selected).score : 0;
     if (bestScore <= currentScore && selected.length >= 2) break;
 
-    selected.push(remaining[bestIndex]);
-    remaining = remaining.filter((_, idx) => idx !== bestIndex);
+    const chosen = remaining[bestIndex];
+    selected.push(chosen);
+    usedGenres.add(chosen.product.productType ?? "");
+    remaining = remaining.filter(
+      (p, idx) =>
+        idx !== bestIndex && !usedGenres.has(p.product.productType ?? ""),
+    );
   }
 
-  // --- Local search refinement ---
+  // --- Local search refinement（同ジャンル内で入れ替え）---
   let improved = true;
   while (improved) {
     improved = false;
     const currentScore = computeScore(selected).score;
 
     for (let i = 0; i < selected.length; i++) {
-      for (let j = 0; j < remaining.length; j++) {
-        const trial = [...selected];
-        const removed = trial.splice(i, 1)[0];
-        trial.push(remaining[j]);
+      const targetGenre = selected[i].product.productType ?? "";
+      const candidatePool = profiles.filter(
+        (p) =>
+          (p.product.productType ?? "") === targetGenre &&
+          p.product.id !== selected[i].product.id,
+      );
 
+      for (const candidate of candidatePool) {
+        const trial = [...selected];
+        trial[i] = candidate;
         const { score } = computeScore(trial);
         if (score > currentScore) {
-          const swapped = remaining[j];
-          remaining[j] = removed;
-          selected[i] = swapped;
+          selected[i] = candidate;
           improved = true;
           break;
         }
@@ -150,8 +165,17 @@ export function recommendDeck(
 
   const finalResult = computeScore(selected);
 
+  // ステップ番号通り（slotConfig の genre 順）に並べ替え
+  const genreOrder = new Map<string, number>();
+  slotConfig.forEach((s, idx) => genreOrder.set(s.genre, idx));
+  const orderedSelected = [...selected].sort((a, b) => {
+    const oa = genreOrder.get(a.product.productType ?? "") ?? 99;
+    const ob = genreOrder.get(b.product.productType ?? "") ?? 99;
+    return oa - ob;
+  });
+
   return {
-    productIds: selected.map((p) => p.product.id),
+    productIds: orderedSelected.map((p) => p.product.id),
     score: finalResult.score,
     recommendedCombinations: finalResult.recommended,
     cautionCombinations: finalResult.cautions,
