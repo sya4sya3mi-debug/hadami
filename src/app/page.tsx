@@ -473,7 +473,7 @@ export default function HomePage() {
               onClick={() => router.push("/settings")}
               style={{
                 width: 40, height: 40, borderRadius: 999,
-                background: "var(--hd-moss)", color: "#fff",
+                background: "var(--hd-moss)", color: "var(--hd-bg)",
                 display: "flex", alignItems: "center", justifyContent: "center",
                 fontFamily: "var(--hd-serif)", fontSize: 17, cursor: "pointer",
                 flexShrink: 0,

@@ -290,7 +290,7 @@ export default function SettingsPage() {
                     borderRadius: 999,
                     flexShrink: 0,
                     background: "var(--hd-moss)",
-                    color: "#fff",
+                    color: "var(--hd-bg)",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
