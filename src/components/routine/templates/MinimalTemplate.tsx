@@ -41,6 +41,8 @@ function MinimalTile({
         <img
           src={step.product_image_url ?? ""}
           alt=""
+          loading="eager"
+          decoding="sync"
           style={{
             position: "absolute",
             inset: 0,
@@ -128,7 +130,7 @@ export default function MinimalTemplate({
   const isMorning = mode === "am";
   const date = todayJP();
 
-  const displaySteps = steps.slice(0, 5);
+  const displaySteps = steps.slice(0, 4);
   const stepCount = displaySteps.length;
   const chips = [skinType, ...concerns].filter(Boolean).slice(0, 4);
 

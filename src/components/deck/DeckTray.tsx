@@ -1,44 +1,47 @@
 "use client";
 
 import { Product, ProductGenre } from "@/types";
-import { GENRE_SLOT_CONFIG } from "@/lib/productGenres";
+import { getSlotConfigForRoutine } from "@/lib/productGenres";
 import GenreSlot from "./GenreSlot";
 
 interface DeckTrayProps {
   productsByGenre: Record<ProductGenre, Product[]>;
+  routine: "morning" | "night";
   onAddSlot: (genre: ProductGenre) => void;
   onRemoveProduct: (productId: string) => void;
 }
 
 export default function DeckTray({
   productsByGenre,
+  routine,
   onAddSlot,
   onRemoveProduct,
 }: DeckTrayProps) {
+  const slots = getSlotConfigForRoutine(routine);
   return (
     <div>
-      {GENRE_SLOT_CONFIG.map((slotConfig) => {
-        const products = productsByGenre[slotConfig.genre] || [];
+      {slots.map((slot) => {
+        const products = productsByGenre[slot.genre] || [];
         const isFilled = products.length > 0;
 
         return (
-          <div key={slotConfig.genre}>
+          <div key={slot.genre}>
             {isFilled ? (
               products.map((product) => (
                 <GenreSlot
                   key={product.id}
-                  genre={slotConfig.genre}
-                  stepLabel={slotConfig.stepLabel}
+                  genre={slot.genre}
+                  stepLabel={slot.stepLabel}
                   product={product}
-                  onAdd={() => onAddSlot(slotConfig.genre)}
+                  onAdd={() => onAddSlot(slot.genre)}
                   onRemove={() => onRemoveProduct(product.id)}
                 />
               ))
             ) : (
               <GenreSlot
-                genre={slotConfig.genre}
-                stepLabel={slotConfig.stepLabel}
-                onAdd={() => onAddSlot(slotConfig.genre)}
+                genre={slot.genre}
+                stepLabel={slot.stepLabel}
+                onAdd={() => onAddSlot(slot.genre)}
               />
             )}
           </div>

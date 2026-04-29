@@ -324,6 +324,7 @@ export default function DeckPage() {
               <>
                 <DeckTray
                   productsByGenre={productsByGenre}
+                  routine={routine === "night" ? "night" : "morning"}
                   onAddSlot={(genre) => openPicker(genre)}
                   onRemoveProduct={(id) => { void handleRemoveItem(id); }}
                 />

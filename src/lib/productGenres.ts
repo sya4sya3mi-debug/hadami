@@ -34,13 +34,34 @@ export interface GenreSlotConfig {
   stepLabel: string;
 }
 
-export const GENRE_SLOT_CONFIG: readonly GenreSlotConfig[] = [
-  { genre: "toner",     maxSlots: 1, section: "base",       stepLabel: "01" },
-  { genre: "serum",     maxSlots: 1, section: "base",       stepLabel: "02" },
-  { genre: "emulsion",  maxSlots: 1, section: "base",       stepLabel: "03" },
-  { genre: "sunscreen", maxSlots: 1, section: "base",       stepLabel: "04" },
-  { genre: "mask_pack", maxSlots: 1, section: "base",       stepLabel: "05" },
+export const AM_GENRE_SLOT_CONFIG: readonly GenreSlotConfig[] = [
+  { genre: "toner",     maxSlots: 1, section: "base", stepLabel: "01" },
+  { genre: "serum",     maxSlots: 1, section: "base", stepLabel: "02" },
+  { genre: "cream",     maxSlots: 1, section: "base", stepLabel: "03" },
+  { genre: "sunscreen", maxSlots: 1, section: "base", stepLabel: "04" },
 ] as const;
+
+export const PM_GENRE_SLOT_CONFIG: readonly GenreSlotConfig[] = [
+  { genre: "toner",     maxSlots: 1, section: "base", stepLabel: "01" },
+  { genre: "serum",     maxSlots: 1, section: "base", stepLabel: "02" },
+  { genre: "cream",     maxSlots: 1, section: "base", stepLabel: "03" },
+  { genre: "mask_pack", maxSlots: 1, section: "base", stepLabel: "04" },
+] as const;
+
+// 後方互換: ジャンル一覧として参照される箇所のために全スロットの和集合を提供。
+export const GENRE_SLOT_CONFIG: readonly GenreSlotConfig[] = [
+  { genre: "toner",     maxSlots: 1, section: "base", stepLabel: "01" },
+  { genre: "serum",     maxSlots: 1, section: "base", stepLabel: "02" },
+  { genre: "cream",     maxSlots: 1, section: "base", stepLabel: "03" },
+  { genre: "sunscreen", maxSlots: 1, section: "base", stepLabel: "04" },
+  { genre: "mask_pack", maxSlots: 1, section: "base", stepLabel: "04" },
+] as const;
+
+export function getSlotConfigForRoutine(
+  routine: "morning" | "night",
+): readonly GenreSlotConfig[] {
+  return routine === "morning" ? AM_GENRE_SLOT_CONFIG : PM_GENRE_SLOT_CONFIG;
+}
 
 export const SECTION_INFO: Record<string, { label: string; step: string }> = {
   base:       { label: "デイリーケア", step: "ROUTINE" },

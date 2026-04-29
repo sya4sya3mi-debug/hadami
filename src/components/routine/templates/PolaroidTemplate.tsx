@@ -62,6 +62,8 @@ function PolaroidPhoto({
           <img
             src={step.product_image_url ?? ""}
             alt=""
+            loading="eager"
+            decoding="sync"
             style={{
               position: "absolute",
               inset: 0,
@@ -182,9 +184,9 @@ export default function PolaroidTemplate({
   const isMorning = mode === "am";
   const date = todayJP();
 
-  const displaySteps = steps.slice(0, 5);
-  const topRow = displaySteps.slice(0, 3);
-  const bottomRow = displaySteps.slice(3, 5);
+  const displaySteps = steps.slice(0, 4);
+  const topRow = displaySteps.slice(0, 2);
+  const bottomRow = displaySteps.slice(2, 4);
   const chips = [skinType, ...concerns].filter(Boolean).slice(0, 4);
 
   return (
@@ -265,16 +267,18 @@ export default function PolaroidTemplate({
           </div>
         ) : (
           <>
-            {/* Top row — up to 3 polaroids */}
+            {/* Top row — up to 2 polaroids */}
             {topRow.length > 0 && (
               <div
                 style={{
                   display: "grid",
-                  gridTemplateColumns: "1fr 1fr 1fr",
-                  gap: 14,
-                  height: bottomRow.length > 0 ? 200 : 240,
+                  gridTemplateColumns: "1fr 1fr",
+                  gap: 18,
+                  height: bottomRow.length > 0 ? 220 : 240,
                   paddingTop: 10,
                   paddingBottom: 10,
+                  paddingLeft: 28,
+                  paddingRight: 28,
                 }}
               >
                 {topRow.map((step, i) => (
@@ -285,7 +289,7 @@ export default function PolaroidTemplate({
                     accentVar={accentVar}
                   />
                 ))}
-                {Array.from({ length: Math.max(0, 3 - topRow.length) }).map(
+                {Array.from({ length: Math.max(0, 2 - topRow.length) }).map(
                   (_, i) => <div key={`empty-top-${i}`} />,
                 )}
               </div>
@@ -309,7 +313,7 @@ export default function PolaroidTemplate({
                   <PolaroidPhoto
                     key={i}
                     step={step}
-                    index={i + 3}
+                    index={i + 2}
                     accentVar={accentVar}
                   />
                 ))}

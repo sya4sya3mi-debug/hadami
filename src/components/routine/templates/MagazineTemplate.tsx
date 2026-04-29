@@ -39,6 +39,8 @@ function HeroTile({
         <img
           src={step.product_image_url ?? ""}
           alt=""
+          loading="eager"
+          decoding="sync"
           style={{
             position: "absolute",
             inset: 0,
@@ -186,6 +188,8 @@ function SubTile({
         <img
           src={step.product_image_url ?? ""}
           alt=""
+          loading="eager"
+          decoding="sync"
           style={{
             position: "absolute",
             inset: 0,
@@ -271,9 +275,9 @@ export default function MagazineTemplate({
   const isMorning = mode === "am";
   const date = todayJP();
 
-  const displaySteps = steps.slice(0, 5);
+  const displaySteps = steps.slice(0, 4);
   const heroStep = displaySteps[0] ?? null;
-  const subSteps = displaySteps.slice(1, 5);
+  const subSteps = displaySteps.slice(1, 4);
   const chips = [skinType, ...concerns].filter(Boolean).slice(0, 4);
 
   return (
@@ -415,8 +419,8 @@ export default function MagazineTemplate({
           <div
             style={{
               display: "grid",
-              gridTemplateColumns: "1fr 1fr",
-              gridTemplateRows: "1fr 1fr",
+              gridTemplateColumns: "1fr",
+              gridTemplateRows: "1fr 1fr 1fr",
               gap: 6,
               minWidth: 0,
             }}
@@ -429,7 +433,7 @@ export default function MagazineTemplate({
                 accentVar={accentVar}
               />
             ))}
-            {Array.from({ length: Math.max(0, 4 - subSteps.length) }).map(
+            {Array.from({ length: Math.max(0, 3 - subSteps.length) }).map(
               (_, i) => (
                 <div
                   key={`empty-sub-${i}`}

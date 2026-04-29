@@ -41,6 +41,8 @@ function ProductTile({
         <img
           src={step.product_image_url ?? ""}
           alt=""
+          loading="eager"
+          decoding="sync"
           style={{
             position: "absolute",
             inset: 0,
@@ -162,9 +164,9 @@ export default function EditorialTemplate({ config, mode, steps, accentVar }: Te
   const isMorning = mode === "am";
   const date = todayJP();
 
-  const displaySteps = steps.slice(0, 5);
-  const topRow = displaySteps.slice(0, 3);
-  const bottomRow = displaySteps.slice(3, 5);
+  const displaySteps = steps.slice(0, 4);
+  const topRow = displaySteps.slice(0, 2);
+  const bottomRow = displaySteps.slice(2, 4);
 
   const chips = [skinType, ...concerns].filter(Boolean).slice(0, 4);
 
@@ -330,7 +332,7 @@ export default function EditorialTemplate({ config, mode, steps, accentVar }: Te
             <div
               style={{
                 display: "grid",
-                gridTemplateColumns: "1fr 1fr 1fr",
+                gridTemplateColumns: "1fr 1fr",
                 gap: 2,
                 flex: bottomRow.length > 0 ? "0 0 auto" : 1,
                 height:
@@ -344,11 +346,11 @@ export default function EditorialTemplate({ config, mode, steps, accentVar }: Te
                   key={i}
                   step={step}
                   index={i}
-                  fontSize={28}
+                  fontSize={32}
                   accentVar={accentVar}
                 />
               ))}
-              {Array.from({ length: Math.max(0, 3 - topRow.length) }).map((_, i) => (
+              {Array.from({ length: Math.max(0, 2 - topRow.length) }).map((_, i) => (
                 <div
                   key={`empty-top-${i}`}
                   style={{
@@ -372,7 +374,7 @@ export default function EditorialTemplate({ config, mode, steps, accentVar }: Te
                   <ProductTile
                     key={i}
                     step={step}
-                    index={i + 3}
+                    index={i + 2}
                     fontSize={32}
                     accentVar={accentVar}
                   />
