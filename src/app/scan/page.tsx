@@ -321,7 +321,7 @@ function ScanPageInner() {
         .filter((f) => isActiveIngredient(f.ingredient.id))
         .map((f) => f.ingredient.id);
       const newIds = discover(activeFoundIds);
-      const _discoveries = newIds
+      const discoveries = newIds
         .map((id) => getIngredientById(id))
         .filter((i): i is Ingredient => i !== null);
 
