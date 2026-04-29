@@ -592,6 +592,8 @@ export default function RoutineSharePageClient({
                 no="05"
                 title="ステップ編集"
                 hint={`${activeLabel} · ${currentSteps.filter((s) => s.step_name.trim()).length} ステップ`}
+                collapsible
+                defaultExpanded={false}
               >
                 <div>
                   {currentSteps.length === 0 && (
@@ -932,36 +934,44 @@ function Section({
   title,
   hint,
   children,
+  collapsible = false,
+  defaultExpanded = true,
 }: {
   no: string;
   title: string;
   hint?: string;
   children: React.ReactNode;
+  collapsible?: boolean;
+  defaultExpanded?: boolean;
 }) {
-  return (
-    <div style={{ paddingTop: 18, paddingBottom: 18, borderTop: "1px solid var(--hd-hair)" }}>
-      <div
-        style={{
-          display: "flex",
-          alignItems: "baseline",
-          justifyContent: "space-between",
-          marginBottom: 12,
-        }}
-      >
-        <div style={{ display: "flex", alignItems: "baseline", gap: 10 }}>
-          <span
-            className="hd-mono hd-caps"
-            style={{ color: "var(--hd-ink-40)" }}
-          >
-            No. {no}
-          </span>
-          <span
-            className="hd-serif"
-            style={{ fontSize: 16, letterSpacing: "-0.01em" }}
-          >
-            {title}
-          </span>
-        </div>
+  const [expanded, setExpanded] = useState(defaultExpanded);
+  const open = collapsible ? expanded : true;
+
+  const headerInner = (
+    <div
+      style={{
+        display: "flex",
+        alignItems: "baseline",
+        justifyContent: "space-between",
+        marginBottom: open ? 12 : 0,
+        width: "100%",
+      }}
+    >
+      <div style={{ display: "flex", alignItems: "baseline", gap: 10 }}>
+        <span
+          className="hd-mono hd-caps"
+          style={{ color: "var(--hd-ink-40)" }}
+        >
+          No. {no}
+        </span>
+        <span
+          className="hd-serif"
+          style={{ fontSize: 16, letterSpacing: "-0.01em" }}
+        >
+          {title}
+        </span>
+      </div>
+      <div style={{ display: "flex", alignItems: "baseline", gap: 10 }}>
         {hint && (
           <span
             className="hd-mono"
@@ -974,8 +984,49 @@ function Section({
             {hint}
           </span>
         )}
+        {collapsible && (
+          <span
+            className="hd-mono"
+            aria-hidden="true"
+            style={{
+              fontSize: 11,
+              color: "var(--hd-ink-40)",
+              transform: open ? "rotate(90deg)" : "rotate(0deg)",
+              transition: "transform 180ms ease",
+              display: "inline-block",
+              lineHeight: 1,
+            }}
+          >
+            ›
+          </span>
+        )}
       </div>
-      {children}
+    </div>
+  );
+
+  return (
+    <div style={{ paddingTop: 18, paddingBottom: open ? 18 : 14, borderTop: "1px solid var(--hd-hair)" }}>
+      {collapsible ? (
+        <button
+          type="button"
+          onClick={() => setExpanded((v) => !v)}
+          aria-expanded={open}
+          style={{
+            background: "transparent",
+            border: "none",
+            padding: 0,
+            width: "100%",
+            cursor: "pointer",
+            color: "inherit",
+            textAlign: "left",
+          }}
+        >
+          {headerInner}
+        </button>
+      ) : (
+        headerInner
+      )}
+      {open && children}
     </div>
   );
 }
