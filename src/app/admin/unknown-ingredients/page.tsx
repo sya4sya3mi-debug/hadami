@@ -3,7 +3,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useUser } from "@/lib/auth";
 import { isAdminClient } from "@/lib/adminConfig";
-import { INGREDIENT_GENRES } from "@/lib/ingredients";
 
 interface UnknownItem {
   name: string;
@@ -25,7 +24,6 @@ const CATEGORIES = [
 interface RegisterDraft {
   nameJa: string;
   nameInci: string;
-  genre: string;
   categories: string[];
   note: string;
 }
@@ -144,21 +142,6 @@ function RegisterModal({
         </div>
 
         <div style={{ marginBottom: 14 }}>
-          <FieldLabel>GENRE</FieldLabel>
-          <select
-            value={draft.genre}
-            onChange={(e) => onChange({ genre: e.target.value })}
-            style={inputStyle}
-          >
-            {INGREDIENT_GENRES.map((g) => (
-              <option key={g.key} value={g.key}>
-                {g.label}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div style={{ marginBottom: 14 }}>
           <FieldLabel>CATEGORIES (MULTI)</FieldLabel>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
             {CATEGORIES.map((cat) => {
@@ -247,7 +230,7 @@ export default function AdminUnknownIngredientsPage() {
 
   const [registerTarget, setRegisterTarget] = useState<string | null>(null);
   const [registerDraft, setRegisterDraft] = useState<RegisterDraft>({
-    nameJa: "", nameInci: "", genre: "base", categories: [], note: "",
+    nameJa: "", nameInci: "", categories: [], note: "",
   });
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState("");
@@ -309,7 +292,7 @@ export default function AdminUnknownIngredientsPage() {
 
   const openRegisterModal = (name: string) => {
     setRegisterTarget(name);
-    setRegisterDraft({ nameJa: name, nameInci: "", genre: "base", categories: [], note: "" });
+    setRegisterDraft({ nameJa: name, nameInci: "", categories: [], note: "" });
     setSaveError("");
   };
 
