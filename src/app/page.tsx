@@ -185,8 +185,8 @@ const RoutineStepButton = memo(function RoutineStepButton({
 
       <div
         style={{
-          width: 50,
-          height: 50,
+          width: 72,
+          height: 72,
           flexShrink: 0,
           overflow: "hidden",
           position: "relative",
@@ -204,14 +204,14 @@ const RoutineStepButton = memo(function RoutineStepButton({
             alt={step.name}
             fill
             style={{ objectFit: "cover" }}
-            sizes="50px"
+            sizes="72px"
             loading="lazy"
           />
         ) : (
           <span
             className="hd-mono"
             style={{
-              fontSize: initials.length > 2 ? 11 : 13,
+              fontSize: initials.length > 2 ? 15 : 18,
               letterSpacing: "0.04em",
             }}
           >
