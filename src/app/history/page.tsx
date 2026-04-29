@@ -1265,7 +1265,7 @@ export default function HistoryPage() {
                   </div>
                   <div
                     className="hd-serif"
-                    style={{ fontSize: 38, fontStyle: "italic", color: "var(--hd-moss)", lineHeight: 1, marginTop: 4 }}
+                    style={{ fontSize: 38, fontStyle: "italic", color: "var(--hd-ink)", lineHeight: 1, marginTop: 4 }}
                   >
                     My shelf.
                   </div>
