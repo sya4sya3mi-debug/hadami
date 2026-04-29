@@ -374,6 +374,25 @@ export default function HomePage() {
     });
   }, [routineDeckEntries]);
 
+  // TODAY'S INGREDIENT: ランダム初期 + 7秒ごと自動ローテーション、フェード遷移
+  const [tipIndex, setTipIndex] = useState(() => Math.floor(Math.random() * TIPS.length));
+  const [tipFading, setTipFading] = useState(false);
+  useEffect(() => {
+    const cycle = setInterval(() => {
+      setTipFading(true);
+      window.setTimeout(() => {
+        setTipIndex((i) => {
+          if (TIPS.length <= 1) return 0;
+          let next = Math.floor(Math.random() * TIPS.length);
+          if (next === i) next = (i + 1) % TIPS.length;
+          return next;
+        });
+        setTipFading(false);
+      }, 320);
+    }, 7000);
+    return () => clearInterval(cycle);
+  }, []);
+
   if (loading) return null;
   if (!user) return <LandingPage />;
 
@@ -400,25 +419,6 @@ export default function HomePage() {
     }
   };
 
-  // TODAY'S INGREDIENT: ランダム初期 + 7秒ごと自動ローテーション、フェード遷移
-  const [tipIndex, setTipIndex] = useState(() => Math.floor(Math.random() * TIPS.length));
-  const [tipFading, setTipFading] = useState(false);
-  useEffect(() => {
-    const cycle = setInterval(() => {
-      setTipFading(true);
-      window.setTimeout(() => {
-        setTipIndex((i) => {
-          if (TIPS.length <= 1) return 0;
-          // 直前と異なるランダムインデックス
-          let next = Math.floor(Math.random() * TIPS.length);
-          if (next === i) next = (i + 1) % TIPS.length;
-          return next;
-        });
-        setTipFading(false);
-      }, 320);
-    }, 7000);
-    return () => clearInterval(cycle);
-  }, []);
   const todayTip = TIPS[tipIndex];
   const greeting = (() => {
     const h = new Date().getHours();
