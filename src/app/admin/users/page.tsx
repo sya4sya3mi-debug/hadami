@@ -18,11 +18,34 @@ interface AdminUser {
 
 function formatDate(iso: string | null) {
   if (!iso) return "—";
-  return new Date(iso).toLocaleDateString("ja-JP", {
-    month: "short",
-    day: "numeric",
-  });
+  return new Date(iso)
+    .toLocaleDateString("ja-JP", { month: "2-digit", day: "2-digit" })
+    .replace("/", ".");
 }
+
+const inputStyle: React.CSSProperties = {
+  width: "100%",
+  padding: "12px 14px",
+  border: "1px solid var(--hd-line)",
+  background: "var(--hd-bg)",
+  color: "var(--hd-ink)",
+  fontFamily: "var(--hd-sans)",
+  fontSize: 13,
+  outline: "none",
+  borderRadius: 0,
+};
+
+const stepBtnStyle: React.CSSProperties = {
+  width: 26,
+  height: 26,
+  background: "transparent",
+  border: "1px solid var(--hd-line)",
+  color: "var(--hd-ink)",
+  cursor: "pointer",
+  fontSize: 13,
+  lineHeight: 1,
+  fontFamily: "var(--hd-sans)",
+};
 
 export default function AdminUsersPage() {
   const { user } = useUser();
@@ -43,9 +66,7 @@ export default function AdminUsersPage() {
       const loadedUsers = (data.users ?? []) as AdminUser[];
       setUsers(loadedUsers);
       setLimitDrafts(
-        Object.fromEntries(
-          loadedUsers.map((u) => [u.id, u.monthlyScanLimit])
-        )
+        Object.fromEntries(loadedUsers.map((u) => [u.id, u.monthlyScanLimit]))
       );
     } catch {
       setError("データの取得に失敗しました。");
@@ -61,7 +82,6 @@ export default function AdminUsersPage() {
   const handleBanToggle = async (targetUser: AdminUser) => {
     const action = targetUser.isBanned ? "BAN解除" : "BAN";
     if (!confirm(`${targetUser.email} を${action}しますか？`)) return;
-
     setBanningId(targetUser.id);
     setError("");
     try {
@@ -75,9 +95,7 @@ export default function AdminUsersPage() {
         throw new Error(d.error ?? "更新失敗");
       }
       setUsers((prev) =>
-        prev.map((u) =>
-          u.id === targetUser.id ? { ...u, isBanned: !u.isBanned } : u
-        )
+        prev.map((u) => (u.id === targetUser.id ? { ...u, isBanned: !u.isBanned } : u))
       );
     } catch (e) {
       setError(e instanceof Error ? e.message : "更新に失敗しました。");
@@ -97,7 +115,6 @@ export default function AdminUsersPage() {
   const handleSaveLimit = async (targetUser: AdminUser) => {
     const nextLimit = limitDrafts[targetUser.id] ?? targetUser.monthlyScanLimit;
     if (nextLimit === targetUser.monthlyScanLimit) return;
-
     setSavingLimitId(targetUser.id);
     setError("");
     try {
@@ -111,16 +128,11 @@ export default function AdminUsersPage() {
         throw new Error(d.error ?? "上限の更新に失敗しました");
       }
       setUsers((prev) =>
-        prev.map((u) =>
-          u.id === targetUser.id ? { ...u, monthlyScanLimit: nextLimit } : u
-        )
+        prev.map((u) => (u.id === targetUser.id ? { ...u, monthlyScanLimit: nextLimit } : u))
       );
     } catch (e) {
       setError(e instanceof Error ? e.message : "上限の更新に失敗しました。");
-      setLimitDrafts((prev) => ({
-        ...prev,
-        [targetUser.id]: targetUser.monthlyScanLimit,
-      }));
+      setLimitDrafts((prev) => ({ ...prev, [targetUser.id]: targetUser.monthlyScanLimit }));
     } finally {
       setSavingLimitId(null);
     }
@@ -128,119 +140,204 @@ export default function AdminUsersPage() {
 
   if (!user) return null;
 
-  const filtered = users.filter((u) =>
-    u.email.toLowerCase().includes(search.toLowerCase())
-  );
+  const filtered = users.filter((u) => u.email.toLowerCase().includes(search.toLowerCase()));
   const activeCount = users.filter((u) => !u.isBanned).length;
   const bannedCount = users.filter((u) => u.isBanned).length;
 
   return (
     <>
-      <h1 className="text-xl font-extrabold font-serif text-bo-ink mb-6">
-        ユーザー管理
-      </h1>
+      <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 24 }}>
+        <h1 className="hd-serif" style={{ fontSize: 22, letterSpacing: "-0.01em" }}>
+          ユーザー管理
+        </h1>
+        <span className="hd-mono" style={{ fontSize: 9, letterSpacing: "0.2em", color: "var(--hd-ink-60)" }}>
+          USERS
+        </span>
+      </div>
 
-      {/* Stats row */}
-      <div className="grid grid-cols-3 gap-2.5 mb-5">
-        <div className="bg-white rounded-r2 py-3 px-3 text-center shadow-bo1">
-          <div className="text-lg font-black font-serif text-bo-accent">{users.length}</div>
-          <div className="text-[10px] text-bo-ink-muted font-sans mt-0.5">総ユーザー</div>
-        </div>
-        <div className="bg-white rounded-r2 py-3 px-3 text-center shadow-bo1">
-          <div className="text-lg font-black font-serif text-bo-ink">{activeCount}</div>
-          <div className="text-[10px] text-bo-ink-muted font-sans mt-0.5">アクティブ</div>
-        </div>
-        <div className="bg-white rounded-r2 py-3 px-3 text-center shadow-bo1">
-          <div className="text-lg font-black font-serif text-bo-danger">{bannedCount}</div>
-          <div className="text-[10px] text-bo-ink-muted font-sans mt-0.5">BAN</div>
-        </div>
+      {/* Stats */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8, marginBottom: 24 }}>
+        {[
+          { caps: "TOTAL", value: users.length, jp: "総ユーザー" },
+          { caps: "ACTIVE", value: activeCount, jp: "アクティブ" },
+          { caps: "BANNED", value: bannedCount, jp: "BAN" },
+        ].map((s) => (
+          <div
+            key={s.caps}
+            style={{
+              border: "1px solid var(--hd-line)",
+              padding: "14px 10px",
+              textAlign: "center",
+              background: "var(--hd-bg)",
+            }}
+          >
+            <div className="hd-serif" style={{ fontSize: 22, lineHeight: 1, marginBottom: 6 }}>
+              {s.value}
+            </div>
+            <div className="hd-mono" style={{ fontSize: 9, letterSpacing: "0.2em", color: "var(--hd-ink-60)", marginBottom: 2 }}>
+              {s.caps}
+            </div>
+            <div style={{ fontSize: 10, color: "var(--hd-ink-60)", fontFamily: "var(--hd-sans)" }}>{s.jp}</div>
+          </div>
+        ))}
       </div>
 
       {/* Search */}
-      <div className="mb-4">
+      <div style={{ marginBottom: 16 }}>
         <input
           type="text"
           placeholder="メールアドレスで検索..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="w-full p-2.5 border-[1.5px] border-bo-parchment rounded-r1 text-sm bg-white outline-none focus:border-bo-accent focus:ring-1 focus:ring-bo-accent/30 transition-colors font-sans"
+          style={inputStyle}
         />
       </div>
 
       {error && (
-        <div className="bg-bo-danger-bg border border-bo-danger rounded-r1 py-2.5 px-4 mb-4 text-center text-[13px] text-bo-danger">
+        <div
+          style={{
+            border: "1px solid var(--hd-terra)",
+            padding: "10px 14px",
+            marginBottom: 16,
+            textAlign: "center",
+            fontSize: 12,
+            color: "var(--hd-terra)",
+            fontFamily: "var(--hd-sans)",
+          }}
+        >
           {error}
         </div>
       )}
 
-      {/* User list */}
       {fetching ? (
-        <div className="text-center py-12 text-bo-ink-muted text-sm font-sans">
+        <div style={{ textAlign: "center", padding: "48px 0", fontSize: 12, color: "var(--hd-ink-60)", fontFamily: "var(--hd-sans)" }}>
           読み込み中...
         </div>
       ) : filtered.length === 0 ? (
-        <div className="text-center py-12 text-bo-ink-muted text-sm font-sans">
+        <div style={{ textAlign: "center", padding: "48px 0", fontSize: 12, color: "var(--hd-ink-60)", fontFamily: "var(--hd-sans)" }}>
           {search ? "該当するユーザーがいません" : "ユーザーがいません"}
         </div>
       ) : (
-        <div className="flex flex-col gap-2">
+        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
           {filtered.map((u) => (
             <div
               key={u.id}
-              className={`bg-white rounded-r2 p-4 shadow-bo1 border-l-[3px] transition-opacity ${
-                u.isBanned
-                  ? "border-l-bo-danger opacity-70"
-                  : "border-l-bo-accent"
-              }`}
+              style={{
+                border: "1px solid var(--hd-line)",
+                borderLeft: `2px solid ${u.isBanned ? "var(--hd-terra)" : "var(--hd-ink)"}`,
+                padding: 14,
+                background: "var(--hd-bg)",
+                opacity: u.isBanned ? 0.65 : 1,
+              }}
             >
-              <div className="flex items-start justify-between gap-2 mb-2">
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-0.5 flex-wrap">
-                    <span className="text-sm font-bold font-sans text-bo-ink truncate">
+              <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 8, marginBottom: 8 }}>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4, flexWrap: "wrap" }}>
+                    <span
+                      className="hd-mono"
+                      style={{
+                        fontSize: 12,
+                        color: "var(--hd-ink)",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                      }}
+                    >
                       {u.email}
                     </span>
                     {u.isBanned && (
-                      <span className="text-[10px] bg-bo-danger-bg text-bo-danger px-1.5 py-0.5 rounded font-bold font-sans shrink-0">
-                        BAN
+                      <span
+                        className="hd-mono"
+                        style={{
+                          fontSize: 9,
+                          letterSpacing: "0.2em",
+                          color: "var(--hd-terra)",
+                          border: "1px solid var(--hd-terra)",
+                          padding: "2px 6px",
+                        }}
+                      >
+                        BANNED
                       </span>
                     )}
                   </div>
-                  <div className="flex items-center gap-2 text-[10px] text-bo-ink-muted font-sans flex-wrap">
-                    <span>登録: {formatDate(u.createdAt)}</span>
-                    <span>•</span>
-                    <span>最終ログイン: {formatDate(u.lastSignIn)}</span>
+                  <div
+                    className="hd-mono"
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 8,
+                      fontSize: 9,
+                      letterSpacing: "0.15em",
+                      color: "var(--hd-ink-60)",
+                      flexWrap: "wrap",
+                    }}
+                  >
+                    <span>JOINED {formatDate(u.createdAt)}</span>
+                    <span>·</span>
+                    <span>SEEN {formatDate(u.lastSignIn)}</span>
                   </div>
                 </div>
                 <button
                   onClick={() => handleBanToggle(u)}
                   disabled={banningId === u.id}
-                  className={`shrink-0 px-3 py-1.5 rounded-lg text-[11px] font-bold border-none cursor-pointer transition-colors font-sans disabled:opacity-50 ${
-                    u.isBanned
-                      ? "bg-bo-accent-soft text-bo-accent hover:bg-emerald-100"
-                      : "bg-bo-danger-bg text-bo-danger hover:bg-red-100"
-                  }`}
+                  className="hd-mono"
+                  style={{
+                    flexShrink: 0,
+                    padding: "6px 10px",
+                    background: "transparent",
+                    color: u.isBanned ? "var(--hd-ink)" : "var(--hd-terra)",
+                    border: `1px solid ${u.isBanned ? "var(--hd-ink)" : "var(--hd-terra)"}`,
+                    cursor: "pointer",
+                    fontSize: 9,
+                    letterSpacing: "0.2em",
+                    opacity: banningId === u.id ? 0.5 : 1,
+                  }}
                 >
-                  {banningId === u.id
-                    ? "処理中..."
-                    : u.isBanned
-                    ? "BAN解除"
-                    : "BAN"}
+                  {banningId === u.id ? "..." : u.isBanned ? "UNBAN" : "BAN"}
                 </button>
               </div>
+
               {/* Stats */}
-              <div className="flex items-center gap-3 text-[10px] text-bo-ink-muted font-sans mt-1">
-                <span>商品 {u.products}</span>
-                <span>•</span>
-                <span>今月スキャン {u.scansThisMonth}</span>
-                <span>•</span>
-                <span>成分 {u.discoveries}</span>
+              <div
+                className="hd-mono"
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 10,
+                  fontSize: 9,
+                  letterSpacing: "0.15em",
+                  color: "var(--hd-ink-60)",
+                  marginTop: 6,
+                }}
+              >
+                <span>PRODUCTS {u.products}</span>
+                <span>·</span>
+                <span>SCANS {u.scansThisMonth}</span>
+                <span>·</span>
+                <span>INGREDIENTS {u.discoveries}</span>
               </div>
-              <div className="mt-3 flex items-center justify-between gap-2">
-                <div className="text-[10px] text-bo-ink-muted font-sans">月上限</div>
-                <div className="flex items-center gap-1.5">
+
+              {/* Monthly limit */}
+              <div
+                style={{
+                  marginTop: 12,
+                  paddingTop: 12,
+                  borderTop: "1px solid var(--hd-line)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  gap: 8,
+                }}
+              >
+                <span
+                  className="hd-mono"
+                  style={{ fontSize: 9, letterSpacing: "0.2em", color: "var(--hd-ink-60)" }}
+                >
+                  MONTHLY LIMIT
+                </span>
+                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                   <button
                     onClick={() => adjustLimitDraft(u.id, -1)}
-                    className="w-6 h-6 rounded-md bg-bo-parchment text-bo-ink text-xs font-bold border-none cursor-pointer pressable"
+                    style={stepBtnStyle}
                     aria-label="上限を減らす"
                     disabled={savingLimitId === u.id}
                   >
@@ -255,17 +352,24 @@ export default function AdminUsersPage() {
                       const value = Number.parseInt(e.target.value, 10);
                       setLimitDrafts((prev) => ({
                         ...prev,
-                        [u.id]:
-                          Number.isFinite(value) && value > 0
-                            ? Math.min(9999, value)
-                            : 1,
+                        [u.id]: Number.isFinite(value) && value > 0 ? Math.min(9999, value) : 1,
                       }));
                     }}
-                    className="w-16 text-center text-[11px] font-bold font-sans border border-bo-parchment rounded-md py-1 bg-white"
+                    className="hd-mono"
+                    style={{
+                      width: 56,
+                      textAlign: "center",
+                      fontSize: 12,
+                      border: "1px solid var(--hd-line)",
+                      padding: "4px 0",
+                      background: "var(--hd-bg)",
+                      color: "var(--hd-ink)",
+                      outline: "none",
+                    }}
                   />
                   <button
                     onClick={() => adjustLimitDraft(u.id, 1)}
-                    className="w-6 h-6 rounded-md bg-bo-parchment text-bo-ink text-xs font-bold border-none cursor-pointer pressable"
+                    style={stepBtnStyle}
                     aria-label="上限を増やす"
                     disabled={savingLimitId === u.id}
                   >
@@ -277,9 +381,23 @@ export default function AdminUsersPage() {
                       savingLimitId === u.id ||
                       (limitDrafts[u.id] ?? u.monthlyScanLimit) === u.monthlyScanLimit
                     }
-                    className="px-2.5 py-1.5 rounded-md bg-bo-accent text-white text-[10px] font-bold font-sans border-none cursor-pointer pressable disabled:opacity-50"
+                    className="hd-mono"
+                    style={{
+                      padding: "5px 10px",
+                      background: "var(--hd-ink)",
+                      color: "var(--hd-bg)",
+                      border: "1px solid var(--hd-ink)",
+                      cursor: "pointer",
+                      fontSize: 9,
+                      letterSpacing: "0.2em",
+                      opacity:
+                        savingLimitId === u.id ||
+                        (limitDrafts[u.id] ?? u.monthlyScanLimit) === u.monthlyScanLimit
+                          ? 0.4
+                          : 1,
+                    }}
                   >
-                    {savingLimitId === u.id ? "保存中..." : "保存"}
+                    {savingLimitId === u.id ? "..." : "SAVE"}
                   </button>
                 </div>
               </div>

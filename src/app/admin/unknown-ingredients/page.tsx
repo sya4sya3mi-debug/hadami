@@ -15,11 +15,11 @@ interface UnknownItem {
 
 const CATEGORIES = [
   { key: "moisturizing", label: "保湿" },
-  { key: "brightening",  label: "美白・整肌" },
-  { key: "turnover",     label: "ターンオーバー" },
-  { key: "barrier",      label: "バリア" },
-  { key: "soothing",     label: "鎮静" },
-  { key: "keratin",      label: "毛髪・角質" },
+  { key: "brightening", label: "美白・整肌" },
+  { key: "turnover", label: "ターンオーバー" },
+  { key: "barrier", label: "バリア" },
+  { key: "soothing", label: "鎮静" },
+  { key: "keratin", label: "毛髪・角質" },
 ] as const;
 
 interface RegisterDraft {
@@ -28,6 +28,35 @@ interface RegisterDraft {
   genre: string;
   categories: string[];
   note: string;
+}
+
+const inputStyle: React.CSSProperties = {
+  width: "100%",
+  padding: "12px 14px",
+  border: "1px solid var(--hd-line)",
+  background: "var(--hd-bg)",
+  color: "var(--hd-ink)",
+  fontFamily: "var(--hd-sans)",
+  fontSize: 13,
+  outline: "none",
+  borderRadius: 0,
+};
+
+function FieldLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <label
+      className="hd-mono"
+      style={{
+        display: "block",
+        fontSize: 9,
+        letterSpacing: "0.2em",
+        color: "var(--hd-ink-60)",
+        marginBottom: 6,
+      }}
+    >
+      {children}
+    </label>
+  );
 }
 
 function RegisterModal({
@@ -44,75 +73,94 @@ function RegisterModal({
   saving: boolean;
 }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40" onClick={onClose}>
+    <div
+      style={{
+        position: "fixed",
+        inset: 0,
+        zIndex: 50,
+        display: "flex",
+        alignItems: "flex-end",
+        justifyContent: "center",
+        background: "rgba(0,0,0,0.4)",
+      }}
+      onClick={onClose}
+    >
       <div
-        className="w-full max-w-[600px] bg-white rounded-t-[24px] p-5 pb-8 shadow-bo-lift"
+        className="hd-root"
+        style={{
+          width: "100%",
+          maxWidth: 600,
+          background: "var(--hd-bg)",
+          color: "var(--hd-ink)",
+          padding: "20px 20px 32px",
+          borderTop: "2px solid var(--hd-ink)",
+        }}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-sm font-extrabold font-sans text-bo-ink">
-            成分マスタへ登録
-          </h2>
+        <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 16 }}>
+          <div style={{ display: "flex", alignItems: "baseline", gap: 10 }}>
+            <h2 className="hd-serif" style={{ fontSize: 16 }}>成分マスタへ登録</h2>
+            <span className="hd-mono" style={{ fontSize: 9, letterSpacing: "0.2em", color: "var(--hd-ink-60)" }}>
+              REGISTER
+            </span>
+          </div>
           <button
             onClick={onClose}
-            className="text-bo-ink-muted text-lg bg-transparent border-none cursor-pointer leading-none"
+            style={{
+              background: "transparent",
+              border: "1px solid var(--hd-line)",
+              color: "var(--hd-ink)",
+              cursor: "pointer",
+              width: 28,
+              height: 28,
+              fontSize: 14,
+              lineHeight: 1,
+            }}
             aria-label="閉じる"
           >
             ×
           </button>
         </div>
 
-        {/* 成分名 */}
-        <div className="mb-3">
-          <label className="text-[10px] font-bold text-bo-ink-muted font-sans block mb-1">
-            成分名（日本語）
-          </label>
+        <div style={{ marginBottom: 14 }}>
+          <FieldLabel>NAME (JA)</FieldLabel>
           <input
             type="text"
             value={draft.nameJa}
             onChange={(e) => onChange({ nameJa: e.target.value })}
-            className="w-full p-2.5 border-[1.5px] border-bo-parchment rounded-r1 text-sm bg-white outline-none focus:border-bo-accent focus:ring-1 focus:ring-bo-accent/30 transition-colors font-sans"
+            style={inputStyle}
           />
         </div>
 
-        {/* INCI名 */}
-        <div className="mb-3">
-          <label className="text-[10px] font-bold text-bo-ink-muted font-sans block mb-1">
-            INCI名（任意）
-          </label>
+        <div style={{ marginBottom: 14 }}>
+          <FieldLabel>INCI (OPTIONAL)</FieldLabel>
           <input
             type="text"
             value={draft.nameInci}
             onChange={(e) => onChange({ nameInci: e.target.value })}
             placeholder="例: Niacinamide"
-            className="w-full p-2.5 border-[1.5px] border-bo-parchment rounded-r1 text-sm bg-white outline-none focus:border-bo-accent focus:ring-1 focus:ring-bo-accent/30 transition-colors font-sans"
+            style={inputStyle}
           />
         </div>
 
-        {/* ジャンル */}
-        <div className="mb-3">
-          <label className="text-[10px] font-bold text-bo-ink-muted font-sans block mb-1">
-            ジャンル
-          </label>
+        <div style={{ marginBottom: 14 }}>
+          <FieldLabel>GENRE</FieldLabel>
           <select
             value={draft.genre}
             onChange={(e) => onChange({ genre: e.target.value })}
-            className="w-full p-2.5 border-[1.5px] border-bo-parchment rounded-r1 text-sm bg-white outline-none focus:border-bo-accent font-sans"
+            style={inputStyle}
           >
             {INGREDIENT_GENRES.map((g) => (
               <option key={g.key} value={g.key}>
-                {g.icon} {g.label}
+                {g.label}
               </option>
             ))}
           </select>
         </div>
 
-        {/* カテゴリ */}
-        <div className="mb-3">
-          <label className="text-[10px] font-bold text-bo-ink-muted font-sans block mb-1.5">
-            カテゴリ（複数選択可）
-          </label>
-          <div className="flex flex-wrap gap-1.5">
+        <div style={{ marginBottom: 14 }}>
+          <FieldLabel>CATEGORIES (MULTI)</FieldLabel>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
             {CATEGORIES.map((cat) => {
               const selected = draft.categories.includes(cat.key);
               return (
@@ -126,11 +174,16 @@ function RegisterModal({
                         : [...draft.categories, cat.key],
                     })
                   }
-                  className={`px-3 py-1 rounded-full text-[11px] font-bold font-sans border transition-colors ${
-                    selected
-                      ? "bg-bo-accent text-white border-bo-accent"
-                      : "bg-white text-bo-ink-muted border-bo-parchment hover:border-bo-accent"
-                  }`}
+                  className="hd-mono"
+                  style={{
+                    padding: "6px 12px",
+                    fontSize: 10,
+                    letterSpacing: "0.15em",
+                    background: selected ? "var(--hd-ink)" : "transparent",
+                    color: selected ? "var(--hd-bg)" : "var(--hd-ink-60)",
+                    border: `1px solid ${selected ? "var(--hd-ink)" : "var(--hd-line)"}`,
+                    cursor: "pointer",
+                  }}
                 >
                   {cat.label}
                 </button>
@@ -139,26 +192,43 @@ function RegisterModal({
           </div>
         </div>
 
-        {/* メモ */}
-        <div className="mb-4">
-          <label className="text-[10px] font-bold text-bo-ink-muted font-sans block mb-1">
-            メモ（任意）
-          </label>
+        <div style={{ marginBottom: 18 }}>
+          <FieldLabel>NOTE (OPTIONAL)</FieldLabel>
           <textarea
             value={draft.note}
             onChange={(e) => onChange({ note: e.target.value })}
             rows={2}
             placeholder="成分の説明・補足など"
-            className="w-full p-2.5 border-[1.5px] border-bo-parchment rounded-r1 text-sm bg-white outline-none focus:border-bo-accent focus:ring-1 focus:ring-bo-accent/30 transition-colors font-sans resize-none"
+            style={{ ...inputStyle, resize: "none" }}
           />
         </div>
 
         <button
           onClick={onSave}
           disabled={saving || !draft.nameJa.trim()}
-          className="w-full py-3 bg-bo-accent text-white rounded-r2 text-sm font-bold font-sans border-none cursor-pointer shadow-bo-accent disabled:opacity-60 transition-colors"
+          style={{
+            width: "100%",
+            padding: "16px 0",
+            background: "var(--hd-ink)",
+            color: "var(--hd-bg)",
+            border: "1px solid var(--hd-ink)",
+            cursor: saving ? "default" : "pointer",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 10,
+            opacity: saving || !draft.nameJa.trim() ? 0.5 : 1,
+          }}
         >
-          {saving ? "登録中..." : "成分マスタへ登録する"}
+          <span className="hd-serif" style={{ fontSize: 14 }}>
+            {saving ? "登録中" : "成分マスタへ登録"}
+          </span>
+          <span
+            className="hd-mono"
+            style={{ fontSize: 9, letterSpacing: "0.2em", color: "var(--hd-bg)", opacity: 0.7 }}
+          >
+            REGISTER →
+          </span>
         </button>
       </div>
     </div>
@@ -175,7 +245,6 @@ export default function AdminUnknownIngredientsPage() {
   const [processingName, setProcessingName] = useState<string | null>(null);
   const [copied, setCopied] = useState<string | null>(null);
 
-  // 登録モーダル
   const [registerTarget, setRegisterTarget] = useState<string | null>(null);
   const [registerDraft, setRegisterDraft] = useState<RegisterDraft>({
     nameJa: "", nameInci: "", genre: "base", categories: [], note: "",
@@ -221,11 +290,7 @@ export default function AdminUnknownIngredientsPage() {
       setItems((prev) =>
         prev.map((item) =>
           item.name === name
-            ? {
-                ...item,
-                dismissed: !currentlyDismissed,
-                dismissedAt: currentlyDismissed ? null : new Date().toISOString(),
-              }
+            ? { ...item, dismissed: !currentlyDismissed, dismissedAt: currentlyDismissed ? null : new Date().toISOString() }
             : item
         )
       );
@@ -262,7 +327,11 @@ export default function AdminUnknownIngredientsPage() {
         const d = await res.json();
         throw new Error(d.error ?? "登録失敗");
       }
-      setRegisteredNames((prev) => { const s = new Set(Array.from(prev)); s.add(registerDraft.nameJa); return s; });
+      setRegisteredNames((prev) => {
+        const s = new Set(Array.from(prev));
+        s.add(registerDraft.nameJa);
+        return s;
+      });
       setRegisterTarget(null);
     } catch (e) {
       setSaveError(e instanceof Error ? e.message : "登録に失敗しました。");
@@ -276,155 +345,258 @@ export default function AdminUnknownIngredientsPage() {
   const visible = items.filter((i) => showDismissed || !i.dismissed);
   const activeCount = items.filter((i) => !i.dismissed).length;
   const dismissedCount = items.filter((i) => i.dismissed).length;
-  const totalOccurrences = items
-    .filter((i) => !i.dismissed)
-    .reduce((sum, i) => sum + i.count, 0);
+  const totalOccurrences = items.filter((i) => !i.dismissed).reduce((sum, i) => sum + i.count, 0);
 
   return (
     <>
-      <h1 className="text-xl font-extrabold font-serif text-bo-ink mb-6">
-        未識別成分
-      </h1>
+      <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 24 }}>
+        <h1 className="hd-serif" style={{ fontSize: 22, letterSpacing: "-0.01em" }}>
+          未識別成分
+        </h1>
+        <span className="hd-mono" style={{ fontSize: 9, letterSpacing: "0.2em", color: "var(--hd-ink-60)" }}>
+          UNKNOWN
+        </span>
+      </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-3 gap-2.5 mb-5">
-        <div className="bg-white rounded-r2 py-3 px-3 text-center shadow-bo1">
-          <div className="text-lg font-black font-serif text-bo-accent">{activeCount}</div>
-          <div className="text-[10px] text-bo-ink-muted font-sans mt-0.5">要確認</div>
-        </div>
-        <div className="bg-white rounded-r2 py-3 px-3 text-center shadow-bo1">
-          <div className="text-lg font-black font-serif text-bo-ink">{totalOccurrences}</div>
-          <div className="text-[10px] text-bo-ink-muted font-sans mt-0.5">総出現回数</div>
-        </div>
-        <div className="bg-white rounded-r2 py-3 px-3 text-center shadow-bo1">
-          <div className="text-lg font-black font-serif text-bo-ink-muted">{dismissedCount}</div>
-          <div className="text-[10px] text-bo-ink-muted font-sans mt-0.5">無視済み</div>
-        </div>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8, marginBottom: 20 }}>
+        {[
+          { caps: "PENDING", value: activeCount, jp: "要確認" },
+          { caps: "OCCURRENCES", value: totalOccurrences, jp: "総出現回数" },
+          { caps: "DISMISSED", value: dismissedCount, jp: "無視済み" },
+        ].map((s) => (
+          <div
+            key={s.caps}
+            style={{ border: "1px solid var(--hd-line)", padding: "14px 10px", textAlign: "center", background: "var(--hd-bg)" }}
+          >
+            <div className="hd-serif" style={{ fontSize: 22, lineHeight: 1, marginBottom: 6 }}>
+              {s.value}
+            </div>
+            <div className="hd-mono" style={{ fontSize: 9, letterSpacing: "0.2em", color: "var(--hd-ink-60)", marginBottom: 2 }}>
+              {s.caps}
+            </div>
+            <div style={{ fontSize: 10, color: "var(--hd-ink-60)", fontFamily: "var(--hd-sans)" }}>{s.jp}</div>
+          </div>
+        ))}
       </div>
 
       {/* 説明 */}
-      <div className="bg-[#FFF8EC] border border-[#F0DBA8] rounded-r2 p-3.5 mb-5 text-[12px] text-bo-ink-muted font-sans leading-relaxed">
-        <span className="font-bold text-bo-ink">使い方: </span>
-        出現回数が多い成分から優先的に「＋ 登録」でカスタム成分マスタへ追加できます。誤認識・ノイズは「無視」で非表示にできます。
+      <div
+        style={{
+          border: "1px solid var(--hd-line)",
+          padding: 14,
+          marginBottom: 20,
+          fontSize: 12,
+          color: "var(--hd-ink)",
+          fontFamily: "var(--hd-sans)",
+          lineHeight: 1.7,
+        }}
+      >
+        <span className="hd-mono" style={{ fontSize: 9, letterSpacing: "0.2em", color: "var(--hd-ink-60)", marginRight: 8 }}>
+          NOTE
+        </span>
+        出現回数が多い成分から優先的に「REGISTER」でカスタム成分マスタへ追加できます。誤認識・ノイズは「DISMISS」で非表示にできます。
       </div>
 
       {error && (
-        <div className="bg-bo-danger-bg border border-bo-danger rounded-r1 py-2.5 px-4 mb-4 text-center text-[13px] text-bo-danger">
+        <div
+          style={{
+            border: "1px solid var(--hd-terra)",
+            padding: "10px 14px",
+            marginBottom: 16,
+            textAlign: "center",
+            fontSize: 12,
+            color: "var(--hd-terra)",
+            fontFamily: "var(--hd-sans)",
+          }}
+        >
           {error}
         </div>
       )}
 
       {/* フィルター */}
-      <div className="flex items-center justify-between mb-3">
-        <h2 className="text-sm font-bold font-sans text-bo-ink">
-          成分一覧 ({visible.length})
-        </h2>
+      <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 12 }}>
+        <div style={{ display: "flex", alignItems: "baseline", gap: 10 }}>
+          <h2 className="hd-serif" style={{ fontSize: 14 }}>成分一覧</h2>
+          <span className="hd-mono" style={{ fontSize: 9, letterSpacing: "0.2em", color: "var(--hd-ink-60)" }}>
+            {String(visible.length).padStart(2, "0")} ITEMS
+          </span>
+        </div>
         <button
           onClick={() => setShowDismissed((v) => !v)}
-          className="text-[11px] text-bo-ink-muted font-sans bg-transparent border-none cursor-pointer underline"
+          className="hd-mono"
+          style={{
+            background: "transparent",
+            border: "1px solid var(--hd-line)",
+            color: "var(--hd-ink-60)",
+            cursor: "pointer",
+            fontSize: 9,
+            letterSpacing: "0.2em",
+            padding: "5px 10px",
+          }}
         >
-          {showDismissed ? "無視済みを隠す" : "無視済みも表示"}
+          {showDismissed ? "HIDE DISMISSED" : "SHOW DISMISSED"}
         </button>
       </div>
 
       {fetching ? (
-        <div className="text-center py-12 text-bo-ink-muted text-sm font-sans">
+        <div style={{ textAlign: "center", padding: "48px 0", fontSize: 12, color: "var(--hd-ink-60)", fontFamily: "var(--hd-sans)" }}>
           読み込み中...
         </div>
       ) : visible.length === 0 ? (
-        <div className="text-center py-12 text-bo-ink-muted text-sm font-sans">
-          {items.length === 0
-            ? "未識別成分はありません"
-            : "表示できる成分がありません（すべて無視済み）"}
+        <div style={{ textAlign: "center", padding: "48px 0", fontSize: 12, color: "var(--hd-ink-60)", fontFamily: "var(--hd-sans)" }}>
+          {items.length === 0 ? "未識別成分はありません" : "表示できる成分がありません（すべて無視済み）"}
         </div>
       ) : (
-        <div className="flex flex-col gap-2">
+        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
           {visible.map((item) => {
             const isRegistered = registeredNames.has(item.name);
+            const highCount = item.count >= 5;
             return (
               <div
                 key={item.name}
-                className={`bg-white rounded-r2 px-4 py-3 shadow-bo1 flex items-center gap-3 transition-opacity ${
-                  item.dismissed ? "opacity-50 border-l-[3px] border-l-bo-ink-faint" : "border-l-[3px] border-l-bo-accent"
-                }`}
+                style={{
+                  border: "1px solid var(--hd-line)",
+                  borderLeft: `2px solid ${item.dismissed ? "var(--hd-line)" : "var(--hd-ink)"}`,
+                  padding: 14,
+                  background: "var(--hd-bg)",
+                  display: "flex",
+                  alignItems: "flex-start",
+                  gap: 12,
+                  opacity: item.dismissed ? 0.5 : 1,
+                }}
               >
-                {/* 出現回数バッジ */}
+                {/* 出現回数 */}
                 <div
-                  className={`shrink-0 w-10 h-10 rounded-xl flex items-center justify-center text-sm font-black font-serif ${
-                    item.count >= 5
-                      ? "bg-[#FFF3DC] text-bo-accent"
-                      : "bg-bo-cream text-bo-ink-muted"
-                  }`}
+                  style={{
+                    flexShrink: 0,
+                    width: 44,
+                    minHeight: 44,
+                    border: `1px solid ${highCount ? "var(--hd-ink)" : "var(--hd-line)"}`,
+                    background: highCount ? "var(--hd-ink)" : "transparent",
+                    color: highCount ? "var(--hd-bg)" : "var(--hd-ink)",
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    padding: "6px 0",
+                  }}
                 >
-                  {item.count}
+                  <div className="hd-serif" style={{ fontSize: 18, lineHeight: 1 }}>{item.count}</div>
+                  <div
+                    className="hd-mono"
+                    style={{ fontSize: 7, letterSpacing: "0.2em", marginTop: 2, opacity: 0.8 }}
+                  >
+                    HITS
+                  </div>
                 </div>
 
                 {/* 成分名 */}
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-1.5 flex-wrap">
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", marginBottom: 4 }}>
                     <span
-                      className={`text-sm font-bold font-sans truncate ${
-                        item.dismissed ? "line-through text-bo-ink-muted" : "text-bo-ink"
-                      }`}
+                      style={{
+                        fontSize: 14,
+                        fontFamily: "var(--hd-sans)",
+                        color: item.dismissed ? "var(--hd-ink-60)" : "var(--hd-ink)",
+                        textDecoration: item.dismissed ? "line-through" : "none",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                      }}
                     >
                       {item.name}
                     </span>
                     <button
                       onClick={() => handleCopy(item.name)}
-                      className="shrink-0 bg-transparent border-none cursor-pointer p-0.5 text-bo-ink-faint hover:text-bo-accent transition-colors"
+                      style={{
+                        flexShrink: 0,
+                        background: "transparent",
+                        border: "none",
+                        cursor: "pointer",
+                        padding: 2,
+                        color: "var(--hd-ink-60)",
+                        display: "inline-flex",
+                        alignItems: "center",
+                      }}
                       title="コピー"
                     >
                       {copied === item.name ? (
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#3A8F7A" strokeWidth="2.5" strokeLinecap="round">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
                           <path d="M20 6L9 17l-5-5" />
                         </svg>
                       ) : (
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                          <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+                          <rect x="9" y="9" width="13" height="13" rx="1" ry="1" />
                           <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
                         </svg>
                       )}
                     </button>
                     {isRegistered && (
-                      <span className="text-[10px] bg-bo-accent-soft text-bo-accent px-1.5 py-0.5 rounded font-bold font-sans shrink-0">
-                        登録済み ✓
+                      <span
+                        className="hd-mono"
+                        style={{
+                          fontSize: 9,
+                          letterSpacing: "0.2em",
+                          color: "var(--hd-ink)",
+                          border: "1px solid var(--hd-ink)",
+                          padding: "2px 6px",
+                        }}
+                      >
+                        REGISTERED ✓
                       </span>
                     )}
                   </div>
-                  <div className="text-[10px] text-bo-ink-muted font-sans mt-0.5">
-                    {item.count}件の商品で検出
+                  <div
+                    className="hd-mono"
+                    style={{ fontSize: 9, letterSpacing: "0.15em", color: "var(--hd-ink-60)" }}
+                  >
+                    {item.count} PRODUCTS
                     {item.dismissed && item.dismissedAt && (
-                      <span className="ml-2">
-                        · 無視: {new Date(item.dismissedAt).toLocaleDateString("ja-JP", { month: "short", day: "numeric" })}
+                      <span style={{ marginLeft: 8 }}>
+                        · DISMISSED{" "}
+                        {new Date(item.dismissedAt)
+                          .toLocaleDateString("ja-JP", { month: "2-digit", day: "2-digit" })
+                          .replace("/", ".")}
                       </span>
                     )}
                   </div>
                 </div>
 
-                {/* アクションボタン */}
-                <div className="shrink-0 flex flex-col gap-1.5 items-end">
+                {/* アクション */}
+                <div style={{ flexShrink: 0, display: "flex", flexDirection: "column", gap: 6, alignItems: "flex-end" }}>
                   {!item.dismissed && !isRegistered && (
                     <button
                       onClick={() => openRegisterModal(item.name)}
-                      className="px-2.5 py-1.5 rounded-lg text-[11px] font-bold border-none cursor-pointer transition-colors font-sans bg-[#FFF3DC] text-[#A07020] hover:bg-[#FDECC0]"
+                      className="hd-mono"
+                      style={{
+                        padding: "6px 10px",
+                        background: "var(--hd-ink)",
+                        color: "var(--hd-bg)",
+                        border: "1px solid var(--hd-ink)",
+                        cursor: "pointer",
+                        fontSize: 9,
+                        letterSpacing: "0.2em",
+                      }}
                     >
-                      ＋ 登録
+                      + REGISTER
                     </button>
                   )}
                   <button
                     onClick={() => handleDismiss(item.name, item.dismissed)}
                     disabled={processingName === item.name}
-                    className={`px-3 py-1.5 rounded-lg text-[11px] font-bold border-none cursor-pointer transition-colors font-sans disabled:opacity-50 ${
-                      item.dismissed
-                        ? "bg-bo-accent-soft text-bo-accent hover:bg-emerald-100"
-                        : "bg-bo-cream text-bo-ink-muted hover:bg-bo-parchment"
-                    }`}
+                    className="hd-mono"
+                    style={{
+                      padding: "6px 10px",
+                      background: "transparent",
+                      color: "var(--hd-ink)",
+                      border: "1px solid var(--hd-ink)",
+                      cursor: "pointer",
+                      fontSize: 9,
+                      letterSpacing: "0.2em",
+                      opacity: processingName === item.name ? 0.5 : 1,
+                    }}
                   >
-                    {processingName === item.name
-                      ? "..."
-                      : item.dismissed
-                      ? "元に戻す"
-                      : "無視"}
+                    {processingName === item.name ? "..." : item.dismissed ? "RESTORE" : "DISMISS"}
                   </button>
                 </div>
               </div>
@@ -444,7 +616,21 @@ export default function AdminUnknownIngredientsPage() {
         />
       )}
       {saveError && registerTarget !== null && (
-        <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-[60] bg-bo-danger text-white text-xs font-bold px-4 py-2 rounded-full shadow-bo2">
+        <div
+          style={{
+            position: "fixed",
+            bottom: 32,
+            left: "50%",
+            transform: "translateX(-50%)",
+            zIndex: 60,
+            background: "var(--hd-terra)",
+            color: "var(--hd-bg)",
+            fontSize: 12,
+            fontFamily: "var(--hd-sans)",
+            padding: "8px 16px",
+            border: "1px solid var(--hd-terra)",
+          }}
+        >
           {saveError}
         </div>
       )}
