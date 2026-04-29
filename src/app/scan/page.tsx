@@ -317,7 +317,7 @@ function ScanPageInner() {
         .filter((f) => isActiveIngredient(f.ingredient.id))
         .map((f) => f.ingredient.id);
       const newIds = discover(activeFoundIds);
-      const discoveries = newIds
+      const _discoveries = newIds
         .map((id) => getIngredientById(id))
         .filter((i): i is Ingredient => i !== null);
 
@@ -352,7 +352,7 @@ function ScanPageInner() {
       setProgress(50);
       setProgressMsg("成分を照合しています...");
 
-      const discoveries = await processIngredients(text, name, brandName);
+      const _discoveries = await processIngredients(text, name, brandName);
 
       setProgress(100);
       setProgressMsg("完了！");
@@ -549,7 +549,7 @@ function ScanPageInner() {
           setProgressMsg("成分を照合しています...");
           setProductType(normalizeGenreFromScan(p.productType || ""));
 
-          const discoveries = await processIngredients(
+          const _discoveries = await processIngredients(
             p.ingredients,
             p.productName || "スキャンしたコスメ",
             p.brand || "ブランド不明"
@@ -633,7 +633,7 @@ function ScanPageInner() {
         setProgress(60);
         setProgressMsg("成分を照合しています...");
 
-        const discoveries = await processIngredients(
+        const _discoveries = await processIngredients(
           text,
           productName || "スキャンしたコスメ",
           brand || "ブランド不明"
@@ -678,7 +678,7 @@ function ScanPageInner() {
           return;
         }
 
-        const discoveries = await processIngredients(
+        const _discoveries = await processIngredients(
           resolvedProduct.ingredients,
           resolvedProduct.productName || "スキャンしたコスメ",
           resolvedProduct.brand || "ブランド不明"

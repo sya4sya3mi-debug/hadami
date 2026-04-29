@@ -191,7 +191,7 @@ export default function RoutineSharePageClient({
     [],
   );
 
-  const addStep = () => {
+  const _addStep = () => {
     setCurrentSteps((prev) => [
       ...prev,
       {
