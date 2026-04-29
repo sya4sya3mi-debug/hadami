@@ -56,6 +56,44 @@
   --hd-card-radius: var(--hd-radius-m);
 }
 
+/* ── Dark Mode (Warm Apothecary Dark) ── */
+.dark .hd-root,
+.dark.hd-root {
+  /* 背景・面 — 温かみのある暗セピア */
+  --hd-bg:        oklch(0.18 0.008 80);
+  --hd-surface:   oklch(0.22 0.008 80);
+  --hd-surface-2: oklch(0.26 0.008 80);
+
+  /* 文字色 — クリーム寄りのオフホワイト */
+  --hd-ink:       oklch(0.94 0.012 85);
+  --hd-ink-60:    oklch(0.74 0.010 85);
+  --hd-ink-40:    oklch(0.54 0.008 85);
+  --hd-ink-20:    oklch(0.36 0.006 85);
+
+  /* 罫線 */
+  --hd-line:      oklch(0.36 0.006 85);
+  --hd-hair:      oklch(0.30 0.005 85);
+
+  /* ブランドグリーン — 暗面で沈まないようやや明るく */
+  --hd-moss:      oklch(0.62 0.07 155);
+  --hd-moss-deep: oklch(0.50 0.06 155);
+  --hd-sage:      oklch(0.78 0.05 150);
+  --hd-mint-bg:   oklch(0.30 0.04 155);
+
+  /* サブアクセント */
+  --hd-terra:     oklch(0.74 0.09 45);
+  --hd-lavender:  oklch(0.78 0.07 290);
+  --hd-dune:      oklch(0.68 0.04 80);
+
+  /* 効果ピル — 彩度を抑えた暗トーン */
+  --hd-eff-white:   oklch(0.32 0.04 310);
+  --hd-eff-barrier: oklch(0.32 0.04 150);
+  --hd-eff-wrinkle: oklch(0.32 0.04 65);
+  --hd-eff-uv:      oklch(0.32 0.04 240);
+  --hd-eff-moist:   oklch(0.32 0.04 210);
+  --hd-eff-keratin: oklch(0.32 0.04 30);
+}
+
 .hd-root[data-density="compact"] { --hd-density-scale: 0.82; }
 .hd-root[data-density="airy"] { --hd-density-scale: 1.18; }
 
@@ -134,6 +172,16 @@
 .hd-root .hd a[role="button"]:active,
 .hd-root .hd .hd-press:active {
   transform: scale(0.97);
+}
+
+/* Disable press/tap feedback for edit-mode pickers that should feel immediate */
+.hd-root .hd .hd-no-press,
+.hd-root .hd .hd-no-press:active,
+.hd-root .hd .hd-no-press:hover,
+.hd-root .hd .hd-no-press:focus-visible {
+  transform: none !important;
+  transition: none !important;
+  -webkit-tap-highlight-color: transparent;
 }
 
 /* Checkbox / pill pop-in when newly toggled on */
