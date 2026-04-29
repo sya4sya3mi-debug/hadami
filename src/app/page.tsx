@@ -9,7 +9,7 @@ import { useProductStore } from "@/stores/useProductStore";
 import { useZukanStore } from "@/stores/useZukanStore";
 import { useDeckStore } from "@/stores/useDeckStore";
 import { getIngredientById } from "@/lib/ingredients";
-import { getGenreByKey } from "@/lib/productGenres";
+import { getGenreByKey, getSlotConfigForRoutine } from "@/lib/productGenres";
 import { getMonthlyScanCount, updateLastUsedAtInDb } from "@/lib/db";
 import Disclaimer from "@/components/ui/Disclaimer";
 import InstallBanner from "@/components/ui/InstallBanner";
@@ -334,18 +334,27 @@ export default function HomePage() {
     fetchScanCount();
   }, [fetchScanCount]);
 
-  const routineDeckItems = useMemo(() =>
-    deckItems
+  const routineDeckItems = useMemo(() => {
+    // CARE 画面と同じ AM/PM 別の 4 スロット構成に揃える。
+    // 該当ジャンル外（旧 emulsion 等）の商品は HOME のチェックリストから除外する。
+    const routineKey = autoRoutine === "night" ? "night" : "morning";
+    const allowedGenres = new Set(
+      getSlotConfigForRoutine(routineKey).map((s) => s.genre)
+    );
+    return deckItems
       .filter((i) => i.routine === autoRoutine)
+      .filter((i) => {
+        const product = products.find((p) => p.id === i.productId);
+        return product ? allowedGenres.has(product.productType ?? "other") : false;
+      })
       .sort((a, b) => {
         const pa = products.find((p) => p.id === a.productId);
         const pb = products.find((p) => p.id === b.productId);
         const orderA = getGenreByKey(pa?.productType ?? "other")?.order ?? 99;
         const orderB = getGenreByKey(pb?.productType ?? "other")?.order ?? 99;
         return orderA - orderB;
-      }),
-    [deckItems, autoRoutine, products]
-  );
+      });
+  }, [deckItems, autoRoutine, products]);
 
   const routineDeckEntries = useMemo(() =>
     routineDeckItems.flatMap((deckItem) => {
@@ -473,7 +482,7 @@ export default function HomePage() {
               onClick={() => router.push("/settings")}
               style={{
                 width: 40, height: 40, borderRadius: 999,
-                background: "var(--hd-moss)", color: "var(--hd-bg)",
+                background: "var(--hd-moss-deep)", color: "var(--hd-bg)",
                 display: "flex", alignItems: "center", justifyContent: "center",
                 fontFamily: "var(--hd-serif)", fontSize: 17, cursor: "pointer",
                 flexShrink: 0,

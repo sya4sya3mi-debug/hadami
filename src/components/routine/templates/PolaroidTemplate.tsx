@@ -92,7 +92,7 @@ function PolaroidPhoto({
                 fontFamily: "var(--hd-serif)",
                 fontSize: 30,
                 fontStyle: "italic",
-                color: "var(--hd-ink-40)",
+                color: "rgba(0,0,0,0.35)",
                 letterSpacing: "-0.02em",
               }}
             >
@@ -143,7 +143,9 @@ function PolaroidPhoto({
             fontFamily: "var(--hd-serif)",
             fontSize: 11,
             fontStyle: "italic",
-            color: "var(--hd-ink)",
+            // ポラロイド紙は常に白 (#fdfcf8) なのでテキストはモード非依存の固定色に。
+            // hd-ink を使うとダーク時にクリームになり白紙の上で読めない。
+            color: "#1a1a1a",
             letterSpacing: "-0.01em",
             lineHeight: 1.15,
             overflow: "hidden",
@@ -159,7 +161,7 @@ function PolaroidPhoto({
             fontSize: 7.5,
             letterSpacing: "0.16em",
             textTransform: "uppercase",
-            color: "var(--hd-ink-40)",
+            color: "#666",
             overflow: "hidden",
             textOverflow: "ellipsis",
             whiteSpace: "nowrap",

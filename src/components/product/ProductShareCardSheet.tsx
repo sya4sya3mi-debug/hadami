@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { flushSync } from "react-dom";
 import BottomSheet from "@/components/scan/BottomSheet";
 import ProductShareCard, {
   CARD_COLORS,
@@ -20,6 +21,22 @@ function isMobileShareDevice() {
     /Android|iPhone|iPad|iPod/i.test(ua) ||
     (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1)
   );
+}
+
+async function inlineImageAsDataUrl(url: string): Promise<string | null> {
+  try {
+    const response = await fetch(url, { credentials: "same-origin" });
+    if (!response.ok) return null;
+    const blob = await response.blob();
+    return await new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = () => reject(reader.error);
+      reader.readAsDataURL(blob);
+    });
+  } catch {
+    return null;
+  }
 }
 
 interface ProductShareCardSheetProps extends ProductShareCardProps {
@@ -45,6 +62,7 @@ export default function ProductShareCardSheet({
   const [pattern, setPattern] = useState<CardPattern>("A");
   const [accentColor, setAccentColor] = useState<string>(CARD_COLORS[0].value);
   const [imageOverride, setImageOverride] = useState<string | null>(null);
+  const [captureImageUrl, setCaptureImageUrl] = useState<string | null>(null);
 
   const handlePickPhoto = () => {
     fileInputRef.current?.click();
@@ -82,46 +100,115 @@ export default function ProductShareCardSheet({
     try {
       const fontSet = document.fonts;
       if (fontSet?.ready) await fontSet.ready;
+
+      // 画像を data URL に事前インライン化。iOS Safari で <img src="https://r2..."> を
+      // html2canvas/html-to-image が読み出せず、結果のシェアカードに画像が反映されない
+      // 問題を回避する。
+      const sourceUrl = imageOverride ?? cardProps.imageUrl ?? null;
+      if (sourceUrl && !sourceUrl.startsWith("data:")) {
+        const inlined = await inlineImageAsDataUrl(sourceUrl);
+        flushSync(() => {
+          setCaptureImageUrl(inlined ?? sourceUrl);
+        });
+      } else {
+        flushSync(() => {
+          setCaptureImageUrl(sourceUrl);
+        });
+      }
+
+      // DOM 反映＋画像デコード待ち
+      await new Promise<void>((resolve) =>
+        requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
+      );
+      const node = captureRef.current;
+      if (node) {
+        const imgs = Array.from(node.querySelectorAll("img"));
+        await Promise.all(
+          imgs.map((img) => {
+            const decodePromise = (img as HTMLImageElement).decode?.();
+            if (decodePromise) return decodePromise.catch(() => undefined);
+            return new Promise<void>((resolve) => {
+              const finish = () => resolve();
+              img.addEventListener("load", finish, { once: true });
+              img.addEventListener("error", finish, { once: true });
+              window.setTimeout(finish, 3000);
+            });
+          }),
+        );
+      }
       await new Promise<void>((resolve) =>
         requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
       );
 
-      const { toBlob } = await import("html-to-image");
-      const blob = await Promise.race([
-        toBlob(captureRef.current, {
-          pixelRatio: 2,
-          cacheBust: false,
-          skipFonts: true,
-          type: "image/webp",
-          quality: 0.92,
-        }),
-        new Promise<Blob | null>((_, reject) =>
-          window.setTimeout(() => reject(new Error("timed out")), 15000)
-        ),
-      ]);
+      let blob: Blob | null = null;
 
-      if (!blob) throw new Error("no blob");
+      // html2canvas + JPEG (iOS Safari の Web Share API が WebP を弾くため)
+      try {
+        const { default: html2canvas } = await import("html2canvas");
+        const canvas = await Promise.race([
+          html2canvas(captureRef.current, {
+            scale: 2,
+            backgroundColor: "#ffffff",
+            useCORS: true,
+            allowTaint: false,
+            logging: false,
+            imageTimeout: 15000,
+          }),
+          new Promise<never>((_, reject) =>
+            window.setTimeout(() => reject(new Error("timed out")), 15000)
+          ),
+        ]);
+        blob = await new Promise<Blob | null>((resolve) => {
+          canvas.toBlob(resolve, "image/jpeg", 0.92);
+        });
+        if (!blob) {
+          blob = await new Promise<Blob | null>((resolve) => {
+            canvas.toBlob(resolve, "image/png");
+          });
+        }
+      } catch (captureError) {
+        console.warn("html2canvas failed, falling back:", captureError);
+      }
 
-      const ext = blob.type === "image/webp" ? "webp" : "png";
+      if (!blob) {
+        const { toBlob } = await import("html-to-image");
+        blob = await Promise.race([
+          toBlob(captureRef.current, {
+            pixelRatio: 2,
+            cacheBust: false,
+            backgroundColor: "#ffffff",
+            skipFonts: true,
+            type: "image/jpeg",
+            quality: 0.92,
+          }),
+          new Promise<Blob | null>((_, reject) =>
+            window.setTimeout(() => reject(new Error("timed out")), 15000)
+          ),
+        ]);
+      }
+
+      if (!blob) throw new Error("画像の生成に失敗しました");
+
+      const mime = blob.type || "image/jpeg";
+      const ext = mime === "image/png" ? "png" : mime === "image/webp" ? "webp" : "jpg";
       const filename = `hadami-product-${Date.now()}.${ext}`;
       const shareNavigator = navigator as ShareCapableNavigator;
 
+      // canShare は iOS で偽陰性が多いため直接 share() を呼ぶ
       if (
         isMobileShareDevice() &&
         typeof File !== "undefined" &&
         typeof shareNavigator.share === "function"
       ) {
-        const file = new File([blob], filename, { type: blob.type || "image/webp" });
-        const shareData: ShareData = { files: [file], title: "コスメカード" };
-        if (!shareNavigator.canShare || shareNavigator.canShare(shareData)) {
-          try {
-            await shareNavigator.share(shareData);
-            setStatus("shared");
-            setTimeout(() => setStatus("idle"), 2500);
-            return;
-          } catch {
-            // fallthrough to download
-          }
+        const file = new File([blob], filename, { type: mime });
+        try {
+          await shareNavigator.share({ files: [file] });
+          setStatus("shared");
+          setTimeout(() => setStatus("idle"), 2500);
+          return;
+        } catch (error) {
+          if (error instanceof DOMException && error.name === "AbortError") return;
+          console.warn("navigator.share failed, falling back:", error);
         }
       }
 
@@ -136,7 +223,10 @@ export default function ProductShareCardSheet({
       setTimeout(() => setStatus("idle"), 2500);
     } catch (e) {
       console.error("ProductShareCard save error", e);
+      const detail = e instanceof Error ? e.message : String(e);
+      alert(`画像の保存に失敗しました。\n${detail}`);
     } finally {
+      setCaptureImageUrl(null);
       setIsDownloading(false);
     }
   };
@@ -327,7 +417,7 @@ export default function ProductShareCardSheet({
             <div ref={captureRef}>
               <ProductShareCard
                 {...cardProps}
-                imageUrl={imageOverride ?? cardProps.imageUrl}
+                imageUrl={captureImageUrl ?? imageOverride ?? cardProps.imageUrl}
                 pattern={pattern}
                 accentColor={accentColor}
               />

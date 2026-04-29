@@ -74,9 +74,11 @@
   --hd-line:      oklch(0.36 0.006 85);
   --hd-hair:      oklch(0.30 0.005 85);
 
-  /* ブランドグリーン — 暗面で沈まないようやや明るく */
+  /* ブランドグリーン — 暗面で沈まないようやや明るく
+     moss は MINE 等の小さなテキストアクセントで読めるよう持ち上げ気味、
+     moss-deep はアバターなどの面塗りに使うため森のような深い緑に。 */
   --hd-moss:      oklch(0.62 0.07 155);
-  --hd-moss-deep: oklch(0.50 0.06 155);
+  --hd-moss-deep: oklch(0.42 0.05 150);
   --hd-sage:      oklch(0.78 0.05 150);
   --hd-mint-bg:   oklch(0.30 0.04 155);
 
@@ -181,7 +183,17 @@
 .hd-root .hd .hd-no-press:focus-visible {
   transform: none !important;
   transition: none !important;
+  animation: none !important;
   -webkit-tap-highlight-color: transparent;
+}
+/* 子要素のすべての遷移/アニメーションも止め、ふわっと感を完全に消す */
+.hd-root .hd .hd-no-press *,
+.hd-root .hd .hd-no-press *:active,
+.hd-root .hd .hd-no-press *:hover,
+.hd-root .hd .hd-no-press *:focus-visible {
+  transform: none !important;
+  transition: none !important;
+  animation: none !important;
 }
 
 /* Checkbox / pill pop-in when newly toggled on */

@@ -289,7 +289,7 @@ export default function SettingsPage() {
                     height: 50,
                     borderRadius: 999,
                     flexShrink: 0,
-                    background: "var(--hd-moss)",
+                    background: "var(--hd-moss-deep)",
                     color: "var(--hd-bg)",
                     display: "flex",
                     alignItems: "center",
