@@ -226,14 +226,14 @@ export default function ProductDetailPage() {
             </button>
           </div>
 
-          {/* Hero image (sticky under header) */}
+          {/* Hero image (sticky under header — stays visible on scroll) */}
           <div
             style={{
               position: "sticky",
               top: 58,
               height: 280,
               overflow: "hidden",
-              zIndex: 0,
+              zIndex: 2,
             }}
           >
             {product.packageImage ? (
@@ -306,11 +306,11 @@ export default function ProductDetailPage() {
           <div
             style={{
               padding: "20px 20px 32px",
-              marginTop: -16,
               borderTopLeftRadius: 24, borderTopRightRadius: 24,
               background: "var(--hd-bg)",
               position: "relative",
               zIndex: 1,
+              marginTop: -24,
             }}
           >
             <input

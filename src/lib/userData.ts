@@ -76,10 +76,15 @@ function resolveProductImage(
     };
   }
 
-  const displayPath = getProductImageDisplayPathFromStoredPath(storedValue);
-  const sharePath = getProductImageSharePathFromStoredPath(storedValue);
-  const displayUrl =
-    signedUrls[displayPath] ?? signedUrls[storedValue] ?? undefined;
+  // 既に新フォーマット (-display.webp) に移行済みかどうか判定。
+  // 移行前 (旧 .avif など) の場合は派生パスのR2ファイルが存在しないため、
+  // storedValue（実在ファイル）をそのまま表示用パスとして使う。
+  const isMigrated = storedValue.endsWith("-display.webp");
+  const displayPath = storedValue;
+  const sharePath = isMigrated
+    ? getProductImageSharePathFromStoredPath(storedValue)
+    : storedValue;
+  const displayUrl = signedUrls[displayPath] ?? undefined;
   const shareUrl = signedUrls[sharePath] ?? displayUrl;
 
   return {
