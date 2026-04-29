@@ -8,10 +8,15 @@ import { useUser } from "@/lib/auth";
 
 export default function InvitePage() {
   const router = useRouter();
-  const { user, loading: authLoading } = useUser();
+  const { user, supabase, loading: authLoading } = useUser();
   const [code, setCode] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
+  const handleBackToLanding = async () => {
+    await supabase.auth.signOut().catch(() => {});
+    window.location.href = "/";
+  };
 
   useEffect(() => {
     if (!authLoading && !user) router.replace("/auth/login");
@@ -26,7 +31,7 @@ export default function InvitePage() {
       const res = await fetch("/api/verify-invite", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ code: code.trim() }),
+        body: JSON.stringify({ code: code.trim().toUpperCase() }),
       });
       const data = (await res.json()) as { valid?: boolean; error?: string };
       if (data.valid) router.push("/auth/profile");
@@ -146,10 +151,14 @@ export default function InvitePage() {
                 type="text"
                 placeholder="例: HADAMI-XXXX"
                 value={code}
-                onChange={(e) => setCode(e.target.value.toUpperCase())}
+                onChange={(e) => setCode(e.target.value)}
                 required
                 autoFocus
                 autoComplete="off"
+                autoCapitalize="characters"
+                autoCorrect="off"
+                spellCheck={false}
+                inputMode="text"
                 style={{
                   width: "100%",
                   padding: "14px 16px",
@@ -163,6 +172,7 @@ export default function InvitePage() {
                   fontFamily: "var(--hd-mono)",
                   boxSizing: "border-box",
                   color: "var(--hd-ink)",
+                  textTransform: "uppercase",
                 }}
               />
             </div>
@@ -234,6 +244,25 @@ export default function InvitePage() {
           </a>
           にDMでお問い合わせください。
         </p>
+
+        <button
+          type="button"
+          onClick={handleBackToLanding}
+          style={{
+            marginTop: 18,
+            background: "transparent",
+            border: "none",
+            padding: "8px 12px",
+            color: "var(--hd-ink-60)",
+            fontFamily: "var(--hd-sans)",
+            fontSize: 12,
+            cursor: "pointer",
+            textDecoration: "underline",
+            textUnderlineOffset: 3,
+          }}
+        >
+          ← トップページに戻る（ログアウト）
+        </button>
       </div>
     </div>
   );
