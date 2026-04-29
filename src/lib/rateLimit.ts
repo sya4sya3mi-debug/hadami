@@ -5,15 +5,41 @@
  * which atomically increments a counter per (key, window) and returns
  * whether the request is within the allowed budget.
  *
- * Falls back to "allow" on RPC errors so a transient DB issue
- * doesn't block all traffic — the durable scan quota (try_reserve_scan)
- * remains the hard cap for authenticated endpoints.
+ * On RPC failure with failOpen=true the limiter degrades to a
+ * process-local in-memory check instead of pure fail-open. This caps
+ * the blast radius if the DB-side limiter is unavailable while still
+ * letting public endpoints (e.g. image-proxy) keep serving.
  */
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 
 type RateLimitOptions = {
   failOpen?: boolean;
 };
+
+const localFallback = new Map<string, { windowStart: number; count: number }>();
+const LOCAL_FALLBACK_MAX_KEYS = 5000;
+
+function localFallbackCheck(
+  key: string,
+  windowMs: number,
+  maxRequests: number
+): boolean {
+  const now = Date.now();
+  const windowStart = Math.floor(now / windowMs) * windowMs;
+  const entry = localFallback.get(key);
+
+  if (!entry || entry.windowStart !== windowStart) {
+    if (localFallback.size >= LOCAL_FALLBACK_MAX_KEYS) {
+      const firstKey = localFallback.keys().next().value;
+      if (firstKey !== undefined) localFallback.delete(firstKey);
+    }
+    localFallback.set(key, { windowStart, count: 1 });
+    return 1 <= maxRequests;
+  }
+
+  entry.count++;
+  return entry.count <= maxRequests;
+}
 
 export async function rateLimit(
   ip: string,
@@ -25,9 +51,18 @@ export async function rateLimit(
   const failOpen = options.failOpen ?? true;
   const key = `ip:${ip}:${route}`;
   const windowSeconds = Math.max(1, Math.round(windowMs / 1000));
-  const failureResult = failOpen
-    ? { allowed: true, remaining: maxRequests, retryAfterMs: 0 }
-    : { allowed: false, remaining: 0, retryAfterMs: windowMs };
+
+  const onRpcFailure = () => {
+    if (!failOpen) {
+      return { allowed: false, remaining: 0, retryAfterMs: windowMs };
+    }
+    const allowed = localFallbackCheck(key, windowMs, maxRequests);
+    return {
+      allowed,
+      remaining: allowed ? 1 : 0,
+      retryAfterMs: allowed ? 0 : windowMs,
+    };
+  };
 
   try {
     const { data, error } = await supabaseAdmin.rpc("check_rate_limit", {
@@ -38,7 +73,7 @@ export async function rateLimit(
 
     if (error) {
       console.error("rate limit RPC error:", error.message);
-      return failureResult;
+      return onRpcFailure();
     }
 
     const allowed = data === true;
@@ -49,7 +84,7 @@ export async function rateLimit(
     };
   } catch (err) {
     console.error("rate limit unexpected error:", err);
-    return failureResult;
+    return onRpcFailure();
   }
 }
 

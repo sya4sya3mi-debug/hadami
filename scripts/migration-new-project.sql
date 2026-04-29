@@ -426,16 +426,78 @@ BEGIN
 END;
 $$;
 
--- マテリアライズドビューリフレッシュ
+-- マテリアライズドビューリフレッシュ用 meta テーブル (グローバルデバウンス)
+CREATE TABLE IF NOT EXISTS public.user_ingredient_profile_meta (
+  id boolean PRIMARY KEY DEFAULT true,
+  last_refreshed_at timestamptz NOT NULL DEFAULT 'epoch',
+  CONSTRAINT single_row CHECK (id = true)
+);
+
+INSERT INTO public.user_ingredient_profile_meta (id) VALUES (true)
+ON CONFLICT (id) DO NOTHING;
+
+ALTER TABLE public.user_ingredient_profile_meta ENABLE ROW LEVEL SECURITY;
+-- ポリシー無し: SECURITY DEFINER 関数経由でのみアクセス可能
+
+-- マテリアライズドビューリフレッシュ (60秒デバウンス付き)
 CREATE OR REPLACE FUNCTION public.refresh_user_ingredient_profile()
 RETURNS void
 LANGUAGE plpgsql
 SECURITY DEFINER
+SET search_path = public
 AS $$
+DECLARE
+  v_last timestamptz;
+  v_min_interval CONSTANT interval := interval '60 seconds';
 BEGIN
+  SELECT last_refreshed_at INTO v_last
+  FROM public.user_ingredient_profile_meta
+  WHERE id = true
+  FOR UPDATE;
+
+  IF v_last + v_min_interval > now() THEN
+    RETURN;
+  END IF;
+
   REFRESH MATERIALIZED VIEW CONCURRENTLY user_ingredient_profile;
+
+  UPDATE public.user_ingredient_profile_meta
+  SET last_refreshed_at = now()
+  WHERE id = true;
 END;
 $$;
+
+-- 商品 30 件上限の DB 側強制トリガ
+-- 既存の user_insert_limit ポリシーと belt-and-suspenders で二段防御。
+-- 上限値を変更する場合は lib/db.ts の USER_LIMIT も同時に更新すること。
+CREATE OR REPLACE FUNCTION public.enforce_products_per_user_limit()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_count int;
+  v_limit CONSTANT int := 30;
+BEGIN
+  SELECT count(*) INTO v_count
+  FROM public.products
+  WHERE user_id = NEW.user_id;
+
+  IF v_count >= v_limit THEN
+    RAISE EXCEPTION 'product_limit_reached'
+      USING errcode = 'P0001';
+  END IF;
+
+  RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS products_enforce_user_limit ON public.products;
+
+CREATE TRIGGER products_enforce_user_limit
+  BEFORE INSERT ON public.products
+  FOR EACH ROW EXECUTE FUNCTION public.enforce_products_per_user_limit();
 
 -- ツイート制限チェック
 CREATE OR REPLACE FUNCTION public.check_daily_tweet_limit(p_user_id uuid, p_limit integer DEFAULT 3)

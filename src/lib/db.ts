@@ -159,6 +159,9 @@ export async function saveProductToDb(
     .single();
 
   if (error) {
+    if (error.message.includes("product_limit_reached")) {
+      return { error: "limit_reached", productId: null, filePath: null };
+    }
     return { error: error.message, productId: null, filePath: null };
   }
 
