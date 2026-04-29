@@ -17,7 +17,6 @@ interface ClassifyStepProps {
   onBrandChange: (brand: string) => void;
   onProductTypeChange: (type: ProductGenre) => void;
   onContinue: () => void;
-  onBack?: () => void;
 }
 
 export default function ClassifyStep({
@@ -29,7 +28,6 @@ export default function ClassifyStep({
   onBrandChange,
   onProductTypeChange,
   onContinue,
-  onBack,
 }: ClassifyStepProps) {
   const needsType = !SCAN_GENRES.some((g) => g.key === productType);
 
@@ -46,56 +44,32 @@ export default function ClassifyStep({
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-      {/* Top action bar */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
-        {onBack ? (
-          <button
-            onClick={onBack}
-            style={{
-              padding: "10px 16px",
-              background: "transparent",
-              color: "var(--hd-ink-60)",
-              border: "1px solid var(--hd-line)",
-              cursor: "pointer",
-              fontFamily: "var(--hd-sans)",
-              fontSize: 13,
-              fontWeight: 500,
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 6,
-              flexShrink: 0,
-            }}
-          >
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" aria-hidden="true">
-              <path d="M15 18l-6-6 6-6" />
-            </svg>
-            戻る
-          </button>
-        ) : <div />}
-        <button
-          onClick={onContinue}
-          style={{
-            padding: "13px 24px",
-            background: "var(--hd-moss)",
-            color: "#fff",
-            border: "none",
-            borderRadius: 0,
-            cursor: "pointer",
-            fontFamily: "var(--hd-sans)",
-            fontSize: 14,
-            fontWeight: 600,
-            display: "inline-flex",
-            alignItems: "center",
-            gap: 8,
-            boxShadow: "0 4px 14px oklch(0.38 0.05 155 / 0.22)",
-          }}
-        >
-          成分を確認する
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" aria-hidden="true">
-            <path d="M9 18l6-6-6-6" />
-          </svg>
-        </button>
-      </div>
+      {/* Primary action */}
+      <button
+        onClick={onContinue}
+        style={{
+          width: "100%",
+          padding: "13px 24px",
+          background: "var(--hd-moss)",
+          color: "#fff",
+          border: "none",
+          borderRadius: 0,
+          cursor: "pointer",
+          fontFamily: "var(--hd-sans)",
+          fontSize: 14,
+          fontWeight: 600,
+          display: "inline-flex",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: 8,
+          boxShadow: "0 4px 14px oklch(0.38 0.05 155 / 0.22)",
+        }}
+      >
+        成分を確認する
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" aria-hidden="true">
+          <path d="M9 18l6-6-6-6" />
+        </svg>
+      </button>
 
       {/* Hero */}
       {imagePreview ? (

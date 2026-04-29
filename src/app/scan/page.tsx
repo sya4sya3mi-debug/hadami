@@ -1130,7 +1130,6 @@ function ScanPageInner() {
                 onBrandChange={setBrand}
                 onProductTypeChange={setProductType}
                 onContinue={handleClassifyContinue}
-                onBack={() => setStep(2)}
               />
             )}
 
