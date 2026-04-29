@@ -2,6 +2,7 @@
 
 import "@/styles/hadami-tokens.css";
 import { useState, useCallback, useEffect, useRef } from "react";
+import { flushSync } from "react-dom";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import RoutineShareCard from "./RoutineShareCard";
 import type { RoutineCardConfig } from "@/lib/routines";
@@ -298,7 +299,33 @@ export default function RoutineSharePageClient({
           }
         }),
       );
-      setCaptureSteps(inlinedSteps);
+      // captureSteps を同期的にコミット (flushSync) して、続く DOM 走査が
+      // 反映前の <img src="/api/..."> を見ないようにする。React の通常の
+      // バッチング下では setState 後 2rAF でも commit が間に合わないケースが
+      // iOS Safari で確認されたため。
+      flushSync(() => {
+        setCaptureSteps(inlinedSteps);
+      });
+      // captureRef 内の <img> がデコード完了するまで待ってから toBlob を呼ぶ。
+      // data: URL は decode が速いがゼロではないため、html-to-image のクローン
+      // タイミング次第で空画像になる事故を避ける。
+      const captureNode = captureRef.current;
+      if (captureNode) {
+        const imgs = Array.from(captureNode.querySelectorAll("img"));
+        await Promise.all(
+          imgs.map((img) => {
+            if (img.complete && img.naturalWidth > 0) return Promise.resolve();
+            const decodePromise = (img as HTMLImageElement).decode?.();
+            if (decodePromise) return decodePromise.catch(() => undefined);
+            return new Promise<void>((resolve) => {
+              const finish = () => resolve();
+              img.addEventListener("load", finish, { once: true });
+              img.addEventListener("error", finish, { once: true });
+              window.setTimeout(finish, 3000);
+            });
+          }),
+        );
+      }
       await new Promise<void>((resolve) => {
         requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
       });
