@@ -21,7 +21,6 @@ create policy "service_role_full_access"
   using (auth.role() = 'service_role')
   with check (auth.role() = 'service_role');
 
--- 初期招待コードを投入（必要に応じて変更してください）
-insert into public.invitation_codes (code, label, max_uses)
-values
-  ('HADAMI-BETA-2026', 'デフォルトベータ招待コード', 50);
+-- 招待コードはこのマイグレーションでは投入しない。
+-- 個別発行は scripts/issue-invitation-code.ts または直接 SQL を使用すること。
+-- 既存環境に残っている既定コード ('HADAMI-BETA-2026') は 017_remove_default_invite_seed.sql で失効させる。
