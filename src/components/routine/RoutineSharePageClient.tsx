@@ -11,6 +11,14 @@ import {
   getRoutineCardLabel,
   type RoutineCardMode,
 } from "@/lib/routineCards";
+import {
+  ACCENT_COLORS,
+  TEMPLATE_OPTIONS,
+  getAccentLabel,
+  getTemplateLabel,
+} from "@/lib/routineCardStyle";
+
+const STYLE_STORAGE_KEY = "hadami.routineCard.style";
 
 const SKIN_TYPES = ["乾燥肌", "脂性肌", "混合肌", "敏感肌", "普通肌"];
 const CONCERN_OPTIONS = [
@@ -193,6 +201,23 @@ export default function RoutineSharePageClient({
     (patch: Partial<RoutineCardConfig>) => setConfig((current) => ({ ...current, ...patch })),
     [],
   );
+
+  // 選択中のスタイル（テンプレ・アクセント色）が変わったら localStorage に保存
+  // ユーザーが一度でも選択した時点で「明示的な意図」とみなし、次回以降の初回オープン時に AM/PM 自動連動させない
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      window.localStorage.setItem(
+        STYLE_STORAGE_KEY,
+        JSON.stringify({
+          template: config.template,
+          accentColor: config.accentColor,
+        }),
+      );
+    } catch {
+      // 容量超過などは無視（致命的ではない）
+    }
+  }, [config.template, config.accentColor]);
 
   const _addStep = () => {
     setCurrentSteps((prev) => [
@@ -663,6 +688,85 @@ export default function RoutineSharePageClient({
                       </button>
                     </div>
                   ))}
+                </div>
+              </Section>
+
+              {/* Card style */}
+              <Section
+                no="06"
+                title="カードスタイル"
+                hint={`${getTemplateLabel(config.template)} · ${getAccentLabel(config.accentColor)}`}
+              >
+                <div style={{ marginBottom: 16 }}>
+                  <div
+                    className="hd-mono hd-caps"
+                    style={{
+                      color: "var(--hd-ink-40)",
+                      marginBottom: 8,
+                      fontSize: 9,
+                      letterSpacing: "0.2em",
+                    }}
+                  >
+                    Template
+                  </div>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                    {TEMPLATE_OPTIONS.map((opt) => {
+                      const active = config.template === opt.key;
+                      return (
+                        <button
+                          key={opt.key}
+                          onClick={() => updateConfig({ template: opt.key })}
+                          style={chipStyle(active)}
+                          aria-pressed={active}
+                          title={opt.description}
+                        >
+                          {opt.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+                <div>
+                  <div
+                    className="hd-mono hd-caps"
+                    style={{
+                      color: "var(--hd-ink-40)",
+                      marginBottom: 8,
+                      fontSize: 9,
+                      letterSpacing: "0.2em",
+                    }}
+                  >
+                    Accent Color
+                  </div>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
+                    {ACCENT_COLORS.map((c) => {
+                      const active = config.accentColor === c.key;
+                      return (
+                        <button
+                          key={c.key}
+                          onClick={() => updateConfig({ accentColor: c.key })}
+                          aria-label={c.label}
+                          aria-pressed={active}
+                          title={c.label}
+                          style={{
+                            width: 32,
+                            height: 32,
+                            borderRadius: 999,
+                            background: c.swatchVar,
+                            border: active
+                              ? "2px solid var(--hd-ink)"
+                              : "1px solid var(--hd-line)",
+                            boxShadow: active
+                              ? "inset 0 0 0 3px var(--hd-bg)"
+                              : "none",
+                            padding: 0,
+                            cursor: "pointer",
+                            transition: "transform 160ms ease",
+                          }}
+                        />
+                      );
+                    })}
+                  </div>
                 </div>
               </Section>
 
