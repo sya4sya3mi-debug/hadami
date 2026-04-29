@@ -332,14 +332,15 @@ export default function RoutineSharePageClient({
 
       let blob: Blob | null = null;
 
-      // iOS Safari の Web Share API は image/webp ファイルを拒否することがあるため、
-      // シェア/保存の確実性を優先して PNG で出力する。
+      // iOS Safari の Web Share API は WebP/PNG が大きいと canShare で拒否される
+      // ことがあるため、JPEG を最優先で出力する。シェアカード用紙は背景塗りなので
+      // 透過は不要。
       try {
         const { default: html2canvas } = await import("html2canvas");
         const canvas = await Promise.race([
           html2canvas(previewCardRef.current, {
             scale: 2,
-            backgroundColor: null,
+            backgroundColor: "#ffffff",
             useCORS: true,
             allowTaint: false,
             logging: false,
@@ -353,8 +354,13 @@ export default function RoutineSharePageClient({
           }),
         ]);
         blob = await new Promise<Blob | null>((resolve) => {
-          canvas.toBlob(resolve, "image/png");
+          canvas.toBlob(resolve, "image/jpeg", 0.92);
         });
+        if (!blob) {
+          blob = await new Promise<Blob | null>((resolve) => {
+            canvas.toBlob(resolve, "image/png");
+          });
+        }
       } catch (captureError) {
         console.warn("Routine share html2canvas capture failed, falling back:", captureError);
       }
@@ -365,9 +371,10 @@ export default function RoutineSharePageClient({
           toBlob(previewCardRef.current, {
             pixelRatio: 2,
             cacheBust: false,
-            backgroundColor: undefined,
+            backgroundColor: "#ffffff",
             skipFonts: true,
-            type: "image/png",
+            type: "image/jpeg",
+            quality: 0.92,
           }),
           new Promise<Blob | null>((_, reject) => {
             window.setTimeout(
@@ -378,34 +385,33 @@ export default function RoutineSharePageClient({
         ]);
       }
 
-      const filename = `hadami-routine-${activeTab}-${Date.now()}.png`;
+      if (!blob) throw new Error("画像の生成に失敗しました（capture）");
+
+      const mime = blob.type || "image/jpeg";
+      const ext = mime === "image/png" ? "png" : mime === "image/webp" ? "webp" : "jpg";
+      const filename = `hadami-routine-${activeTab}-${Date.now()}.${ext}`;
       const shareNavigator = navigator as ShareCapableNavigator;
 
+      // Web Share API: canShare のチェックは iOS で偽陰性が多いため、
+      // 直接 share() を呼んで try/catch で落とす方が確実。
       if (
-        blob &&
         isMobileShareDevice() &&
         typeof File !== "undefined" &&
         typeof shareNavigator.share === "function"
       ) {
-        const file = new File([blob], filename, { type: blob.type || "image/png" });
-        const shareData: ShareData = {
-          files: [file],
-          title: `${activeLabel}カード画像`,
-        };
-
-        if (!shareNavigator.canShare || shareNavigator.canShare(shareData)) {
-          try {
-            await shareNavigator.share(shareData);
-            setLastExportMode("shared");
-            setTimeout(() => setLastExportMode(null), 2500);
-            return;
-          } catch (error) {
-            if (error instanceof DOMException && error.name === "AbortError") return;
-          }
+        const file = new File([blob], filename, { type: mime });
+        try {
+          await shareNavigator.share({ files: [file] });
+          setLastExportMode("shared");
+          setTimeout(() => setLastExportMode(null), 2500);
+          return;
+        } catch (error) {
+          if (error instanceof DOMException && error.name === "AbortError") return;
+          // canShare で弾かれたケースなどは下のダウンロード経路へフォールスルー
+          console.warn("navigator.share failed, falling back to download:", error);
         }
       }
 
-      if (!blob) throw new Error("Failed to generate image");
       const dataUrl = await new Promise<string>((resolve, reject) => {
         const reader = new FileReader();
         reader.onload = () => resolve(reader.result as string);
@@ -424,10 +430,11 @@ export default function RoutineSharePageClient({
 
       if (saveResult === "cancelled") return;
 
-      throw new Error("Failed to save generated image");
+      throw new Error("ブラウザの保存処理が完了しませんでした");
     } catch (error) {
       console.error("Failed to save routine share image:", error);
-      alert("画像の保存に失敗しました。時間をおいてもう一度お試しください。");
+      const detail = error instanceof Error ? error.message : String(error);
+      alert(`画像の保存に失敗しました。\n${detail}`);
     } finally {
       setCaptureSteps(null);
       setIsDownloading(false);
