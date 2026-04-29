@@ -177,14 +177,17 @@ export default function RoutineSharePageClient({
     if (!step.product_id) return "";
 
     const product = allProducts.find((item) => item.id === step.product_id);
-    // ルーティンカード（シェア用）では高画質な share バリアントを優先する
+    // ルーティンカードのステップ画像は 560px 幅程度で描画されるため、
+    // 1600px の display バリアントで十分高画質。
+    // share バリアント (2000px Q95) は data URL 化すると 1MB 超になり、
+    // iPhone Safari で <img> にロードできず html2canvas キャプチャが空になる。
     return (
-      product?.packageImageSharePath ??
       product?.packageImagePath ??
       product?.packageImageThumbPath ??
-      product?.packageImageShareUrl ??
+      product?.packageImageSharePath ??
       product?.packageImage ??
       product?.packageImageThumb ??
+      product?.packageImageShareUrl ??
       ""
     );
   }
