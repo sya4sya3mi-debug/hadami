@@ -104,7 +104,7 @@ export default function RoutineSharePageClient({
   const [previewScale, setPreviewScale] = useState(1);
   const [previewHeight, setPreviewHeight] = useState<number | null>(null);
   const [captureSteps, setCaptureSteps] = useState<StepDraft[] | null>(null);
-  const captureRef = useRef<HTMLDivElement | null>(null);
+  const previewCardRef = useRef<HTMLDivElement | null>(null);
   const previewViewportRef = useRef<HTMLDivElement | null>(null);
   const allProducts = useProductStore((state) => state.products);
 
@@ -148,11 +148,11 @@ export default function RoutineSharePageClient({
   }, []);
 
   useEffect(() => {
-    const node = captureRef.current;
+    const node = previewCardRef.current;
     if (!node) return;
 
     const updateHeight = () => {
-      const nextHeight = node.getBoundingClientRect().height;
+      const nextHeight = node.offsetHeight;
       if (!nextHeight) return;
       setPreviewHeight(nextHeight);
     };
@@ -260,7 +260,7 @@ export default function RoutineSharePageClient({
   };
 
   const handleDownloadImage = async () => {
-    if (!captureRef.current || isDownloading) return;
+    if (!previewCardRef.current || isDownloading) return;
 
     setIsDownloading(true);
     setLastExportMode(null);
@@ -309,7 +309,7 @@ export default function RoutineSharePageClient({
       // captureRef 内の <img> がデコード完了するまで待ってから toBlob を呼ぶ。
       // data: URL は decode が速いがゼロではないため、html-to-image のクローン
       // タイミング次第で空画像になる事故を避ける。
-      const captureNode = captureRef.current;
+      const captureNode = previewCardRef.current;
       if (captureNode) {
         const imgs = Array.from(captureNode.querySelectorAll("img"));
         await Promise.all(
@@ -330,26 +330,55 @@ export default function RoutineSharePageClient({
         requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
       });
 
-      const { toBlob } = await import("html-to-image");
-      const blob = await Promise.race([
-        toBlob(captureRef.current, {
-          pixelRatio: 2,
-          cacheBust: false,
-          backgroundColor: undefined,
-          skipFonts: true,
-          type: "image/webp",
-          quality: 0.92,
-        }),
-        new Promise<Blob | null>((_, reject) => {
-          window.setTimeout(
-            () => reject(new Error("Share image generation timed out")),
-            15000,
-          );
-        }),
-      ]);
+      let blob: Blob | null = null;
 
-      const ext = blob?.type === "image/webp" ? "webp" : "png";
-      const filename = `hadami-routine-${activeTab}-${Date.now()}.${ext}`;
+      // iOS Safari の Web Share API は image/webp ファイルを拒否することがあるため、
+      // シェア/保存の確実性を優先して PNG で出力する。
+      try {
+        const { default: html2canvas } = await import("html2canvas");
+        const canvas = await Promise.race([
+          html2canvas(previewCardRef.current, {
+            scale: 2,
+            backgroundColor: null,
+            useCORS: true,
+            allowTaint: false,
+            logging: false,
+            imageTimeout: 15000,
+          }),
+          new Promise<never>((_, reject) => {
+            window.setTimeout(
+              () => reject(new Error("Share image generation timed out")),
+              15000,
+            );
+          }),
+        ]);
+        blob = await new Promise<Blob | null>((resolve) => {
+          canvas.toBlob(resolve, "image/png");
+        });
+      } catch (captureError) {
+        console.warn("Routine share html2canvas capture failed, falling back:", captureError);
+      }
+
+      if (!blob) {
+        const { toBlob } = await import("html-to-image");
+        blob = await Promise.race([
+          toBlob(previewCardRef.current, {
+            pixelRatio: 2,
+            cacheBust: false,
+            backgroundColor: undefined,
+            skipFonts: true,
+            type: "image/png",
+          }),
+          new Promise<Blob | null>((_, reject) => {
+            window.setTimeout(
+              () => reject(new Error("Fallback share image generation timed out")),
+              15000,
+            );
+          }),
+        ]);
+      }
+
+      const filename = `hadami-routine-${activeTab}-${Date.now()}.png`;
       const shareNavigator = navigator as ShareCapableNavigator;
 
       if (
@@ -358,7 +387,7 @@ export default function RoutineSharePageClient({
         typeof File !== "undefined" &&
         typeof shareNavigator.share === "function"
       ) {
-        const file = new File([blob], filename, { type: blob.type || "image/webp" });
+        const file = new File([blob], filename, { type: blob.type || "image/png" });
         const shareData: ShareData = {
           files: [file],
           title: `${activeLabel}カード画像`,
@@ -385,7 +414,6 @@ export default function RoutineSharePageClient({
       });
       const saveResult = await downloadShareImage(dataUrl, {
         filename,
-        allowNativeShareFallback: false,
       });
 
       if (saveResult === "downloaded" || saveResult === "shared") {
@@ -415,6 +443,7 @@ export default function RoutineSharePageClient({
   };
 
   const previewSteps = resolveSteps(currentSteps.filter((step) => step.step_name.trim()));
+  const renderedPreviewSteps = captureSteps ?? previewSteps;
 
   return (
     <div className="hd-root hd-softa" data-density="compact">
@@ -920,38 +949,17 @@ export default function RoutineSharePageClient({
                       transformOrigin: "top center",
                     }}
                   >
-                    <RoutineShareCard
-                      config={config}
-                      mode={activeTab}
-                      steps={previewSteps}
-                    />
+                    <div ref={previewCardRef}>
+                      <RoutineShareCard
+                        config={config}
+                        mode={activeTab}
+                        steps={renderedPreviewSteps}
+                      />
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
-          </div>
-        </div>
-
-        <div
-          aria-hidden="true"
-          style={{
-            pointerEvents: "none",
-            position: "fixed",
-            left: -10000,
-            top: 0,
-            opacity: 0,
-          }}
-        >
-          <div ref={captureRef}>
-            <RoutineShareCard
-              config={config}
-              mode={activeTab}
-              steps={
-                captureSteps
-                  ? resolveSteps(captureSteps.filter((step) => step.step_name.trim()))
-                  : previewSteps
-              }
-            />
           </div>
         </div>
       </div>
