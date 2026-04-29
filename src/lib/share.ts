@@ -1,16 +1,5 @@
-import { Ingredient, Product, RoutineType } from "@/types";
-import { RARITY } from "./ingredients";
+import { Product, RoutineType } from "@/types";
 import { getGenreByKey } from "./productGenres";
-
-export function shareIngredientDiscovery(ingredient: Ingredient): string {
-  const rarityInfo = RARITY[ingredient.rarity];
-  const stars = "★".repeat(rarityInfo.star);
-  return `【成分図鑑】${ingredient.nameJa}（${ingredient.nameInci}）を発見！
-${stars} ${rarityInfo.label}
-📌 ${ingredient.note}
-
-#HADAMI #成分図鑑`;
-}
 
 export function shareProductCheck(product: Product, ingredientNames: string[]): string {
   const top3 = ingredientNames.slice(0, 3).join(" / ");

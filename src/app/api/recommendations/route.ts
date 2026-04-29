@@ -55,11 +55,9 @@ export async function GET() {
   // 3. 軸1: よく出会う成分のキーワード生成
   const topIngredients = enriched.slice(0, 3);
 
-  // 4. 軸2: 未発見の高レアリティ成分
+  // 4. 軸2: 未発見のアクティブ成分
   const unknownRare = MASTER_INGREDIENTS.filter(
-    (i) =>
-      (i.rarity === "rare" || i.rarity === "legendary") &&
-      !knownIds.has(i.id)
+    (i) => i.activeIngredient && !knownIds.has(i.id),
   ).slice(0, 3);
 
   const discoveryKeywords = unknownRare.map(

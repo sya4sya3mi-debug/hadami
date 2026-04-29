@@ -163,7 +163,7 @@ const STEPS = [
 
 const FEATURES = [
   { en: "AI INGREDIENT SCAN",   tag: "SCAN",     title: "AI成分検索",            desc: "400種超の美容成分に対応。パッケージを撮影するだけでAIが商品を特定し、成分の特徴をお伝えします" },
-  { en: "COMPENDIUM · ★RARITY",  tag: "INDEX",    title: "成分図鑑＋★レアリティ", desc: "見つけた成分をコレクト。出現頻度に応じた★1〜★4のレアリティ付き。コンプリートを目指そう" },
+  { en: "COMPENDIUM",            tag: "INDEX",    title: "成分図鑑",              desc: "出会った美容成分をコレクト。効果カテゴリ・肌悩みごとに整理して、自分のスキンケアの幅を広げよう" },
   { en: "ROUTINE COMPOSE",       tag: "ROUTINE",  title: "スキンケアルーティン",  desc: "お気に入り製品をルーティンに並べ朝・夜のルーティンを管理。カバー率や相乗効果の分析、シェアも" },
   { en: "AM / PM RITUAL",        tag: "RITUAL",   title: "朝夜ルーティンチェック", desc: "ルーティンに登録した製品が毎日のチェックリストに。進捗リングで達成度をひと目で確認" },
   { en: "DISCOVERY",             tag: "RECOMMEND",title: "おすすめ商品レコメンド", desc: "スキャン履歴から成分傾向を分析し、まだ出会っていない成分を含む商品をおすすめ" },
@@ -171,9 +171,9 @@ const FEATURES = [
 ];
 
 const SCAN_PREVIEW_INGREDIENTS = [
-  { name: "パンテノール",       en: "Panthenol",         cat: "ビタミン",   rarity: 1 },
-  { name: "ツボクサエキス",     en: "Centella Asiatica", cat: "ボタニカル", rarity: 2 },
-  { name: "ヒアルロン酸Na",     en: "Sodium Hyaluronate", cat: "うるおい",  rarity: 1 },
+  { name: "パンテノール",       en: "Panthenol",         cat: "ビタミン" },
+  { name: "ツボクサエキス",     en: "Centella Asiatica", cat: "ボタニカル" },
+  { name: "ヒアルロン酸Na",     en: "Sodium Hyaluronate", cat: "うるおい" },
 ];
 
 const SAMPLE_ROUTINES = {
@@ -1601,18 +1601,6 @@ export default function LandingPage() {
                             <Mono style={{ fontSize: 8.5, opacity: 0.4 }}>
                               {ing.en} · {ing.cat}
                             </Mono>
-                          </div>
-                          <div
-                            style={{
-                              fontFamily: "'JetBrains Mono', monospace",
-                              fontSize: 11,
-                              color: DARK_TEXT,
-                              letterSpacing: "0.1em",
-                              opacity: 0.85,
-                            }}
-                          >
-                            {"★".repeat(ing.rarity)}
-                            <span style={{ opacity: 0.3 }}>{"★".repeat(4 - ing.rarity)}</span>
                           </div>
                         </div>
                       ))}

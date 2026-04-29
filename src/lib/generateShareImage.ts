@@ -1,7 +1,7 @@
 "use client";
 
 import { Product, Ingredient } from "@/types";
-import { getIngredientById, RARITY } from "./ingredients";
+import { getIngredientById } from "./ingredients";
 import { getGenreByKey } from "./productGenres";
 
 // ── Softa palette (oklch を hex 近似に解いた値) ──
@@ -257,7 +257,7 @@ async function renderProductCard(params: {
   brand: string;
   productType: string;
   imageSrc?: string;
-  ingredients: { nameJa: string; rarity: string }[];
+  ingredients: { nameJa: string }[];
   serial?: string;
 }): Promise<string> {
   const { productName, brand, productType, imageSrc, ingredients, serial } =
@@ -420,20 +420,6 @@ async function renderProductCard(params: {
         SOFTA.ink,
         "left",
       );
-      const rarityInfo = RARITY[ing.rarity as keyof typeof RARITY];
-      const stars = rarityInfo
-        ? "★".repeat(rarityInfo.star) + "☆".repeat(Math.max(0, 4 - rarityInfo.star))
-        : "";
-      drawText(
-        ctx,
-        stars,
-        W - PAD_X,
-        cursorY + 4,
-        fontMono(400, 12),
-        SOFTA.ink60,
-        "right",
-        1.2,
-      );
       // hairline under each row except last
       if (i < list.length - 1) {
         ctx.fillStyle = SOFTA.hair;
@@ -465,7 +451,6 @@ export async function generateProductShareImage(product: Product): Promise<strin
     imageSrc: product.packageImageShareUrl ?? product.packageImage,
     ingredients: activeIngs.map((ing) => ({
       nameJa: ing.nameJa,
-      rarity: ing.rarity,
     })),
     serial: "001",
   });
@@ -487,7 +472,6 @@ export async function generateScanResultShareImage(params: {
     imageSrc: imagePreview,
     ingredients: activeIngredients.slice(0, 5).map((ing) => ({
       nameJa: ing.nameJa,
-      rarity: ing.rarity,
     })),
     serial: "—",
   });

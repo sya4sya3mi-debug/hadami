@@ -1,7 +1,7 @@
 "use client";
 
 import "@/styles/hadami-tokens.css";
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useRef, useEffect } from "react";
 import ScrollToTop from "@/components/ui/ScrollToTop";
 import { useRouter } from "next/navigation";
 import { useZukanStore } from "@/stores/useZukanStore";
@@ -14,25 +14,13 @@ import {
   getActiveCategoryTotal,
 } from "@/lib/ingredients";
 import { SKIN_CONCERNS } from "@/lib/concerns";
-import { RarityKey, Product, CategoryKey } from "@/types";
+import { Product, CategoryKey } from "@/types";
 import { useUser } from "@/lib/auth";
 
 import AuthGuard from "@/components/ui/AuthGuard";
 import Disclaimer from "@/components/ui/Disclaimer";
 import TargetedRakutenSection from "@/components/recommendations/TargetedRakutenSection";
 import { ActiveCategoryIcon, SkinConcernIcon } from "@/components/ui/CosmeticIcons";
-
-const RARITY_ORDER: RarityKey[] = ["legendary", "rare", "uncommon", "common"];
-
-const RARITY_VIS: Record<
-  RarityKey,
-  { star: number; color: string; bg: string; border: string }
-> = {
-  common:    { star: 1, color: "#9CA3AF", bg: "rgba(156,163,175,0.07)", border: "rgba(156,163,175,0.15)" },
-  uncommon:  { star: 2, color: "#4CAF50", bg: "rgba(76,175,80,0.07)",   border: "rgba(76,175,80,0.15)" },
-  rare:      { star: 3, color: "#E91E8C", bg: "rgba(233,30,140,0.07)",  border: "rgba(233,30,140,0.18)" },
-  legendary: { star: 4, color: "#F59E0B", bg: "rgba(245,158,11,0.07)",  border: "rgba(245,158,11,0.22)" },
-};
 
 /* ═══════════════════════════════════════
    Tab 1: 効果カテゴリ別
@@ -57,9 +45,7 @@ function CategoryExplorer({ discoveredIds }: { discoveredIds: string[] }) {
   const catIngredients = useMemo(() => {
     const items = getActiveByCategory(selectedCat);
     return [...items].sort((a, b) => {
-      const ra = RARITY_ORDER.indexOf(a.rarity);
-      const rb = RARITY_ORDER.indexOf(b.rarity);
-      if (ra !== rb) return ra - rb;
+      // 発見済みを上に
       const aDisc = discoveredSet.has(a.id) ? 0 : 1;
       const bDisc = discoveredSet.has(b.id) ? 0 : 1;
       return aDisc - bDisc;
@@ -72,13 +58,31 @@ function CategoryExplorer({ discoveredIds }: { discoveredIds: string[] }) {
     [catIngredients, discoveredSet]
   );
 
+  // 初期マウント時、選択中のチップを左端に揃える。
+  // 直前のスクロール状態の残り (タブ切替など) で 美白/肌荒れ防止 など
+  // 先頭のチップが見切れて表示される問題を防ぐ。
+  const chipScrollRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    const node = chipScrollRef.current;
+    if (!node) return;
+    const active = node.querySelector<HTMLButtonElement>('[data-active="true"]');
+    if (active) {
+      const offset = active.offsetLeft - 16;
+      node.scrollTo({ left: Math.max(0, offset), behavior: "auto" });
+    } else {
+      node.scrollLeft = 0;
+    }
+  }, []);
+
   return (
     <div>
       {/* Category chips */}
       <div
+        ref={chipScrollRef}
         style={{
           display: "flex", gap: 8, overflowX: "auto",
           padding: "16px 20px", WebkitOverflowScrolling: "touch",
+          scrollPaddingInline: 20,
         }}
       >
         {catStats.map((cat) => {
@@ -87,6 +91,7 @@ function CategoryExplorer({ discoveredIds }: { discoveredIds: string[] }) {
             <button
               key={cat.key}
               onClick={() => setSelectedCat(cat.key)}
+              data-active={active ? "true" : "false"}
               style={{
                 flexShrink: 0,
                 display: "flex", alignItems: "center", gap: 8,
@@ -95,6 +100,7 @@ function CategoryExplorer({ discoveredIds }: { discoveredIds: string[] }) {
                 color: active ? "var(--hd-bg)" : "var(--hd-ink)",
                 border: active ? "none" : "1px solid var(--hd-line)",
                 cursor: "pointer",
+                scrollSnapAlign: "start",
               }}
             >
               <ActiveCategoryIcon category={cat.key} size={13} />
@@ -198,7 +204,6 @@ function CategoryExplorer({ discoveredIds }: { discoveredIds: string[] }) {
           {/* Ingredient list */}
           <div className="hd-stagger">
             {catIngredients.map((ing, i) => {
-              const r = RARITY_VIS[ing.rarity];
               const found = discoveredSet.has(ing.id);
               return (
                 <div
@@ -267,18 +272,6 @@ function CategoryExplorer({ discoveredIds }: { discoveredIds: string[] }) {
                       </div>
                     )}
                   </div>
-                  <div
-                    className="hd-mono"
-                    style={{
-                      flexShrink: 0,
-                      fontSize: 11,
-                      color: r.color,
-                      letterSpacing: "0.05em",
-                    }}
-                  >
-                    {"★".repeat(r.star)}
-                    <span style={{ opacity: 0.25 }}>{"★".repeat(4 - r.star)}</span>
-                  </div>
                   {found && (
                     <svg
                       width="10"
@@ -324,7 +317,6 @@ function ConcernView({ discoveredIds, products }: { discoveredIds: string[]; pro
     if (!concern) return [];
     return [...concern.keyIngredients]
       .filter((ingredient) => !discoveredSet.has(ingredient.id))
-      .sort((a, b) => RARITY_ORDER.indexOf(a.rarity) - RARITY_ORDER.indexOf(b.rarity))
       .slice(0, 2);
   }, [concern, discoveredSet]);
 
@@ -535,7 +527,6 @@ function ConcernView({ discoveredIds, products }: { discoveredIds: string[]; pro
       {/* Key Ingredients */}
       <div className="hd-stagger" style={{ display: "flex", flexDirection: "column", gap: 8, padding: "0 20px" }}>
         {concern.keyIngredients.map((ing) => {
-          const r = RARITY_VIS[ing.rarity];
           const found = discoveredSet.has(ing.id);
           const matchedProducts = getProductsWithIngredient(ing.id);
           const hasProducts = matchedProducts.length > 0;
@@ -591,7 +582,7 @@ function ConcernView({ discoveredIds, products }: { discoveredIds: string[]; pro
                       whiteSpace: "nowrap",
                     }}
                   >
-                    {"★".repeat(r.star)} · {ing.role}
+                    {ing.role}
                   </div>
                 </div>
                 {hasProducts ? (
