@@ -457,7 +457,7 @@ export default function HomePage() {
               borderBottom: "1px solid var(--hd-hair)",
               display: "flex",
               justifyContent: "space-between",
-              alignItems: "flex-start",
+              alignItems: "center",
             }}
           >
             <div>
