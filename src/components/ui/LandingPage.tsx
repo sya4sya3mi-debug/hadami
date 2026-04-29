@@ -10,7 +10,8 @@ import { Ico } from "@/components/redesign/apothecary/Icons";
 /* ─── Design tokens (mapped to hadami-tokens.css OKLCH equivalents) ─── */
 const INK = "#1a1a16";
 const BG = "#e8e4db";
-const ACCENT = "#5fa39a";
+// アバター（var(--hd-moss-deep)）と揃えた深いアポセカリーグリーン
+const ACCENT = "#3a5544";
 const DARK_TEXT = "#f0ece3";
 
 /* ─── Animated Number Counter ─── */
