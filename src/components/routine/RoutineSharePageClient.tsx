@@ -273,8 +273,11 @@ export default function RoutineSharePageClient({
         requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
       });
 
+      // currentSteps の product_image_url は通常空で、product_id から resolveSteps で
+      // 解決される。インライン化は解決済みURL (previewSteps) を起点にしないと
+      // 画像が空のまま toBlob され、保存されたカードに画像が反映されない。
       const inlinedSteps = await Promise.all(
-        currentSteps.map(async (step) => {
+        previewSteps.map(async (step) => {
           const raw = step.product_image_url;
           if (!raw) return step;
           if (raw.startsWith("data:")) return step;
