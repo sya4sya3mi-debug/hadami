@@ -21,10 +21,11 @@ export function applyTheme(theme: Theme) {
   } else {
     root.classList.remove("dark");
   }
-  // Update theme-color meta for PWA status bar
+  // Update theme-color meta for PWA status bar — hd-* デザインに合わせて
+  // ライトはクリーム (--hd-bg 相当)、ダークは温かい暗セピアに揃える。
   const meta = document.querySelector('meta[name="theme-color"]');
   if (meta) {
-    meta.setAttribute("content", theme === "dark" ? "#121212" : "#3A8F7A");
+    meta.setAttribute("content", theme === "dark" ? "#1a1714" : "#f0eee9");
   }
 }
 
