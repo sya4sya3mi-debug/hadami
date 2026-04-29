@@ -38,3 +38,10 @@ next-env.d.ts
 .vercel
 .env*.local
 .mcp.json
+
+# deployment archives
+*_deploy_clean.tar
+*_deploy_clean.zip
+
+# supabase CLI temp state (project ref, pooler URL など環境固有のキャッシュ)
+supabase/.temp/
