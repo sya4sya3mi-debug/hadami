@@ -542,6 +542,12 @@ export default function LandingPage() {
     return () => clearInterval(t);
   }, []);
 
+  // Widen the app shell while the landing page is mounted (desktop only)
+  useEffect(() => {
+    document.body.classList.add("lp-active");
+    return () => document.body.classList.remove("lp-active");
+  }, []);
+
   // Auto-advance scan demo step
   useEffect(() => {
     const i = setInterval(() => setScanStep((s) => (s + 1) % 4), 3200);

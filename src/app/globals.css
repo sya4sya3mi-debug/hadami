@@ -222,6 +222,18 @@ body {
   }
 }
 
+/* Landing page: allow a wider shell on desktop */
+@media (min-width: 768px) {
+  body.lp-active #app-container {
+    max-width: 1280px;
+  }
+}
+@media (min-width: 1280px) {
+  body.lp-active #app-container {
+    max-width: 1440px;
+  }
+}
+
 /* Discovery animations */
 @keyframes sparkle {
   0%, 100% { box-shadow: 0 0 4px rgba(124,106,232,0.2); }
