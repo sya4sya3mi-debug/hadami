@@ -36,7 +36,7 @@ export function defaultRoutineCardConfig(): RoutineCardConfig {
     note: "",
     username: "",
     theme: "light",
-    accentColor: "moss",
+    accentColor: "coral",
     template: "editorial",
   };
 }
