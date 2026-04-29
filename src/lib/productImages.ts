@@ -1,6 +1,9 @@
 export const PRODUCT_IMAGE_BUCKET = "product-images";
-export const PRODUCT_IMAGE_DISPLAY_SIZE = 800;
-export const PRODUCT_IMAGE_SHARE_SIZE = 1200;
+export const PRODUCT_IMAGE_DISPLAY_SIZE = 1600;
+export const PRODUCT_IMAGE_SHARE_SIZE = 2000;
+export const PRODUCT_IMAGE_DISPLAY_QUALITY = 92;
+export const PRODUCT_IMAGE_SHARE_QUALITY = 95;
+export const PRODUCT_IMAGE_WEBP_EFFORT = 6;
 export const PRODUCT_IMAGE_BACKFILL_BATCH_SIZE = 10;
 
 export function getProductImageDisplayPath(userId: string, productId: string) {

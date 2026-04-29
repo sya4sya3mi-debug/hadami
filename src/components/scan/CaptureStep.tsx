@@ -19,7 +19,7 @@ async function preprocessImage(dataUrl: string): Promise<string> {
       canvas.height = height;
       const ctx = canvas.getContext("2d")!;
       ctx.drawImage(img, 0, 0, width, height);
-      resolve(canvas.toDataURL("image/jpeg", 0.90));
+      resolve(canvas.toDataURL("image/jpeg", 0.95));
     };
     img.src = dataUrl;
   });

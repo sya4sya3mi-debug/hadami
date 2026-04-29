@@ -357,24 +357,23 @@ export default function DeckPage() {
                   style={{
                     width: "100%",
                     marginTop: 12,
-                    cursor: isCreatingShareCard ? "default" : "pointer",
-                    fontSize: 13,
-                    fontFamily: "var(--hd-sans)",
-                    fontStyle: "normal",
-                    fontWeight: 600,
-                    letterSpacing: "0.01em",
+                    padding: "16px 0",
                     background: "var(--hd-ink)",
                     color: "var(--hd-bg)",
-                    border: "none",
-                    padding: "14px 22px",
+                    border: "1px solid var(--hd-ink)",
+                    cursor: isCreatingShareCard ? "default" : "pointer",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    gap: 8,
+                    gap: 10,
                     opacity: isCreatingShareCard ? 0.6 : 1,
                   }}
                 >
-                  シェアカードを作成
+                  <span className="hd-serif" style={{ fontSize: 14 }}>シェアカードを作成</span>
+                  <span
+                    className="hd-mono"
+                    style={{ fontSize: 9, letterSpacing: "0.2em", color: "var(--hd-bg)", opacity: 0.7 }}
+                  >SHARE →</span>
                 </button>
                 {isCreatingShareCard && (
                   <p style={{ marginTop: 8, textAlign: "center", fontSize: 12, color: "var(--hd-ink-60)", fontFamily: "var(--hd-sans)" }}>
@@ -402,24 +401,23 @@ export default function DeckPage() {
                   style={{
                     width: "100%",
                     marginTop: 24,
-                    cursor: isCreatingShareCard ? "default" : "pointer",
-                    fontSize: 13,
-                    fontFamily: "var(--hd-sans)",
-                    fontStyle: "normal",
-                    fontWeight: 600,
-                    letterSpacing: "0.01em",
+                    padding: "16px 0",
                     background: "var(--hd-ink)",
                     color: "var(--hd-bg)",
-                    border: "none",
-                    padding: "14px 22px",
+                    border: "1px solid var(--hd-ink)",
+                    cursor: isCreatingShareCard ? "default" : "pointer",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    gap: 8,
+                    gap: 10,
                     opacity: isCreatingShareCard ? 0.6 : 1,
                   }}
                 >
-                  シェアカードを作成
+                  <span className="hd-serif" style={{ fontSize: 14 }}>シェアカードを作成</span>
+                  <span
+                    className="hd-mono"
+                    style={{ fontSize: 9, letterSpacing: "0.2em", color: "var(--hd-bg)", opacity: 0.7 }}
+                  >SHARE →</span>
                 </button>
                 {isCreatingShareCard && (
                   <p style={{ marginTop: 8, textAlign: "center", fontSize: 12, color: "var(--hd-ink-60)", fontFamily: "var(--hd-sans)" }}>

@@ -33,7 +33,7 @@ async function preprocessImage(dataUrl: string): Promise<PreprocessResult> {
       colorCanvas.height = height;
       const colorCtx = colorCanvas.getContext("2d")!;
       colorCtx.drawImage(img, 0, 0, width, height);
-      const color = colorCanvas.toDataURL("image/jpeg", 0.92);
+      const color = colorCanvas.toDataURL("image/jpeg", 0.95);
 
       // グレースケール版（API送信用）
       const canvas = document.createElement("canvas");
@@ -50,7 +50,7 @@ async function preprocessImage(dataUrl: string): Promise<PreprocessResult> {
         d[i] = d[i + 1] = d[i + 2] = contrast;
       }
       ctx.putImageData(imageData, 0, 0);
-      const processed = canvas.toDataURL("image/jpeg", 0.92);
+      const processed = canvas.toDataURL("image/jpeg", 0.95);
 
       resolve({ processed, color });
     };
