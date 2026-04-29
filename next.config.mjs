@@ -20,7 +20,7 @@ const nextConfig = {
         pathname: "/**",
       },
     ],
-    formats: ["image/avif", "image/webp"],
+    formats: ["image/webp"],
   },
   async headers() {
     return [

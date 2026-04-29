@@ -26,7 +26,10 @@ import {
 } from "@/lib/db";
 import { PRODUCT_GENRES, getGenreByKey } from "@/lib/productGenres";
 import { getSignedImageUrls } from "@/lib/storage";
-import { getProductImagePath, getProductImageThumbPath } from "@/lib/productImages";
+import {
+  getProductImageDisplayPath,
+  getProductImageSharePath,
+} from "@/lib/productImages";
 import { ProductGenre } from "@/types";
 
 type LayoutMode = "magazine" | "mosaic" | "list";
@@ -379,10 +382,20 @@ export default function HistoryPage() {
       const { error, filePath } = await updateProductImageInDb(supabase, user.id, productId, imageBase64);
       if (error) { setImageError(`保存に失敗しました: ${error}`); }
       else if (filePath) {
-        const imagePath = getProductImagePath(user.id, productId);
-        const thumbPath = getProductImageThumbPath(user.id, productId);
-        const signedImages = await getSignedImageUrls(supabase, [imagePath, thumbPath]);
-        updateProductImage(productId, signedImages[imagePath] ?? undefined, imagePath, signedImages[thumbPath] ?? signedImages[imagePath] ?? undefined, thumbPath);
+        const displayPath = getProductImageDisplayPath(user.id, productId);
+        const sharePath = getProductImageSharePath(user.id, productId);
+        const signedImages = await getSignedImageUrls(supabase, [displayPath, sharePath]);
+        const displayUrl = signedImages[displayPath] ?? undefined;
+        const shareUrl = signedImages[sharePath] ?? displayUrl;
+        updateProductImage(
+          productId,
+          displayUrl,
+          displayPath,
+          displayUrl,
+          displayPath,
+          shareUrl,
+          sharePath
+        );
       }
       setUpdatingImageId(null);
     };

@@ -2,25 +2,26 @@ import { NextResponse } from "next/server";
 import sharp from "sharp";
 import { authenticateRequest, validateImagePayload } from "@/lib/apiAuth";
 import {
-  PRODUCT_IMAGE_MAX_DIMENSION,
-  PRODUCT_IMAGE_THUMB_SIZE,
-  getProductImagePath,
-  getProductImageThumbPath,
-  getProductImageThumbPathFromStoredPath,
+  PRODUCT_IMAGE_DISPLAY_SIZE,
+  PRODUCT_IMAGE_SHARE_SIZE,
+  getProductImageDisplayPath,
+  getProductImageSharePath,
+  getProductImageDisplayPathFromStoredPath,
+  getProductImageSharePathFromStoredPath,
 } from "@/lib/productImages";
 import { r2Upload, r2Delete, r2Download } from "@/lib/r2";
 
 export const runtime = "nodejs";
 export const maxDuration = 30;
 
-const AVIF_FULL_QUALITY = 72;
-const AVIF_THUMB_QUALITY = 65;
-const AVIF_EFFORT = 5;
-const AVIF_CONTENT_TYPE = "image/avif";
+const WEBP_DISPLAY_QUALITY = 75;
+const WEBP_SHARE_QUALITY = 88;
+const WEBP_EFFORT = 4;
+const WEBP_CONTENT_TYPE = "image/webp";
 
 function getContentTypeFromKey(key: string) {
-  if (key.endsWith(".avif")) return "image/avif";
   if (key.endsWith(".webp")) return "image/webp";
+  if (key.endsWith(".avif")) return "image/avif";
   if (key.endsWith(".png")) return "image/png";
   if (key.endsWith(".jpg") || key.endsWith(".jpeg")) return "image/jpeg";
   return "application/octet-stream";
@@ -89,34 +90,34 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "対象の商品が見つかりません" }, { status: 404 });
   }
 
-  const filePath = getProductImagePath(auth.user.id, body.productId);
-  const thumbPath = getProductImageThumbPath(auth.user.id, body.productId);
+  const displayPath = getProductImageDisplayPath(auth.user.id, body.productId);
+  const sharePath = getProductImageSharePath(auth.user.id, body.productId);
   const inputBytes = Buffer.from(validation.base64Data, "base64");
-  let fullBytes: Buffer;
-  let thumbBytes: Buffer;
+  let displayBytes: Buffer;
+  let shareBytes: Buffer;
 
   try {
     const rotated = sharp(inputBytes).rotate();
-    const [full, thumb] = await Promise.all([
+    const [display, share] = await Promise.all([
       rotated
         .clone()
-        .resize(PRODUCT_IMAGE_MAX_DIMENSION, PRODUCT_IMAGE_MAX_DIMENSION, {
+        .resize(PRODUCT_IMAGE_DISPLAY_SIZE, PRODUCT_IMAGE_DISPLAY_SIZE, {
           fit: "inside",
           withoutEnlargement: true,
         })
-        .avif({ quality: AVIF_FULL_QUALITY, effort: AVIF_EFFORT })
+        .webp({ quality: WEBP_DISPLAY_QUALITY, effort: WEBP_EFFORT })
         .toBuffer(),
       rotated
         .clone()
-        .resize(PRODUCT_IMAGE_THUMB_SIZE, PRODUCT_IMAGE_THUMB_SIZE, {
+        .resize(PRODUCT_IMAGE_SHARE_SIZE, PRODUCT_IMAGE_SHARE_SIZE, {
           fit: "inside",
           withoutEnlargement: true,
         })
-        .avif({ quality: AVIF_THUMB_QUALITY, effort: AVIF_EFFORT })
+        .webp({ quality: WEBP_SHARE_QUALITY, effort: WEBP_EFFORT })
         .toBuffer(),
     ]);
-    fullBytes = full;
-    thumbBytes = thumb;
+    displayBytes = display;
+    shareBytes = share;
   } catch (error) {
     console.error("Failed to encode product image:", error);
     return NextResponse.json(
@@ -127,8 +128,8 @@ export async function POST(request: Request) {
 
   try {
     await Promise.all([
-      r2Upload(filePath, fullBytes, AVIF_CONTENT_TYPE),
-      r2Upload(thumbPath, thumbBytes, AVIF_CONTENT_TYPE),
+      r2Upload(displayPath, displayBytes, WEBP_CONTENT_TYPE),
+      r2Upload(sharePath, shareBytes, WEBP_CONTENT_TYPE),
     ]);
   } catch (error) {
     console.error("R2 upload failed:", error);
@@ -137,27 +138,39 @@ export async function POST(request: Request) {
 
   const { error: updateError } = await auth.supabase
     .from("products")
-    .update({ package_image_url: filePath })
+    .update({ package_image_url: displayPath })
     .eq("id", body.productId)
     .eq("user_id", auth.user.id);
 
   if (updateError) {
     console.error("Failed to persist product image path:", updateError);
-    if (product.package_image_url !== filePath) {
-      await r2Delete([filePath, thumbPath]);
+    if (product.package_image_url !== displayPath) {
+      await r2Delete([displayPath, sharePath]);
     }
     return NextResponse.json({ error: "画像情報の保存に失敗しました" }, { status: 500 });
   }
 
-  if (product.package_image_url && product.package_image_url !== filePath) {
-    const staleThumb = getProductImageThumbPathFromStoredPath(product.package_image_url);
-    await r2Delete([product.package_image_url, staleThumb]).catch((error) => {
-      console.error("Failed to delete stale product image:", error);
-    });
+  if (product.package_image_url && product.package_image_url !== displayPath) {
+    const staleDisplay = getProductImageDisplayPathFromStoredPath(product.package_image_url);
+    const staleShare = getProductImageSharePathFromStoredPath(product.package_image_url);
+    const staleKeys = new Set<string>([
+      product.package_image_url,
+      staleDisplay,
+      staleShare,
+    ]);
+    staleKeys.delete(displayPath);
+    staleKeys.delete(sharePath);
+    if (staleKeys.size > 0) {
+      await r2Delete(Array.from(staleKeys)).catch((error) => {
+        console.error("Failed to delete stale product image:", error);
+      });
+    }
   }
 
   return NextResponse.json({
-    filePath,
-    thumbPath,
+    filePath: displayPath,
+    sharePath,
+    // 後方互換のため `thumbPath` は display を返す
+    thumbPath: displayPath,
   });
 }

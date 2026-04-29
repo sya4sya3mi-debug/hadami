@@ -33,8 +33,8 @@ import {
 } from "@/lib/db";
 import { getSignedImageUrls } from "@/lib/storage";
 import {
-  getProductImagePath,
-  getProductImageThumbPath,
+  getProductImageDisplayPath,
+  getProductImageSharePath,
 } from "@/lib/productImages";
 import { Ingredient, Combination, ProductGenre } from "@/types";
 import { normalizeGenreFromScan } from "@/lib/productGenres";
@@ -250,23 +250,27 @@ function ScanPageInner() {
           packageImagePath: undefined,
           packageImageThumb: undefined,
           packageImageThumbPath: undefined,
+          packageImageShareUrl: undefined,
+          packageImageSharePath: undefined,
         };
       }
 
-      const packageImagePath = getProductImagePath(user.id, productId);
-      const packageImageThumbPath = getProductImageThumbPath(user.id, productId);
+      const displayPath = getProductImageDisplayPath(user.id, productId);
+      const sharePath = getProductImageSharePath(user.id, productId);
       const signedImages = await getSignedImageUrls(supabase, [
-        packageImagePath,
-        packageImageThumbPath,
+        displayPath,
+        sharePath,
       ]);
-      const signedImageUrl = signedImages[packageImagePath];
-      const signedThumbUrl = signedImages[packageImageThumbPath];
+      const displayUrl = signedImages[displayPath] ?? undefined;
+      const shareUrl = signedImages[sharePath] ?? displayUrl;
 
       return {
-        packageImage: signedImageUrl ?? undefined,
-        packageImagePath,
-        packageImageThumb: signedThumbUrl ?? signedImageUrl ?? undefined,
-        packageImageThumbPath,
+        packageImage: displayUrl,
+        packageImagePath: displayPath,
+        packageImageThumb: displayUrl,
+        packageImageThumbPath: displayPath,
+        packageImageShareUrl: shareUrl,
+        packageImageSharePath: sharePath,
       };
     },
     [supabase, user]
@@ -764,6 +768,8 @@ function ScanPageInner() {
         packageImage: savedImage.packageImage,
         packageImageThumbPath: savedImage.packageImageThumbPath,
         packageImageThumb: savedImage.packageImageThumb,
+        packageImageSharePath: savedImage.packageImageSharePath,
+        packageImageShareUrl: savedImage.packageImageShareUrl,
         isFavorite: false,
         createdAt: new Date().toISOString(),
         ingredients: foundIngs.map((f) => ({ ingredientId: f.ingredient.id, orderIndex: f.orderIndex })),
@@ -851,6 +857,8 @@ function ScanPageInner() {
         packageImage: savedImage.packageImage,
         packageImageThumbPath: savedImage.packageImageThumbPath,
         packageImageThumb: savedImage.packageImageThumb,
+        packageImageSharePath: savedImage.packageImageSharePath,
+        packageImageShareUrl: savedImage.packageImageShareUrl,
         isFavorite: false,
         createdAt: new Date().toISOString(),
         ingredients: foundIngredients.map((f) => ({ ingredientId: f.ingredient.id, orderIndex: f.orderIndex })),

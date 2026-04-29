@@ -5,7 +5,8 @@ import { useProductStore } from "@/stores/useProductStore";
 import { useZukanStore } from "@/stores/useZukanStore";
 import {
   PRODUCT_IMAGE_BACKFILL_BATCH_SIZE,
-  getProductImageThumbPathFromStoredPath,
+  getProductImageDisplayPathFromStoredPath,
+  getProductImageSharePathFromStoredPath,
 } from "@/lib/productImages";
 import { clearImageUrlCache, getSignedImageUrls } from "./storage";
 
@@ -59,6 +60,8 @@ function resolveProductImage(
       packageImage: undefined,
       packageImageThumbPath: undefined,
       packageImageThumb: undefined,
+      packageImageSharePath: undefined,
+      packageImageShareUrl: undefined,
     };
   }
 
@@ -68,17 +71,24 @@ function resolveProductImage(
       packageImage: storedValue,
       packageImageThumbPath: storedValue,
       packageImageThumb: storedValue,
+      packageImageSharePath: storedValue,
+      packageImageShareUrl: storedValue,
     };
   }
 
-  const thumbPath = getProductImageThumbPathFromStoredPath(storedValue);
-  const fullImage = signedUrls[storedValue] ?? undefined;
+  const displayPath = getProductImageDisplayPathFromStoredPath(storedValue);
+  const sharePath = getProductImageSharePathFromStoredPath(storedValue);
+  const displayUrl =
+    signedUrls[displayPath] ?? signedUrls[storedValue] ?? undefined;
+  const shareUrl = signedUrls[sharePath] ?? displayUrl;
 
   return {
-    packageImagePath: storedValue,
-    packageImage: fullImage,
-    packageImageThumbPath: thumbPath,
-    packageImageThumb: signedUrls[thumbPath] ?? fullImage,
+    packageImagePath: displayPath,
+    packageImage: displayUrl,
+    packageImageThumbPath: displayPath,
+    packageImageThumb: displayUrl,
+    packageImageSharePath: sharePath,
+    packageImageShareUrl: shareUrl,
   };
 }
 
@@ -122,6 +132,8 @@ function mapProducts(
       packageImage: image.packageImage,
       packageImageThumbPath: image.packageImageThumbPath,
       packageImageThumb: image.packageImageThumb,
+      packageImageSharePath: image.packageImageSharePath,
+      packageImageShareUrl: image.packageImageShareUrl,
       isFavorite: row.is_favorite ?? false,
       createdAt: row.created_at ?? new Date(0).toISOString(),
       lastUsedAt: row.last_used_at ?? undefined,
@@ -144,7 +156,7 @@ function mapDeckItems(rows: DeckRow[]): DeckItem[] {
   }));
 }
 
-const THUMB_VERSION = 2; // Bump when thumbnail size/quality changes
+const THUMB_VERSION = 3; // Bump when thumbnail size/quality changes
 const THUMB_VERSION_KEY = "hadami_thumb_version";
 const THUMB_BACKFILL_RETRY_AFTER_KEY = "hadami_thumb_backfill_retry_after";
 const THUMB_BACKFILL_RETRY_MS = 10 * 60 * 1000;
@@ -180,6 +192,9 @@ async function backfillProductThumbnails(
   const storedVersion = localStorage.getItem(THUMB_VERSION_KEY);
   const needsForceRegenerate = storedVersion !== String(THUMB_VERSION);
 
+  // 表示用URLが取得できなかった、もしくはshare URLがdisplayと同一にフォールバック
+  // している場合は、新フォーマット（display.webp / share.webp）の生成が
+  // まだ済んでいないためバックフィルが必要。
   const targets = needsForceRegenerate
     ? products.filter(
         (product) =>
@@ -190,8 +205,9 @@ async function backfillProductThumbnails(
         (product) =>
           typeof product.packageImagePath === "string" &&
           !isDirectImageUrl(product.packageImagePath) &&
-          typeof product.packageImageThumbPath === "string" &&
-          product.packageImageThumb === product.packageImage
+          (!product.packageImage ||
+            !product.packageImageShareUrl ||
+            product.packageImageShareUrl === product.packageImage)
       );
 
   if (targets.length === 0) {
@@ -233,11 +249,19 @@ async function backfillProductThumbnails(
         }
       }
 
-      const thumbPaths = targets
-        .map((product) => product.packageImageThumbPath)
-        .filter((value): value is string => typeof value === "string");
+      const refreshPaths = Array.from(
+        new Set(
+          targets.flatMap((product) => {
+            const paths: string[] = [];
+            if (product.packageImagePath) paths.push(product.packageImagePath);
+            if (product.packageImageSharePath)
+              paths.push(product.packageImageSharePath);
+            return paths;
+          })
+        )
+      );
 
-      if (thumbPaths.length === 0) {
+      if (refreshPaths.length === 0) {
         clearThumbnailBackfillRetryAfter();
         if (needsForceRegenerate) {
           localStorage.setItem(THUMB_VERSION_KEY, String(THUMB_VERSION));
@@ -245,18 +269,23 @@ async function backfillProductThumbnails(
         return;
       }
 
-      const signedThumbs = await getSignedImageUrls(supabase, thumbPaths);
+      const refreshedSignedUrls = await getSignedImageUrls(supabase, refreshPaths);
       const currentProducts = useProductStore.getState().products;
       const nextProducts = currentProducts.map((product) => {
-        const thumbPath = product.packageImageThumbPath;
-        if (!thumbPath) return product;
-
-        const thumbUrl = signedThumbs[thumbPath];
-        if (!thumbUrl) return product;
+        const displayPath = product.packageImagePath;
+        const sharePath = product.packageImageSharePath;
+        const displayUrl = displayPath
+          ? refreshedSignedUrls[displayPath]
+          : undefined;
+        const shareUrl = sharePath ? refreshedSignedUrls[sharePath] : undefined;
+        if (!displayUrl && !shareUrl) return product;
 
         return {
           ...product,
-          packageImageThumb: thumbUrl,
+          packageImage: displayUrl ?? product.packageImage,
+          packageImageThumb: displayUrl ?? product.packageImageThumb,
+          packageImageShareUrl:
+            shareUrl ?? displayUrl ?? product.packageImageShareUrl,
         };
       });
 
@@ -316,7 +345,8 @@ export async function syncUserData(supabase: SupabaseClient, userId: string) {
 
           return [
             row.package_image_url,
-            getProductImageThumbPathFromStoredPath(row.package_image_url),
+            getProductImageDisplayPathFromStoredPath(row.package_image_url),
+            getProductImageSharePathFromStoredPath(row.package_image_url),
           ];
         })
       )

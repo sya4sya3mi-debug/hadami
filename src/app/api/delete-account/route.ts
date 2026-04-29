@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 import { authenticateRequest } from "@/lib/apiAuth";
-import { getProductImageThumbPathFromStoredPath } from "@/lib/productImages";
+import {
+  getProductImageDisplayPathFromStoredPath,
+  getProductImageSharePathFromStoredPath,
+} from "@/lib/productImages";
 import { r2Delete } from "@/lib/r2";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 
@@ -46,7 +49,8 @@ function collectR2Keys(paths: Array<string | null>): string[] {
     if (!normalized) continue;
 
     keys.add(normalized);
-    keys.add(getProductImageThumbPathFromStoredPath(normalized));
+    keys.add(getProductImageDisplayPathFromStoredPath(normalized));
+    keys.add(getProductImageSharePathFromStoredPath(normalized));
   }
 
   return Array.from(keys);

@@ -17,7 +17,9 @@ interface ProductState {
     packageImage?: string,
     packageImagePath?: string,
     packageImageThumb?: string,
-    packageImageThumbPath?: string
+    packageImageThumbPath?: string,
+    packageImageShareUrl?: string,
+    packageImageSharePath?: string
   ) => void;
   updateProductType: (id: string, productType: ProductGenre) => void;
   toggleFavorite: (id: string) => void;
@@ -49,7 +51,9 @@ export const useProductStore = create<ProductState>()(
         packageImage,
         packageImagePath,
         packageImageThumb,
-        packageImageThumbPath
+        packageImageThumbPath,
+        packageImageShareUrl,
+        packageImageSharePath
       ) =>
         set((state) => ({
           products: state.products.map((p) =>
@@ -61,6 +65,10 @@ export const useProductStore = create<ProductState>()(
                   packageImageThumb: packageImageThumb ?? packageImage,
                   packageImageThumbPath:
                     packageImageThumbPath ?? packageImagePath,
+                  packageImageShareUrl:
+                    packageImageShareUrl ?? packageImage,
+                  packageImageSharePath:
+                    packageImageSharePath ?? packageImagePath,
                 }
               : p
           ),

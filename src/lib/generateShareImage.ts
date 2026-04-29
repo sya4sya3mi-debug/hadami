@@ -447,7 +447,7 @@ async function renderProductCard(params: {
   const FOOTER_TOP = H - 72;
   drawFooter(ctx, W, FOOTER_TOP, "#マイコスメ · #スキンケア");
 
-  return canvas.toDataURL("image/png");
+  return canvas.toDataURL("image/webp", 0.92);
 }
 
 export async function generateProductShareImage(product: Product): Promise<string> {
@@ -461,7 +461,8 @@ export async function generateProductShareImage(product: Product): Promise<strin
     productName: product.name,
     brand: product.brand,
     productType: product.productType,
-    imageSrc: product.packageImage,
+    // 高画質シェア用バリアントを優先し、未生成なら表示用にフォールバック
+    imageSrc: product.packageImageShareUrl ?? product.packageImage,
     ingredients: activeIngs.map((ing) => ({
       nameJa: ing.nameJa,
       rarity: ing.rarity,

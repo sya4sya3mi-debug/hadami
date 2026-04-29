@@ -168,11 +168,14 @@ export default function RoutineSharePageClient({
     if (!step.product_id) return "";
 
     const product = allProducts.find((item) => item.id === step.product_id);
+    // ルーティンカード（シェア用）では高画質な share バリアントを優先する
     return (
-      product?.packageImageThumbPath ??
+      product?.packageImageSharePath ??
       product?.packageImagePath ??
-      product?.packageImageThumb ??
+      product?.packageImageThumbPath ??
+      product?.packageImageShareUrl ??
       product?.packageImage ??
+      product?.packageImageThumb ??
       ""
     );
   }
@@ -279,6 +282,8 @@ export default function RoutineSharePageClient({
           cacheBust: false,
           backgroundColor: undefined,
           skipFonts: true,
+          type: "image/webp",
+          quality: 0.92,
         }),
         new Promise<Blob | null>((_, reject) => {
           window.setTimeout(
@@ -288,7 +293,8 @@ export default function RoutineSharePageClient({
         }),
       ]);
 
-      const filename = `hadami-routine-${activeTab}-${Date.now()}.png`;
+      const ext = blob?.type === "image/webp" ? "webp" : "png";
+      const filename = `hadami-routine-${activeTab}-${Date.now()}.${ext}`;
       const shareNavigator = navigator as ShareCapableNavigator;
 
       if (
@@ -297,7 +303,7 @@ export default function RoutineSharePageClient({
         typeof File !== "undefined" &&
         typeof shareNavigator.share === "function"
       ) {
-        const file = new File([blob], filename, { type: blob.type || "image/png" });
+        const file = new File([blob], filename, { type: blob.type || "image/webp" });
         const shareData: ShareData = {
           files: [file],
           title: `${activeLabel}カード画像`,

@@ -1,7 +1,7 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 import {
-  getProductImagePath,
-  getProductImageThumbPath,
+  getProductImageDisplayPath,
+  getProductImageSharePath,
 } from "@/lib/productImages";
 import { r2Delete } from "@/lib/r2";
 
@@ -225,9 +225,9 @@ export async function deleteProductImageFromDb(
 ): Promise<{ error: string | null }> {
   if (typeof window === "undefined") {
     try {
-      const filePath = getProductImagePath(userId, productId);
-      const thumbPath = getProductImageThumbPath(userId, productId);
-      await r2Delete([filePath, thumbPath]);
+      const displayPath = getProductImageDisplayPath(userId, productId);
+      const sharePath = getProductImageSharePath(userId, productId);
+      await r2Delete([displayPath, sharePath]);
     } catch (e) {
       console.error("R2 image delete failed (non-blocking):", e);
     }
@@ -250,9 +250,9 @@ export async function deleteProductFromDb(
   // R2画像削除はサーバーサイドでのみ実行（クライアントではクレデンシャルが無くフリーズする）
   if (typeof window === "undefined") {
     try {
-      const filePath = getProductImagePath(userId, productId);
-      const thumbPath = getProductImageThumbPath(userId, productId);
-      await r2Delete([filePath, thumbPath]);
+      const displayPath = getProductImageDisplayPath(userId, productId);
+      const sharePath = getProductImageSharePath(userId, productId);
+      await r2Delete([displayPath, sharePath]);
     } catch (e) {
       console.error("R2 delete failed (non-blocking):", e);
     }

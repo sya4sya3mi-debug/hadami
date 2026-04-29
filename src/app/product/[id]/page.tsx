@@ -14,7 +14,10 @@ import { useUser } from "@/lib/auth";
 
 import AuthGuard from "@/components/ui/AuthGuard";
 import { toggleFavoriteInDb, updateProductImageInDb } from "@/lib/db";
-import { getProductImagePath, getProductImageThumbPath } from "@/lib/productImages";
+import {
+  getProductImageDisplayPath,
+  getProductImageSharePath,
+} from "@/lib/productImages";
 import { getSignedImageUrls } from "@/lib/storage";
 import { ActiveCategoryIcon, ProductGenreIcon } from "@/components/ui/CosmeticIcons";
 import { StarIcon } from "@/components/ui/Icons";
@@ -57,6 +60,7 @@ export default function ProductDetailPage() {
   const [photoError, setPhotoError] = useState<string | null>(null);
   const [photoMessage, setPhotoMessage] = useState<string | null>(null);
   const [shareCardOpen, setShareCardOpen] = useState(false);
+  const [ingredientsExpanded, setIngredientsExpanded] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const router = useRouter();
 
@@ -105,6 +109,12 @@ export default function ProductDetailPage() {
     .filter((i) => i !== undefined);
 
   const activeIngredients = allIngredients.filter((i) => i.activeIngredient);
+  const INGREDIENT_PREVIEW_COUNT = 5;
+  const ingredientsOverflow = activeIngredients.length > INGREDIENT_PREVIEW_COUNT;
+  const visibleIngredients =
+    ingredientsExpanded || !ingredientsOverflow
+      ? activeIngredients
+      : activeIngredients.slice(0, INGREDIENT_PREVIEW_COUNT);
 
   const ingredientNames = allIngredients.map((i) => i.nameJa);
   const xShareUrl = `https://x.com/intent/tweet?text=${encodeURIComponent(shareMyCosmetic(product, ingredientNames))}`;
@@ -158,12 +168,20 @@ export default function ProductDetailPage() {
       const imageBase64 = await readFileAsDataUrl(file);
       const result = await updateProductImageInDb(supabase, user.id, product.id, imageBase64);
       if (result.error) { setPhotoError(result.error); return; }
-      const packageImagePath = result.filePath ?? getProductImagePath(user.id, product.id);
-      const packageImageThumbPath = getProductImageThumbPath(user.id, product.id);
-      const signedImages = await getSignedImageUrls(supabase, [packageImagePath, packageImageThumbPath]);
-      const packageImage = signedImages[packageImagePath] ?? undefined;
-      const packageImageThumb = signedImages[packageImageThumbPath] ?? packageImage;
-      updateProductImage(product.id, packageImage, packageImagePath, packageImageThumb, packageImageThumbPath);
+      const displayPath = result.filePath ?? getProductImageDisplayPath(user.id, product.id);
+      const sharePath = getProductImageSharePath(user.id, product.id);
+      const signedImages = await getSignedImageUrls(supabase, [displayPath, sharePath]);
+      const displayUrl = signedImages[displayPath] ?? undefined;
+      const shareUrl = signedImages[sharePath] ?? displayUrl;
+      updateProductImage(
+        product.id,
+        displayUrl,
+        displayPath,
+        displayUrl,
+        displayPath,
+        shareUrl,
+        sharePath
+      );
       setPhotoMessage("写真を更新しました");
     } catch (error) {
       console.error("Failed to update product photo:", error);
@@ -208,8 +226,16 @@ export default function ProductDetailPage() {
             </button>
           </div>
 
-          {/* Hero image */}
-          <div style={{ position: "relative", height: 280, overflow: "hidden" }}>
+          {/* Hero image (sticky under header) */}
+          <div
+            style={{
+              position: "sticky",
+              top: 58,
+              height: 280,
+              overflow: "hidden",
+              zIndex: 0,
+            }}
+          >
             {product.packageImage ? (
               <Image
                 src={product.packageImage}
@@ -282,7 +308,9 @@ export default function ProductDetailPage() {
               padding: "20px 20px 32px",
               marginTop: -16,
               borderTopLeftRadius: 24, borderTopRightRadius: 24,
-              background: "var(--hd-bg)", position: "relative",
+              background: "var(--hd-bg)",
+              position: "relative",
+              zIndex: 1,
             }}
           >
             <input
@@ -334,8 +362,8 @@ export default function ProductDetailPage() {
                   </div>
                 </div>
 
-                <div className="hd-stagger" style={{ marginBottom: 24 }}>
-                  {activeIngredients.map((ing, i) => {
+                <div className="hd-stagger" style={{ marginBottom: ingredientsOverflow ? 14 : 24 }}>
+                  {visibleIngredients.map((ing, i) => {
                     const catInfo = getIngredientCategoryInfo(ing);
                     return (
                       <button
@@ -349,7 +377,7 @@ export default function ProductDetailPage() {
                           background: "transparent",
                           border: "none",
                           borderBottom:
-                            i < activeIngredients.length - 1
+                            i < visibleIngredients.length - 1
                               ? "1px solid var(--hd-hair)"
                               : "1px solid var(--hd-hair)",
                           cursor: "pointer",
@@ -421,6 +449,51 @@ export default function ProductDetailPage() {
                     );
                   })}
                 </div>
+
+                {ingredientsOverflow && (
+                  <button
+                    type="button"
+                    onClick={() => setIngredientsExpanded((prev) => !prev)}
+                    style={{
+                      width: "100%",
+                      marginBottom: 24,
+                      padding: "11px 0",
+                      background: "transparent",
+                      border: "1px solid var(--hd-line)",
+                      color: "var(--hd-ink-60)",
+                      fontSize: 12,
+                      fontWeight: 600,
+                      fontFamily: "var(--hd-sans)",
+                      letterSpacing: "0.04em",
+                      cursor: "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: 8,
+                    }}
+                  >
+                    <span>
+                      {ingredientsExpanded
+                        ? "閉じる"
+                        : `すべて表示 (+${activeIngredients.length - INGREDIENT_PREVIEW_COUNT})`}
+                    </span>
+                    <svg
+                      width="10"
+                      height="10"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2.5"
+                      strokeLinecap="round"
+                      style={{
+                        transform: ingredientsExpanded ? "rotate(180deg)" : "rotate(0deg)",
+                        transition: "transform 0.2s",
+                      }}
+                    >
+                      <path d="M6 9l6 6 6-6" />
+                    </svg>
+                  </button>
+                )}
               </>
             )}
 
@@ -614,41 +687,28 @@ export default function ProductDetailPage() {
             </div>
 
             {/* Actions */}
-            <div style={{ display: "flex", gap: 10, marginTop: 24 }}>
-              <button
-                onClick={() => router.push("/deck")}
-                style={{
-                  flex: 1, padding: "13px 0",
-                  borderRadius: 999,
-                  background: "transparent",
-                  border: "1px solid var(--hd-moss)",
-                  color: "var(--hd-moss)",
-                  fontSize: 13, fontWeight: 600, fontFamily: "var(--hd-sans)",
-                  cursor: "pointer",
-                }}
-              >
-                ルーティンに追加
-              </button>
-              <button
-                type="button"
-                onClick={openPhotoCapture}
-                disabled={isUpdatingPhoto}
-                aria-label={isUpdatingPhoto ? "写真を更新中" : product.packageImage ? "写真を変更" : "写真を追加"}
-                className="hd-cta"
-                style={{
-                  flex: 1, fontSize: 13,
-                  cursor: isUpdatingPhoto ? "default" : "pointer",
-                  display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
-                  opacity: isUpdatingPhoto ? 0.6 : 1,
-                  padding: "13px 0",
-                }}
-              >
-                <span>📷</span>
-                <span>
-                  {isUpdatingPhoto ? "写真を更新中..." : product.packageImage ? "写真を変更" : "写真を追加"}
-                </span>
-              </button>
-            </div>
+            <button
+              type="button"
+              onClick={openPhotoCapture}
+              disabled={isUpdatingPhoto}
+              aria-label={isUpdatingPhoto ? "写真を更新中" : product.packageImage ? "写真を変更" : "写真を追加"}
+              style={{
+                width: "100%", marginTop: 24, padding: "13px 0",
+                background: "transparent",
+                border: "1px solid var(--hd-ink)",
+                color: "var(--hd-ink)",
+                fontSize: 13, fontWeight: 600, fontFamily: "var(--hd-sans)",
+                cursor: isUpdatingPhoto ? "default" : "pointer",
+                opacity: isUpdatingPhoto ? 0.6 : 1,
+                display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+              }}
+            >
+              <span>📷</span>
+              <span>
+                {isUpdatingPhoto ? "写真を更新中..." : product.packageImage ? "写真を変更" : "写真を追加"}
+              </span>
+              <span style={{ fontFamily: "var(--hd-mono)", fontSize: 9, letterSpacing: "0.2em", opacity: 0.5 }}>PHOTO →</span>
+            </button>
             <button
               type="button"
               onClick={() => setShareCardOpen(true)}
@@ -703,7 +763,7 @@ export default function ProductDetailPage() {
         brand={product.brand}
         productType={getGenreByKey(product.productType)?.label ?? product.productType}
         initials={shareCardInitials}
-        imageUrl={product.packageImage ?? undefined}
+        imageUrl={product.packageImageShareUrl ?? product.packageImage ?? undefined}
         effects={shareCardEffects}
       />
     </AuthGuard>

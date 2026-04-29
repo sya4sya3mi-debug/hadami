@@ -62,6 +62,8 @@ export default function ProductShareCardSheet({
           pixelRatio: 2,
           cacheBust: false,
           skipFonts: true,
+          type: "image/webp",
+          quality: 0.92,
         }),
         new Promise<Blob | null>((_, reject) =>
           window.setTimeout(() => reject(new Error("timed out")), 15000)
@@ -70,7 +72,8 @@ export default function ProductShareCardSheet({
 
       if (!blob) throw new Error("no blob");
 
-      const filename = `hadami-product-${Date.now()}.png`;
+      const ext = blob.type === "image/webp" ? "webp" : "png";
+      const filename = `hadami-product-${Date.now()}.${ext}`;
       const shareNavigator = navigator as ShareCapableNavigator;
 
       if (
@@ -78,7 +81,7 @@ export default function ProductShareCardSheet({
         typeof File !== "undefined" &&
         typeof shareNavigator.share === "function"
       ) {
-        const file = new File([blob], filename, { type: blob.type || "image/png" });
+        const file = new File([blob], filename, { type: blob.type || "image/webp" });
         const shareData: ShareData = { files: [file], title: "コスメカード" };
         if (!shareNavigator.canShare || shareNavigator.canShare(shareData)) {
           try {

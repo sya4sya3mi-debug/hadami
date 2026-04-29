@@ -4,18 +4,19 @@ import { authenticateRequest } from "@/lib/apiAuth";
 import { rateLimit } from "@/lib/rateLimit";
 import {
   PRODUCT_IMAGE_BACKFILL_BATCH_SIZE,
-  PRODUCT_IMAGE_MAX_DIMENSION,
-  PRODUCT_IMAGE_THUMB_SIZE,
-  getProductImagePath,
-  getProductImageThumbPath,
-  getProductImageThumbPathFromStoredPath,
+  PRODUCT_IMAGE_DISPLAY_SIZE,
+  PRODUCT_IMAGE_SHARE_SIZE,
+  getProductImageDisplayPath,
+  getProductImageSharePath,
+  getProductImageDisplayPathFromStoredPath,
+  getProductImageSharePathFromStoredPath,
 } from "@/lib/productImages";
 import { r2Upload, r2Download, r2Delete } from "@/lib/r2";
 
-const AVIF_FULL_QUALITY = 72;
-const AVIF_THUMB_QUALITY = 65;
-const AVIF_EFFORT = 5;
-const AVIF_CONTENT_TYPE = "image/avif";
+const WEBP_DISPLAY_QUALITY = 75;
+const WEBP_SHARE_QUALITY = 88;
+const WEBP_EFFORT = 4;
+const WEBP_CONTENT_TYPE = "image/webp";
 const BACKFILL_WINDOW_MS = 10 * 60_000;
 const BACKFILL_MAX_REQUESTS = 12;
 
@@ -90,8 +91,8 @@ export async function POST(request: Request) {
   const { data: products, error } = await query;
 
   if (error) {
-    console.error("Failed to fetch products for thumbnail backfill:", error);
-    return NextResponse.json({ error: "thumbnail_backfill_failed" }, { status: 500 });
+    console.error("Failed to fetch products for image backfill:", error);
+    return NextResponse.json({ error: "image_backfill_failed" }, { status: 500 });
   }
 
   const rows = (products ?? []) as Array<{
@@ -104,68 +105,88 @@ export async function POST(request: Request) {
       if (!product.package_image_url) return null;
 
       const storedPath = product.package_image_url;
-      const isAvif = storedPath.endsWith(".avif");
-      const filePath = isAvif ? storedPath : getProductImagePath(auth.user.id, product.id);
-      const thumbPath = isAvif
-        ? getProductImageThumbPathFromStoredPath(storedPath)
-        : getProductImageThumbPath(auth.user.id, product.id);
+      const displayPath = getProductImageDisplayPath(auth.user.id, product.id);
+      const sharePath = getProductImageSharePath(auth.user.id, product.id);
+      const isAlreadyMigrated = storedPath === displayPath;
 
-      if (!forceRegenerate && isAvif) {
-        const existing = await r2Download(thumbPath);
-        if (existing) {
-          return { productId: product.id, thumbPath };
+      if (!forceRegenerate && isAlreadyMigrated) {
+        // 既に新フォーマットの場合、share バリアントの存在のみ確認する
+        const existingShare = await r2Download(sharePath);
+        if (existingShare) {
+          return { productId: product.id, displayPath, sharePath };
         }
       }
 
-      const original = await r2Download(storedPath);
+      // 元画像を入力として読み込む。優先順位: 新display → 旧storedPath → 旧display派生
+      const candidatePaths = Array.from(
+        new Set(
+          [
+            storedPath,
+            getProductImageDisplayPathFromStoredPath(storedPath),
+            getProductImageSharePathFromStoredPath(storedPath),
+          ].filter((value): value is string => typeof value === "string")
+        )
+      );
+
+      let original: Buffer | null = null;
+      for (const candidate of candidatePaths) {
+        original = await r2Download(candidate);
+        if (original) break;
+      }
+
       if (!original) {
         throw new Error("original image missing");
       }
 
       const rotated = sharp(original).rotate();
-      const [fullBytes, thumbBytes] = await Promise.all([
+      const [displayBytes, shareBytes] = await Promise.all([
         rotated
           .clone()
-          .resize(PRODUCT_IMAGE_MAX_DIMENSION, PRODUCT_IMAGE_MAX_DIMENSION, {
+          .resize(PRODUCT_IMAGE_DISPLAY_SIZE, PRODUCT_IMAGE_DISPLAY_SIZE, {
             fit: "inside",
             withoutEnlargement: true,
           })
-          .avif({ quality: AVIF_FULL_QUALITY, effort: AVIF_EFFORT })
+          .webp({ quality: WEBP_DISPLAY_QUALITY, effort: WEBP_EFFORT })
           .toBuffer(),
         rotated
           .clone()
-          .resize(PRODUCT_IMAGE_THUMB_SIZE, PRODUCT_IMAGE_THUMB_SIZE, {
+          .resize(PRODUCT_IMAGE_SHARE_SIZE, PRODUCT_IMAGE_SHARE_SIZE, {
             fit: "inside",
             withoutEnlargement: true,
           })
-          .avif({ quality: AVIF_THUMB_QUALITY, effort: AVIF_EFFORT })
+          .webp({ quality: WEBP_SHARE_QUALITY, effort: WEBP_EFFORT })
           .toBuffer(),
       ]);
 
       await Promise.all([
-        r2Upload(filePath, fullBytes, AVIF_CONTENT_TYPE),
-        r2Upload(thumbPath, thumbBytes, AVIF_CONTENT_TYPE),
+        r2Upload(displayPath, displayBytes, WEBP_CONTENT_TYPE),
+        r2Upload(sharePath, shareBytes, WEBP_CONTENT_TYPE),
       ]);
 
-      if (!isAvif) {
+      if (!isAlreadyMigrated) {
         const { error: updateError } = await auth.supabase
           .from("products")
-          .update({ package_image_url: filePath })
+          .update({ package_image_url: displayPath })
           .eq("id", product.id)
           .eq("user_id", auth.user.id);
 
         if (updateError) {
-          await r2Delete([filePath, thumbPath]).catch(() => {});
+          await r2Delete([displayPath, sharePath]).catch(() => {});
           throw updateError;
         }
 
-        const staleThumb = getProductImageThumbPathFromStoredPath(storedPath);
-        await r2Delete([storedPath, staleThumb]).catch((err) => {
-          console.error("Failed to delete legacy webp image:", err);
-        });
+        // 旧フォーマットの残骸を削除（新しい display/share と異なるキーのみ）
+        const stalePaths = new Set<string>([storedPath, ...candidatePaths]);
+        stalePaths.delete(displayPath);
+        stalePaths.delete(sharePath);
+        if (stalePaths.size > 0) {
+          await r2Delete(Array.from(stalePaths)).catch((err) => {
+            console.error("Failed to delete legacy image files:", err);
+          });
+        }
       }
 
-      return { productId: product.id, thumbPath };
+      return { productId: product.id, displayPath, sharePath };
     })
   );
 
@@ -173,16 +194,22 @@ export async function POST(request: Request) {
     .filter(
       (
         result
-      ): result is PromiseFulfilledResult<{ productId: string; thumbPath: string } | null> =>
-        result.status === "fulfilled"
+      ): result is PromiseFulfilledResult<{
+        productId: string;
+        displayPath: string;
+        sharePath: string;
+      } | null> => result.status === "fulfilled"
     )
     .map((result) => result.value)
-    .filter((value): value is { productId: string; thumbPath: string } => Boolean(value));
+    .filter(
+      (value): value is { productId: string; displayPath: string; sharePath: string } =>
+        Boolean(value)
+    );
 
   results
     .filter((result): result is PromiseRejectedResult => result.status === "rejected")
     .forEach((result) => {
-      console.error("Product thumbnail backfill failed:", result.reason);
+      console.error("Product image backfill failed:", result.reason);
     });
 
   return NextResponse.json({ created });
