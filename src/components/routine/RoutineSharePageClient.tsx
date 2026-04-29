@@ -106,6 +106,8 @@ export default function RoutineSharePageClient({
   const [captureSteps, setCaptureSteps] = useState<StepDraft[] | null>(null);
   const previewCardRef = useRef<HTMLDivElement | null>(null);
   const previewViewportRef = useRef<HTMLDivElement | null>(null);
+  const stepFileInputRef = useRef<HTMLInputElement | null>(null);
+  const [stepUploadIndex, setStepUploadIndex] = useState<number | null>(null);
   const allProducts = useProductStore((state) => state.products);
 
   const [config, setConfig] = useState<RoutineCardConfig>(initialConfig);
@@ -245,6 +247,45 @@ export default function RoutineSharePageClient({
     setCurrentSteps((prev) =>
       prev.map((step, currentIndex) => (currentIndex === index ? { ...step, ...patch } : step)),
     );
+  };
+
+  const requestStepPhoto = (index: number) => {
+    setStepUploadIndex(index);
+    stepFileInputRef.current?.click();
+  };
+
+  const handleStepPhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    const targetIndex = stepUploadIndex;
+    e.target.value = "";
+    if (!file || targetIndex == null) {
+      setStepUploadIndex(null);
+      return;
+    }
+    if (!file.type.startsWith("image/")) {
+      alert("画像ファイルを選択してください。");
+      setStepUploadIndex(null);
+      return;
+    }
+    if (file.size > 12 * 1024 * 1024) {
+      alert("画像が大きすぎます（12MBまで）。");
+      setStepUploadIndex(null);
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = reader.result;
+      if (typeof result === "string") {
+        updateStep(targetIndex, { product_image_url: result });
+      }
+      setStepUploadIndex(null);
+    };
+    reader.onerror = () => setStepUploadIndex(null);
+    reader.readAsDataURL(file);
+  };
+
+  const clearStepPhoto = (index: number) => {
+    updateStep(index, { product_image_url: "" });
   };
 
   const copyShareText = () => {
@@ -679,7 +720,18 @@ export default function RoutineSharePageClient({
                       ステップがまだありません。下のボタンから追加してください。
                     </p>
                   )}
-                  {currentSteps.map((step, index) => (
+                  <input
+                    ref={stepFileInputRef}
+                    type="file"
+                    accept="image/*"
+                    style={{ display: "none" }}
+                    onChange={handleStepPhotoChange}
+                  />
+                  {currentSteps.map((step, index) => {
+                    const hasUploadedPhoto =
+                      typeof step.product_image_url === "string" &&
+                      step.product_image_url.startsWith("data:");
+                    return (
                     <div
                       key={index}
                       style={{
@@ -734,6 +786,85 @@ export default function RoutineSharePageClient({
                           placeholder="商品名（任意）"
                         />
                       </div>
+                      <div
+                        style={{
+                          display: "flex",
+                          flexDirection: "column",
+                          gap: 4,
+                          alignItems: "center",
+                          flexShrink: 0,
+                        }}
+                      >
+                        <button
+                          type="button"
+                          onClick={() => requestStepPhoto(index)}
+                          aria-label="写真を選ぶ"
+                          title="写真を選ぶ"
+                          style={{
+                            position: "relative",
+                            width: 48,
+                            height: 48,
+                            border: "1px solid var(--hd-hair)",
+                            background: hasUploadedPhoto
+                              ? "transparent"
+                              : "var(--hd-bg)",
+                            cursor: "pointer",
+                            padding: 0,
+                            overflow: "hidden",
+                            color: "var(--hd-ink-60)",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                          }}
+                        >
+                          {hasUploadedPhoto ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img
+                              src={step.product_image_url}
+                              alt=""
+                              style={{
+                                width: "100%",
+                                height: "100%",
+                                objectFit: "cover",
+                              }}
+                            />
+                          ) : (
+                            <svg
+                              width="18"
+                              height="18"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              aria-hidden="true"
+                            >
+                              <rect x="3" y="3" width="18" height="18" rx="2" />
+                              <circle cx="8.5" cy="8.5" r="1.5" />
+                              <path d="M21 15l-5-5L5 21" />
+                            </svg>
+                          )}
+                        </button>
+                        {hasUploadedPhoto && (
+                          <button
+                            type="button"
+                            onClick={() => clearStepPhoto(index)}
+                            style={{
+                              fontSize: 9,
+                              fontFamily: "var(--hd-mono)",
+                              letterSpacing: "0.08em",
+                              color: "var(--hd-ink-40)",
+                              background: "transparent",
+                              border: "none",
+                              cursor: "pointer",
+                              padding: "2px 4px",
+                            }}
+                          >
+                            リセット
+                          </button>
+                        )}
+                      </div>
                       <button
                         onClick={() => removeStep(index)}
                         aria-label="削除"
@@ -758,7 +889,8 @@ export default function RoutineSharePageClient({
                         ×
                       </button>
                     </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </Section>
 

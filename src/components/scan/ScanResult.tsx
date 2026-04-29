@@ -245,7 +245,7 @@ export default function ScanResult({
                 <path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z" />
               </svg>
             )}
-            {isSaving ? "保存中…" : "マイコスメに保存する"}
+            {isSaving ? "保存中…" : "保存する"}
           </button>
         )}
         {saved && (

@@ -39,10 +39,40 @@ export default function ProductShareCardSheet({
   ...cardProps
 }: ProductShareCardSheetProps) {
   const captureRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [isDownloading, setIsDownloading] = useState(false);
   const [status, setStatus] = useState<"idle" | "shared" | "downloaded">("idle");
   const [pattern, setPattern] = useState<CardPattern>("A");
   const [accentColor, setAccentColor] = useState<string>(CARD_COLORS[0].value);
+  const [imageOverride, setImageOverride] = useState<string | null>(null);
+
+  const handlePickPhoto = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      alert("画像ファイルを選択してください。");
+      e.target.value = "";
+      return;
+    }
+    if (file.size > 12 * 1024 * 1024) {
+      alert("画像が大きすぎます（12MBまで）。");
+      e.target.value = "";
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = reader.result;
+      if (typeof result === "string") setImageOverride(result);
+    };
+    reader.readAsDataURL(file);
+    e.target.value = "";
+  };
+
+  const handleResetPhoto = () => setImageOverride(null);
 
   const handleSave = async () => {
     if (!captureRef.current || isDownloading) return;
@@ -173,6 +203,76 @@ export default function ProductShareCardSheet({
           </div>
         </div>
 
+        {/* ── Photo upload ── */}
+        <div style={{ marginBottom: 20 }}>
+          <div
+            className="hd-mono hd-caps"
+            style={{ fontSize: 9, color: "var(--hd-ink-40)", letterSpacing: "0.14em", marginBottom: 8 }}
+          >
+            Photo
+          </div>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            style={{ display: "none" }}
+            onChange={handlePhotoChange}
+          />
+          <div style={{ display: "flex", gap: 8 }}>
+            <button
+              onClick={handlePickPhoto}
+              style={{
+                flex: 1,
+                padding: "10px 12px",
+                background: "var(--hd-surface)",
+                color: "var(--hd-ink)",
+                border: "1px solid var(--hd-line)",
+                fontFamily: "var(--hd-sans)",
+                fontSize: 12,
+                cursor: "pointer",
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 8,
+              }}
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <rect x="3" y="3" width="18" height="18" rx="2" />
+                <circle cx="8.5" cy="8.5" r="1.5" />
+                <path d="M21 15l-5-5L5 21" />
+              </svg>
+              <span>{imageOverride ? "写真を変更" : "写真を選択"}</span>
+            </button>
+            {imageOverride && (
+              <button
+                onClick={handleResetPhoto}
+                style={{
+                  padding: "10px 14px",
+                  background: "transparent",
+                  color: "var(--hd-ink-60)",
+                  border: "1px solid var(--hd-line)",
+                  fontFamily: "var(--hd-sans)",
+                  fontSize: 12,
+                  cursor: "pointer",
+                }}
+              >
+                元に戻す
+              </button>
+            )}
+          </div>
+          <p
+            style={{
+              fontFamily: "var(--hd-sans)",
+              fontSize: 10,
+              color: "var(--hd-ink-40)",
+              margin: "8px 0 0",
+              lineHeight: 1.6,
+            }}
+          >
+            ※ Pattern C は文字のみのため写真は使用されません。差し替えはこの画面のみで有効です。
+          </p>
+        </div>
+
         {/* ── Color swatches ── */}
         <div style={{ marginBottom: 20 }}>
           <div
@@ -181,7 +281,15 @@ export default function ProductShareCardSheet({
           >
             Accent Color
           </div>
-          <div style={{ display: "flex", gap: 10 }}>
+          <div
+            style={{
+              display: "flex",
+              gap: 10,
+              overflowX: "auto",
+              paddingBottom: 4,
+              WebkitOverflowScrolling: "touch",
+            }}
+          >
             {CARD_COLORS.map((c) => {
               const active = accentColor === c.value;
               return (
@@ -190,8 +298,8 @@ export default function ProductShareCardSheet({
                   onClick={() => setAccentColor(c.value)}
                   title={c.label}
                   style={{
-                    width: 32,
-                    height: 32,
+                    width: 36,
+                    height: 36,
                     background: c.value,
                     border: active ? "2px solid var(--hd-ink)" : "2px solid transparent",
                     outline: active ? "2px solid var(--hd-bg)" : "none",
@@ -219,6 +327,7 @@ export default function ProductShareCardSheet({
             <div ref={captureRef}>
               <ProductShareCard
                 {...cardProps}
+                imageUrl={imageOverride ?? cardProps.imageUrl}
                 pattern={pattern}
                 accentColor={accentColor}
               />

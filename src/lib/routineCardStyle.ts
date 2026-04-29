@@ -5,7 +5,17 @@ import type { RoutineCardMode } from "@/lib/routineCards";
 
 export type RoutineTemplateKey = "editorial" | "minimal" | "magazine" | "polaroid";
 
-export type AccentColorKey = "moss" | "terra" | "lavender" | "dune" | "sage" | "ink";
+export type AccentColorKey =
+  | "crimson"
+  | "coral"
+  | "saffron"
+  | "olive"
+  | "emerald"
+  | "teal"
+  | "cobalt"
+  | "lilac"
+  | "plum"
+  | "ink";
 
 export type AccentColorOption = {
   key: AccentColorKey;
@@ -21,13 +31,26 @@ export type TemplateOption = {
 };
 
 export const ACCENT_COLORS: readonly AccentColorOption[] = [
-  { key: "moss", label: "モス", swatchVar: "var(--hd-moss)", legacyHex: "#3A8F7A" },
-  { key: "terra", label: "テラ", swatchVar: "var(--hd-terra)", legacyHex: "#C77B5C" },
-  { key: "lavender", label: "ラベンダー", swatchVar: "var(--hd-lavender)", legacyHex: "#9D8FBF" },
-  { key: "dune", label: "デューン", swatchVar: "var(--hd-dune)", legacyHex: "#C8B68F" },
-  { key: "sage", label: "セージ", swatchVar: "var(--hd-sage)", legacyHex: "#9BB59A" },
-  { key: "ink", label: "インク", swatchVar: "var(--hd-ink)", legacyHex: "#1F1F1F" },
+  { key: "crimson", label: "クリムゾン", swatchVar: "#C8203A", legacyHex: "#C8203A" },
+  { key: "coral",   label: "コーラル",   swatchVar: "#F26B5E", legacyHex: "#F26B5E" },
+  { key: "saffron", label: "サフラン",   swatchVar: "#E5A41C", legacyHex: "#E5A41C" },
+  { key: "olive",   label: "オリーブ",   swatchVar: "#6F7A2E", legacyHex: "#6F7A2E" },
+  { key: "emerald", label: "エメラルド", swatchVar: "#138A5C", legacyHex: "#138A5C" },
+  { key: "teal",    label: "ティール",   swatchVar: "#0E8B8E", legacyHex: "#0E8B8E" },
+  { key: "cobalt",  label: "コバルト",   swatchVar: "#1E4FB8", legacyHex: "#1E4FB8" },
+  { key: "lilac",   label: "ライラック", swatchVar: "#7E5BCC", legacyHex: "#7E5BCC" },
+  { key: "plum",    label: "プラム",     swatchVar: "#7A2660", legacyHex: "#7A2660" },
+  { key: "ink",     label: "インク",     swatchVar: "#1F1F1F", legacyHex: "#1F1F1F" },
 ] as const;
+
+const LEGACY_KEY_MAP: Record<string, AccentColorKey> = {
+  moss: "emerald",
+  terra: "coral",
+  lavender: "lilac",
+  dune: "saffron",
+  sage: "olive",
+  ink: "ink",
+};
 
 export const TEMPLATE_OPTIONS: readonly TemplateOption[] = [
   { key: "editorial", label: "エディトリアル", description: "雑誌的な3+2グリッド" },
@@ -49,11 +72,11 @@ export function isRoutineTemplateKey(value: unknown): value is RoutineTemplateKe
 
 export function resolveAccentVar(key: string): string {
   const found = ACCENT_COLORS.find((c) => c.key === key);
-  return found ? found.swatchVar : "var(--hd-moss)";
+  return found ? found.swatchVar : "#F26B5E";
 }
 
 export function getAccentLabel(key: string): string {
-  return ACCENT_COLORS.find((c) => c.key === key)?.label ?? "モス";
+  return ACCENT_COLORS.find((c) => c.key === key)?.label ?? "コーラル";
 }
 
 export function getTemplateLabel(key: string): string {
@@ -62,7 +85,7 @@ export function getTemplateLabel(key: string): string {
 
 // 初回オープン時のAM/PM連動初期色（朝=暖色 / 夜=寒色）
 export function getInitialAccentForMode(mode: RoutineCardMode): AccentColorKey {
-  return mode === "pm" ? "lavender" : "terra";
+  return mode === "pm" ? "cobalt" : "coral";
 }
 
 // HEX値や旧形式の accentColor を AccentColorKey に正規化
@@ -70,12 +93,14 @@ export function coerceAccentColor(raw: unknown): AccentColorKey {
   if (isAccentColorKey(raw)) return raw;
   if (typeof raw === "string") {
     const normalized = raw.trim().toLowerCase();
+    const mapped = LEGACY_KEY_MAP[normalized];
+    if (mapped) return mapped;
     const matchedHex = ACCENT_COLORS.find(
       (c) => c.legacyHex.toLowerCase() === normalized,
     );
     if (matchedHex) return matchedHex.key;
   }
-  return "moss";
+  return "coral";
 }
 
 export function coerceRoutineTemplate(raw: unknown): RoutineTemplateKey {

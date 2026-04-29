@@ -8,12 +8,16 @@ const SC_H = 540;
 export type CardPattern = "A" | "B" | "C";
 
 export const CARD_COLORS = [
-  { label: "Moss",       value: "#5c7a5e" },
-  { label: "Amber",      value: "#a07830" },
-  { label: "Rose",       value: "#9b5060" },
-  { label: "Ocean",      value: "#3a6b8a" },
-  { label: "Charcoal",   value: "#444444" },
-  { label: "Terracotta", value: "#9b5a3a" },
+  { label: "Crimson", value: "#C8203A" },
+  { label: "Coral",   value: "#F26B5E" },
+  { label: "Saffron", value: "#E5A41C" },
+  { label: "Olive",   value: "#6F7A2E" },
+  { label: "Emerald", value: "#138A5C" },
+  { label: "Teal",    value: "#0E8B8E" },
+  { label: "Cobalt",  value: "#1E4FB8" },
+  { label: "Lilac",   value: "#7E5BCC" },
+  { label: "Plum",    value: "#7A2660" },
+  { label: "Ink",     value: "#1F1F1F" },
 ] as const;
 
 export interface ProductShareCardEffect {
@@ -165,7 +169,7 @@ function PatternA({
         background: "var(--hd-bg)",
         color: "var(--hd-ink)",
         display: "grid",
-        gridTemplateColumns: "210px 1fr",
+        gridTemplateColumns: "260px 1fr",
         boxSizing: "border-box",
         overflow: "hidden",
         fontFamily: "var(--hd-sans)",
@@ -268,7 +272,7 @@ function PatternB({
       }}
     >
       {/* Photo top */}
-      <div style={{ position: "relative", height: 220, flexShrink: 0, overflow: "hidden" }}>
+      <div style={{ position: "relative", height: 280, flexShrink: 0, overflow: "hidden" }}>
         <PhotoPanel imageUrl={imageUrl} bgColor={bgColor ?? "#b5c4b1"} initials={initials} style={{ position: "absolute", inset: 0 }} />
         {/* bottom gradient overlay */}
         <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(0,0,0,0.45) 0%, transparent 55%)" }} />

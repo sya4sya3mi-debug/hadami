@@ -102,7 +102,11 @@ function unlockDocumentScroll() {
   body.style.overscrollBehavior = originalBodyOverscrollBehavior;
   body.style.paddingRight = originalBodyPaddingRight;
 
-  window.scrollTo(lockedScrollX, lockedScrollY);
+  window.scrollTo({
+    left: lockedScrollX,
+    top: lockedScrollY,
+    behavior: "instant" as ScrollBehavior,
+  });
 }
 
 export function useScrollLock(locked: boolean, scrollableRef?: RefObject<HTMLElement | null>) {
