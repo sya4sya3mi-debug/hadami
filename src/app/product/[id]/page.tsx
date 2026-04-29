@@ -305,7 +305,7 @@ export default function ProductDetailPage() {
           {/* Content */}
           <div
             style={{
-              padding: "20px 20px 32px",
+              padding: "40px 20px 32px",
               borderTopLeftRadius: 24, borderTopRightRadius: 24,
               background: "var(--hd-bg)",
               position: "relative",
