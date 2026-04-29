@@ -201,7 +201,7 @@ const SHARE_SWATCHES = [
 ];
 
 /* ─── Phone Mock — Hero right column ─── */
-function PhoneMock() {
+function PhoneMock({ maxWidth = 300 }: { maxWidth?: number } = {}) {
   const [phase, setPhase] = useState(0);
 
   useEffect(() => {
@@ -416,7 +416,7 @@ function PhoneMock() {
     <div
       style={{
         width: "100%",
-        maxWidth: 300,
+        maxWidth,
         aspectRatio: "9/19.5",
         margin: "0 auto",
         borderRadius: 40,
@@ -1034,14 +1034,12 @@ export default function LandingPage() {
               </Reveal>
             </div>
 
-            {/* right — phone mock */}
-            {!mobile && (
-              <Reveal delay={300}>
-                <div style={{ position: "relative" }}>
-                  <PhoneMock />
-                </div>
-              </Reveal>
-            )}
+            {/* right — phone mock (mobile では小さめに表示) */}
+            <Reveal delay={300}>
+              <div style={{ position: "relative" }}>
+                <PhoneMock maxWidth={mobile ? 220 : 300} />
+              </div>
+            </Reveal>
           </div>
 
           <div
