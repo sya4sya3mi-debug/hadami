@@ -4,8 +4,19 @@ import "@/styles/hadami-tokens.css";
 import { useState, useEffect, useRef, ReactNode, CSSProperties } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { motion, useMotionValue, useSpring, useReducedMotion } from "framer-motion";
 import { getAccountScanLimit } from "@/lib/db";
 import { Ico } from "@/components/redesign/apothecary/Icons";
+import {
+  MotionReveal,
+  SplitText,
+  Typewriter,
+  GradientSweep,
+  ScrollScene,
+  useStepFromMV,
+  Magnetic,
+  HairlineDivider,
+} from "@/components/ui/landing/animations";
 
 /* ─── Design tokens (mapped to hadami-tokens.css OKLCH equivalents) ─── */
 const INK = "#1a1a16";
@@ -53,41 +64,8 @@ function AnimNum({ to, dur = 1200 }: { to: number; dur?: number }) {
   return <span ref={elRef}>{v.toLocaleString()}</span>;
 }
 
-/* ─── Scroll-reveal wrapper ─── */
-function Reveal({ children, delay = 0 }: { children: ReactNode; delay?: number }) {
-  const [visible, setVisible] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    const obs = new IntersectionObserver(
-      ([e]) => {
-        if (e.isIntersecting) {
-          setVisible(true);
-          obs.disconnect();
-        }
-      },
-      { threshold: 0.15 },
-    );
-    obs.observe(el);
-    return () => obs.disconnect();
-  }, []);
-
-  return (
-    <div
-      ref={ref}
-      style={{
-        opacity: visible ? 1 : 0,
-        transform: visible ? "translateY(0)" : "translateY(28px)",
-        filter: visible ? "blur(0)" : "blur(2px)",
-        transition: `opacity 700ms cubic-bezier(0.22,0.61,0.36,1) ${delay}ms, transform 700ms cubic-bezier(0.22,0.61,0.36,1) ${delay}ms, filter 700ms ease ${delay}ms`,
-      }}
-    >
-      {children}
-    </div>
-  );
-}
+/* ─── Scroll-reveal wrapper (delegates to MotionReveal for reduced-motion support) ─── */
+const Reveal = MotionReveal;
 
 /* ─── Responsive hook ─── */
 function useIsMobile() {
@@ -131,7 +109,19 @@ const Label = ({ children, style = {} }: { children: ReactNode; style?: CSSPrope
 );
 
 const HR = ({ ink = INK, style = {} }: { ink?: string; style?: CSSProperties }) => (
-  <div style={{ height: "0.5px", background: ink, opacity: 0.13, ...style }} />
+  <motion.div
+    style={{
+      height: "0.5px",
+      background: ink,
+      opacity: 0.13,
+      transformOrigin: "left center",
+      ...style,
+    }}
+    initial={{ scaleX: 0 }}
+    whileInView={{ scaleX: 1 }}
+    viewport={{ once: true, margin: "-10%" }}
+    transition={{ duration: 1.4, ease: [0.22, 0.61, 0.36, 1] }}
+  />
 );
 
 /* ─── Data (faithful to current site copy) ─── */
@@ -199,6 +189,51 @@ const SHARE_SWATCHES = [
   { type: "日焼け止め", abbr: "PC",  name: "Water Barrier Sun",  hue: 210 },
   { type: "美容オイル", abbr: "tc",  name: "Lano-oil",           hue: 230 },
 ];
+
+/* ─── Phone Mock parallax wrapper — gentle mouse follow on desktop ─── */
+function PhoneMockParallax({ mobile }: { mobile: boolean }) {
+  const reduced = useReducedMotion();
+  const x = useMotionValue(0);
+  const y = useMotionValue(0);
+  const rx = useMotionValue(0);
+  const ry = useMotionValue(0);
+  const sx = useSpring(x, { stiffness: 50, damping: 18 });
+  const sy = useSpring(y, { stiffness: 50, damping: 18 });
+  const srx = useSpring(rx, { stiffness: 50, damping: 18 });
+  const sry = useSpring(ry, { stiffness: 50, damping: 18 });
+
+  const off = mobile || reduced;
+
+  const onMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (off) return;
+    const r = e.currentTarget.getBoundingClientRect();
+    const cx = r.left + r.width / 2;
+    const cy = r.top + r.height / 2;
+    const nx = (e.clientX - cx) / r.width;
+    const ny = (e.clientY - cy) / r.height;
+    x.set(nx * 6);
+    y.set(ny * 6);
+    ry.set(nx * 4);
+    rx.set(-ny * 3);
+  };
+  const onLeave = () => {
+    x.set(0); y.set(0); rx.set(0); ry.set(0);
+  };
+
+  return (
+    <div
+      style={{ position: "relative", perspective: 1200 }}
+      onMouseMove={onMove}
+      onMouseLeave={onLeave}
+    >
+      <motion.div
+        style={off ? undefined : { x: sx, y: sy, rotateX: srx, rotateY: sry, transformStyle: "preserve-3d" }}
+      >
+        <PhoneMock maxWidth={mobile ? 220 : 300} />
+      </motion.div>
+    </div>
+  );
+}
 
 /* ─── Phone Mock — Hero right column ─── */
 function PhoneMock({ maxWidth = 300 }: { maxWidth?: number } = {}) {
@@ -564,11 +599,63 @@ export default function LandingPage() {
     return () => document.body.classList.remove("lp-active");
   }, []);
 
-  // Auto-advance scan demo step
+  // Scroll-driven scan demo step (desktop) + auto-advance fallback
+  const scanRef = useRef<HTMLDivElement>(null);
+  const scrollDriving = useRef(false);
   useEffect(() => {
-    const i = setInterval(() => setScanStep((s) => (s + 1) % 4), 3200);
-    return () => clearInterval(i);
-  }, []);
+    if (mobile) {
+      // mobile: timer-only, no pinning
+      const i = setInterval(() => setScanStep((s) => (s + 1) % 4), 3200);
+      return () => clearInterval(i);
+    }
+    // desktop: drive from scroll position over the pinned scan section
+    let timer: ReturnType<typeof setInterval> | null = null;
+    const startTimer = () => {
+      if (timer) return;
+      timer = setInterval(() => setScanStep((s) => (s + 1) % 4), 3600);
+    };
+    const stopTimer = () => {
+      if (timer) {
+        clearInterval(timer);
+        timer = null;
+      }
+    };
+
+    const onScroll = () => {
+      const el = scanRef.current;
+      if (!el) return;
+      const rect = el.getBoundingClientRect();
+      const total = rect.height - window.innerHeight;
+      if (total <= 0) {
+        scrollDriving.current = false;
+        startTimer();
+        return;
+      }
+      // Progress = how far scrolled into the pinned region (0 → 1)
+      const scrolled = Math.min(Math.max(-rect.top, 0), total);
+      const p = scrolled / total;
+      // Active when section is in the viewport at all
+      const inView = rect.top < window.innerHeight * 0.6 && rect.bottom > window.innerHeight * 0.4;
+      if (inView) {
+        scrollDriving.current = true;
+        stopTimer();
+        const idx = Math.min(3, Math.max(0, Math.floor(p * 4)));
+        setScanStep(idx);
+      } else {
+        scrollDriving.current = false;
+        startTimer();
+      }
+    };
+
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onScroll);
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onScroll);
+      stopTimer();
+    };
+  }, [mobile]);
 
   // Nav scroll state + back-to-top visibility
   useEffect(() => {
@@ -863,18 +950,23 @@ export default function LandingPage() {
                     letterSpacing: "-0.02em",
                   }}
                 >
-                  <div>成分から、</div>
+                  <div>
+                    <SplitText text="成分から、" />
+                  </div>
                   <div style={{ display: "flex", alignItems: "baseline", gap: 14, marginTop: 4 }}>
-                    <span
+                    <GradientSweep
+                      baseColor={ACCENT}
+                      glintColor="oklch(0.78 0.10 150)"
+                      duration={2.4}
+                      intervalSec={6}
                       style={{
                         fontFamily: "'Cormorant Garamond', serif",
                         fontStyle: "italic",
                         fontSize: "1.05em",
-                        color: ACCENT,
                       }}
                     >
                       美しさ
-                    </span>
+                    </GradientSweep>
                     <span
                       style={{
                         fontFamily: "'JetBrains Mono', monospace",
@@ -887,7 +979,9 @@ export default function LandingPage() {
                       /utsu·ku·shi·sa/
                     </span>
                   </div>
-                  <div style={{ marginTop: 4 }}>を選ぶ。</div>
+                  <div style={{ marginTop: 4 }}>
+                    <SplitText text="を選ぶ。" delay={0.4} />
+                  </div>
                 </h1>
               </Reveal>
 
@@ -900,13 +994,19 @@ export default function LandingPage() {
                     fontSize: mobile ? 14 : 15,
                     lineHeight: 2.0,
                     color: "rgba(26,26,22,0.7)",
+                    minHeight: mobile ? 84 : 90,
                   }}
                 >
-                  パッケージを撮影するだけでAIが成分を検索。
-                  <br />
-                  図鑑に集めて、ルーティンに組んで、
-                  <br />
-                  毎日のスキンケアを成分から見直せるアプリ。
+                  <Typewriter
+                    lines={[
+                      "パッケージを撮影するだけでAIが成分を検索。",
+                      "図鑑に集めて、ルーティンに組んで、",
+                      "毎日のスキンケアを成分から見直せるアプリ。",
+                    ]}
+                    speed={42}
+                    startDelay={1400}
+                    cursorColor={ACCENT}
+                  />
                 </p>
               </Reveal>
 
@@ -919,33 +1019,35 @@ export default function LandingPage() {
                     flexWrap: "wrap",
                   }}
                 >
-                  <Link
-                    href="/auth/invite"
-                    style={{
-                      display: "inline-flex",
-                      alignItems: "center",
-                      gap: 10,
-                      padding: "14px 26px",
-                      background: INK,
-                      color: BG,
-                      textDecoration: "none",
-                      fontFamily: "'Shippori Mincho', serif",
-                      fontSize: 14,
-                    }}
-                  >
-                    {Ico.camera({ width: 16, height: 16 })}
-                    <span>無料で始める</span>
-                    <span
+                  <Magnetic strength={0.18} max={6} disabled={mobile}>
+                    <Link
+                      href="/auth/invite"
                       style={{
-                        fontFamily: "'JetBrains Mono', monospace",
-                        fontSize: 9,
-                        letterSpacing: "0.2em",
-                        opacity: 0.7,
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: 10,
+                        padding: "14px 26px",
+                        background: INK,
+                        color: BG,
+                        textDecoration: "none",
+                        fontFamily: "'Shippori Mincho', serif",
+                        fontSize: 14,
                       }}
                     >
-                      START →
-                    </span>
-                  </Link>
+                      {Ico.camera({ width: 16, height: 16 })}
+                      <span>無料で始める</span>
+                      <span
+                        style={{
+                          fontFamily: "'JetBrains Mono', monospace",
+                          fontSize: 9,
+                          letterSpacing: "0.2em",
+                          opacity: 0.7,
+                        }}
+                      >
+                        START →
+                      </span>
+                    </Link>
+                  </Magnetic>
                   <a
                     href="#scan"
                     style={{
@@ -1051,9 +1153,7 @@ export default function LandingPage() {
 
             {/* right — phone mock (mobile では小さめに表示) */}
             <Reveal delay={300}>
-              <div style={{ position: "relative" }}>
-                <PhoneMock maxWidth={mobile ? 220 : 300} />
-              </div>
+              <PhoneMockParallax mobile={mobile} />
             </Reveal>
           </div>
 
@@ -1210,13 +1310,33 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* ── SCAN DEMO (How it works) ── */}
+        {/* ── SCAN DEMO (How it works) — pinned cinematic 4-step ── */}
+        <div
+          ref={scanRef}
+          style={{
+            position: "relative",
+            background: INK,
+            // Desktop: 350vh so the user scrolls through 4 step keyframes
+            // Mobile: auto height (no pinning)
+            ...(mobile ? null : { height: "350vh" }),
+          }}
+        >
         <section
           id="scan"
           style={{
             background: INK,
             color: DARK_TEXT,
-            padding: mobile ? `72px ${px}` : `120px ${px}`,
+            padding: mobile ? `72px ${px}` : `80px ${px}`,
+            ...(mobile
+              ? null
+              : {
+                  position: "sticky",
+                  top: 0,
+                  height: "100vh",
+                  display: "flex",
+                  flexDirection: "column",
+                  overflow: "hidden",
+                }),
           }}
         >
           <Reveal>
@@ -1422,13 +1542,17 @@ export default function LandingPage() {
                     STEP {scanStep + 1} / 4 · {STEPS[scanStep].en}
                   </Mono>
                 </div>
-                <div
+                <motion.div
+                  key={scanStep}
                   style={{
                     height: "calc(100% - 80px)",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
                   }}
+                  initial={{ opacity: 0, y: 16, filter: "blur(4px)" }}
+                  animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+                  transition={{ duration: 0.55, ease: [0.22, 0.61, 0.36, 1] }}
                 >
                   {scanStep === 0 && (
                     <div style={{ position: "relative", width: 140, height: 180 }}>
@@ -1637,11 +1761,12 @@ export default function LandingPage() {
                       </Mono>
                     </div>
                   )}
-                </div>
+                </motion.div>
               </div>
             )}
           </div>
         </section>
+        </div>
 
         {/* ── ROUTINE SHOWCASE ── */}
         <section
