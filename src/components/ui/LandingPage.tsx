@@ -436,13 +436,14 @@ function PhoneMock({ maxWidth = 300 }: { maxWidth?: number } = {}) {
           overflow: "hidden",
           background: BG,
           position: "relative",
-          // iOS Safari で親 transform + 子 overflow:hidden + border-radius の
-          // 組み合わせでクリップが失われる対策。isolation だけでは
-          // position:absolute の子（下部 nav）がラウンド領域からはみ出るため
-          // clip-path で明示クリップする。translateZ(0) はベゼル幅が崩れるため使わない。
+          // 内部は flex column で構成し position:absolute による配置を避ける。
+          // iOS Safari は親 transform + 子 overflow:hidden + border-radius +
+          // position:absolute の組み合わせでクリップが効かず、下部 nav が
+          // ラウンド外にはみ出る不具合があるため、絶対配置をやめて自然な
+          // 縦フローで status bar / 画面 / 下部 nav を並べる。
           isolation: "isolate",
-          clipPath: "inset(0 round 32px)",
-          WebkitClipPath: "inset(0 round 32px)",
+          display: "flex",
+          flexDirection: "column",
         }}
       >
         <div
@@ -467,22 +468,18 @@ function PhoneMock({ maxWidth = 300 }: { maxWidth?: number } = {}) {
             fontFamily: "'JetBrains Mono', monospace",
             fontWeight: 600,
             color: INK,
+            flexShrink: 0,
           }}
         >
           <span>9:41</span>
           <span style={{ opacity: 0 }}>·</span>
           <span style={{ fontSize: 9 }}>●●●</span>
         </div>
-        {/* screens 領域: 上の status bar (~28px) + 下の固定ナビ (64px) を引いた残り。
-            従来 80px は固定ナビ 64px に対して引きすぎ/足りずで、画面コンテンツの下端が
-            ナビと重なって貫通して見えていた。96px に拡張して完全に独立させる。 */}
-        <div style={{ height: "calc(100% - 96px)", overflow: "hidden" }}>{screens[phase]}</div>
+        {/* 画面領域は flex:1 で残りを取り、min-height:0 で flex 子の縮小を許容 */}
+        <div style={{ flex: 1, minHeight: 0, overflow: "hidden" }}>{screens[phase]}</div>
         <div
           style={{
-            position: "absolute",
-            bottom: 0,
-            left: 0,
-            right: 0,
+            flexShrink: 0,
             height: 64,
             background: BG,
             borderTop: "0.5px solid rgba(26,26,22,0.1)",
