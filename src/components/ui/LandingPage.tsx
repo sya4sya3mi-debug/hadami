@@ -844,7 +844,7 @@ export default function LandingPage() {
                   style={{
                     fontFamily: "'Shippori Mincho', 'Noto Serif JP', serif",
                     fontSize: mobile ? "clamp(44px, 12vw, 68px)" : "clamp(52px, 6.5vw, 108px)",
-                    lineHeight: 1.2,
+                    lineHeight: 1.35,
                     fontWeight: 400,
                     margin: 0,
                     color: INK,
@@ -1075,7 +1075,7 @@ export default function LandingPage() {
                   style={{
                     fontFamily: "'Shippori Mincho', serif",
                     fontSize: mobile ? "clamp(32px,8vw,48px)" : "clamp(38px, 5vw, 72px)",
-                    lineHeight: 1.2,
+                    lineHeight: 1.35,
                     fontWeight: 400,
                     margin: 0,
                     color: INK,
@@ -1214,7 +1214,7 @@ export default function LandingPage() {
                 style={{
                   fontFamily: "'Shippori Mincho', serif",
                   fontSize: mobile ? "clamp(36px,9vw,56px)" : "clamp(40px, 5.5vw, 80px)",
-                  lineHeight: 1.0,
+                  lineHeight: 1.35,
                   fontWeight: 400,
                   margin: 0,
                   color: DARK_TEXT,
@@ -1656,7 +1656,7 @@ export default function LandingPage() {
                   style={{
                     fontFamily: "'Shippori Mincho', serif",
                     fontSize: mobile ? "clamp(32px,8vw,48px)" : "clamp(36px, 4.5vw, 64px)",
-                    lineHeight: 1.2,
+                    lineHeight: 1.35,
                     fontWeight: 400,
                     margin: 0,
                     color: INK,
@@ -1826,7 +1826,7 @@ export default function LandingPage() {
                   style={{
                     fontFamily: "'Shippori Mincho', serif",
                     fontSize: mobile ? "clamp(32px,8vw,48px)" : "clamp(36px, 4.5vw, 64px)",
-                    lineHeight: 1.2,
+                    lineHeight: 1.35,
                     fontWeight: 400,
                     margin: "0 0 24px",
                     color: INK,
@@ -2108,7 +2108,7 @@ export default function LandingPage() {
                 style={{
                   fontFamily: "'Shippori Mincho', serif",
                   fontSize: mobile ? "clamp(40px,11vw,68px)" : "clamp(52px, 7.5vw, 116px)",
-                  lineHeight: 1.2,
+                  lineHeight: 1.35,
                   fontWeight: 400,
                   margin: 0,
                   color: DARK_TEXT,
