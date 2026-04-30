@@ -437,9 +437,12 @@ function PhoneMock({ maxWidth = 300 }: { maxWidth?: number } = {}) {
           background: BG,
           position: "relative",
           // iOS Safari で親 transform + 子 overflow:hidden + border-radius の
-          // 組み合わせでクリップが失われる対策として isolation のみ付与。
-          // transform: translateZ(0) を入れるとベゼル幅の計算が崩れるため避ける。
+          // 組み合わせでクリップが失われる対策。isolation だけでは
+          // position:absolute の子（下部 nav）がラウンド領域からはみ出るため
+          // clip-path で明示クリップする。translateZ(0) はベゼル幅が崩れるため使わない。
           isolation: "isolate",
+          clipPath: "inset(0 round 32px)",
+          WebkitClipPath: "inset(0 round 32px)",
         }}
       >
         <div
