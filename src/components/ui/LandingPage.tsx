@@ -12,10 +12,7 @@ import {
   SplitText,
   Typewriter,
   GradientSweep,
-  ScrollScene,
-  useStepFromMV,
   Magnetic,
-  HairlineDivider,
 } from "@/components/ui/landing/animations";
 
 /* ─── Design tokens (mapped to hadami-tokens.css OKLCH equivalents) ─── */
