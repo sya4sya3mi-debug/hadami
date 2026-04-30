@@ -426,6 +426,12 @@ function PhoneMock({ maxWidth = 300 }: { maxWidth?: number } = {}) {
           "0 48px 90px -20px rgba(0,0,0,0.25), inset 0 0 0 0.5px rgba(255,255,255,0.07)",
         position: "relative",
         boxSizing: "border-box",
+        // iOS Safari で inner が aspectRatio + padding の組み合わせで
+        // 計算ミスし下部にはみ出ても、ベゼルのラウンド形状でクリップする保険。
+        // 過去にここで overflow:hidden を入れた際にベゼルが消えたのは inner の
+        // transform: translateZ(0) との合わせ技で起きたため、inner に transform
+        // を入れない限り副作用は出ない。
+        overflow: "hidden",
       }}
     >
       <div
