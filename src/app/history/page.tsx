@@ -854,14 +854,14 @@ export default function HistoryPage() {
               marginTop={28}
               marginBottom={14}
             />
-            <EditorialOverflowSection
-              items={archive}
-              startIdx={featuredItems.length + staffPicks.length}
-            />
+            {EditorialOverflowSection({
+              items: archive,
+              startIdx: featuredItems.length + staffPicks.length,
+            })}
           </>
         )}
 
-        {editMode && <EditGenrePanels />}
+        {editMode && EditGenrePanels()}
       </div>
     );
   }
@@ -914,8 +914,8 @@ export default function HistoryPage() {
           </div>
         )}
         {/* Remaining items */}
-        <OverflowSection items={rest} startIdx={5} />
-        {editMode && <EditGenrePanels />}
+        {OverflowSection({ items: rest, startIdx: 5 })}
+        {editMode && EditGenrePanels()}
       </div>
     );
   }
@@ -1402,10 +1402,10 @@ export default function HistoryPage() {
             {products.length === 0 ? (
               <EmptyState />
             ) : (
-              <div className={editMode ? undefined : "hd-stagger"}>
-                {layout === "magazine" && <MagazineGrid />}
-                {layout === "mosaic" && <MosaicGrid />}
-                {layout === "list" && <ListLayout />}
+              <div>
+                {layout === "magazine" && MagazineGrid()}
+                {layout === "mosaic" && MosaicGrid()}
+                {layout === "list" && ListLayout()}
               </div>
             )}
 
