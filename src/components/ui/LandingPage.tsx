@@ -424,11 +424,8 @@ function PhoneMock({ maxWidth = 300 }: { maxWidth?: number } = {}) {
         background: "linear-gradient(180deg, #1e1c19, #0c0a08)",
         boxShadow:
           "0 48px 90px -20px rgba(0,0,0,0.25), inset 0 0 0 0.5px rgba(255,255,255,0.07)",
-        // iOS Safari で親 transform + 子 overflow:hidden の組み合わせでクリップが
-        // 失われ、画面コンテンツが丸角の下にはみ出る現象を防ぐ。
-        isolation: "isolate",
         position: "relative",
-        overflow: "hidden",
+        boxSizing: "border-box",
       }}
     >
       <div
@@ -439,10 +436,10 @@ function PhoneMock({ maxWidth = 300 }: { maxWidth?: number } = {}) {
           overflow: "hidden",
           background: BG,
           position: "relative",
-          // 同上 — 内側にも明示的にスタッキングコンテキストを作って
-          // border-radius クリップを保証する。
+          // iOS Safari で親 transform + 子 overflow:hidden + border-radius の
+          // 組み合わせでクリップが失われる対策として isolation のみ付与。
+          // transform: translateZ(0) を入れるとベゼル幅の計算が崩れるため避ける。
           isolation: "isolate",
-          transform: "translateZ(0)",
         }}
       >
         <div
