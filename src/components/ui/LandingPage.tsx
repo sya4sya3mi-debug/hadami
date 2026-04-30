@@ -202,10 +202,18 @@ function PhoneMockParallax({ mobile }: { mobile: boolean }) {
   const srx = useSpring(rx, { stiffness: 50, damping: 18 });
   const sry = useSpring(ry, { stiffness: 50, damping: 18 });
 
-  const off = mobile || reduced;
+  // モバイル / reduced-motion 時は perspective ラッパーを完全に外す。
+  // iOS Safari は perspective + 子の overflow:hidden + border-radius の組み合わせで
+  // ベゼルクリップが崩れる既知不具合があるため、可能な限りラッパーを通さない。
+  if (mobile || reduced) {
+    return (
+      <div style={{ position: "relative" }}>
+        <PhoneMock maxWidth={mobile ? 220 : 300} />
+      </div>
+    );
+  }
 
   const onMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (off) return;
     const r = e.currentTarget.getBoundingClientRect();
     const cx = r.left + r.width / 2;
     const cy = r.top + r.height / 2;
@@ -227,9 +235,9 @@ function PhoneMockParallax({ mobile }: { mobile: boolean }) {
       onMouseLeave={onLeave}
     >
       <motion.div
-        style={off ? undefined : { x: sx, y: sy, rotateX: srx, rotateY: sry, transformStyle: "preserve-3d" }}
+        style={{ x: sx, y: sy, rotateX: srx, rotateY: sry, transformStyle: "preserve-3d" }}
       >
-        <PhoneMock maxWidth={mobile ? 220 : 300} />
+        <PhoneMock maxWidth={300} />
       </motion.div>
     </div>
   );
