@@ -16,12 +16,13 @@ const TABS: {
   ariaLabel: string;
   icon?: keyof typeof Ico;
   center?: boolean;
+  activeColor?: string;
 }[] = [
-  { id: "home",  href: "/",        label: "HOME",  jp: "ホーム",       ariaLabel: "ホーム画面",                 icon: "home"  },
-  { id: "book",  href: "/zukan",   label: "INDEX", jp: "図鑑",         ariaLabel: "成分図鑑を見る",             icon: "book"  },
-  { id: "scan",  href: "/scan",    label: "SCAN",  jp: "スキャン",     ariaLabel: "コスメを撮影してスキャン",   center: true  },
-  { id: "notes", href: "/deck",    label: "CARE",  jp: "スキンケア管理", ariaLabel: "スキンケア管理を開く",       icon: "notes" },
-  { id: "my",    href: "/history", label: "MINE",  jp: "マイコスメ",   ariaLabel: "保存したコスメ一覧",         icon: "user"  },
+  { id: "home",  href: "/",        label: "HOME",  jp: "ホーム",         ariaLabel: "ホーム画面",               icon: "home",  activeColor: "oklch(0.52 0.14 238)" },
+  { id: "book",  href: "/zukan",   label: "INDEX", jp: "図鑑",           ariaLabel: "成分図鑑を見る",           icon: "book",  activeColor: "var(--hd-moss)"       },
+  { id: "scan",  href: "/scan",    label: "SCAN",  jp: "スキャン",       ariaLabel: "コスメを撮影してスキャン", center: true                                       },
+  { id: "notes", href: "/deck",    label: "CARE",  jp: "スキンケア管理", ariaLabel: "スキンケア管理を開く",     icon: "notes", activeColor: "var(--hd-ink-60)"     },
+  { id: "my",    href: "/history", label: "MINE",  jp: "マイコスメ",     ariaLabel: "保存したコスメ一覧",       icon: "user",  activeColor: "var(--hd-terra)"      },
 ];
 
 export default function TabBar() {
@@ -182,7 +183,7 @@ export default function TabBar() {
               justifyContent: "center",
               gap: 5,
               cursor: "pointer",
-              color: active ? "var(--hd-moss)" : "var(--hd-ink-40)",
+              color: active ? (tab.activeColor ?? "var(--hd-moss)") : "var(--hd-ink-40)",
             }}
           >
             {tab.icon && Ico[tab.icon]({ width: 19, height: 19 })}
@@ -204,7 +205,7 @@ export default function TabBar() {
                   width: 3,
                   height: 3,
                   borderRadius: 999,
-                  background: "var(--hd-moss)",
+                  background: active ? (tab.activeColor ?? "var(--hd-moss)") : "var(--hd-ink-40)",
                 }}
               />
             )}
