@@ -1455,7 +1455,7 @@ export default function LandingPage() {
             {!mobile && (
               <div
                 style={{
-                  aspectRatio: "4/5",
+                  aspectRatio: "1/1",
                   border: "0.5px solid rgba(240,236,227,0.1)",
                   padding: 28,
                   position: "relative",
