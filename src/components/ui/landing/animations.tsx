@@ -286,7 +286,7 @@ export function GradientSweep({
     const leadingText = chars.join("");
     const revealStart = Math.max(0.04, (duration * 0.85) / cycleDuration);
     const revealMid = Math.min(0.94, duration / cycleDuration);
-    const wipeEnd = Math.min(0.98, (duration * 1.15) / cycleDuration);
+    const wipeEnd = Math.min(0.98, (duration * 1.06) / cycleDuration);
 
     return (
       <span
