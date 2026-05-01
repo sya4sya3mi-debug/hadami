@@ -604,63 +604,11 @@ export default function LandingPage() {
     return () => document.body.classList.remove("lp-active");
   }, []);
 
-  // Scroll-driven scan demo step (desktop) + auto-advance fallback
-  const scanRef = useRef<HTMLDivElement>(null);
-  const scrollDriving = useRef(false);
+  // Auto-advance scan demo step
   useEffect(() => {
-    if (mobile) {
-      // mobile: timer-only, no pinning
-      const i = setInterval(() => setScanStep((s) => (s + 1) % 4), 3200);
-      return () => clearInterval(i);
-    }
-    // desktop: drive from scroll position over the pinned scan section
-    let timer: ReturnType<typeof setInterval> | null = null;
-    const startTimer = () => {
-      if (timer) return;
-      timer = setInterval(() => setScanStep((s) => (s + 1) % 4), 3600);
-    };
-    const stopTimer = () => {
-      if (timer) {
-        clearInterval(timer);
-        timer = null;
-      }
-    };
-
-    const onScroll = () => {
-      const el = scanRef.current;
-      if (!el) return;
-      const rect = el.getBoundingClientRect();
-      const total = rect.height - window.innerHeight;
-      if (total <= 0) {
-        scrollDriving.current = false;
-        startTimer();
-        return;
-      }
-      // Progress = how far scrolled into the pinned region (0 → 1)
-      const scrolled = Math.min(Math.max(-rect.top, 0), total);
-      const p = scrolled / total;
-      // Active when section is in the viewport at all
-      const inView = rect.top < window.innerHeight * 0.6 && rect.bottom > window.innerHeight * 0.4;
-      if (inView) {
-        scrollDriving.current = true;
-        stopTimer();
-        const idx = Math.min(3, Math.max(0, Math.floor(p * 4)));
-        setScanStep(idx);
-      } else {
-        scrollDriving.current = false;
-        startTimer();
-      }
-    };
-
-    onScroll();
-    window.addEventListener("scroll", onScroll, { passive: true });
-    window.addEventListener("resize", onScroll);
-    return () => {
-      window.removeEventListener("scroll", onScroll);
-      window.removeEventListener("resize", onScroll);
-      stopTimer();
-    };
-  }, [mobile]);
+    const i = setInterval(() => setScanStep((s) => (s + 1) % 4), 3200);
+    return () => clearInterval(i);
+  }, []);
 
   // Nav scroll state + back-to-top visibility
   useEffect(() => {
@@ -1315,33 +1263,13 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* ── SCAN DEMO (How it works) — pinned cinematic 4-step ── */}
-        <div
-          ref={scanRef}
-          style={{
-            position: "relative",
-            background: INK,
-            // Desktop: 350vh so the user scrolls through 4 step keyframes
-            // Mobile: auto height (no pinning)
-            ...(mobile ? null : { height: "350vh" }),
-          }}
-        >
+        {/* ── SCAN DEMO (How it works) ── */}
         <section
           id="scan"
           style={{
             background: INK,
             color: DARK_TEXT,
-            padding: mobile ? `72px ${px}` : `80px ${px}`,
-            ...(mobile
-              ? null
-              : {
-                  position: "sticky",
-                  top: 0,
-                  height: "100vh",
-                  display: "flex",
-                  flexDirection: "column",
-                  overflow: "hidden",
-                }),
+            padding: mobile ? `72px ${px}` : `120px ${px}`,
           }}
         >
           <Reveal>
@@ -1771,7 +1699,6 @@ export default function LandingPage() {
             )}
           </div>
         </section>
-        </div>
 
         {/* ── ROUTINE SHOWCASE ── */}
         <section
