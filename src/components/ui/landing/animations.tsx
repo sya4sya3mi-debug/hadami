@@ -9,7 +9,6 @@ import {
 } from "react";
 import {
   motion,
-  useInView,
   useMotionValue,
   useReducedMotion,
   useScroll,
@@ -157,18 +156,17 @@ export function Typewriter({
   className?: string;
 }) {
   const reduced = useReducedMotion();
-  const ref = useRef<HTMLSpanElement>(null);
-  const inView = useInView(ref, { once: true, margin: "-10%" });
   const [done, setDone] = useState(false);
   const [text, setText] = useState<string[]>(lines.map(() => ""));
 
+  // Hero 直下用なので useInView は使わない（margin:"-10%" + 短い viewport で
+  // 永遠に false になり tick が発火しないケースを回避）。マウント直後から開始する。
   useEffect(() => {
     if (reduced) {
       setText(lines);
       setDone(true);
       return;
     }
-    if (!inView) return;
     let cancelled = false;
     const flat = lines.join("\n");
     let idx = 0;
@@ -193,10 +191,10 @@ export function Typewriter({
       cancelled = true;
       if (timer.id != null) clearTimeout(timer.id);
     };
-  }, [inView, reduced, speed, startDelay, lines]);
+  }, [reduced, speed, startDelay, lines]);
 
   return (
-    <span ref={ref} className={className} style={style}>
+    <span className={className} style={style}>
       {text.map((l, i) => (
         <span key={i}>
           {l}
