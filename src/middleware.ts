@@ -5,11 +5,11 @@ export async function middleware(request: NextRequest) {
   const isDev = process.env.NODE_ENV !== "production";
   const cspHeader = [
     "default-src 'self'",
-    `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ""}`,
+    `script-src 'self' 'unsafe-inline' https://www.googletagmanager.com${isDev ? " 'unsafe-eval'" : ""}`,
     "style-src 'self' 'unsafe-inline'",
-    "img-src 'self' data: blob: https://*.supabase.co https://*.r2.dev https://*.r2.cloudflarestorage.com https://thumbnail.image.rakuten.co.jp https://*.rakuten.co.jp",
+    "img-src 'self' data: blob: https://*.supabase.co https://*.r2.dev https://*.r2.cloudflarestorage.com https://thumbnail.image.rakuten.co.jp https://*.rakuten.co.jp https://www.google-analytics.com",
     "font-src 'self'",
-    "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://*.r2.dev https://*.r2.cloudflarestorage.com https://app.rakuten.co.jp",
+    "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://*.r2.dev https://*.r2.cloudflarestorage.com https://app.rakuten.co.jp https://www.google-analytics.com https://analytics.google.com https://www.googletagmanager.com",
     "frame-ancestors 'none'",
     "base-uri 'self'",
     "form-action 'self'",
