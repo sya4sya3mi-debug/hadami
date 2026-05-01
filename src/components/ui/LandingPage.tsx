@@ -914,7 +914,7 @@ export default function LandingPage() {
                     <GradientSweep
                       baseColor={ACCENT}
                       glintColor="oklch(0.78 0.10 150)"
-                      duration={2.4}
+                      duration={1.4}
                       intervalSec={6}
                       pinLastChar
                       style={{
