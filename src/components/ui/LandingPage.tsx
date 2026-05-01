@@ -460,33 +460,29 @@ function PhoneMock({ maxWidth = 300 }: { maxWidth?: number } = {}) {
         aspectRatio: "9/19.5",
         margin: "0 auto",
         borderRadius: 40,
-        padding: 10,
+        // padding は使わず、inner を position:absolute + inset:10 で配置する。
+        // iOS Safari は aspectRatio + padding + height:100% の組み合わせで
+        // 子要素の高さが border-box ぶん解決され下ベゼル 10px を食いつぶす
+        // 不具合があるため、絶対座標で四辺 10px を明示固定する。
         background: "linear-gradient(180deg, #1e1c19, #0c0a08)",
         boxShadow:
           "0 48px 90px -20px rgba(0,0,0,0.25), inset 0 0 0 0.5px rgba(255,255,255,0.07)",
         position: "relative",
         boxSizing: "border-box",
-        // iOS Safari で inner が aspectRatio + padding の組み合わせで
-        // 計算ミスし下部にはみ出ても、ベゼルのラウンド形状でクリップする保険。
-        // 過去にここで overflow:hidden を入れた際にベゼルが消えたのは inner の
-        // transform: translateZ(0) との合わせ技で起きたため、inner に transform
-        // を入れない限り副作用は出ない。
         overflow: "hidden",
       }}
     >
       <div
         style={{
-          width: "100%",
-          height: "100%",
+          position: "absolute",
+          top: 10,
+          right: 10,
+          bottom: 10,
+          left: 10,
           borderRadius: 32,
           overflow: "hidden",
           background: BG,
-          position: "relative",
-          // 内部は flex column で構成し position:absolute による配置を避ける。
-          // iOS Safari は親 transform + 子 overflow:hidden + border-radius +
-          // position:absolute の組み合わせでクリップが効かず、下部 nav が
-          // ラウンド外にはみ出る不具合があるため、絶対配置をやめて自然な
-          // 縦フローで status bar / 画面 / 下部 nav を並べる。
+          // 内部は flex column で status bar / 画面 / 下部 nav を縦に並べる。
           isolation: "isolate",
           display: "flex",
           flexDirection: "column",
@@ -1455,7 +1451,7 @@ export default function LandingPage() {
             {!mobile && (
               <div
                 style={{
-                  aspectRatio: "1/1",
+                  aspectRatio: "4/3",
                   border: "0.5px solid rgba(240,236,227,0.1)",
                   padding: 28,
                   position: "relative",
