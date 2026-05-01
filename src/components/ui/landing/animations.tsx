@@ -317,7 +317,7 @@ export function GradientSweep({
                 "inset(0 36% 0 0)",
                 "inset(0 0% 0 0)",
                 "inset(0 0% 0 0)",
-                "inset(0 100% 0 0)",
+                "inset(0 0% 0 0)",
                 "inset(0 100% 0 0)",
               ],
             }}
