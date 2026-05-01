@@ -310,14 +310,14 @@ export function GradientSweep({
               pointerEvents: "none",
             }}
             animate={{
-              opacity: [0, 0, 0.85, 1, 1, 0, 0],
+              opacity: [0, 0, 0.85, 1, 1, 1, 0],
               clipPath: [
                 "inset(0 100% 0 0)",
                 "inset(0 100% 0 0)",
                 "inset(0 36% 0 0)",
                 "inset(0 0% 0 0)",
                 "inset(0 0% 0 0)",
-                "inset(0 0% 0 0)",
+                "inset(0 0% 0 100%)",
                 "inset(0 100% 0 0)",
               ],
             }}
