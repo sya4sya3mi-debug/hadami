@@ -133,7 +133,7 @@ const STEPS = [
     no: "02",
     en: "DECODE",
     title: "知る",
-    desc: "AIが成分の特徴と★レアリティを表示。組み合わせの相性も読み解けます。",
+    desc: "AIが成分の特徴をわかりやすく表示。組み合わせの相性も読み解けます。",
   },
   {
     no: "03",
@@ -151,7 +151,7 @@ const STEPS = [
 
 const FEATURES = [
   { en: "AI INGREDIENT SCAN",   tag: "SCAN",     title: "AI成分検索",            desc: "400種超の美容成分に対応。パッケージを撮影するだけでAIが商品を特定し、成分の特徴をお伝えします" },
-  { en: "COMPENDIUM",            tag: "INDEX",    title: "成分図鑑",              desc: "出会った美容成分をコレクト。効果カテゴリ・肌悩みごとに整理して、自分のスキンケアの幅を広げよう" },
+  { en: "COMPENDIUM",            tag: "INDEX",    title: "成分図鑑",              desc: "AIが成分の特徴をわかりやすく表示。組み合わせの相性も読み解けます。" },
   { en: "ROUTINE COMPOSE",       tag: "ROUTINE",  title: "スキンケアルーティン",  desc: "お気に入り製品をルーティンに並べ朝・夜のルーティンを管理。カバー率や相乗効果の分析、シェアも" },
   { en: "AM / PM RITUAL",        tag: "RITUAL",   title: "朝夜ルーティンチェック", desc: "ルーティンに登録した製品が毎日のチェックリストに。進捗リングで達成度をひと目で確認" },
   { en: "DISCOVERY",             tag: "RECOMMEND",title: "おすすめ商品レコメンド", desc: "スキャン履歴から成分傾向を分析し、まだ出会っていない成分を含む商品をおすすめ" },
@@ -948,9 +948,9 @@ export default function LandingPage() {
                 >
                   <Typewriter
                     lines={[
-                      "パッケージを撮影するだけでAIが成分を検索。",
-                      "図鑑に集めて、ルーティンに組んで、",
-                      "毎日のスキンケアを成分から見直せるアプリ。",
+                      "Niacinamide  ——  ナイアシンアミド。",
+                      "肌が、自分のことばで話しはじめる。",
+                      "Camellia japonica  ✓  found in 12 items.",
                     ]}
                     speed={42}
                     startDelay={1400}
