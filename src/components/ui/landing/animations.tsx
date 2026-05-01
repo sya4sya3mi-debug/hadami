@@ -259,7 +259,8 @@ export function GradientSweep({
     const leadingText = chars.join("");
     const revealStart = Math.max(0.04, (duration * 0.72) / cycleDuration);
     const revealEnd = Math.min(0.88, (duration * 0.98) / cycleDuration);
-    const resetStart = Math.max(revealEnd + 0.02, 0.96);
+    const holdEnd = Math.min(0.92, revealEnd + 0.1);
+    const fadeEnd = Math.min(0.98, holdEnd + 0.08);
 
     return (
       <span
@@ -275,12 +276,13 @@ export function GradientSweep({
             display: "inline-block",
             backgroundImage: `linear-gradient(110deg, ${baseColor} 0%, ${baseColor} 40%, ${glintColor} 50%, ${baseColor} 60%, ${baseColor} 100%)`,
             backgroundSize: "300% 100%",
+            backgroundRepeat: "no-repeat",
             backgroundClip: "text",
             WebkitBackgroundClip: "text",
             color: "transparent",
             WebkitTextFillColor: "transparent",
           }}
-          animate={{ backgroundPosition: ["200% 0%", "-100% 0%"] }}
+          animate={{ backgroundPosition: ["100% 0%", "0% 0%"] }}
           transition={{
             duration,
             repeat: Infinity,
@@ -308,13 +310,14 @@ export function GradientSweep({
               pointerEvents: "none",
             }}
             animate={{
-              opacity: [0, 0, 0.85, 1, 1, 0],
+              opacity: [0, 0, 0.85, 1, 1, 0, 0],
               clipPath: [
                 "inset(0 100% 0 0)",
                 "inset(0 100% 0 0)",
                 "inset(0 36% 0 0)",
                 "inset(0 0% 0 0)",
                 "inset(0 0% 0 0)",
+                "inset(0 100% 0 0)",
                 "inset(0 100% 0 0)",
               ],
             }}
@@ -327,7 +330,8 @@ export function GradientSweep({
                 Math.max(0, revealStart - 0.05),
                 revealStart,
                 revealEnd,
-                resetStart,
+                holdEnd,
+                fadeEnd,
                 1,
               ],
             }}
@@ -346,13 +350,14 @@ export function GradientSweep({
         display: "inline-block",
         backgroundImage: `linear-gradient(110deg, ${baseColor} 0%, ${baseColor} 40%, ${glintColor} 50%, ${baseColor} 60%, ${baseColor} 100%)`,
         backgroundSize: "300% 100%",
+        backgroundRepeat: "no-repeat",
         backgroundClip: "text",
         WebkitBackgroundClip: "text",
         color: "transparent",
         WebkitTextFillColor: "transparent",
         ...style,
       }}
-      animate={{ backgroundPosition: ["200% 0%", "-100% 0%"] }}
+      animate={{ backgroundPosition: ["100% 0%", "0% 0%"] }}
       transition={{
         duration,
         repeat: Infinity,
