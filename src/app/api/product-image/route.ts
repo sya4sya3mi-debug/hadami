@@ -3,7 +3,10 @@ import sharp from "sharp";
 import { authenticateRequest, validateImagePayload } from "@/lib/apiAuth";
 import {
   PRODUCT_IMAGE_DISPLAY_SIZE,
+  PRODUCT_IMAGE_DISPLAY_QUALITY,
   PRODUCT_IMAGE_SHARE_SIZE,
+  PRODUCT_IMAGE_SHARE_QUALITY,
+  PRODUCT_IMAGE_WEBP_EFFORT,
   getProductImageDisplayPath,
   getProductImageSharePath,
   getProductImageDisplayPathFromStoredPath,
@@ -14,9 +17,6 @@ import { r2Upload, r2Delete, r2Download } from "@/lib/r2";
 export const runtime = "nodejs";
 export const maxDuration = 30;
 
-const WEBP_DISPLAY_QUALITY = 75;
-const WEBP_SHARE_QUALITY = 88;
-const WEBP_EFFORT = 4;
 const WEBP_CONTENT_TYPE = "image/webp";
 
 function getContentTypeFromKey(key: string) {
@@ -105,7 +105,10 @@ export async function POST(request: Request) {
           fit: "inside",
           withoutEnlargement: true,
         })
-        .webp({ quality: WEBP_DISPLAY_QUALITY, effort: WEBP_EFFORT })
+        .webp({
+          quality: PRODUCT_IMAGE_DISPLAY_QUALITY,
+          effort: PRODUCT_IMAGE_WEBP_EFFORT,
+        })
         .toBuffer(),
       rotated
         .clone()
@@ -113,7 +116,10 @@ export async function POST(request: Request) {
           fit: "inside",
           withoutEnlargement: true,
         })
-        .webp({ quality: WEBP_SHARE_QUALITY, effort: WEBP_EFFORT })
+        .webp({
+          quality: PRODUCT_IMAGE_SHARE_QUALITY,
+          effort: PRODUCT_IMAGE_WEBP_EFFORT,
+        })
         .toBuffer(),
     ]);
     displayBytes = display;

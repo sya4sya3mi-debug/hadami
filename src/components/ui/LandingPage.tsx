@@ -908,6 +908,7 @@ export default function LandingPage() {
                       glintColor="oklch(0.78 0.10 150)"
                       duration={2.4}
                       intervalSec={6}
+                      pinLastChar
                       style={{
                         fontFamily: "'Cormorant Garamond', serif",
                         fontStyle: "italic",

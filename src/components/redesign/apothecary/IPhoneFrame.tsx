@@ -5,24 +5,26 @@ import * as React from "react";
 export function IPhoneFrame({ children }: { children: React.ReactNode }) {
   const W = 388;
   const H = 820;
+  const GUTTER = 20;
   return (
     <div
       style={{
-        minHeight: "100vh",
+        minHeight: "100dvh",
         width: "100%",
         display: "flex",
-        alignItems: "flex-start",
+        alignItems: "center",
         justifyContent: "center",
         background: "#f0eee9",
+        padding: `${GUTTER / 2}px 0`,
+        boxSizing: "border-box",
       }}
     >
       <div
-        className="hd-frame"
         style={{
           width: W,
           height: H,
-          maxWidth: "100vw",
-          maxHeight: "100dvh",
+          maxWidth: `calc(100vw - ${GUTTER}px)`,
+          maxHeight: `calc(100dvh - ${GUTTER}px)`,
           position: "relative",
           overflow: "hidden",
           background: "var(--hd-bg)",
@@ -31,15 +33,6 @@ export function IPhoneFrame({ children }: { children: React.ReactNode }) {
       >
         {children}
       </div>
-      <style>{`
-        @media (max-width: 420px) {
-          .hd-frame {
-            width: 100vw !important;
-            height: 100dvh !important;
-            border-radius: 0 !important;
-          }
-        }
-      `}</style>
     </div>
   );
 }

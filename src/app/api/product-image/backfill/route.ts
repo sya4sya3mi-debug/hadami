@@ -5,7 +5,10 @@ import { rateLimit } from "@/lib/rateLimit";
 import {
   PRODUCT_IMAGE_BACKFILL_BATCH_SIZE,
   PRODUCT_IMAGE_DISPLAY_SIZE,
+  PRODUCT_IMAGE_DISPLAY_QUALITY,
   PRODUCT_IMAGE_SHARE_SIZE,
+  PRODUCT_IMAGE_SHARE_QUALITY,
+  PRODUCT_IMAGE_WEBP_EFFORT,
   getProductImageDisplayPath,
   getProductImageSharePath,
   getProductImageDisplayPathFromStoredPath,
@@ -13,9 +16,6 @@ import {
 } from "@/lib/productImages";
 import { r2Upload, r2Download, r2Delete } from "@/lib/r2";
 
-const WEBP_DISPLAY_QUALITY = 75;
-const WEBP_SHARE_QUALITY = 88;
-const WEBP_EFFORT = 4;
 const WEBP_CONTENT_TYPE = "image/webp";
 const BACKFILL_WINDOW_MS = 10 * 60_000;
 const BACKFILL_MAX_REQUESTS = 12;
@@ -146,7 +146,10 @@ export async function POST(request: Request) {
             fit: "inside",
             withoutEnlargement: true,
           })
-          .webp({ quality: WEBP_DISPLAY_QUALITY, effort: WEBP_EFFORT })
+          .webp({
+            quality: PRODUCT_IMAGE_DISPLAY_QUALITY,
+            effort: PRODUCT_IMAGE_WEBP_EFFORT,
+          })
           .toBuffer(),
         rotated
           .clone()
@@ -154,7 +157,10 @@ export async function POST(request: Request) {
             fit: "inside",
             withoutEnlargement: true,
           })
-          .webp({ quality: WEBP_SHARE_QUALITY, effort: WEBP_EFFORT })
+          .webp({
+            quality: PRODUCT_IMAGE_SHARE_QUALITY,
+            effort: PRODUCT_IMAGE_WEBP_EFFORT,
+          })
           .toBuffer(),
       ]);
 

@@ -161,7 +161,7 @@ function mapDeckItems(rows: DeckRow[]): DeckItem[] {
   }));
 }
 
-const THUMB_VERSION = 3; // Bump when thumbnail size/quality changes
+const THUMB_VERSION = 4; // Bump when product image size/quality changes
 const THUMB_VERSION_KEY = "hadami_thumb_version";
 const THUMB_BACKFILL_RETRY_AFTER_KEY = "hadami_thumb_backfill_retry_after";
 const THUMB_BACKFILL_RETRY_MS = 10 * 60 * 1000;

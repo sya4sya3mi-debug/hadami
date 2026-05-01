@@ -229,6 +229,7 @@ export function GradientSweep({
   glintColor = "oklch(0.62 0.06 150)",
   duration = 2.4,
   intervalSec = 6,
+  pinLastChar = false,
   style,
   className,
 }: {
@@ -237,14 +238,103 @@ export function GradientSweep({
   glintColor?: string;
   duration?: number;
   intervalSec?: number;
+  pinLastChar?: boolean;
   style?: CSSProperties;
   className?: string;
 }) {
   const reduced = useReducedMotion();
+  const cycleDuration = Math.max(duration, intervalSec);
+
   if (reduced) {
     return (
       <span className={className} style={style}>
         {children}
+      </span>
+    );
+  }
+
+  if (pinLastChar && typeof children === "string" && children.length > 1) {
+    const chars = Array.from(children);
+    const lastChar = chars.pop() ?? "";
+    const leadingText = chars.join("");
+    const revealStart = Math.max(0.04, (duration * 0.72) / cycleDuration);
+    const revealEnd = Math.min(0.88, (duration * 0.98) / cycleDuration);
+    const resetStart = Math.max(revealEnd + 0.02, 0.96);
+
+    return (
+      <span
+        className={className}
+        style={{
+          display: "inline-flex",
+          alignItems: "baseline",
+          ...style,
+        }}
+      >
+        <motion.span
+          style={{
+            display: "inline-block",
+            backgroundImage: `linear-gradient(110deg, ${baseColor} 0%, ${baseColor} 40%, ${glintColor} 50%, ${baseColor} 60%, ${baseColor} 100%)`,
+            backgroundSize: "300% 100%",
+            backgroundClip: "text",
+            WebkitBackgroundClip: "text",
+            color: "transparent",
+            WebkitTextFillColor: "transparent",
+          }}
+          animate={{ backgroundPosition: ["200% 0%", "-100% 0%"] }}
+          transition={{
+            duration,
+            repeat: Infinity,
+            repeatDelay: Math.max(0, intervalSec - duration),
+            ease: "easeInOut",
+          }}
+        >
+          {leadingText}
+        </motion.span>
+        <span
+          style={{
+            position: "relative",
+            display: "inline-block",
+            color: baseColor,
+          }}
+        >
+          {lastChar}
+          <motion.span
+            aria-hidden="true"
+            style={{
+              position: "absolute",
+              inset: 0,
+              color: glintColor,
+              textShadow: `0 0 10px ${glintColor}`,
+              pointerEvents: "none",
+            }}
+            animate={{
+              opacity: [0, 0, 0.85, 1, 1, 0],
+              clipPath: [
+                "inset(0 100% 0 0)",
+                "inset(0 100% 0 0)",
+                "inset(0 36% 0 0)",
+                "inset(0 0% 0 0)",
+                "inset(0 0% 0 0)",
+                "inset(0 100% 0 0)",
+              ],
+            }}
+            transition={{
+              duration: cycleDuration,
+              repeat: Infinity,
+              ease: "linear",
+              times: [
+                0,
+                Math.max(0, revealStart - 0.05),
+                revealStart,
+                revealEnd,
+                resetStart,
+                1,
+              ],
+            }}
+          >
+            {lastChar}
+          </motion.span>
+        </span>
       </span>
     );
   }
