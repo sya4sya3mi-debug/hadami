@@ -157,13 +157,15 @@ export function Typewriter({
 }) {
   const reduced = useReducedMotion();
   const [done, setDone] = useState(false);
-  const [text, setText] = useState<string[]>(lines.map(() => ""));
+  const [text, setText] = useState<string[]>([""]);
+  const [currentLine, setCurrentLine] = useState(0);
 
   // Hero 直下用なので useInView は使わない（margin:"-10%" + 短い viewport で
   // 永遠に false になり tick が発火しないケースを回避）。マウント直後から開始する。
   useEffect(() => {
     if (reduced) {
       setText(lines);
+      setCurrentLine(lines.length - 1);
       setDone(true);
       return;
     }
@@ -172,6 +174,20 @@ export function Typewriter({
     let idx = 0;
     const timer: { id: number | null } = { id: null };
 
+    // 実際のキーボード入力に近い揺らぎを足す
+    // - 1キーごとの基準速度 ±35% のジッター
+    // - スペース/句点/カンマの直後に短い間
+    // - 改行直後に「思考」の長めの間
+    // - 稀に小さな間（指のもたつき）
+    const nextDelay = (justTyped: string, nextChar: string): number => {
+      const jitter = speed * (0.65 + Math.random() * 0.7);
+      if (justTyped === "\n") return jitter + 220 + Math.random() * 180;
+      if (/[。．、,.!?]/.test(justTyped)) return jitter + 90 + Math.random() * 80;
+      if (justTyped === " " || nextChar === " ") return jitter + 20;
+      if (Math.random() < 0.04) return jitter + 70 + Math.random() * 80;
+      return jitter;
+    };
+
     const tick = () => {
       if (cancelled) return;
       idx += 1;
@@ -179,8 +195,11 @@ export function Typewriter({
       const split = partial.split("\n");
       const padded = lines.map((_, i) => split[i] ?? "");
       setText(padded);
+      setCurrentLine(split.length - 1);
       if (idx < flat.length) {
-        timer.id = window.setTimeout(tick, speed);
+        const justTyped = flat.charAt(idx - 1);
+        const nextChar = flat.charAt(idx);
+        timer.id = window.setTimeout(tick, nextDelay(justTyped, nextChar));
       } else {
         setDone(true);
       }
@@ -193,29 +212,39 @@ export function Typewriter({
     };
   }, [reduced, speed, startDelay, lines]);
 
+  const visibleLines = done ? lines : text.slice(0, currentLine + 1);
+
   return (
     <span className={className} style={style}>
-      {text.map((l, i) => (
-        <span key={i}>
-          {l}
-          {i < text.length - 1 ? <br /> : null}
-        </span>
-      ))}
-      {cursor && !done && !reduced && (
-        <motion.span
-          aria-hidden
-          style={{
-            display: "inline-block",
-            width: "0.5px",
-            height: "1em",
-            background: cursorColor,
-            marginLeft: 2,
-            verticalAlign: "-0.12em",
-          }}
-          animate={{ opacity: [1, 0, 1] }}
-          transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-        />
-      )}
+      {visibleLines.map((l, i) => {
+        const isLast = i === visibleLines.length - 1;
+        return (
+          <span key={i}>
+            {l}
+            {isLast && cursor && !done && !reduced && (
+              <motion.span
+                aria-hidden
+                style={{
+                  display: "inline-block",
+                  width: "1px",
+                  height: "1em",
+                  background: cursorColor,
+                  marginLeft: 2,
+                  verticalAlign: "-0.12em",
+                }}
+                animate={{ opacity: [1, 1, 0, 0] }}
+                transition={{
+                  duration: 1.06,
+                  repeat: Infinity,
+                  ease: "linear",
+                  times: [0, 0.49, 0.5, 1],
+                }}
+              />
+            )}
+            {!isLast && <br />}
+          </span>
+        );
+      })}
     </span>
   );
 }
