@@ -255,10 +255,9 @@ export function GradientSweep({
     const chars = Array.from(children);
     const lastChar = chars.pop() ?? "";
     const leadingText = chars.join("");
-    const revealStart = Math.max(0.04, (duration * 0.72) / cycleDuration);
-    const revealEnd = Math.min(0.88, (duration * 0.98) / cycleDuration);
-    const holdEnd = Math.min(0.92, revealEnd + 0.1);
-    const fadeEnd = Math.min(0.98, holdEnd + 0.08);
+    const revealStart = Math.max(0.04, (duration * 0.85) / cycleDuration);
+    const revealMid = Math.min(0.94, (duration * 1.1) / cycleDuration);
+    const wipeEnd = Math.min(0.98, (duration * 1.3) / cycleDuration);
 
     return (
       <span
@@ -308,12 +307,11 @@ export function GradientSweep({
               pointerEvents: "none",
             }}
             animate={{
-              opacity: [0, 0, 0.85, 1, 1, 1, 0],
+              opacity: [0, 0, 0.85, 1, 1, 0],
               clipPath: [
                 "inset(0 100% 0 0)",
                 "inset(0 100% 0 0)",
                 "inset(0 36% 0 0)",
-                "inset(0 0% 0 0)",
                 "inset(0 0% 0 0)",
                 "inset(0 0% 0 100%)",
                 "inset(0 100% 0 0)",
@@ -327,9 +325,8 @@ export function GradientSweep({
                 0,
                 Math.max(0, revealStart - 0.05),
                 revealStart,
-                revealEnd,
-                holdEnd,
-                fadeEnd,
+                revealMid,
+                wipeEnd,
                 1,
               ],
             }}
