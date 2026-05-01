@@ -256,6 +256,7 @@ export function GradientSweep({
   glintColor = "oklch(0.62 0.06 150)",
   duration = 2.4,
   intervalSec = 6,
+  delay = 0,
   pinLastChar = false,
   style,
   className,
@@ -265,6 +266,7 @@ export function GradientSweep({
   glintColor?: string;
   duration?: number;
   intervalSec?: number;
+  delay?: number;
   pinLastChar?: boolean;
   style?: CSSProperties;
   className?: string;
@@ -384,6 +386,7 @@ export function GradientSweep({
       animate={{ backgroundPosition: ["100% 0%", "0% 0%"] }}
       transition={{
         duration,
+        delay,
         repeat: Infinity,
         repeatDelay: Math.max(0, intervalSec - duration),
         ease: "easeInOut",

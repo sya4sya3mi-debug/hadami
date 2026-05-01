@@ -916,7 +916,6 @@ export default function LandingPage() {
                       glintColor="oklch(0.78 0.10 150)"
                       duration={1.4}
                       intervalSec={6}
-                      pinLastChar
                       style={{
                         fontFamily: "'Cormorant Garamond', serif",
                         fontStyle: "italic",
@@ -925,17 +924,21 @@ export default function LandingPage() {
                     >
                       美しさ
                     </GradientSweep>
-                    <span
+                    <GradientSweep
+                      baseColor={ACCENT}
+                      glintColor="oklch(0.78 0.10 150)"
+                      duration={0.9}
+                      intervalSec={6}
+                      delay={1.4}
                       style={{
                         fontFamily: "'JetBrains Mono', monospace",
                         fontSize: "0.18em",
-                        color: ACCENT,
                         letterSpacing: "0.14em",
                         opacity: 0.9,
                       }}
                     >
                       /utsu·ku·shi·sa/
-                    </span>
+                    </GradientSweep>
                   </div>
                   <div style={{ marginTop: 4 }}>
                     <SplitText text="を選ぶ。" delay={0.4} />
