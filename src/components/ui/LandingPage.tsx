@@ -22,6 +22,14 @@ const BG = "#e8e4db";
 const ACCENT = "#3a5544";
 const DARK_TEXT = "#f0ece3";
 
+// Typewriter 用：参照を固定するためモジュール定数化（親の毎秒再レンダリングで配列リテラルが
+// 新参照になるとエフェクトが startDelay 中にキャンセルされ続け、文字が打たれない）
+const HERO_TYPEWRITER_LINES = [
+  "Niacinamide  ——  ナイアシンアミド。",
+  "肌が、自分のことばで話しはじめる。",
+  "Camellia japonica  ✓  found in 12 items.",
+];
+
 /* ─── Animated Number Counter ─── */
 function AnimNum({ to, dur = 1200 }: { to: number; dur?: number }) {
   const [v, setV] = useState(0);
@@ -948,11 +956,7 @@ export default function LandingPage() {
                   }}
                 >
                   <Typewriter
-                    lines={[
-                      "Niacinamide  ——  ナイアシンアミド。",
-                      "肌が、自分のことばで話しはじめる。",
-                      "Camellia japonica  ✓  found in 12 items.",
-                    ]}
+                    lines={HERO_TYPEWRITER_LINES}
                     speed={42}
                     startDelay={1400}
                     cursorColor={ACCENT}
