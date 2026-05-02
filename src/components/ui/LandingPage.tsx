@@ -4,7 +4,7 @@ import "@/styles/hadami-tokens.css";
 import { useState, useEffect, useRef, ReactNode, CSSProperties } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { motion, useMotionValue, useSpring, useReducedMotion } from "framer-motion";
+import { motion } from "framer-motion";
 import { getAccountScanLimit } from "@/lib/db";
 import { Ico } from "@/components/redesign/apothecary/Icons";
 import {
@@ -195,66 +195,17 @@ const SHARE_SWATCHES = [
   { type: "美容オイル", abbr: "tc",  name: "Lano-oil",           hue: 230 },
 ];
 
-/* ─── Phone Mock parallax wrapper — gentle mouse follow on desktop ─── */
+/* ─── Phone Mock parallax wrapper ───
+ *
+ * 以前は perspective + rotateX/rotateY の spring で 3D parallax 風に
+ * 揺らしていたが、画面内の小さなテキストがサブピクセルのアンチエイリアスで
+ * ちらつき "ぶれぶれ" に見えるという報告があったため parallax を外し、
+ * 静的に表示するシンプルな構造に変更した。
+ */
 function PhoneMockParallax({ mobile }: { mobile: boolean }) {
-  const reduced = useReducedMotion();
-  const x = useMotionValue(0);
-  const y = useMotionValue(0);
-  const rx = useMotionValue(0);
-  const ry = useMotionValue(0);
-  const sx = useSpring(x, { stiffness: 50, damping: 18 });
-  const sy = useSpring(y, { stiffness: 50, damping: 18 });
-  const srx = useSpring(rx, { stiffness: 50, damping: 18 });
-  const sry = useSpring(ry, { stiffness: 50, damping: 18 });
-
-  // モバイル / reduced-motion 時は perspective ラッパーを完全に外す。
-  // iOS Safari は perspective + 子の overflow:hidden + border-radius の組み合わせで
-  // ベゼルクリップが崩れる既知不具合があるため、可能な限りラッパーを通さない。
-  if (mobile || reduced) {
-    return (
-      <div style={{ position: "relative" }}>
-        <PhoneMock maxWidth={mobile ? 220 : 300} />
-      </div>
-    );
-  }
-
-  const onMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    const r = e.currentTarget.getBoundingClientRect();
-    const cx = r.left + r.width / 2;
-    const cy = r.top + r.height / 2;
-    const nx = (e.clientX - cx) / r.width;
-    const ny = (e.clientY - cy) / r.height;
-    x.set(nx * 6);
-    y.set(ny * 6);
-    ry.set(nx * 4);
-    rx.set(-ny * 3);
-  };
-  const onLeave = () => {
-    x.set(0); y.set(0); rx.set(0); ry.set(0);
-  };
-
   return (
-    <div
-      style={{ position: "relative", perspective: 1200 }}
-      onMouseMove={onMove}
-      onMouseLeave={onLeave}
-    >
-      <motion.div
-        style={{
-          x: sx,
-          y: sy,
-          rotateX: srx,
-          rotateY: sry,
-          transformStyle: "preserve-3d",
-          // GPU 合成レイヤを固定して、parallax の spring 出力による
-          // サブピクセル単位のアンチエイリアスのちらつきを抑える
-          willChange: "transform",
-          backfaceVisibility: "hidden",
-          WebkitBackfaceVisibility: "hidden",
-        }}
-      >
-        <PhoneMock maxWidth={300} />
-      </motion.div>
+    <div style={{ position: "relative" }}>
+      <PhoneMock maxWidth={mobile ? 220 : 300} />
     </div>
   );
 }
