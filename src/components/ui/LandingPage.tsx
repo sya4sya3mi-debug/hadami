@@ -125,7 +125,7 @@ const HR = ({ ink = INK, style = {} }: { ink?: string; style?: CSSProperties }) 
     initial={{ scaleX: 0 }}
     whileInView={{ scaleX: 1 }}
     viewport={{ once: true, margin: "-10%" }}
-    transition={{ duration: 1.8, ease: [0.22, 0.61, 0.36, 1] }}
+    transition={{ duration: 2.8, ease: [0.22, 0.61, 0.36, 1] }}
   />
 );
 
@@ -1504,8 +1504,8 @@ export default function LandingPage() {
                     alignItems: "center",
                     justifyContent: "center",
                   }}
-                  initial={{ opacity: 0, y: 16, filter: "blur(4px)" }}
-                  animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+                  initial={{ opacity: 0, y: 16 }}
+                  animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.55, ease: [0.22, 0.61, 0.36, 1] }}
                 >
                   {scanStep === 0 && (
