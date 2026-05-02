@@ -487,8 +487,25 @@ function PhoneMock({ maxWidth = 300 }: { maxWidth?: number } = {}) {
           <span style={{ opacity: 0 }}>·</span>
           <span style={{ fontSize: 9 }}>●●●</span>
         </div>
-        {/* 画面領域は flex:1 で残りを取り、min-height:0 で flex 子の縮小を許容 */}
-        <div style={{ flex: 1, minHeight: 0, overflow: "hidden" }}>{screens[phase]}</div>
+        {/* 画面領域は flex:1 で残りを取り、min-height:0 で flex 子の縮小を許容。
+            phase 切替時はハードスワップではなく opacity のクロスフェードで遷移し、
+            レイアウト再計算による上下のブレを防ぐ。 */}
+        <div style={{ flex: 1, minHeight: 0, overflow: "hidden", position: "relative" }}>
+          {screens.map((screen, i) => (
+            <motion.div
+              key={i}
+              animate={{ opacity: phase === i ? 1 : 0 }}
+              transition={{ duration: 0.4, ease: "easeOut" }}
+              style={{
+                position: "absolute",
+                inset: 0,
+                pointerEvents: phase === i ? "auto" : "none",
+              }}
+            >
+              {screen}
+            </motion.div>
+          ))}
+        </div>
         <div
           style={{
             flexShrink: 0,
@@ -1076,8 +1093,9 @@ export default function LandingPage() {
             </div>
 
             {/* right — phone mock (mobile では小さめに表示) */}
-            {/* perspective + 3D 変形を使うため blur フィルタを切る */}
-            <Reveal delay={300} noBlur>
+            {/* y 移動 + blur フィルタは GPU 合成と干渉して上下にぶれて
+                見えるため、entry は opacity のみに簡略化 */}
+            <Reveal delay={300} noBlur y={0}>
               <PhoneMockParallax mobile={mobile} />
             </Reveal>
           </div>
