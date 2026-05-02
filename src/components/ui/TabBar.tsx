@@ -38,7 +38,10 @@ export default function TabBar() {
   if (isAuthPath) return null;
   if (pathname.startsWith("/redesign")) return null;
   if (pathname.startsWith("/admin")) return null;
-  if (!loading && !user) return null;
+  // 未ログイン時はランディングページが表示されるため TabBar を出さない。
+  // loading 中も非表示にしておくことで、LP の初期描画にログイン後の
+  // ボトムメニューが一瞬チラつくのを防ぐ。
+  if (loading || !user) return null;
 
   const isActive = (href: string) =>
     href === "/"
