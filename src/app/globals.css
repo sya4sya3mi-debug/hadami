@@ -234,6 +234,17 @@ body {
   }
 }
 
+/* LP は常に cream トーン。ダークモードや prefers-color-scheme 影響で
+   body 背景が #121212 等になっていても、#app-container の外側が黒く
+   表示されないように LP の BG (#e8e4db) で塗り直す。 */
+body.lp-active,
+html:has(body.lp-active) {
+  background: #e8e4db !important;
+}
+body.lp-active #app-container {
+  background: #e8e4db;
+}
+
 /* Discovery animations */
 @keyframes sparkle {
   0%, 100% { box-shadow: 0 0 4px rgba(124,106,232,0.2); }
