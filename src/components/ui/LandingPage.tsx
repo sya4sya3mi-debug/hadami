@@ -850,7 +850,7 @@ export default function LandingPage() {
               }}
               initial={{ scaleX: 0 }}
               animate={{ scaleX: 1 }}
-              transition={{ duration: 11, ease: [0.22, 0.61, 0.36, 1] }}
+              transition={{ duration: 4, ease: [0.22, 0.61, 0.36, 1] }}
               aria-hidden
             />
           </div>
