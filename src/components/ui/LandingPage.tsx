@@ -1157,14 +1157,15 @@ export default function LandingPage() {
                     color: INK,
                   }}
                 >
-                  HADAMIに
+                  HADAMIに、
+                  <br />
                   <span
                     style={{
                       fontFamily: "'Cormorant Garamond', serif",
                       fontStyle: "italic",
                     }}
                   >
-                    {" "}できる
+                    できる
                   </span>
                   こと。
                 </h2>
