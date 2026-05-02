@@ -125,7 +125,7 @@ const HR = ({ ink = INK, style = {} }: { ink?: string; style?: CSSProperties }) 
     initial={{ scaleX: 0 }}
     whileInView={{ scaleX: 1 }}
     viewport={{ once: true, margin: "-10%" }}
-    transition={{ duration: 2.4, ease: [0.22, 0.61, 0.36, 1] }}
+    transition={{ duration: 1.8, ease: [0.22, 0.61, 0.36, 1] }}
   />
 );
 
@@ -240,7 +240,18 @@ function PhoneMockParallax({ mobile }: { mobile: boolean }) {
       onMouseLeave={onLeave}
     >
       <motion.div
-        style={{ x: sx, y: sy, rotateX: srx, rotateY: sry, transformStyle: "preserve-3d" }}
+        style={{
+          x: sx,
+          y: sy,
+          rotateX: srx,
+          rotateY: sry,
+          transformStyle: "preserve-3d",
+          // GPU 合成レイヤを固定して、parallax の spring 出力による
+          // サブピクセル単位のアンチエイリアスのちらつきを抑える
+          willChange: "transform",
+          backfaceVisibility: "hidden",
+          WebkitBackfaceVisibility: "hidden",
+        }}
       >
         <PhoneMock maxWidth={300} />
       </motion.div>
@@ -1114,7 +1125,8 @@ export default function LandingPage() {
             </div>
 
             {/* right — phone mock (mobile では小さめに表示) */}
-            <Reveal delay={300}>
+            {/* perspective + 3D 変形を使うため blur フィルタを切る */}
+            <Reveal delay={300} noBlur>
               <PhoneMockParallax mobile={mobile} />
             </Reveal>
           </div>

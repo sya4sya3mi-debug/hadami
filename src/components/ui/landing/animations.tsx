@@ -25,12 +25,19 @@ export function MotionReveal({
   children,
   delay = 0,
   y = 28,
+  noBlur = false,
   className,
   style,
 }: {
   children: ReactNode;
   delay?: number;
   y?: number;
+  /**
+   * blur フィルタの遷移を無効化する。perspective + 3D 変形を使う子要素
+   * (例: スマホモックアップの parallax) では blur フィルタが GPU 合成と
+   * 干渉してエッジがブレるため、そのケースで true にする。
+   */
+  noBlur?: boolean;
   className?: string;
   style?: CSSProperties;
 }) {
@@ -42,12 +49,18 @@ export function MotionReveal({
       </div>
     );
   }
+  const initial = noBlur
+    ? { opacity: 0, y }
+    : { opacity: 0, y, filter: "blur(2px)" };
+  const animate = noBlur
+    ? { opacity: 1, y: 0 }
+    : { opacity: 1, y: 0, filter: "blur(0px)" };
   return (
     <motion.div
       className={className}
       style={style}
-      initial={{ opacity: 0, y, filter: "blur(2px)" }}
-      whileInView={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+      initial={initial}
+      whileInView={animate}
       viewport={{ once: true, margin: "-10%" }}
       transition={{
         duration: 0.7,
