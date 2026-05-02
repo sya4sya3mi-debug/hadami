@@ -828,13 +828,31 @@ export default function LandingPage() {
               display: "flex",
               justifyContent: "space-between",
               padding: `28px ${px} 18px`,
-              borderBottom: "0.5px solid rgba(26,26,22,0.13)",
+              position: "relative",
             }}
           >
             <Mono style={{ fontSize: 9, opacity: 0.4 }}>
               {mobile ? "HADAMI · 成分図鑑" : "HADAMI · ハダミ成分図鑑 — A FIELD GUIDE TO YOUR SKIN"}
             </Mono>
             <Mono style={{ fontSize: 9, opacity: 0.4 }}>TOKYO · {timeStr}</Mono>
+            {/* 「中央から左右に広がる」LP の入場演出。ヘアラインより太く・濃く、
+                4 秒かけてゆっくり広がるので明確に視認できる。 */}
+            <motion.div
+              style={{
+                position: "absolute",
+                left: 0,
+                right: 0,
+                bottom: 0,
+                height: 1,
+                background: INK,
+                opacity: 0.35,
+                transformOrigin: "center",
+              }}
+              initial={{ scaleX: 0 }}
+              animate={{ scaleX: 1 }}
+              transition={{ duration: 4, ease: [0.22, 0.61, 0.36, 1] }}
+              aria-hidden
+            />
           </div>
 
           {/* main */}
@@ -844,7 +862,10 @@ export default function LandingPage() {
               display: "grid",
               gridTemplateColumns: mobile ? "1fr" : "1.15fr 1fr",
               gap: mobile ? 48 : 80,
-              alignItems: "center",
+              // 左カラム (H1 + 本文) のフォント遅延読み込みで高さが変わると、
+              // alignItems: center だとスマホモックアップが上下に再センタリングされて
+              // ずれて見える。start に固定して位置を安定させる。
+              alignItems: "start",
               padding: mobile ? `48px ${px} 48px` : `80px ${px} 80px`,
             }}
           >
