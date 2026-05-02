@@ -119,13 +119,13 @@ const HR = ({ ink = INK, style = {} }: { ink?: string; style?: CSSProperties }) 
       height: "0.5px",
       background: ink,
       opacity: 0.13,
-      transformOrigin: "left center",
+      transformOrigin: "center",
       ...style,
     }}
     initial={{ scaleX: 0 }}
     whileInView={{ scaleX: 1 }}
     viewport={{ once: true, margin: "-10%" }}
-    transition={{ duration: 1.4, ease: [0.22, 0.61, 0.36, 1] }}
+    transition={{ duration: 2.4, ease: [0.22, 0.61, 0.36, 1] }}
   />
 );
 
@@ -539,45 +539,50 @@ function PhoneMock({ maxWidth = 300 }: { maxWidth?: number } = {}) {
             paddingBottom: 6,
           }}
         >
-          {[
-            ["⌂", "HOME"],
-            ["≡", "INDEX"],
-            [null, "CARE"],
-            ["□", "MINE"],
-          ].map(([icon, label], i) =>
-            i === 2 ? (
-              <div
-                key={label as string}
-                style={{
-                  width: 44,
-                  height: 44,
-                  borderRadius: "50%",
-                  background: INK,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                <span style={{ color: BG, fontSize: 16 }}>⊙</span>
-              </div>
-            ) : (
-              <div
-                key={label as string}
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                  gap: 3,
-                  opacity: phase === i ? 1 : 0.4,
-                }}
-              >
-                <span style={{ fontSize: 14 }}>{icon as string}</span>
-                <Mono style={{ fontSize: 7, letterSpacing: "0.14em", opacity: 0.6 }}>
-                  {label as string}
-                </Mono>
-              </div>
-            ),
-          )}
+          {(() => {
+            // phase 0 → Home, phase 1 → Scan (center), phase 2 → Routine (CARE)
+            const activeIndex = phase === 0 ? 0 : phase === 1 ? 2 : 3;
+            return [
+              ["⌂", "HOME"],
+              ["≡", "INDEX"],
+              [null, "SCAN"],
+              ["▭", "CARE"],
+              ["○", "MINE"],
+            ].map(([icon, label], i) =>
+              i === 2 ? (
+                <div
+                  key={label as string}
+                  style={{
+                    width: 44,
+                    height: 44,
+                    borderRadius: "50%",
+                    background: INK,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  <span style={{ color: BG, fontSize: 16 }}>⊙</span>
+                </div>
+              ) : (
+                <div
+                  key={label as string}
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    gap: 3,
+                    opacity: activeIndex === i ? 1 : 0.4,
+                  }}
+                >
+                  <span style={{ fontSize: 14 }}>{icon as string}</span>
+                  <Mono style={{ fontSize: 7, letterSpacing: "0.14em", opacity: 0.6 }}>
+                    {label as string}
+                  </Mono>
+                </div>
+              ),
+            );
+          })()}
         </div>
       </div>
     </div>
