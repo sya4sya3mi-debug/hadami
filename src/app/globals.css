@@ -214,9 +214,6 @@ body {
   position: relative;
   overflow-x: clip;
   background: var(--background);
-  /* LP マウント時 (body.lp-active 追加) に max-width が広がる際、
-     中央から左右にゆっくり広がるアニメに見せる。 */
-  transition: max-width 3s cubic-bezier(0.22, 0.61, 0.36, 1);
 }
 
 @media (min-width: 768px) {
