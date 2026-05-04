@@ -1,24 +1,29 @@
 "use client";
 
 import "@/styles/hadami-tokens.css";
+import * as React from "react";
+import ScatterDeco from "@/components/share/ScatterDeco";
+import {
+  SHARE_PALETTES,
+  getSharePalette,
+  type SharePalette,
+  type SharePaletteKey,
+} from "@/lib/shareCardPalettes";
+import {
+  buildShareDecoTheme,
+  type ShareDecoKey,
+} from "@/lib/shareCardDeco";
 
 const SC_W = 540;
 const SC_H = 540;
 
 export type CardPattern = "A" | "B" | "C";
 
-export const CARD_COLORS = [
-  { label: "Crimson", value: "#C8203A" },
-  { label: "Coral",   value: "#F26B5E" },
-  { label: "Saffron", value: "#E5A41C" },
-  { label: "Olive",   value: "#6F7A2E" },
-  { label: "Emerald", value: "#138A5C" },
-  { label: "Teal",    value: "#0E8B8E" },
-  { label: "Cobalt",  value: "#1E4FB8" },
-  { label: "Lilac",   value: "#7E5BCC" },
-  { label: "Plum",    value: "#7A2660" },
-  { label: "Ink",     value: "#1F1F1F" },
-] as const;
+// 旧 API 互換: 単色カラーチップ。新規実装では SHARE_PALETTES を優先利用する。
+export const CARD_COLORS = SHARE_PALETTES.map((p) => ({
+  label: p.label,
+  value: p.swatch,
+}));
 
 export interface ProductShareCardEffect {
   label: string;
@@ -30,13 +35,15 @@ export interface ProductShareCardProps {
   brand: string;
   productType: string;
   initials: string;
-  bgColor?: string;
+  bgColor?: string;        // 商品サムネ用フォールバック
   imageUrl?: string;
   no?: number;
   effects: ProductShareCardEffect[];
-  rating?: number;
+  rating?: number;          // 0-5（0/未設定なら非表示）
+  comment?: string;         // 使用感コメント（空なら非表示）
   pattern?: CardPattern;
-  accentColor?: string;
+  paletteKey?: SharePaletteKey;
+  deco?: ShareDecoKey;
 }
 
 // ── shared helpers ────────────────────────────────────────────────────────────
@@ -98,8 +105,77 @@ function PhotoPanel({
           </div>
         </>
       )}
-      {/* top rule */}
-      <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 3, background: "var(--hd-ink)" }} />
+    </div>
+  );
+}
+
+function RatingStars({
+  rating,
+  accent,
+  hair,
+  size = 12,
+}: {
+  rating: number;
+  accent: string;
+  hair: string;
+  size?: number;
+}) {
+  const filled = Math.max(0, Math.min(5, Math.round(rating)));
+  return (
+    <div
+      style={{
+        display: "inline-flex",
+        gap: 2,
+        alignItems: "center",
+      }}
+      aria-label={`評価 ${filled}/5`}
+    >
+      {[1, 2, 3, 4, 5].map((i) => (
+        <svg
+          key={i}
+          width={size}
+          height={size}
+          viewBox="0 0 12 12"
+          aria-hidden="true"
+        >
+          <path
+            d="M6 1l1.4 3 3.3.4-2.4 2.3.7 3.2L6 8.5l-3 1.4.7-3.2L1.3 4.4l3.3-.4z"
+            fill={i <= filled ? accent : hair}
+          />
+        </svg>
+      ))}
+    </div>
+  );
+}
+
+function CommentBlock({
+  comment,
+  ink,
+  accent,
+  fontSize = 12,
+}: {
+  comment: string;
+  ink: string;
+  accent: string;
+  fontSize?: number;
+}) {
+  return (
+    <div
+      style={{
+        fontFamily: "var(--hd-serif)",
+        fontStyle: "italic",
+        fontSize,
+        lineHeight: 1.5,
+        color: ink,
+        letterSpacing: "-0.005em",
+        position: "relative",
+        paddingLeft: 14,
+        borderLeft: `2px solid ${accent}`,
+      }}
+    >
+      <span style={{ color: accent, marginRight: 2 }}>&ldquo;</span>
+      {comment}
+      <span style={{ color: accent, marginLeft: 2 }}>&rdquo;</span>
     </div>
   );
 }
@@ -107,21 +183,33 @@ function PhotoPanel({
 function EffectBars({
   effects,
   accent,
+  ink,
+  ink40,
+  hair,
 }: {
   effects: ProductShareCardEffect[];
   accent: string;
+  ink: string;
+  ink40: string;
+  hair: string;
 }) {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 9 }}>
       {effects.map((e) => (
         <div key={e.label} style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <div
-            className="hd-serif"
-            style={{ fontSize: 12, width: 44, letterSpacing: "-0.01em", flexShrink: 0 }}
+            style={{
+              fontFamily: "var(--hd-serif)",
+              fontSize: 12,
+              width: 44,
+              letterSpacing: "-0.01em",
+              flexShrink: 0,
+              color: ink,
+            }}
           >
             {e.label}
           </div>
-          <div style={{ flex: 1, height: 2, background: "var(--hd-hair)", position: "relative" }}>
+          <div style={{ flex: 1, height: 2, background: hair, position: "relative" }}>
             <div
               style={{
                 position: "absolute",
@@ -137,7 +225,7 @@ function EffectBars({
             style={{
               fontFamily: "var(--hd-mono)",
               fontSize: 9,
-              color: "var(--hd-ink-40)",
+              color: ink40,
               width: 28,
               textAlign: "right",
               flexShrink: 0,
@@ -154,10 +242,14 @@ function EffectBars({
 // ── Pattern A: left photo + right data ───────────────────────────────────────
 
 function PatternA({
-  name, brand, productType, initials, bgColor, imageUrl, no, effects, accent,
-}: Omit<ProductShareCardProps, "pattern" | "accentColor" | "rating"> & { accent: string }) {
+  name, brand, productType, initials, bgColor, imageUrl, no,
+  effects, rating, comment, palette, deco,
+}: Omit<ProductShareCardProps, "pattern" | "paletteKey"> & { palette: SharePalette; deco: ShareDecoKey }) {
   const noLabel = no != null ? `No. ${String(no).padStart(3, "0")}` : "No. —";
-  const displayEffects = effects.slice(0, 4);
+  // コメントがある場合は effects を 2 件、無ければ 4 件まで
+  const hasComment = !!comment?.trim();
+  const displayEffects = effects.slice(0, hasComment ? 2 : 4);
+  const decoTheme = buildShareDecoTheme(deco, palette.accent);
 
   return (
     <div
@@ -166,18 +258,25 @@ function PatternA({
       style={{
         width: SC_W,
         height: SC_H,
-        background: "var(--hd-bg)",
-        color: "var(--hd-ink)",
+        background: palette.bg,
+        color: palette.ink,
         display: "grid",
         gridTemplateColumns: "260px 1fr",
         boxSizing: "border-box",
         overflow: "hidden",
         fontFamily: "var(--hd-sans)",
+        position: "relative",
       }}
     >
-      {/* Left */}
+      {/* Left: photo */}
       <div style={{ position: "relative", overflow: "hidden" }}>
-        <PhotoPanel imageUrl={imageUrl} bgColor={bgColor ?? "#b5c4b1"} initials={initials} style={{ position: "absolute", inset: 0 }} />
+        <PhotoPanel
+          imageUrl={imageUrl}
+          bgColor={bgColor ?? palette.accent2}
+          initials={initials}
+          style={{ position: "absolute", inset: 0 }}
+        />
+        <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 3, background: palette.ink }} />
         <div
           style={{
             position: "absolute",
@@ -204,42 +303,137 @@ function PatternA({
         </div>
       </div>
 
-      {/* Right */}
+      {/* Right: data */}
       <div
         style={{
-          padding: "28px 30px 24px",
+          padding: "26px 28px 22px",
           display: "flex",
           flexDirection: "column",
-          borderTop: "3px solid var(--hd-ink)",
+          borderTop: `3px solid ${palette.ink}`,
+          position: "relative",
+          overflow: "hidden",
         }}
       >
-        <div style={{ paddingBottom: 16, borderBottom: "1px solid var(--hd-ink)" }}>
-          <div style={{ fontFamily: "var(--hd-mono)", fontSize: 9, letterSpacing: "0.22em", textTransform: "uppercase", color: "var(--hd-ink-40)" }}>
-            {noLabel}
+        {/* deco scatter (right pane only) */}
+        <ScatterDeco items={decoTheme.scatter} seed={3} />
+
+        <div
+          style={{
+            paddingBottom: 14,
+            borderBottom: `1px solid ${palette.ink}`,
+            position: "relative",
+            zIndex: 2,
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+            }}
+          >
+            <div
+              style={{
+                fontFamily: "var(--hd-mono)",
+                fontSize: 9,
+                letterSpacing: "0.22em",
+                textTransform: "uppercase",
+                color: palette.ink40,
+              }}
+            >
+              {noLabel}
+            </div>
+            {decoTheme.badge}
           </div>
-          <div style={{ fontFamily: "var(--hd-mono)", fontSize: 10, letterSpacing: "0.12em", color: accent, marginTop: 6, textTransform: "uppercase" }}>
+          <div
+            style={{
+              fontFamily: "var(--hd-mono)",
+              fontSize: 10,
+              letterSpacing: "0.12em",
+              color: palette.accent,
+              marginTop: 6,
+              textTransform: "uppercase",
+            }}
+          >
             {brand}
           </div>
-          <div className="hd-serif" style={{ fontSize: 18, lineHeight: 1.2, marginTop: 6, letterSpacing: "-0.015em" }}>
+          <div
+            style={{
+              fontFamily: "var(--hd-serif)",
+              fontSize: 17,
+              lineHeight: 1.2,
+              marginTop: 4,
+              letterSpacing: "-0.015em",
+              color: palette.ink,
+            }}
+          >
             {name}
           </div>
+          {rating != null && rating > 0 && (
+            <div style={{ marginTop: 8 }}>
+              <RatingStars rating={rating} accent={palette.accent} hair={palette.hair} size={11} />
+            </div>
+          )}
         </div>
 
-        <div style={{ marginTop: 16, flex: 1 }}>
-          <div style={{ fontFamily: "var(--hd-mono)", fontSize: 9, letterSpacing: "0.22em", textTransform: "uppercase", color: "var(--hd-ink-40)", marginBottom: 12 }}>
-            Active Effects
-          </div>
-          {displayEffects.length > 0
-            ? <EffectBars effects={displayEffects} accent={accent} />
-            : <div style={{ fontFamily: "var(--hd-mono)", fontSize: 9, color: "var(--hd-ink-40)", letterSpacing: "0.1em" }}>——</div>
-          }
+        <div style={{ marginTop: 14, flex: 1, position: "relative", zIndex: 2, minHeight: 0 }}>
+          {hasComment && (
+            <div style={{ marginBottom: 14 }}>
+              <CommentBlock
+                comment={comment!.trim()}
+                ink={palette.ink}
+                accent={palette.accent}
+                fontSize={11.5}
+              />
+            </div>
+          )}
+          {displayEffects.length > 0 && (
+            <>
+              <div
+                style={{
+                  fontFamily: "var(--hd-mono)",
+                  fontSize: 9,
+                  letterSpacing: "0.22em",
+                  textTransform: "uppercase",
+                  color: palette.ink40,
+                  marginBottom: 8,
+                }}
+              >
+                Active Effects
+              </div>
+              <EffectBars
+                effects={displayEffects}
+                accent={palette.accent}
+                ink={palette.ink}
+                ink40={palette.ink40}
+                hair={palette.hair}
+              />
+            </>
+          )}
         </div>
 
-        <div style={{ paddingTop: 16, borderTop: "1px solid var(--hd-hair)", display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
-          <div style={{ fontFamily: "var(--hd-mono)", fontSize: 8, color: "var(--hd-ink-40)", letterSpacing: "0.14em" }}>
+        <div
+          style={{
+            paddingTop: 14,
+            borderTop: `1px solid ${palette.hair}`,
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "flex-end",
+            position: "relative",
+            zIndex: 2,
+          }}
+        >
+          <div style={{ fontFamily: "var(--hd-mono)", fontSize: 8, color: palette.ink40, letterSpacing: "0.14em" }}>
             #マイコスメ #スキンケア
           </div>
-          <div className="hd-serif" style={{ fontSize: 18, fontStyle: "italic", color: accent }}>
+          <div
+            style={{
+              fontFamily: "var(--hd-serif)",
+              fontStyle: "italic",
+              fontSize: 18,
+              color: palette.accent,
+            }}
+          >
             HADAMI
           </div>
         </div>
@@ -251,9 +445,12 @@ function PatternA({
 // ── Pattern B: full-width photo top + data below ─────────────────────────────
 
 function PatternB({
-  name, brand, productType, initials, bgColor, imageUrl, effects, accent,
-}: Omit<ProductShareCardProps, "pattern" | "accentColor" | "rating" | "no"> & { accent: string }) {
-  const displayEffects = effects.slice(0, 3);
+  name, brand, productType, initials, bgColor, imageUrl,
+  effects, rating, comment, palette, deco,
+}: Omit<ProductShareCardProps, "pattern" | "paletteKey" | "no"> & { palette: SharePalette; deco: ShareDecoKey }) {
+  const hasComment = !!comment?.trim();
+  const displayEffects = effects.slice(0, hasComment ? 2 : 3);
+  const decoTheme = buildShareDecoTheme(deco, palette.accent);
 
   return (
     <div
@@ -262,8 +459,8 @@ function PatternB({
       style={{
         width: SC_W,
         height: SC_H,
-        background: "var(--hd-bg)",
-        color: "var(--hd-ink)",
+        background: palette.bg,
+        color: palette.ink,
         display: "flex",
         flexDirection: "column",
         boxSizing: "border-box",
@@ -272,41 +469,180 @@ function PatternB({
       }}
     >
       {/* Photo top */}
-      <div style={{ position: "relative", height: 280, flexShrink: 0, overflow: "hidden" }}>
-        <PhotoPanel imageUrl={imageUrl} bgColor={bgColor ?? "#b5c4b1"} initials={initials} style={{ position: "absolute", inset: 0 }} />
-        {/* bottom gradient overlay */}
-        <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(0,0,0,0.45) 0%, transparent 55%)" }} />
-        {/* bottom-left brand */}
+      <div style={{ position: "relative", height: 260, flexShrink: 0, overflow: "hidden" }}>
+        <PhotoPanel
+          imageUrl={imageUrl}
+          bgColor={bgColor ?? palette.accent2}
+          initials={initials}
+          style={{ position: "absolute", inset: 0 }}
+        />
+        <div
+          style={{
+            position: "absolute",
+            inset: 0,
+            background: "linear-gradient(to top, rgba(0,0,0,0.45) 0%, transparent 55%)",
+          }}
+        />
         <div style={{ position: "absolute", bottom: 16, left: 20 }}>
-          <div style={{ fontFamily: "var(--hd-mono)", fontSize: 9, letterSpacing: "0.24em", textTransform: "uppercase", color: "rgba(255,255,255,0.7)" }}>
+          <div
+            style={{
+              fontFamily: "var(--hd-mono)",
+              fontSize: 9,
+              letterSpacing: "0.24em",
+              textTransform: "uppercase",
+              color: "rgba(255,255,255,0.7)",
+            }}
+          >
             {productType}
           </div>
-          <div style={{ fontFamily: "var(--hd-mono)", fontSize: 11, letterSpacing: "0.12em", textTransform: "uppercase", color: "rgba(255,255,255,0.95)", marginTop: 3, fontWeight: 600 }}>
+          <div
+            style={{
+              fontFamily: "var(--hd-mono)",
+              fontSize: 11,
+              letterSpacing: "0.12em",
+              textTransform: "uppercase",
+              color: "rgba(255,255,255,0.95)",
+              marginTop: 3,
+              fontWeight: 600,
+            }}
+          >
             {brand}
           </div>
+        </div>
+        {/* badge top-right */}
+        <div
+          style={{
+            position: "absolute",
+            top: 14,
+            right: 14,
+            width: 32,
+            height: 32,
+            borderRadius: "50%",
+            background: "rgba(255,255,255,0.95)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            boxShadow: "0 4px 12px rgba(0,0,0,0.2)",
+          }}
+        >
+          {React.cloneElement(decoTheme.badge, { size: 16 })}
         </div>
       </div>
 
       {/* Data bottom */}
-      <div style={{ flex: 1, padding: "22px 28px 20px", display: "flex", flexDirection: "column", borderTop: "3px solid var(--hd-ink)" }}>
-        <div className="hd-serif" style={{ fontSize: 22, lineHeight: 1.15, letterSpacing: "-0.02em", marginBottom: 18 }}>
-          {name}
+      <div
+        style={{
+          flex: 1,
+          padding: "20px 26px 18px",
+          display: "flex",
+          flexDirection: "column",
+          borderTop: `3px solid ${palette.ink}`,
+          position: "relative",
+          overflow: "hidden",
+          minHeight: 0,
+        }}
+      >
+        <ScatterDeco items={decoTheme.scatter} seed={5} />
+        <div style={{ position: "relative", zIndex: 2 }}>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "flex-start",
+              justifyContent: "space-between",
+              gap: 10,
+            }}
+          >
+            <div
+              style={{
+                fontFamily: "var(--hd-serif)",
+                fontSize: 21,
+                lineHeight: 1.15,
+                letterSpacing: "-0.02em",
+                color: palette.ink,
+                flex: 1,
+                minWidth: 0,
+              }}
+            >
+              {name}
+            </div>
+            {rating != null && rating > 0 && (
+              <div style={{ flexShrink: 0, paddingTop: 4 }}>
+                <RatingStars
+                  rating={rating}
+                  accent={palette.accent}
+                  hair={palette.hair}
+                  size={12}
+                />
+              </div>
+            )}
+          </div>
         </div>
 
-        {displayEffects.length > 0 && (
-          <div style={{ flex: 1 }}>
-            <div style={{ fontFamily: "var(--hd-mono)", fontSize: 9, letterSpacing: "0.22em", textTransform: "uppercase", color: "var(--hd-ink-40)", marginBottom: 10 }}>
-              Active Effects
-            </div>
-            <EffectBars effects={displayEffects} accent={accent} />
+        {hasComment && (
+          <div style={{ marginTop: 14, position: "relative", zIndex: 2 }}>
+            <CommentBlock
+              comment={comment!.trim()}
+              ink={palette.ink}
+              accent={palette.accent}
+              fontSize={12}
+            />
           </div>
         )}
 
-        <div style={{ marginTop: "auto", paddingTop: 14, borderTop: "1px solid var(--hd-hair)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <div style={{ fontFamily: "var(--hd-mono)", fontSize: 8, color: "var(--hd-ink-40)", letterSpacing: "0.14em" }}>
+        {displayEffects.length > 0 && (
+          <div style={{ flex: 1, marginTop: 14, position: "relative", zIndex: 2, minHeight: 0 }}>
+            <div
+              style={{
+                fontFamily: "var(--hd-mono)",
+                fontSize: 9,
+                letterSpacing: "0.22em",
+                textTransform: "uppercase",
+                color: palette.ink40,
+                marginBottom: 10,
+              }}
+            >
+              Active Effects
+            </div>
+            <EffectBars
+              effects={displayEffects}
+              accent={palette.accent}
+              ink={palette.ink}
+              ink40={palette.ink40}
+              hair={palette.hair}
+            />
+          </div>
+        )}
+
+        <div
+          style={{
+            marginTop: "auto",
+            paddingTop: 12,
+            borderTop: `1px solid ${palette.hair}`,
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            position: "relative",
+            zIndex: 2,
+          }}
+        >
+          <div
+            style={{
+              fontFamily: "var(--hd-mono)",
+              fontSize: 8,
+              color: palette.ink40,
+              letterSpacing: "0.14em",
+            }}
+          >
             #マイコスメ #スキンケア
           </div>
-          <div className="hd-serif" style={{ fontSize: 16, fontStyle: "italic", color: accent }}>
+          <div
+            style={{
+              fontFamily: "var(--hd-serif)",
+              fontStyle: "italic",
+              fontSize: 16,
+              color: palette.accent,
+            }}
+          >
             HADAMI
           </div>
         </div>
@@ -318,9 +654,14 @@ function PatternB({
 // ── Pattern C: minimal typographic ───────────────────────────────────────────
 
 function PatternC({
-  name, brand, productType, effects, accent,
-}: Pick<ProductShareCardProps, "name" | "brand" | "productType" | "effects"> & { accent: string }) {
-  const displayEffects = effects.slice(0, 4);
+  name, brand, productType, effects, rating, comment, palette, deco,
+}: Pick<ProductShareCardProps, "name" | "brand" | "productType" | "effects" | "rating" | "comment"> & {
+  palette: SharePalette;
+  deco: ShareDecoKey;
+}) {
+  const hasComment = !!comment?.trim();
+  const displayEffects = effects.slice(0, hasComment ? 2 : 4);
+  const decoTheme = buildShareDecoTheme(deco, palette.accent);
 
   return (
     <div
@@ -329,53 +670,154 @@ function PatternC({
       style={{
         width: SC_W,
         height: SC_H,
-        background: "var(--hd-bg)",
-        color: "var(--hd-ink)",
+        background: palette.bg,
+        color: palette.ink,
         display: "flex",
         flexDirection: "column",
         boxSizing: "border-box",
         overflow: "hidden",
         fontFamily: "var(--hd-sans)",
-        padding: "44px 52px 36px",
+        padding: "40px 48px 32px",
+        position: "relative",
       }}
     >
+      <ScatterDeco items={decoTheme.scatter} seed={11} />
+
       {/* Top rule */}
-      <div style={{ height: 3, background: "var(--hd-ink)", marginBottom: 28 }} />
+      <div
+        style={{
+          height: 3,
+          background: palette.ink,
+          marginBottom: 22,
+          position: "relative",
+          zIndex: 2,
+        }}
+      />
 
       {/* Type block */}
-      <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center" }}>
-        <div style={{ fontFamily: "var(--hd-mono)", fontSize: 9, letterSpacing: "0.3em", textTransform: "uppercase", color: "var(--hd-ink-40)", marginBottom: 10 }}>
-          {productType}
+      <div
+        style={{
+          flex: 1,
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "center",
+          position: "relative",
+          zIndex: 2,
+          minHeight: 0,
+        }}
+      >
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+          <div
+            style={{
+              fontFamily: "var(--hd-mono)",
+              fontSize: 9,
+              letterSpacing: "0.3em",
+              textTransform: "uppercase",
+              color: palette.ink40,
+            }}
+          >
+            {productType}
+          </div>
+          {decoTheme.cornerTop}
         </div>
-        <div style={{ fontFamily: "var(--hd-mono)", fontSize: 11, letterSpacing: "0.14em", textTransform: "uppercase", color: accent, marginBottom: 10, fontWeight: 600 }}>
+        <div
+          style={{
+            fontFamily: "var(--hd-mono)",
+            fontSize: 11,
+            letterSpacing: "0.14em",
+            textTransform: "uppercase",
+            color: palette.accent,
+            marginBottom: 8,
+            fontWeight: 600,
+          }}
+        >
           {brand}
         </div>
-        <div className="hd-serif" style={{ fontSize: 34, lineHeight: 1.1, letterSpacing: "-0.025em", marginBottom: 28 }}>
+        <div
+          style={{
+            fontFamily: "var(--hd-serif)",
+            fontSize: 30,
+            lineHeight: 1.1,
+            letterSpacing: "-0.025em",
+            marginBottom: 14,
+            color: palette.ink,
+          }}
+        >
           {name}
         </div>
+        {rating != null && rating > 0 && (
+          <div style={{ marginBottom: 18 }}>
+            <RatingStars
+              rating={rating}
+              accent={palette.accent}
+              hair={palette.hair}
+              size={14}
+            />
+          </div>
+        )}
+
+        {hasComment && (
+          <div style={{ marginBottom: 18 }}>
+            <CommentBlock
+              comment={comment!.trim()}
+              ink={palette.ink}
+              accent={palette.accent}
+              fontSize={13}
+            />
+          </div>
+        )}
 
         {/* Divider */}
-        <div style={{ height: 1, background: "var(--hd-line)", marginBottom: 24 }} />
+        <div style={{ height: 1, background: palette.line, marginBottom: 18 }} />
 
         {/* Effects */}
         {displayEffects.length > 0 && (
           <div>
-            <div style={{ fontFamily: "var(--hd-mono)", fontSize: 9, letterSpacing: "0.22em", textTransform: "uppercase", color: "var(--hd-ink-40)", marginBottom: 14 }}>
+            <div
+              style={{
+                fontFamily: "var(--hd-mono)",
+                fontSize: 9,
+                letterSpacing: "0.22em",
+                textTransform: "uppercase",
+                color: palette.ink40,
+                marginBottom: 12,
+              }}
+            >
               Active Effects
             </div>
-            <EffectBars effects={displayEffects} accent={accent} />
+            <EffectBars
+              effects={displayEffects}
+              accent={palette.accent}
+              ink={palette.ink}
+              ink40={palette.ink40}
+              hair={palette.hair}
+            />
           </div>
         )}
       </div>
 
       {/* Bottom rule + footer */}
-      <div>
-        <div style={{ height: 1, background: "var(--hd-line)", marginBottom: 14 }} />
+      <div style={{ position: "relative", zIndex: 2 }}>
+        <div style={{ height: 1, background: palette.line, marginBottom: 12 }} />
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
-          <div style={{ fontFamily: "var(--hd-mono)", fontSize: 8, color: "var(--hd-ink-40)", letterSpacing: "0.14em" }}>
+          <div
+            style={{
+              fontFamily: "var(--hd-mono)",
+              fontSize: 8,
+              color: palette.ink40,
+              letterSpacing: "0.14em",
+            }}
+          >
             #マイコスメ #スキンケア
           </div>
-          <div className="hd-serif" style={{ fontSize: 18, fontStyle: "italic", color: accent }}>
+          <div
+            style={{
+              fontFamily: "var(--hd-serif)",
+              fontStyle: "italic",
+              fontSize: 18,
+              color: palette.accent,
+            }}
+          >
             HADAMI
           </div>
         </div>
@@ -388,16 +830,17 @@ function PatternC({
 
 export default function ProductShareCard({
   pattern = "A",
-  accentColor = CARD_COLORS[0].value,
+  paletteKey = "blossom",
+  deco = "hearts",
   ...props
 }: ProductShareCardProps) {
-  const accent = accentColor;
+  const palette = getSharePalette(paletteKey);
 
   if (pattern === "B") {
-    return <PatternB {...props} accent={accent} />;
+    return <PatternB {...props} palette={palette} deco={deco} />;
   }
   if (pattern === "C") {
-    return <PatternC {...props} accent={accent} />;
+    return <PatternC {...props} palette={palette} deco={deco} />;
   }
-  return <PatternA {...props} accent={accent} />;
+  return <PatternA {...props} palette={palette} deco={deco} />;
 }

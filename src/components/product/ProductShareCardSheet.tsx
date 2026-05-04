@@ -4,11 +4,21 @@ import { useRef, useState } from "react";
 import { flushSync } from "react-dom";
 import BottomSheet from "@/components/scan/BottomSheet";
 import ProductShareCard, {
-  CARD_COLORS,
   type CardPattern,
   type ProductShareCardProps,
 } from "./ProductShareCard";
+import {
+  SHARE_PALETTES,
+  type SharePaletteKey,
+} from "@/lib/shareCardPalettes";
+import {
+  SHARE_DECOS,
+  type ShareDecoKey,
+} from "@/lib/shareCardDeco";
 import { downloadShareImage } from "@/lib/downloadImage";
+
+const STYLE_STORAGE_KEY = "hadami.productShare.style";
+const COMMENT_MAX = 80;
 
 type ShareCapableNavigator = Navigator & {
   canShare?: (data: ShareData) => boolean;
@@ -50,6 +60,28 @@ const PATTERNS: { key: CardPattern; label: string; desc: string }[] = [
   { key: "C", label: "C", desc: "タイポ" },
 ];
 
+type SavedStyle = {
+  pattern: CardPattern;
+  paletteKey: SharePaletteKey;
+  deco: ShareDecoKey;
+};
+
+function readSavedStyle(): SavedStyle | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = window.localStorage.getItem(STYLE_STORAGE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as Partial<SavedStyle>;
+    return {
+      pattern: (parsed.pattern as CardPattern) ?? "A",
+      paletteKey: (parsed.paletteKey as SharePaletteKey) ?? "blossom",
+      deco: (parsed.deco as ShareDecoKey) ?? "hearts",
+    };
+  } catch {
+    return null;
+  }
+}
+
 export default function ProductShareCardSheet({
   open,
   onClose,
@@ -59,10 +91,35 @@ export default function ProductShareCardSheet({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isDownloading, setIsDownloading] = useState(false);
   const [status, setStatus] = useState<"idle" | "shared" | "downloaded">("idle");
-  const [pattern, setPattern] = useState<CardPattern>("A");
-  const [accentColor, setAccentColor] = useState<string>(CARD_COLORS[0].value);
+
+  const initialStyle = readSavedStyle();
+  const [pattern, setPattern] = useState<CardPattern>(initialStyle?.pattern ?? "A");
+  const [paletteKey, setPaletteKey] = useState<SharePaletteKey>(initialStyle?.paletteKey ?? "blossom");
+  const [deco, setDeco] = useState<ShareDecoKey>(initialStyle?.deco ?? "hearts");
+  const [rating, setRating] = useState<number>(0);
+  const [comment, setComment] = useState<string>("");
+
   const [imageOverride, setImageOverride] = useState<string | null>(null);
   const [captureImageUrl, setCaptureImageUrl] = useState<string | null>(null);
+
+  // スタイル保存（コメント・評価はパーソナルなので保存しない）
+  const persistStyle = (next: Partial<SavedStyle>) => {
+    if (typeof window === "undefined") return;
+    try {
+      const cur: SavedStyle = {
+        pattern,
+        paletteKey,
+        deco,
+        ...next,
+      };
+      window.localStorage.setItem(STYLE_STORAGE_KEY, JSON.stringify(cur));
+    } catch {
+      // ignore
+    }
+  };
+
+  const accentSwatch =
+    SHARE_PALETTES.find((p) => p.key === paletteKey)?.swatch ?? "#C4627A";
 
   const handlePickPhoto = () => {
     fileInputRef.current?.click();
@@ -101,9 +158,6 @@ export default function ProductShareCardSheet({
       const fontSet = document.fonts;
       if (fontSet?.ready) await fontSet.ready;
 
-      // 画像を data URL に事前インライン化。iOS Safari で <img src="https://r2..."> を
-      // html2canvas/html-to-image が読み出せず、結果のシェアカードに画像が反映されない
-      // 問題を回避する。
       const sourceUrl = imageOverride ?? cardProps.imageUrl ?? null;
       if (sourceUrl && !sourceUrl.startsWith("data:")) {
         const inlined = await inlineImageAsDataUrl(sourceUrl);
@@ -116,9 +170,8 @@ export default function ProductShareCardSheet({
         });
       }
 
-      // DOM 反映＋画像デコード待ち
       await new Promise<void>((resolve) =>
-        requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
+        requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
       );
       const node = captureRef.current;
       if (node) {
@@ -137,12 +190,11 @@ export default function ProductShareCardSheet({
         );
       }
       await new Promise<void>((resolve) =>
-        requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
+        requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
       );
 
       let blob: Blob | null = null;
 
-      // html2canvas + JPEG (iOS Safari の Web Share API が WebP を弾くため)
       try {
         const { default: html2canvas } = await import("html2canvas");
         const canvas = await Promise.race([
@@ -155,7 +207,7 @@ export default function ProductShareCardSheet({
             imageTimeout: 15000,
           }),
           new Promise<never>((_, reject) =>
-            window.setTimeout(() => reject(new Error("timed out")), 15000)
+            window.setTimeout(() => reject(new Error("timed out")), 15000),
           ),
         ]);
         blob = await new Promise<Blob | null>((resolve) => {
@@ -182,7 +234,7 @@ export default function ProductShareCardSheet({
             quality: 0.92,
           }),
           new Promise<Blob | null>((_, reject) =>
-            window.setTimeout(() => reject(new Error("timed out")), 15000)
+            window.setTimeout(() => reject(new Error("timed out")), 15000),
           ),
         ]);
       }
@@ -194,7 +246,6 @@ export default function ProductShareCardSheet({
       const filename = `hadami-product-${Date.now()}.${ext}`;
       const shareNavigator = navigator as ShareCapableNavigator;
 
-      // canShare は iOS で偽陰性が多いため直接 share() を呼ぶ
       if (
         isMobileShareDevice() &&
         typeof File !== "undefined" &&
@@ -242,22 +293,18 @@ export default function ProductShareCardSheet({
   return (
     <BottomSheet open={open} onClose={onClose} title="シェアカード">
       <div style={{ paddingBottom: 24 }}>
-
         {/* ── Pattern selector ── */}
-        <div style={{ marginBottom: 16 }}>
-          <div
-            className="hd-mono hd-caps"
-            style={{ fontSize: 9, color: "var(--hd-ink-40)", letterSpacing: "0.14em", marginBottom: 8 }}
-          >
-            Pattern
-          </div>
+        <Section label="Pattern">
           <div style={{ display: "flex", gap: 8 }}>
             {PATTERNS.map((p) => {
               const active = pattern === p.key;
               return (
                 <button
                   key={p.key}
-                  onClick={() => setPattern(p.key)}
+                  onClick={() => {
+                    setPattern(p.key);
+                    persistStyle({ pattern: p.key });
+                  }}
                   style={{
                     flex: 1,
                     padding: "10px 6px",
@@ -291,16 +338,10 @@ export default function ProductShareCardSheet({
               );
             })}
           </div>
-        </div>
+        </Section>
 
         {/* ── Photo upload ── */}
-        <div style={{ marginBottom: 20 }}>
-          <div
-            className="hd-mono hd-caps"
-            style={{ fontSize: 9, color: "var(--hd-ink-40)", letterSpacing: "0.14em", marginBottom: 8 }}
-          >
-            Photo
-          </div>
+        <Section label="Photo">
           <input
             ref={fileInputRef}
             type="file"
@@ -326,7 +367,17 @@ export default function ProductShareCardSheet({
                 gap: 8,
               }}
             >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+              >
                 <rect x="3" y="3" width="18" height="18" rx="2" />
                 <circle cx="8.5" cy="8.5" r="1.5" />
                 <path d="M21 15l-5-5L5 21" />
@@ -359,67 +410,200 @@ export default function ProductShareCardSheet({
               lineHeight: 1.6,
             }}
           >
-            ※ Pattern C は文字のみのため写真は使用されません。差し替えはこの画面のみで有効です。
+            ※ Pattern C は文字のみのため写真は使用されません。
           </p>
-        </div>
+        </Section>
 
-        {/* ── Color swatches ── */}
-        <div style={{ marginBottom: 20 }}>
-          <div
-            className="hd-mono hd-caps"
-            style={{ fontSize: 9, color: "var(--hd-ink-40)", letterSpacing: "0.14em", marginBottom: 8 }}
-          >
-            Accent Color
-          </div>
+        {/* ── Palette ── */}
+        <Section label="Palette">
           <div
             style={{
               display: "flex",
+              flexWrap: "wrap",
               gap: 10,
-              overflowX: "auto",
-              paddingBottom: 4,
-              WebkitOverflowScrolling: "touch",
             }}
           >
-            {CARD_COLORS.map((c) => {
-              const active = accentColor === c.value;
+            {SHARE_PALETTES.map((p) => {
+              const active = paletteKey === p.key;
               return (
                 <button
-                  key={c.value}
-                  onClick={() => setAccentColor(c.value)}
-                  title={c.label}
+                  key={p.key}
+                  onClick={() => {
+                    setPaletteKey(p.key);
+                    persistStyle({ paletteKey: p.key });
+                  }}
+                  aria-label={p.label}
+                  title={p.label}
                   style={{
-                    width: 36,
-                    height: 36,
-                    background: c.value,
-                    border: active ? "2px solid var(--hd-ink)" : "2px solid transparent",
-                    outline: active ? "2px solid var(--hd-bg)" : "none",
-                    outlineOffset: -4,
-                    cursor: "pointer",
+                    width: 38,
+                    height: 38,
+                    borderRadius: 999,
+                    background: p.swatch,
+                    border: active ? "2px solid var(--hd-ink)" : "1px solid var(--hd-line)",
+                    boxShadow: active ? "inset 0 0 0 3px var(--hd-bg)" : "none",
                     padding: 0,
+                    cursor: "pointer",
                     flexShrink: 0,
                   }}
                 />
               );
             })}
           </div>
-        </div>
+        </Section>
+
+        {/* ── Deco ── */}
+        <Section label="Deco">
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+            {SHARE_DECOS.map((d) => {
+              const active = deco === d.key;
+              return (
+                <button
+                  key={d.key}
+                  onClick={() => {
+                    setDeco(d.key);
+                    persistStyle({ deco: d.key });
+                  }}
+                  aria-pressed={active}
+                  style={{
+                    padding: "6px 12px",
+                    background: active ? "var(--hd-ink)" : "transparent",
+                    color: active ? "var(--hd-bg)" : "var(--hd-ink)",
+                    border: active ? "none" : "1px solid var(--hd-line)",
+                    fontFamily: "var(--hd-sans)",
+                    fontSize: 12,
+                    cursor: "pointer",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 6,
+                    borderRadius: 0,
+                  }}
+                >
+                  <span
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      width: 16,
+                      height: 16,
+                    }}
+                  >
+                    {d.preview(active ? "var(--hd-bg)" : accentSwatch)}
+                  </span>
+                  {d.label}
+                </button>
+              );
+            })}
+          </div>
+        </Section>
+
+        {/* ── Rating ── */}
+        <Section
+          label="Rating"
+          hint={rating > 0 ? `★ ${rating} / 5` : "未評価"}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+            {[1, 2, 3, 4, 5].map((i) => {
+              const active = i <= rating;
+              return (
+                <button
+                  key={i}
+                  onClick={() => setRating(rating === i ? 0 : i)}
+                  aria-label={`${i} 星`}
+                  aria-pressed={active}
+                  style={{
+                    background: "transparent",
+                    border: "none",
+                    cursor: "pointer",
+                    padding: 6,
+                    display: "inline-flex",
+                  }}
+                >
+                  <svg width={22} height={22} viewBox="0 0 12 12" aria-hidden="true">
+                    <path
+                      d="M6 1l1.4 3 3.3.4-2.4 2.3.7 3.2L6 8.5l-3 1.4.7-3.2L1.3 4.4l3.3-.4z"
+                      fill={active ? accentSwatch : "transparent"}
+                      stroke={accentSwatch}
+                      strokeWidth={1}
+                    />
+                  </svg>
+                </button>
+              );
+            })}
+            {rating > 0 && (
+              <button
+                onClick={() => setRating(0)}
+                style={{
+                  marginLeft: 8,
+                  padding: "4px 8px",
+                  fontFamily: "var(--hd-mono)",
+                  fontSize: 9,
+                  color: "var(--hd-ink-40)",
+                  background: "transparent",
+                  border: "1px solid var(--hd-line)",
+                  cursor: "pointer",
+                  letterSpacing: "0.1em",
+                }}
+              >
+                CLEAR
+              </button>
+            )}
+          </div>
+        </Section>
+
+        {/* ── Comment ── */}
+        <Section
+          label="Comment"
+          hint={`${comment.length} / ${COMMENT_MAX}`}
+        >
+          <textarea
+            value={comment}
+            onChange={(e) => setComment(e.target.value.slice(0, COMMENT_MAX))}
+            placeholder="使用感や感想（80文字まで・任意）"
+            rows={3}
+            style={{
+              width: "100%",
+              padding: "10px 12px",
+              background: "var(--hd-bg)",
+              border: "1px solid var(--hd-line)",
+              borderRadius: 0,
+              fontFamily: "var(--hd-sans)",
+              fontSize: 13,
+              color: "var(--hd-ink)",
+              outline: "none",
+              boxSizing: "border-box",
+              resize: "vertical",
+              minHeight: 64,
+              lineHeight: 1.5,
+            }}
+          />
+        </Section>
 
         {/* ── Card preview ── */}
         <div
           style={{
             display: "flex",
             justifyContent: "center",
+            marginTop: 8,
             marginBottom: 20,
             overflow: "hidden",
           }}
         >
-          <div style={{ transform: "scale(0.54)", transformOrigin: "top center", height: 292 }}>
+          <div
+            style={{
+              transform: "scale(0.54)",
+              transformOrigin: "top center",
+              height: 292,
+            }}
+          >
             <div ref={captureRef}>
               <ProductShareCard
                 {...cardProps}
                 imageUrl={captureImageUrl ?? imageOverride ?? cardProps.imageUrl}
                 pattern={pattern}
-                accentColor={accentColor}
+                paletteKey={paletteKey}
+                deco={deco}
+                rating={rating}
+                comment={comment}
               />
             </div>
           </div>
@@ -472,5 +656,52 @@ export default function ProductShareCardSheet({
         </p>
       </div>
     </BottomSheet>
+  );
+}
+
+function Section({
+  label,
+  hint,
+  children,
+}: {
+  label: string;
+  hint?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div style={{ marginBottom: 16 }}>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "baseline",
+          justifyContent: "space-between",
+          marginBottom: 8,
+        }}
+      >
+        <div
+          className="hd-mono hd-caps"
+          style={{
+            fontSize: 9,
+            color: "var(--hd-ink-40)",
+            letterSpacing: "0.14em",
+          }}
+        >
+          {label}
+        </div>
+        {hint && (
+          <div
+            className="hd-mono"
+            style={{
+              fontSize: 9,
+              color: "var(--hd-ink-40)",
+              letterSpacing: "0.05em",
+            }}
+          >
+            {hint}
+          </div>
+        )}
+      </div>
+      {children}
+    </div>
   );
 }
