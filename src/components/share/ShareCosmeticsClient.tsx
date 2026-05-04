@@ -5,6 +5,7 @@ import { useState, useCallback, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import type { Product } from "@/types";
 import ShareCardCanvas, {
+  SHARE_TEMPLATE_GROUPS,
   SHARE_TEMPLATE_OPTIONS,
 } from "@/components/share/ShareCardCanvas";
 import {
@@ -441,18 +442,38 @@ export default function ShareCosmeticsClient({
                 title="テンプレート"
                 hint={SHARE_TEMPLATE_OPTIONS.find((t) => t.key === config.template)?.label}
               >
-                <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-                  {SHARE_TEMPLATE_OPTIONS.map((opt) => (
-                    <button
-                      key={opt.key}
-                      onClick={() => updateConfig({ template: opt.key })}
-                      style={chipStyle(config.template === opt.key)}
-                      aria-pressed={config.template === opt.key}
-                      title={opt.description}
-                    >
-                      {opt.label}
-                    </button>
-                  ))}
+                <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                  {SHARE_TEMPLATE_GROUPS.map((group) => {
+                    const opts = SHARE_TEMPLATE_OPTIONS.filter((o) => o.group === group.key);
+                    return (
+                      <div key={group.key}>
+                        <div
+                          className="hd-mono hd-caps"
+                          style={{
+                            color: "var(--hd-ink-40)",
+                            fontSize: 9,
+                            letterSpacing: "0.2em",
+                            marginBottom: 6,
+                          }}
+                        >
+                          {group.label}
+                        </div>
+                        <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                          {opts.map((opt) => (
+                            <button
+                              key={opt.key}
+                              onClick={() => updateConfig({ template: opt.key })}
+                              style={chipStyle(config.template === opt.key)}
+                              aria-pressed={config.template === opt.key}
+                              title={opt.description}
+                            >
+                              {opt.label}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               </Section>
 

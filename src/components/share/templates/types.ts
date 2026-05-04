@@ -6,7 +6,10 @@ import type { ShareDecoKey } from "@/lib/shareCardDeco";
 
 export type ShareAspectKey = "1:1" | "9:16";
 
-export type ShareTemplateKey = "H4" | "S5" | "M4";
+export type ShareTemplateKey =
+  | "H4" | "H5" | "H6"
+  | "S4" | "S5" | "S6"
+  | "M4" | "M5" | "M6";
 
 export type ShareCardConfig = {
   template: ShareTemplateKey;
