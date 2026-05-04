@@ -1326,6 +1326,31 @@ export default function HistoryPage() {
 
                   {/* Edit controls */}
                   <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    {editMode && selectedIds.size === 4 && (
+                      <button
+                        onClick={() => {
+                          try {
+                            sessionStorage.setItem(
+                              "hadami.shareCosmetics.draft",
+                              JSON.stringify({
+                                selectedProductIds: Array.from(selectedIds),
+                              }),
+                            );
+                            router.push("/share/cosmetics");
+                          } catch (err) {
+                            console.error("Failed to start share flow:", err);
+                          }
+                        }}
+                        style={{
+                          padding: "7px 12px", border: "none",
+                          background: "var(--hd-moss)", color: "#fff",
+                          fontSize: 11, fontWeight: 600, cursor: "pointer",
+                          fontFamily: "var(--hd-sans)",
+                        }}
+                      >
+                        4点でシェア
+                      </button>
+                    )}
                     {editMode && selectedIds.size > 0 && (
                       <button
                         onClick={handleBulkDelete}
