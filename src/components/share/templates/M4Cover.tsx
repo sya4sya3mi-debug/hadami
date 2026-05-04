@@ -237,7 +237,9 @@ export default function M4Cover({
             <div
               key={i}
               style={{
-                flex: 1,
+                // flex-basis: 0 を強制してブランド名の長さに依らず 3 等分。
+                flex: "1 1 0",
+                minWidth: 0,
                 background: "rgba(255,255,255,0.97)",
                 borderRadius: isPortrait ? 12 : 10,
                 padding: isPortrait ? "10px 12px" : "10px 10px",
@@ -245,6 +247,7 @@ export default function M4Cover({
                 display: "flex",
                 alignItems: "center",
                 gap: isPortrait ? 10 : 9,
+                overflow: "hidden",
               }}
             >
               <ShareProductImage
