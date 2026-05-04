@@ -12,12 +12,19 @@ import {
   type ShareTemplateProps,
 } from "./types";
 
+// サブ円: 元 88px → 140px に拡大（メイン縮小と合わせてバランス取り）。
+// 540 - (3 * 140) = 120 → 4分割で 30 ずつ均等配置 → x: 30, 200, 370
+const SUB_OUTER = 140; // 外枠サイズ
+const SUB_IMAGE = 124; // 内側画像サイズ
 const SUB_POSITIONS = [
-  { x: 50, y: 400 },
-  { x: 220, y: 420 },
-  { x: 390, y: 400 },
+  { x: 30, y: 348 },
+  { x: 200, y: 348 },
+  { x: 370, y: 348 },
 ];
 const TYPE_LABELS = ["MAIN", "STEP 02", "STEP 03", "STEP 04"];
+
+const MAIN_OUTER = 220;
+const MAIN_IMAGE = 204;
 
 export default function H5HeroCircle({
   products,
@@ -92,7 +99,7 @@ export default function H5HeroCircle({
       <div
         style={{
           position: "absolute",
-          top: 120,
+          top: 110,
           left: "50%",
           transform: "translateX(-50%)",
           zIndex: 3,
@@ -100,8 +107,8 @@ export default function H5HeroCircle({
       >
         <div
           style={{
-            width: 260,
-            height: 260,
+            width: MAIN_OUTER,
+            height: MAIN_OUTER,
             borderRadius: "50%",
             padding: 8,
             background: "#fff",
@@ -111,7 +118,12 @@ export default function H5HeroCircle({
             boxSizing: "border-box",
           }}
         >
-          <ShareProductImage product={main} size={244} radius={122} fontSize={48} />
+          <ShareProductImage
+            product={main}
+            size={MAIN_IMAGE}
+            radius={MAIN_IMAGE / 2}
+            fontSize={42}
+          />
           <div
             style={{
               position: "absolute",
@@ -150,35 +162,40 @@ export default function H5HeroCircle({
         >
           <div
             style={{
-              width: 88,
-              height: 88,
+              width: SUB_OUTER,
+              height: SUB_OUTER,
               borderRadius: "50%",
-              padding: 5,
+              padding: 7,
               background: "#fff",
-              boxShadow: "0 6px 16px rgba(0,0,0,0.15)",
+              boxShadow: "0 8px 18px rgba(0,0,0,0.16)",
               position: "relative",
               boxSizing: "border-box",
             }}
           >
-            <ShareProductImage product={subs[i]} size={78} radius={39} fontSize={20} />
+            <ShareProductImage
+              product={subs[i]}
+              size={SUB_IMAGE}
+              radius={SUB_IMAGE / 2}
+              fontSize={28}
+            />
             <div
               style={{
                 position: "absolute",
-                bottom: -5,
+                bottom: -8,
                 left: "50%",
                 transform: "translateX(-50%)",
                 background: p.bg,
-                padding: "1px 8px",
+                padding: "2px 10px",
                 borderRadius: 999,
                 fontFamily: "var(--hd-mono)",
-                fontSize: 7,
+                fontSize: 8,
                 letterSpacing: "0.1em",
                 color: p.ink60,
                 border: `1px solid ${p.line}`,
                 whiteSpace: "nowrap",
               }}
             >
-              {i + 2}. {TYPE_LABELS[i + 1]}
+              {i + 2}. {subs[i]?.brand?.slice(0, 8) || TYPE_LABELS[i + 1]}
             </div>
           </div>
         </div>

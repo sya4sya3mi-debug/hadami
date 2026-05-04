@@ -12,11 +12,13 @@ import {
   type ShareTemplateProps,
 } from "./types";
 
+// タイトル(～y:130)・フッター(y:500〜)に被らないよう y 範囲を 130-490 に集約。
+// 左右対称に再配置: 中央寄せ + 上下行で重ならないよう間隔調整。
 const ITEMS = [
-  { x: 18, y: 100, size: 168, tilt: -6 },
-  { x: 210, y: 80, size: 158, tilt: 5 },
-  { x: 30, y: 295, size: 158, tilt: 4 },
-  { x: 240, y: 305, size: 158, tilt: -4 },
+  { x: 50, y: 130, size: 168, tilt: -6 },
+  { x: 230, y: 140, size: 158, tilt: 5 },
+  { x: 60, y: 295, size: 158, tilt: 4 },
+  { x: 250, y: 295, size: 168, tilt: -4 },
 ];
 
 export default function S4Scatter({

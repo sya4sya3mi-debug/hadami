@@ -185,16 +185,6 @@ export default function H6HeroTop({
               {shortName(main?.name ?? "—", 3)}
             </div>
           </div>
-          <div style={{ display: "flex", gap: 1, flexShrink: 0 }}>
-            {[1, 2, 3, 4, 5].map((i) => (
-              <svg key={i} width="9" height="9" viewBox="0 0 12 12" aria-hidden="true">
-                <path
-                  d="M6 1l1.4 3 3.3.4-2.4 2.3.7 3.2L6 8.5l-3 1.4.7-3.2L1.3 4.4l3.3-.4z"
-                  fill={i <= 4 ? p.accent : p.hair}
-                />
-              </svg>
-            ))}
-          </div>
         </div>
       </div>
 

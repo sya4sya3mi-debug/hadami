@@ -199,21 +199,27 @@ export default function M5Split({
           </div>
         </div>
 
-        {/* サブ3点 */}
+        {/* サブ3点: サムネイル拡大 */}
         <div style={{ display: "flex", gap: 10 }}>
           {[0, 1, 2].map((i) => {
             const sub = subs[i];
             return (
               <div
                 key={i}
-                style={{ flex: 1, display: "flex", alignItems: "center", gap: 7, minWidth: 0 }}
+                style={{
+                  flex: 1,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 9,
+                  minWidth: 0,
+                }}
               >
-                <ShareProductImage product={sub} size={36} radius={6} fontSize={11} />
+                <ShareProductImage product={sub} size={60} radius={8} fontSize={16} />
                 <div style={{ minWidth: 0, flex: 1 }}>
                   <div
                     style={{
                       fontFamily: "var(--hd-mono)",
-                      fontSize: 7,
+                      fontSize: 8,
                       color: p.accent,
                       letterSpacing: "0.1em",
                       whiteSpace: "nowrap",
@@ -226,14 +232,15 @@ export default function M5Split({
                   </div>
                   <div
                     style={{
-                      fontFamily: "var(--hd-mono)",
-                      fontSize: 7.5,
+                      fontFamily: "var(--hd-serif)",
+                      fontStyle: "italic",
+                      fontSize: 11,
                       color: p.ink60,
-                      marginTop: 1,
-                      fontWeight: 600,
+                      marginTop: 3,
                       whiteSpace: "nowrap",
                       overflow: "hidden",
                       textOverflow: "ellipsis",
+                      lineHeight: 1.15,
                     }}
                   >
                     STEP {i + 2}

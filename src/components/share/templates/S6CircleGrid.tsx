@@ -12,13 +12,16 @@ import {
   type ShareTemplateProps,
 } from "./types";
 
+// 円形ステッカー: 元 148px → 180px に拡大。
+// 540 横に 2 列。outer = 180 + 16(padding) = 196 → 残 540-2*196 = 148 → 4分割 で約 37 ずつ
+// y は title (~y:100) と footer (y: 498~) を避けて 120-466 にレイアウト。
 const POSITIONS = [
-  { x: 50, y: 130, tilt: -5 },
-  { x: 280, y: 110, tilt: 4 },
-  { x: 40, y: 310, tilt: 4 },
-  { x: 270, y: 300, tilt: -4 },
+  { x: 30, y: 120, tilt: -5 },
+  { x: 314, y: 105, tilt: 4 },
+  { x: 26, y: 290, tilt: 4 },
+  { x: 318, y: 280, tilt: -4 },
 ];
-const SIZE = 148;
+const SIZE = 180;
 
 export default function S6CircleGrid({
   products,

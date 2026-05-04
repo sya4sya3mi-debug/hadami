@@ -58,9 +58,10 @@ export default function M4Cover({
   const headlineSize = isPortrait ? 60 : 38;
   const headlineMax = isPortrait ? 360 : 230;
   const panelMax = isPortrait ? 280 : 185;
-  const subStripBottom = isPortrait ? 110 : 56;
-  const subStripPad = isPortrait ? 32 : 24;
+  const subStripBottom = isPortrait ? 110 : 60;
+  const subStripPad = isPortrait ? 32 : 22;
   const footerBottom = isPortrait ? 32 : 18;
+  const subThumbSize = isPortrait ? 64 : 64;
 
   return (
     <div
@@ -238,25 +239,25 @@ export default function M4Cover({
               style={{
                 flex: 1,
                 background: "rgba(255,255,255,0.97)",
-                borderRadius: isPortrait ? 12 : 8,
-                padding: isPortrait ? "10px 12px" : "7px 8px",
+                borderRadius: isPortrait ? 12 : 10,
+                padding: isPortrait ? "10px 12px" : "10px 10px",
                 boxShadow: "0 4px 12px rgba(0,0,0,0.14)",
                 display: "flex",
                 alignItems: "center",
-                gap: isPortrait ? 10 : 7,
+                gap: isPortrait ? 10 : 9,
               }}
             >
               <ShareProductImage
                 product={sub}
-                size={isPortrait ? 56 : 36}
-                radius={isPortrait ? 10 : 7}
-                fontSize={isPortrait ? 14 : 11}
+                size={subThumbSize}
+                radius={isPortrait ? 10 : 8}
+                fontSize={isPortrait ? 16 : 16}
               />
               <div style={{ minWidth: 0, flex: 1 }}>
                 <div
                   style={{
                     fontFamily: "var(--hd-mono)",
-                    fontSize: isPortrait ? 10 : 7,
+                    fontSize: isPortrait ? 10 : 8,
                     letterSpacing: "0.1em",
                     color: p.accent,
                     textTransform: "uppercase",
@@ -270,13 +271,14 @@ export default function M4Cover({
                 <div
                   style={{
                     fontFamily: "var(--hd-serif)",
-                    fontSize: isPortrait ? 12 : 9,
+                    fontSize: isPortrait ? 12 : 11,
                     color: p.ink60,
-                    marginTop: 2,
+                    marginTop: 3,
                     fontStyle: "italic",
                     whiteSpace: "nowrap",
                     overflow: "hidden",
                     textOverflow: "ellipsis",
+                    lineHeight: 1.15,
                   }}
                 >
                   {shortName(sub?.name ?? "—", 2)}
