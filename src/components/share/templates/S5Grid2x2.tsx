@@ -2,6 +2,9 @@
 
 // S5: ステッカー風 2×2 グリッド（4点均等）
 // 1:1 と 9:16 で同じ思想（タイトル上部 + 2x2 グリッド + フッター）
+// レイアウト: flex column。グリッドは flex:1 で残り高さを2行に等分し、
+// 各タイルは flex column 内で画像が残り領域、ブランド行が固定で並ぶ。
+// （aspectRatio で画像を強制的に正方形にすると下段が card height をはみ出す）
 
 import * as React from "react";
 import ScatterDeco from "@/components/share/ScatterDeco";
@@ -27,16 +30,18 @@ export default function S5Grid2x2({
   const isPortrait = aspect === "9:16";
 
   const titlePad = isPortrait ? "32px 24px 18px" : "22px 32px 14px";
-  const gridPad = isPortrait ? "0 24px" : "0 28px";
-  const gridGap = isPortrait ? 18 : 16;
+  const gridPadX = isPortrait ? 24 : 28;
+  const gridGap = isPortrait ? 18 : 14;
   const cardRadius = isPortrait ? 16 : 14;
-  const cardPad = isPortrait ? 8 : 7;
+  const cardPad = isPortrait ? 8 : 6;
   const titleSize = isPortrait ? 34 : 28;
   const titleLine = isPortrait ? 1.0 : 0.95;
   const subSize = isPortrait ? 11 : 8.5;
-  const titleStepFlex = isPortrait ? 1.6 : 1; // 9:16 はグリッドにより多めの高さ
-  const stepLabelSize = isPortrait ? 26 : 22;
-  const stepLabelFont = isPortrait ? 13 : 12;
+  const stepLabelSize = isPortrait ? 26 : 20;
+  const stepLabelFont = isPortrait ? 13 : 11;
+  // フッター領域の確保。グリッドの paddingBottom として確保し、
+  // 下段タイルがフッターと重ならないようにする。
+  const footerSpace = isPortrait ? 60 : 42;
 
   return (
     <div
@@ -49,12 +54,21 @@ export default function S5Grid2x2({
         position: "relative",
         overflow: "hidden",
         boxSizing: "border-box",
+        display: "flex",
+        flexDirection: "column",
       }}
     >
       <ScatterDeco items={theme.scatter} seed={7} />
 
       {/* タイトル */}
-      <div style={{ padding: titlePad, position: "relative", zIndex: 2 }}>
+      <div
+        style={{
+          padding: titlePad,
+          position: "relative",
+          zIndex: 2,
+          flexShrink: 0,
+        }}
+      >
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           {theme.cornerTop}
           <div
@@ -85,36 +99,50 @@ export default function S5Grid2x2({
         </div>
       </div>
 
-      {/* 2×2 グリッド */}
+      {/* 2×2 グリッド: flex:1 で残り高さを 2 行に等分 */}
       <div
         style={{
-          padding: gridPad,
+          flex: 1,
+          minHeight: 0,
+          padding: `0 ${gridPadX}px ${footerSpace}px`,
           display: "grid",
           gridTemplateColumns: "1fr 1fr",
+          gridTemplateRows: "1fr 1fr",
           gap: gridGap,
           position: "relative",
           zIndex: 2,
-          flex: titleStepFlex,
-          alignContent: isPortrait ? "center" : "flex-start",
-          height: isPortrait ? `calc(100% - 200px)` : undefined,
-          alignItems: "center",
         }}
       >
         {[0, 1, 2, 3].map((i) => {
           const product = products[i];
           return (
-            <div key={i} style={{ transform: `rotate(${TILTS[i]}deg)` }}>
+            <div
+              key={i}
+              style={{
+                transform: `rotate(${TILTS[i]}deg)`,
+                height: "100%",
+                minHeight: 0,
+                display: "flex",
+              }}
+            >
               <div
                 style={{
+                  flex: 1,
+                  minHeight: 0,
                   background: "#fff",
                   padding: cardPad,
                   borderRadius: cardRadius,
                   boxShadow: "0 7px 20px rgba(0,0,0,0.14)",
+                  display: "flex",
+                  flexDirection: "column",
+                  boxSizing: "border-box",
                 }}
               >
+                {/* 画像: 残り領域を埋める */}
                 <div
                   style={{
-                    aspectRatio: "1 / 1",
+                    flex: 1,
+                    minHeight: 0,
                     borderRadius: cardRadius - 6,
                     overflow: "hidden",
                     position: "relative",
@@ -147,19 +175,21 @@ export default function S5Grid2x2({
                     {i + 1}
                   </div>
                 </div>
+                {/* ブランド行 */}
                 <div
                   style={{
                     display: "flex",
                     justifyContent: "space-between",
                     alignItems: "center",
                     padding: "6px 4px 2px",
+                    flexShrink: 0,
                   }}
                 >
                   <div
                     style={{
                       fontFamily: "var(--hd-serif)",
                       fontStyle: "italic",
-                      fontSize: isPortrait ? 14 : 12,
+                      fontSize: isPortrait ? 14 : 11,
                       color: p.ink60,
                       whiteSpace: "nowrap",
                       overflow: "hidden",
