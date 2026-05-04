@@ -357,6 +357,8 @@ export default function HistoryPage() {
   }, [layout]);
   const router = useRouter();
   const [editMode, setEditMode] = useState(false);
+  // シェア用: 4点まで選択する専用モード。editMode とは排他。
+  const [shareSelectMode, setShareSelectMode] = useState(false);
   const [editingGenreId, setEditingGenreId] = useState<string | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [editingNameId, setEditingNameId] = useState<string | null>(null);
@@ -484,19 +486,28 @@ export default function HistoryPage() {
   const toggleSelect = (id: string) => {
     setSelectedIds((prev) => {
       const next = new Set(prev);
-      if (next.has(id)) next.delete(id); else next.add(id);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        // シェア選択モードでは 4 点上限。すでに 4 つ選んでいたら追加しない
+        if (shareSelectMode && next.size >= 4) return prev;
+        next.add(id);
+      }
       return next;
     });
   };
 
   const layoutLabels: Record<LayoutMode, string> = { magazine: "Magazine", mosaic: "Mosaic", list: "List" };
 
+  // 編集モード or シェア選択モードのいずれかなら「選択UI」を出す
+  const selectionMode = editMode || shareSelectMode;
+
   // ── Shared cover card props helper ────────────────────────
   const coverCardProps = (p: Product, idx: number, pri = false) => ({
     p, index: idx,
     priority: pri,
     failedImageIds,
-    editMode,
+    editMode: selectionMode,
     isSelected: selectedIds.has(p.id),
     onNavigate: () => router.push(`/product/${p.id}`),
     onFav: (e: React.MouseEvent) => { e.stopPropagation(); handleToggleFavorite(p.id, p.isFavorite); },
@@ -510,7 +521,7 @@ export default function HistoryPage() {
     hasImage: Boolean(p.packageImage) && !failedImageIds.has(p.id),
     priority: pri,
     onImageError: () => setFailedImageIds((s) => new Set(s).add(p.id)),
-    editMode,
+    editMode: selectionMode,
     selected: selectedIds.has(p.id),
     onSelect: () => toggleSelect(p.id),
     onToggleFavorite: () => handleToggleFavorite(p.id, p.isFavorite),
@@ -1001,18 +1012,18 @@ export default function HistoryPage() {
           return (
             <div key={p.id} style={{ opacity: deletingId === p.id ? 0.5 : 1 }}>
               <div
-                className={editMode ? "hd-no-press" : undefined}
-                onClick={() => editMode ? toggleSelect(p.id) : router.push(`/product/${p.id}`)}
+                className={selectionMode ? "hd-no-press" : undefined}
+                onClick={() => selectionMode ? toggleSelect(p.id) : router.push(`/product/${p.id}`)}
                 style={{
                   display: "flex", alignItems: "stretch", gap: 14,
                   padding: "14px 0",
                   borderBottom: idx < filtered.length - 1 ? "1px solid var(--hd-hair)" : "none",
                   cursor: "pointer",
-                  WebkitTapHighlightColor: editMode ? "transparent" : undefined,
+                  WebkitTapHighlightColor: selectionMode ? "transparent" : undefined,
                 }}
               >
-                {/* Edit select */}
-                {editMode && (
+                {/* Edit/Share select */}
+                {selectionMode && (
                   <div
                     style={{
                       alignSelf: "center",
@@ -1324,33 +1335,58 @@ export default function HistoryPage() {
                     })}
                   </div>
 
-                  {/* Edit controls */}
+                  {/* Edit / Share controls */}
                   <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    {editMode && selectedIds.size === 4 && (
-                      <button
-                        onClick={() => {
-                          try {
-                            sessionStorage.setItem(
-                              "hadami.shareCosmetics.draft",
-                              JSON.stringify({
-                                selectedProductIds: Array.from(selectedIds),
-                              }),
-                            );
-                            router.push("/share/cosmetics");
-                          } catch (err) {
-                            console.error("Failed to start share flow:", err);
-                          }
-                        }}
-                        style={{
-                          padding: "7px 12px", border: "none",
-                          background: "var(--hd-moss)", color: "#fff",
-                          fontSize: 11, fontWeight: 600, cursor: "pointer",
-                          fontFamily: "var(--hd-sans)",
-                        }}
-                      >
-                        4点でシェア
-                      </button>
+                    {/* シェア選択モード時：n/4 表示 + 決定 */}
+                    {shareSelectMode && (
+                      <>
+                        <span
+                          style={{
+                            fontFamily: "var(--hd-mono)",
+                            fontSize: 11,
+                            color: "var(--hd-ink-60)",
+                            letterSpacing: "0.1em",
+                          }}
+                        >
+                          {selectedIds.size} / 4
+                        </span>
+                        <button
+                          onClick={() => {
+                            if (selectedIds.size !== 4) return;
+                            try {
+                              sessionStorage.setItem(
+                                "hadami.shareCosmetics.draft",
+                                JSON.stringify({
+                                  selectedProductIds: Array.from(selectedIds),
+                                }),
+                              );
+                              router.push("/share/cosmetics");
+                            } catch (err) {
+                              console.error("Failed to start share flow:", err);
+                            }
+                          }}
+                          disabled={selectedIds.size !== 4}
+                          style={{
+                            padding: "7px 12px",
+                            border: "none",
+                            background:
+                              selectedIds.size === 4
+                                ? "var(--hd-moss)"
+                                : "var(--hd-surface-2)",
+                            color:
+                              selectedIds.size === 4 ? "#fff" : "var(--hd-ink-40)",
+                            fontSize: 11,
+                            fontWeight: 600,
+                            cursor: selectedIds.size === 4 ? "pointer" : "default",
+                            fontFamily: "var(--hd-sans)",
+                          }}
+                        >
+                          決定
+                        </button>
+                      </>
                     )}
+
+                    {/* 編集モード時：削除ボタン */}
                     {editMode && selectedIds.size > 0 && (
                       <button
                         onClick={handleBulkDelete}
@@ -1364,7 +1400,31 @@ export default function HistoryPage() {
                         {selectedIds.size}件削除
                       </button>
                     )}
-                    {products.length > 0 && (
+
+                    {/* シェアボタン（通常時） */}
+                    {!editMode && !shareSelectMode && products.length > 0 && (
+                      <button
+                        onClick={() => {
+                          setShareSelectMode(true);
+                          setSelectedIds(new Set());
+                        }}
+                        style={{
+                          padding: "7px 12px",
+                          background: "transparent",
+                          color: "var(--hd-ink)",
+                          border: "1px solid var(--hd-ink)",
+                          fontSize: 10,
+                          cursor: "pointer",
+                          fontFamily: "var(--hd-mono)",
+                          letterSpacing: "0.18em",
+                        }}
+                      >
+                        SHARE
+                      </button>
+                    )}
+
+                    {/* EDIT/DONE ボタン（シェア選択モード時は非表示） */}
+                    {!shareSelectMode && products.length > 0 && (
                       <button
                         onClick={() => { setEditMode(!editMode); setEditingGenreId(null); setSelectedIds(new Set()); setEditingNameId(null); }}
                         style={{
@@ -1377,6 +1437,26 @@ export default function HistoryPage() {
                         }}
                       >
                         {editMode ? "DONE" : "EDIT"}
+                      </button>
+                    )}
+
+                    {/* シェア選択モード時のキャンセル */}
+                    {shareSelectMode && (
+                      <button
+                        onClick={() => {
+                          setShareSelectMode(false);
+                          setSelectedIds(new Set());
+                        }}
+                        style={{
+                          padding: "7px 12px",
+                          background: "transparent",
+                          color: "var(--hd-ink-60)",
+                          border: "1px solid var(--hd-line)",
+                          fontSize: 10, cursor: "pointer",
+                          fontFamily: "var(--hd-mono)", letterSpacing: "0.18em",
+                        }}
+                      >
+                        CANCEL
                       </button>
                     )}
                   </div>
@@ -1396,6 +1476,39 @@ export default function HistoryPage() {
                   }}
                 >
                   ⚠️ {imageError}
+                </div>
+              )}
+
+              {/* シェア選択モードのヒントバー */}
+              {shareSelectMode && (
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    gap: 10,
+                    marginBottom: 14,
+                    padding: "10px 14px",
+                    background: "var(--hd-mint-bg)",
+                    border: "1px solid var(--hd-moss)",
+                    fontSize: 12,
+                    color: "var(--hd-moss-deep)",
+                    fontFamily: "var(--hd-sans)",
+                  }}
+                >
+                  <span>
+                    シェアするコスメを <strong>4点</strong> タップしてください。決定で編集画面に進みます。
+                  </span>
+                  <span
+                    className="hd-mono"
+                    style={{
+                      fontSize: 11,
+                      letterSpacing: "0.1em",
+                      flexShrink: 0,
+                    }}
+                  >
+                    {selectedIds.size} / 4
+                  </span>
                 </div>
               )}
 

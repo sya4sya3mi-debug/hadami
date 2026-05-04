@@ -10,7 +10,6 @@ import ShareCardCanvas, {
 import {
   ASPECT_DIMENSIONS,
   ASPECT_EXPORT_SCALE,
-  type ShareAspectKey,
   type ShareCardConfig,
   type ShareTemplateKey,
 } from "@/components/share/templates/types";
@@ -69,11 +68,6 @@ function chipStyle(active: boolean): React.CSSProperties {
   };
 }
 
-const ASPECT_OPTIONS: { key: ShareAspectKey; label: string; sub: string }[] = [
-  { key: "1:1", label: "1:1", sub: "Square" },
-  { key: "9:16", label: "9:16", sub: "Story" },
-];
-
 type Props = {
   initialProducts: Product[];
   initialUsername: string;
@@ -89,6 +83,9 @@ export default function ShareCosmeticsClient({
   const previewCardRef = useRef<HTMLDivElement | null>(null);
   const previewViewportRef = useRef<HTMLDivElement | null>(null);
 
+  // 商品の並び順はローカルで変更可能（最初の1点が「メイン」になる）
+  const [products, setProducts] = useState<Product[]>(initialProducts);
+
   const [config, setConfig] = useState<ShareCardConfig>(() => {
     // localStorage に前回スタイルがあれば復元
     if (typeof window !== "undefined") {
@@ -100,7 +97,8 @@ export default function ShareCosmeticsClient({
             template: (parsed.template ?? "H4") as ShareTemplateKey,
             palette: (parsed.palette ?? "blossom") as SharePaletteKey,
             deco: (parsed.deco ?? "hearts") as ShareDecoKey,
-            aspect: (parsed.aspect ?? "1:1") as ShareAspectKey,
+            // Phase 1 では 1:1 固定。9:16 は Phase 2 で再開放予定。
+            aspect: "1:1",
             username: initialUsername,
             skinType: initialSkinType,
           };
@@ -167,6 +165,16 @@ export default function ShareCosmeticsClient({
     (patch: Partial<ShareCardConfig>) => setConfig((cur) => ({ ...cur, ...patch })),
     [],
   );
+
+  const moveProduct = useCallback((from: number, to: number) => {
+    setProducts((cur) => {
+      if (to < 0 || to >= cur.length || from === to) return cur;
+      const next = cur.slice();
+      const [moved] = next.splice(from, 1);
+      next.splice(to, 0, moved);
+      return next;
+    });
+  }, []);
 
   const handleDownloadImage = async () => {
     if (!previewCardRef.current || isDownloading) return;
@@ -448,25 +456,9 @@ export default function ShareCosmeticsClient({
                 </div>
               </Section>
 
-              {/* Aspect */}
-              <Section no="04" title="アスペクト比">
-                <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-                  {ASPECT_OPTIONS.map((opt) => (
-                    <button
-                      key={opt.key}
-                      onClick={() => updateConfig({ aspect: opt.key })}
-                      style={chipStyle(config.aspect === opt.key)}
-                      aria-pressed={config.aspect === opt.key}
-                    >
-                      {opt.label} · {opt.sub}
-                    </button>
-                  ))}
-                </div>
-              </Section>
-
               {/* Color palette */}
               <Section
-                no="05"
+                no="04"
                 title="カラーパレット"
                 hint={SHARE_PALETTES.find((p) => p.key === config.palette)?.label}
               >
@@ -501,7 +493,7 @@ export default function ShareCosmeticsClient({
 
               {/* Deco */}
               <Section
-                no="06"
+                no="05"
                 title="デコパーツ"
                 hint={getShareDecoLabel(config.deco)}
               >
@@ -538,8 +530,23 @@ export default function ShareCosmeticsClient({
                 </div>
               </Section>
 
-              {/* Selected products preview */}
-              <Section no="07" title="選択中のコスメ" hint={`${initialProducts.length} / 4 点`}>
+              {/* Selected products with reorder */}
+              <Section
+                no="06"
+                title="選択中のコスメ"
+                hint={`${products.length} / 4 点 · ①がメイン`}
+              >
+                <p
+                  style={{
+                    fontFamily: "var(--hd-sans)",
+                    fontSize: 11,
+                    color: "var(--hd-ink-40)",
+                    margin: "0 0 10px",
+                    lineHeight: 1.6,
+                  }}
+                >
+                  矢印で並び替え。①が大きく表示される「メイン」、②③④はサブとして配置されます。
+                </p>
                 <div
                   style={{
                     display: "grid",
@@ -547,46 +554,114 @@ export default function ShareCosmeticsClient({
                     gap: 8,
                   }}
                 >
-                  {initialProducts.map((p) => (
-                    <div
-                      key={p.id}
-                      style={{
-                        aspectRatio: "1 / 1",
-                        background: "var(--hd-surface-2)",
-                        border: "1px solid var(--hd-hair)",
-                        position: "relative",
-                        overflow: "hidden",
-                      }}
-                    >
-                      {p.packageImage ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img
-                          src={p.packageImageThumb ?? p.packageImage}
-                          alt={p.name}
-                          style={{
-                            width: "100%",
-                            height: "100%",
-                            objectFit: "cover",
-                          }}
-                        />
-                      ) : (
+                  {products.map((p, i) => (
+                    <div key={p.id} style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                      <div
+                        style={{
+                          aspectRatio: "1 / 1",
+                          background: "var(--hd-surface-2)",
+                          border: i === 0 ? "2px solid var(--hd-ink)" : "1px solid var(--hd-hair)",
+                          position: "relative",
+                          overflow: "hidden",
+                        }}
+                      >
+                        {p.packageImage ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img
+                            src={p.packageImageThumb ?? p.packageImage}
+                            alt={p.name}
+                            style={{
+                              width: "100%",
+                              height: "100%",
+                              objectFit: "cover",
+                            }}
+                          />
+                        ) : (
+                          <div
+                            style={{
+                              position: "absolute",
+                              inset: 0,
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              fontFamily: "var(--hd-mono)",
+                              fontSize: 9,
+                              color: "var(--hd-ink-40)",
+                              textAlign: "center",
+                              padding: 4,
+                            }}
+                          >
+                            {p.brand}
+                          </div>
+                        )}
+                        {/* index badge */}
                         <div
                           style={{
                             position: "absolute",
-                            inset: 0,
+                            top: 4,
+                            left: 4,
+                            width: 22,
+                            height: 22,
+                            borderRadius: 999,
+                            background: i === 0 ? accentColor : "rgba(255,255,255,0.92)",
+                            color: i === 0 ? "#fff" : "var(--hd-ink)",
+                            fontFamily: "var(--hd-serif)",
+                            fontStyle: "italic",
+                            fontSize: 12,
                             display: "flex",
                             alignItems: "center",
                             justifyContent: "center",
-                            fontFamily: "var(--hd-mono)",
-                            fontSize: 9,
-                            color: "var(--hd-ink-40)",
-                            textAlign: "center",
-                            padding: 4,
                           }}
                         >
-                          {p.brand}
+                          {i + 1}
                         </div>
-                      )}
+                      </div>
+                      <div style={{ display: "flex", gap: 4 }}>
+                        <button
+                          type="button"
+                          onClick={() => moveProduct(i, i - 1)}
+                          disabled={i === 0}
+                          aria-label="左へ"
+                          style={{
+                            flex: 1,
+                            padding: "4px 0",
+                            background: "transparent",
+                            border: "1px solid var(--hd-line)",
+                            borderRadius: 0,
+                            color: i === 0 ? "var(--hd-ink-20)" : "var(--hd-ink)",
+                            cursor: i === 0 ? "default" : "pointer",
+                            fontFamily: "var(--hd-mono)",
+                            fontSize: 12,
+                            lineHeight: 1,
+                          }}
+                        >
+                          ←
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => moveProduct(i, i + 1)}
+                          disabled={i === products.length - 1}
+                          aria-label="右へ"
+                          style={{
+                            flex: 1,
+                            padding: "4px 0",
+                            background: "transparent",
+                            border: "1px solid var(--hd-line)",
+                            borderRadius: 0,
+                            color:
+                              i === products.length - 1
+                                ? "var(--hd-ink-20)"
+                                : "var(--hd-ink)",
+                            cursor:
+                              i === products.length - 1 ? "default" : "pointer",
+                            fontFamily: "var(--hd-mono)",
+                            fontSize: 12,
+                            lineHeight: 1,
+                          }}
+                        >
+                          →
+                        </button>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -672,7 +747,7 @@ export default function ShareCosmeticsClient({
                     }}
                   >
                     <div ref={previewCardRef}>
-                      <ShareCardCanvas config={config} products={initialProducts} />
+                      <ShareCardCanvas config={config} products={products} />
                     </div>
                   </div>
                 </div>
