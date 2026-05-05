@@ -7,7 +7,6 @@ import Image from "next/image";
 
 import { useProductStore } from "@/stores/useProductStore";
 import { getIngredientById, getIngredientCategoryInfo } from "@/lib/ingredients";
-import { findCombinations } from "@/lib/combinations";
 import { getGenreByKey } from "@/lib/productGenres";
 import Disclaimer from "@/components/ui/Disclaimer";
 import { useUser } from "@/lib/auth";
@@ -136,7 +135,6 @@ export default function ProductDetailPage() {
     }))
     .filter((e) => e.score > 0)
     .slice(0, 4);
-  const combinations = findCombinations(ingredientNames);
 
   const handleToggleFavorite = async () => {
     const prevFav = product.isFavorite;
@@ -531,93 +529,6 @@ export default function ProductDetailPage() {
             >
               ※ 成分をタップすると図鑑で詳細を確認できます
             </p>
-
-            {/* Combinations */}
-            {combinations.length > 0 && (
-              <div style={{ marginTop: 28, marginBottom: 24 }}>
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "baseline",
-                    justifyContent: "space-between",
-                    paddingBottom: 10,
-                    marginBottom: 12,
-                    borderBottom: "1px solid var(--hd-ink)",
-                  }}
-                >
-                  <div>
-                    <div className="hd-mono hd-caps" style={{ color: "var(--hd-ink-40)" }}>
-                      Combinations · 組み合わせ
-                    </div>
-                    <div className="hd-serif" style={{ fontSize: 18, marginTop: 3, letterSpacing: "-0.01em" }}>
-                      組み合わせ情報
-                    </div>
-                  </div>
-                  <div className="hd-mono" style={{ fontSize: 12, color: "var(--hd-ink-60)" }}>
-                    {String(combinations.length).padStart(2, "0")}
-                  </div>
-                </div>
-                <div>
-                  {combinations.map((combo, i) => {
-                    const isGood = combo.type === "recommended";
-                    const accent = isGood ? "var(--hd-moss)" : "var(--hd-terra)";
-                    return (
-                      <div
-                        key={i}
-                        style={{
-                          padding: "14px 14px",
-                          marginBottom: 8,
-                          background: "var(--hd-surface)",
-                          border: "1px solid var(--hd-hair)",
-                          borderLeft: `3px solid ${accent}`,
-                        }}
-                      >
-                        <div
-                          className="hd-mono hd-caps"
-                          style={{ color: accent, marginBottom: 4 }}
-                        >
-                          {isGood ? "Recommended · 推奨" : "Note · 注意"}
-                        </div>
-                        <div
-                          className="hd-serif"
-                          style={{
-                            fontSize: 14,
-                            letterSpacing: "-0.01em",
-                            lineHeight: 1.4,
-                          }}
-                        >
-                          {combo.label}
-                        </div>
-                        <p
-                          style={{
-                            fontFamily: "var(--hd-sans)",
-                            fontSize: 12,
-                            marginTop: 6,
-                            marginBottom: 0,
-                            color: "var(--hd-ink-60)",
-                            lineHeight: 1.6,
-                          }}
-                        >
-                          {combo.desc}
-                        </p>
-                        <p
-                          className="hd-mono"
-                          style={{
-                            fontSize: 9,
-                            marginTop: 6,
-                            marginBottom: 0,
-                            color: "var(--hd-ink-40)",
-                            letterSpacing: "0.05em",
-                          }}
-                        >
-                          SOURCE · {combo.source}
-                        </p>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
 
             {/* Dates */}
             <div
