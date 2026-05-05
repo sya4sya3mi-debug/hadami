@@ -192,7 +192,7 @@ export default function EditorialCard({
         fontSize: 8,
         letterSpacing: "0.16em",
         padding: "3px 8px",
-        color: "var(--hd-ink)",
+        color: "var(--hd-ink-fixed)",
       }}
     >
       {cardSerial}

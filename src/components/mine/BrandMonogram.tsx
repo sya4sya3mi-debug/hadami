@@ -24,8 +24,9 @@ export default function BrandMonogram({
         height: size,
         borderRadius: 999,
         background: isLight ? "rgba(255,255,255,0.95)" : "var(--hd-ink)",
-        color: isLight ? "var(--hd-ink)" : "#fff",
-        border: isLight ? "1px solid var(--hd-ink-20)" : "none",
+        color: isLight ? "var(--hd-ink-fixed)" : "#fff",
+        // 白い面の上の薄い輪郭。ダークモードでも常に薄いラインが必要なので固定色で。
+        border: isLight ? "1px solid rgba(0,0,0,0.18)" : "none",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",

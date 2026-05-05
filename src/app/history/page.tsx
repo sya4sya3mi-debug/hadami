@@ -189,7 +189,7 @@ function CoverCard({
             background: "rgba(255,255,255,0.9)",
             fontFamily: "var(--hd-mono)", fontSize: 8,
             padding: "2px 8px", borderRadius: 999,
-            color: "var(--hd-ink)",
+            color: "var(--hd-ink-fixed)",
           }}
         >
           N°{String(index + 1).padStart(3, "0")}
