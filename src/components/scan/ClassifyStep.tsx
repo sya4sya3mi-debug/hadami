@@ -4,8 +4,10 @@ import { PRODUCT_GENRES } from "@/lib/productGenres";
 import { ProductGenre } from "@/types";
 import { ProductGenreIcon } from "@/components/ui/CosmeticIcons";
 
+// "other" を末尾に含めることで、AIが認識できなかった/ユーザーがその場で
+// 判断できないケースでも明示的に「other」を選択できるようにする。
 const SCAN_GENRES = PRODUCT_GENRES.filter((g) =>
-  ["toner", "serum", "emulsion", "cream", "sunscreen", "mask_pack"].includes(g.key)
+  ["toner", "serum", "emulsion", "cream", "sunscreen", "mask_pack", "other"].includes(g.key)
 );
 
 interface ClassifyStepProps {

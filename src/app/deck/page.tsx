@@ -192,7 +192,7 @@ export default function DeckPage() {
           const genre = getGenreByKey(product?.productType ?? "other");
           return {
             icon: genre?.icon ?? "🌿",
-            step_name: genre?.label ?? "その他",
+            step_name: genre?.label ?? "other",
             product_name: product?.name ?? "",
             brand: product?.brand ?? "",
             product_id: product?.id ?? "",

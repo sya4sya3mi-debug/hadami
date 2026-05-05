@@ -367,7 +367,7 @@ export default function HistoryPage() {
   const [failedImageIds, setFailedImageIds] = useState<Set<string>>(new Set());
 
   const { favCount, filtered, activeGenres } = useMemo(() => {
-    const displayGenres = ["toner", "serum", "emulsion", "cream", "sunscreen", "mask_pack"];
+    const displayGenres = ["toner", "serum", "emulsion", "cream", "sunscreen", "mask_pack", "other"];
     const favCount = products.filter((p) => p.isFavorite).length;
     const filtered = products
       .filter((p) => {
@@ -942,7 +942,7 @@ export default function HistoryPage() {
                 {p.name} のカテゴリ変更
               </div>
               <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-                {PRODUCT_GENRES.filter((g) => g.key !== "other").map((g) => (
+                {PRODUCT_GENRES.map((g) => (
                   <button
                     key={g.key}
                     onClick={() => { handleGenreChange(p.id, g.key); setEditingGenreId(null); }}
@@ -1219,7 +1219,7 @@ export default function HistoryPage() {
               {/* Genre picker (list mode) */}
               {editMode && editingGenreId === p.id && (
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 6, paddingBottom: 10 }} onClick={(e) => e.stopPropagation()}>
-                  {PRODUCT_GENRES.filter((g) => g.key !== "other").map((g) => (
+                  {PRODUCT_GENRES.map((g) => (
                     <button
                       key={g.key}
                       onClick={() => { handleGenreChange(p.id, g.key); setEditingGenreId(null); }}

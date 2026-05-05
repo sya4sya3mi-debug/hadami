@@ -20,7 +20,7 @@ export const PRODUCT_GENRES: readonly ProductGenreInfo[] = [
   { key: "eye_care", label: "アイケア", icon: "\u{1F441}\uFE0F", color: "#90A4AE", order: 9 },
   { key: "oil", label: "オイル", icon: "\u{1F49B}", color: "#A5D6A7", order: 10 },
   { key: "mist", label: "ミスト", icon: "\u{1F32B}\uFE0F", color: "#B3E5FC", order: 11 },
-  { key: "other", label: "その他", icon: "\u{1F4E6}", color: "#BDBDBD", order: 12 },
+  { key: "other", label: "other", icon: "\u{1F4E6}", color: "#BDBDBD", order: 12 },
 ] as const;
 
 export function getGenreByKey(key: string): ProductGenreInfo | undefined {
