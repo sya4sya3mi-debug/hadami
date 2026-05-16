@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useUser } from "@/lib/auth";
 import { isAdminClient } from "@/lib/adminConfig";
+import SignupTrendChart, { SignupTrendDatum } from "@/components/admin/SignupTrendChart";
 
 interface Stats {
   totalUsers: number;
@@ -14,6 +15,12 @@ interface Stats {
   activeInviteCodes: number;
   totalInviteUses: number;
   currentMonth: string;
+}
+
+interface SignupTrend {
+  daily: SignupTrendDatum[];
+  total: number;
+  rangeDays: number;
 }
 
 function StatCard({
@@ -74,15 +81,21 @@ function SectionHeader({ jp, caps }: { jp: string; caps: string }) {
 export default function AdminDashboardPage() {
   const { user } = useUser();
   const [stats, setStats] = useState<Stats | null>(null);
+  const [signups, setSignups] = useState<SignupTrend | null>(null);
   const [fetching, setFetching] = useState(true);
   const [error, setError] = useState("");
 
   const fetchStats = useCallback(async () => {
     setFetching(true);
     try {
-      const res = await fetch("/api/admin/stats");
-      if (!res.ok) throw new Error("取得失敗");
-      setStats(await res.json());
+      const [statsRes, signupsRes] = await Promise.all([
+        fetch("/api/admin/stats"),
+        fetch("/api/admin/stats/signups"),
+      ]);
+      if (!statsRes.ok || !signupsRes.ok) throw new Error("取得失敗");
+      const [statsData, signupsData] = await Promise.all([statsRes.json(), signupsRes.json()]);
+      setStats(statsData);
+      setSignups(signupsData);
     } catch {
       setError("データの取得に失敗しました。");
     } finally {
@@ -135,6 +148,49 @@ export default function AdminDashboardPage() {
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
             <StatCard caps="TOTAL" label="総ユーザー数" value={stats.totalUsers} />
             <StatCard caps="ACTIVE" label="今月アクティブ" value={stats.activeUsersThisMonth} sub={`${monthLabel} スキャン`} />
+          </div>
+
+          <SectionHeader jp="新規登録者の推移" caps="SIGNUPS · 30D" />
+          <div
+            style={{
+              border: "1px solid var(--hd-line)",
+              padding: 16,
+              background: "var(--hd-bg)",
+            }}
+          >
+            <div style={{ marginBottom: 12 }}>
+              <div className="hd-serif" style={{ fontSize: 26, lineHeight: 1.05 }}>
+                {signups ? `${signups.total}名` : "—"}
+              </div>
+              <div
+                className="hd-mono"
+                style={{
+                  fontSize: 9,
+                  letterSpacing: "0.2em",
+                  color: "var(--hd-ink-60)",
+                  marginTop: 4,
+                }}
+              >
+                TOTAL · LAST 30 DAYS
+              </div>
+            </div>
+            {signups ? (
+              <SignupTrendChart data={signups.daily} />
+            ) : (
+              <div
+                style={{
+                  height: 240,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: 12,
+                  color: "var(--hd-ink-60)",
+                  fontFamily: "var(--hd-sans)",
+                }}
+              >
+                読み込み中...
+              </div>
+            )}
           </div>
 
           <SectionHeader jp="スキャン" caps="SCANS" />
