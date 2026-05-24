@@ -178,6 +178,12 @@ function CommentBlock({
         position: "relative",
         paddingLeft: 14,
         borderLeft: `2px solid ${accent}`,
+        // 長文コメントで Active Effects が下に押し出されるのを防ぐため
+        // 最大 3 行で打ち切る。
+        display: "-webkit-box",
+        WebkitLineClamp: 3,
+        WebkitBoxOrient: "vertical",
+        overflow: "hidden",
       }}
     >
       <span style={{ color: accent, marginRight: 2 }}>&ldquo;</span>
@@ -225,9 +231,11 @@ function PatternA({
   effects, rating, comment, palette, deco,
 }: Omit<ProductShareCardProps, "pattern" | "paletteKey"> & { palette: SharePalette; deco: ShareDecoKey }) {
   const noLabel = no != null ? `No. ${String(no).padStart(3, "0")}` : "No. —";
-  // コメントがある場合は effects を 2 件、無ければ 4 件まで
+  // コメントの有無にかかわらず effects は 4 件まで表示する。
+  // コメントが長いと縦に伸びるが、CSS の overflow: hidden でクリップされる側を
+  // コメントブロックに寄せている (下記 CommentBlock の maxHeight)。
   const hasComment = !!comment?.trim();
-  const displayEffects = effects.slice(0, hasComment ? 2 : 4);
+  const displayEffects = effects.slice(0, 4);
   const decoTheme = buildShareDecoTheme(deco, palette.accent);
 
   return (
@@ -426,7 +434,8 @@ function PatternB({
   effects, rating, comment, palette, deco,
 }: Omit<ProductShareCardProps, "pattern" | "paletteKey" | "no"> & { palette: SharePalette; deco: ShareDecoKey }) {
   const hasComment = !!comment?.trim();
-  const displayEffects = effects.slice(0, hasComment ? 2 : 3);
+  // コメントの有無にかかわらず最大 3 件まで表示。
+  const displayEffects = effects.slice(0, 3);
   const decoTheme = buildShareDecoTheme(deco, palette.accent);
 
   return (
@@ -635,7 +644,8 @@ function PatternC({
   deco: ShareDecoKey;
 }) {
   const hasComment = !!comment?.trim();
-  const displayEffects = effects.slice(0, hasComment ? 2 : 4);
+  // コメントの有無にかかわらず最大 4 件まで表示。
+  const displayEffects = effects.slice(0, 4);
   const decoTheme = buildShareDecoTheme(deco, palette.accent);
 
   return (
