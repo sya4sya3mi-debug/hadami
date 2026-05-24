@@ -216,13 +216,14 @@ export default function ProductShareCardSheet({
 
       let blob: Blob | null = null;
 
-      // 540×540 のカードを 3 倍 → 1620×1620 で出力。
-      // iPhone (Retina) の写真表示や Instagram (推奨 1080×1080) 想定で十分な
-      // 高解像度を確保しつつ、4 倍 (2160×2160) ほどファイルサイズを膨張させない
-      // 中庸の値。レンダリングタイムアウトは scale 3 でも余裕を持たせて 25s。
-      const CAPTURE_SCALE = 3;
-      const JPEG_QUALITY = 0.95;
-      const RENDER_TIMEOUT_MS = 25000;
+      // 540×540 のカードを 4 倍 → 2160×2160 で出力。
+      // iPhone Retina で原寸表示しても文字エッジがシャープに保たれ、
+      // Instagram (推奨 1080×1080 / Stories 1080×1920) でも縮小先で
+      // アンチエイリアスがきれいに効くサイズ。
+      // 旧 scale 3 (1620) からのファイルサイズ増は約 1.5 倍 (700KB→1.1MB 程度)。
+      const CAPTURE_SCALE = 4;
+      const JPEG_QUALITY = 0.97;
+      const RENDER_TIMEOUT_MS = 30000;
 
       try {
         const { default: html2canvas } = await import("html2canvas");
