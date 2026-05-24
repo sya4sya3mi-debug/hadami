@@ -105,7 +105,8 @@ export async function POST(request: NextRequest) {
     .upsert({ name: name.trim() }, { onConflict: "name" });
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.error("[admin/unknown-ingredients] dismiss upsert error:", error);
+    return NextResponse.json({ error: "予期しないエラーが発生しました" }, { status: 500 });
   }
 
   return NextResponse.json({ success: true });
@@ -147,7 +148,8 @@ export async function PATCH(request: NextRequest) {
     );
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.error("[admin/unknown-ingredients] custom_ingredients upsert error:", error);
+    return NextResponse.json({ error: "予期しないエラーが発生しました" }, { status: 500 });
   }
 
   return NextResponse.json({ success: true });
@@ -171,7 +173,8 @@ export async function DELETE(request: NextRequest) {
     .eq("name", name.trim());
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.error("[admin/unknown-ingredients] dismiss delete error:", error);
+    return NextResponse.json({ error: "予期しないエラーが発生しました" }, { status: 500 });
   }
 
   return NextResponse.json({ success: true });

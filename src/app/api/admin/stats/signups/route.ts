@@ -60,7 +60,8 @@ export async function GET(request: NextRequest) {
     .lt("invite_activated_at", endUtcIso);
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.error("[admin/stats/signups] db error:", error);
+    return NextResponse.json({ error: "予期しないエラーが発生しました" }, { status: 500 });
   }
 
   const counts = new Map<string, number>();

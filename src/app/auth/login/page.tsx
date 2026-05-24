@@ -7,6 +7,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase";
 import { toJaAuthErrorMessage } from "@/lib/authErrorMessage";
+import { PASSWORD_MIN_LENGTH, validatePasswordPolicy } from "@/lib/passwordPolicy";
 
 type EmailMode = "login" | "signup";
 
@@ -82,6 +83,12 @@ function LoginPageInner() {
     setMessage("");
     setShowResetHint(false);
     if (emailMode === "signup") {
+      const policyError = validatePasswordPolicy(password);
+      if (policyError) {
+        setMessage(policyError);
+        setLoadingEmail(false);
+        return;
+      }
       const registrationRes = await fetch("/api/check-registration").catch(() => null);
       if (registrationRes) {
         const { allowed } = (await registrationRes.json().catch(() => ({ allowed: true }))) as { allowed?: boolean };
@@ -107,10 +114,28 @@ function LoginPageInner() {
       setLoadingEmail(false);
       return;
     }
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) {
-      setShowResetHint(/invalid login credentials/i.test(error.message));
-      setMessage(toJaAuthErrorMessage(error.message, "ログインに失敗しました。"));
+    let loginRes: Response;
+    try {
+      loginRes = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+    } catch {
+      setMessage("通信に失敗しました。ネットワーク接続を確認してください。");
+      setLoadingEmail(false);
+      return;
+    }
+    if (!loginRes.ok) {
+      const body = (await loginRes.json().catch(() => ({}))) as {
+        error?: string;
+        locked?: boolean;
+      };
+      const errMsg = body.error || "ログインに失敗しました。";
+      setShowResetHint(
+        !body.locked && /メールアドレスまたはパスワード/.test(errMsg),
+      );
+      setMessage(errMsg);
       setLoadingEmail(false);
       return;
     }
@@ -314,11 +339,15 @@ function LoginPageInner() {
             <div style={{ marginBottom: 14 }}>
               <input
                 type="password"
-                placeholder="パスワード（6文字以上）"
+                placeholder={
+                  emailMode === "signup"
+                    ? `パスワード（${PASSWORD_MIN_LENGTH}文字以上、英数字混合）`
+                    : "パスワード"
+                }
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                minLength={6}
+                minLength={emailMode === "signup" ? PASSWORD_MIN_LENGTH : 6}
                 style={inputStyle}
               />
             </div>

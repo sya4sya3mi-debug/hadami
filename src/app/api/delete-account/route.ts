@@ -61,7 +61,8 @@ function throwIfError(
   message: string
 ): asserts error is null {
   if (error) {
-    throw new Error(`${message}: ${error.message}`);
+    console.error(`[delete-account] ${message}:`, error);
+    throw new Error(message);
   }
 }
 
@@ -166,12 +167,7 @@ export async function DELETE() {
     console.error("Account deletion failed:", error);
 
     return NextResponse.json(
-      {
-        error:
-          error instanceof Error
-            ? error.message
-            : "アカウント削除に失敗しました",
-      },
+      { error: "アカウント削除に失敗しました" },
       { status: 500 }
     );
   }

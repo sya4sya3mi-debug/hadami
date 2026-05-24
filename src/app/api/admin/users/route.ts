@@ -103,10 +103,12 @@ export async function GET(request: NextRequest) {
   ]);
 
   if (usersError) {
-    return NextResponse.json({ error: usersError.message }, { status: 500 });
+    console.error("[admin/users] usersError:", usersError);
+    return NextResponse.json({ error: "予期しないエラーが発生しました" }, { status: 500 });
   }
   if (activatedProfilesResult.error) {
-    return NextResponse.json({ error: activatedProfilesResult.error.message }, { status: 500 });
+    console.error("[admin/users] activatedProfilesError:", activatedProfilesResult.error);
+    return NextResponse.json({ error: "予期しないエラーが発生しました" }, { status: 500 });
   }
 
   const activatedProfiles = (activatedProfilesResult.data ?? []) as ActivatedProfile[];
@@ -159,13 +161,16 @@ export async function GET(request: NextRequest) {
 
   if (productsResult.error || scansResult.error || discoveriesResult.error) {
     const error = productsResult.error || scansResult.error || discoveriesResult.error;
-    return NextResponse.json({ error: error?.message ?? "予期しないエラーが発生しました" }, { status: 500 });
+    console.error("[admin/users] aggregate query error:", error);
+    return NextResponse.json({ error: "予期しないエラーが発生しました" }, { status: 500 });
   }
   if (scanLimitsResult.error && !isUserScanLimitsTableMissingError(scanLimitsResult.error)) {
-    return NextResponse.json({ error: scanLimitsResult.error.message }, { status: 500 });
+    console.error("[admin/users] scanLimits error:", scanLimitsResult.error);
+    return NextResponse.json({ error: "予期しないエラーが発生しました" }, { status: 500 });
   }
   if (legacyLimitsResult.error) {
-    return NextResponse.json({ error: legacyLimitsResult.error.message }, { status: 500 });
+    console.error("[admin/users] legacyLimits error:", legacyLimitsResult.error);
+    return NextResponse.json({ error: "予期しないエラーが発生しました" }, { status: 500 });
   }
 
   const productCount: Record<string, number> = {};
@@ -240,7 +245,8 @@ export async function PATCH(request: NextRequest) {
         .delete()
         .eq("user_id", id);
       if (error && !isUserScanLimitsTableMissingError(error)) {
-        return NextResponse.json({ error: error.message }, { status: 500 });
+        console.error("[admin/users] delete scan_limits error:", error);
+        return NextResponse.json({ error: "予期しないエラーが発生しました" }, { status: 500 });
       }
       await deleteLegacyScanLimit(id);
       return NextResponse.json({ success: true, monthlyScanLimit });
@@ -259,11 +265,13 @@ export async function PATCH(request: NextRequest) {
 
     if (error) {
       if (!isUserScanLimitsTableMissingError(error)) {
-        return NextResponse.json({ error: error.message }, { status: 500 });
+        console.error("[admin/users] upsert scan_limits error:", error);
+        return NextResponse.json({ error: "予期しないエラーが発生しました" }, { status: 500 });
       }
       const legacy = await upsertLegacyScanLimit(id, monthlyScanLimit);
       if (legacy.error) {
-        return NextResponse.json({ error: legacy.error.message }, { status: 500 });
+        console.error("[admin/users] upsert legacy scan_limits error:", legacy.error);
+        return NextResponse.json({ error: "予期しないエラーが発生しました" }, { status: 500 });
       }
       return NextResponse.json({ success: true, monthlyScanLimit });
     }
@@ -285,7 +293,8 @@ export async function PATCH(request: NextRequest) {
   });
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.error("[admin/users] ban update error:", error);
+    return NextResponse.json({ error: "予期しないエラーが発生しました" }, { status: 500 });
   }
 
   return NextResponse.json({ success: true });
@@ -311,7 +320,8 @@ export async function DELETE(request: NextRequest) {
   const { error } = await supabaseAdmin.auth.admin.deleteUser(id);
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.error("[admin/users] delete user error:", error);
+    return NextResponse.json({ error: "予期しないエラーが発生しました" }, { status: 500 });
   }
 
   return NextResponse.json({ success: true });

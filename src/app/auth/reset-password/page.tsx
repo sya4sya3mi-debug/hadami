@@ -11,14 +11,14 @@ import {
   createRecoveryRequestClient,
   createRecoverySessionClient,
 } from "@/lib/supabaseRecovery";
+import { PASSWORD_MIN_LENGTH, validatePasswordPolicy } from "@/lib/passwordPolicy";
 
 function getPasswordValidationMessage(
   password: string,
   confirmPassword?: string,
 ) {
-  if (password.length < 6) {
-    return "パスワードは6文字以上で入力してください。";
-  }
+  const policyError = validatePasswordPolicy(password);
+  if (policyError) return policyError;
   if (typeof confirmPassword === "string" && password !== confirmPassword) {
     return "確認用パスワードが一致しません。";
   }
@@ -407,7 +407,7 @@ function ResetPasswordPageInner() {
             }}
           >
             {mode === "update"
-              ? "パスワードは6文字以上で入力してください。"
+              ? `パスワードは${PASSWORD_MIN_LENGTH}文字以上で、英字と数字を両方含めてください。`
               : "登録済みメールアドレスに再設定リンクをお送りします。"}
           </p>
 
@@ -494,8 +494,8 @@ function ResetPasswordPageInner() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
-                    minLength={6}
-                    placeholder="6文字以上"
+                    minLength={PASSWORD_MIN_LENGTH}
+                    placeholder={`${PASSWORD_MIN_LENGTH}文字以上、英数字混合`}
                     style={inputStyle}
                   />
                 </div>
@@ -515,7 +515,7 @@ function ResetPasswordPageInner() {
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     required
-                    minLength={6}
+                    minLength={PASSWORD_MIN_LENGTH}
                     placeholder="もう一度入力"
                     style={inputStyle}
                   />

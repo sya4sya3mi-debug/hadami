@@ -13,7 +13,7 @@ const AUTH_ERROR_MAP: Array<{ pattern: RegExp; message: string }> = [
   },
   {
     pattern: /password should be at least/i,
-    message: "パスワードは6文字以上で入力してください。",
+    message: "パスワードは8文字以上の英数字混合で入力してください。",
   },
   {
     pattern: /unable to validate email address|invalid email/i,

@@ -38,7 +38,8 @@ export async function GET(request: NextRequest) {
       .not("invite_activated_at", "is", null);
 
   if (activatedProfilesError) {
-    return NextResponse.json({ error: activatedProfilesError.message }, { status: 500 });
+    console.error("[admin/stats] activatedProfiles error:", activatedProfilesError);
+    return NextResponse.json({ error: "予期しないエラーが発生しました" }, { status: 500 });
   }
 
   const activatedUserIds = (activatedProfiles ?? []).map(
