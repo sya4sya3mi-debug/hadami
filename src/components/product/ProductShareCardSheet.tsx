@@ -216,11 +216,19 @@ export default function ProductShareCardSheet({
 
       let blob: Blob | null = null;
 
+      // 540×540 のカードを 3 倍 → 1620×1620 で出力。
+      // iPhone (Retina) の写真表示や Instagram (推奨 1080×1080) 想定で十分な
+      // 高解像度を確保しつつ、4 倍 (2160×2160) ほどファイルサイズを膨張させない
+      // 中庸の値。レンダリングタイムアウトは scale 3 でも余裕を持たせて 25s。
+      const CAPTURE_SCALE = 3;
+      const JPEG_QUALITY = 0.95;
+      const RENDER_TIMEOUT_MS = 25000;
+
       try {
         const { default: html2canvas } = await import("html2canvas");
         const canvas = await Promise.race([
           html2canvas(captureRef.current, {
-            scale: 2,
+            scale: CAPTURE_SCALE,
             backgroundColor: "#ffffff",
             useCORS: true,
             allowTaint: false,
@@ -228,11 +236,11 @@ export default function ProductShareCardSheet({
             imageTimeout: 15000,
           }),
           new Promise<never>((_, reject) =>
-            window.setTimeout(() => reject(new Error("timed out")), 15000),
+            window.setTimeout(() => reject(new Error("timed out")), RENDER_TIMEOUT_MS),
           ),
         ]);
         blob = await new Promise<Blob | null>((resolve) => {
-          canvas.toBlob(resolve, "image/jpeg", 0.92);
+          canvas.toBlob(resolve, "image/jpeg", JPEG_QUALITY);
         });
         if (!blob) {
           blob = await new Promise<Blob | null>((resolve) => {
@@ -247,15 +255,15 @@ export default function ProductShareCardSheet({
         const { toBlob } = await import("html-to-image");
         blob = await Promise.race([
           toBlob(captureRef.current, {
-            pixelRatio: 2,
+            pixelRatio: CAPTURE_SCALE,
             cacheBust: false,
             backgroundColor: "#ffffff",
             skipFonts: true,
             type: "image/jpeg",
-            quality: 0.92,
+            quality: JPEG_QUALITY,
           }),
           new Promise<Blob | null>((_, reject) =>
-            window.setTimeout(() => reject(new Error("timed out")), 15000),
+            window.setTimeout(() => reject(new Error("timed out")), RENDER_TIMEOUT_MS),
           ),
         ]);
       }
