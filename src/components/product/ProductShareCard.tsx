@@ -27,7 +27,7 @@ export const CARD_COLORS = SHARE_PALETTES.map((p) => ({
 
 export interface ProductShareCardEffect {
   label: string;
-  score: number; // 0-10
+  score: number; // 該当成分数
 }
 
 export interface ProductShareCardProps {
@@ -182,13 +182,11 @@ function CommentBlock({
 
 function EffectBars({
   effects,
-  accent,
   ink,
   ink40,
   hair,
 }: {
   effects: ProductShareCardEffect[];
-  accent: string;
   ink: string;
   ink40: string;
   hair: string;
@@ -201,37 +199,24 @@ function EffectBars({
             style={{
               fontFamily: "var(--hd-serif)",
               fontSize: 12,
-              width: 44,
+              flex: 1,
               letterSpacing: "-0.01em",
-              flexShrink: 0,
               color: ink,
             }}
           >
             {e.label}
           </div>
-          <div style={{ flex: 1, height: 2, background: hair, position: "relative" }}>
-            <div
-              style={{
-                position: "absolute",
-                left: 0,
-                top: 0,
-                height: "100%",
-                width: `${(e.score / 10) * 100}%`,
-                background: accent,
-              }}
-            />
-          </div>
+          <div style={{ flex: 1, height: 1, background: hair }} />
           <div
             style={{
               fontFamily: "var(--hd-mono)",
               fontSize: 9,
               color: ink40,
-              width: 28,
               textAlign: "right",
               flexShrink: 0,
             }}
           >
-            {e.score}/10
+            {e.score} 件
           </div>
         </div>
       ))}
@@ -403,7 +388,6 @@ function PatternA({
               </div>
               <EffectBars
                 effects={displayEffects}
-                accent={palette.accent}
                 ink={palette.ink}
                 ink40={palette.ink40}
                 hair={palette.hair}
@@ -605,7 +589,6 @@ function PatternB({
             </div>
             <EffectBars
               effects={displayEffects}
-              accent={palette.accent}
               ink={palette.ink}
               ink40={palette.ink40}
               hair={palette.hair}
@@ -787,7 +770,6 @@ function PatternC({
             </div>
             <EffectBars
               effects={displayEffects}
-              accent={palette.accent}
               ink={palette.ink}
               ink40={palette.ink40}
               hair={palette.hair}

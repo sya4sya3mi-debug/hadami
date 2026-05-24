@@ -5720,9 +5720,9 @@ export interface ActiveCategoryInfo {
 }
 
 export const ACTIVE_CATEGORIES: ActiveCategoryInfo[] = [
-  { key: "brightening",  label: "美白",       icon: "✨", color: "#CE93D8" },
-  { key: "soothing",     label: "肌荒れ防止", icon: "🛡️", color: "#4CAF50" },
-  { key: "turnover",     label: "シワ改善", icon: "🔄", color: "#FFB74D" },
+  { key: "brightening",  label: "明るい印象", icon: "✨", color: "#CE93D8" },
+  { key: "soothing",     label: "すこやか肌", icon: "🛡️", color: "#4CAF50" },
+  { key: "turnover",     label: "乾燥小ジワ", icon: "🔄", color: "#FFB74D" },
   { key: "barrier",      label: "バリア", icon: "🛡️", color: "#81C784" },
   { key: "moisturizing", label: "保湿",       icon: "💧", color: "#4FC3F7" },
   { key: "keratin",      label: "角質ケア", icon: "🧹", color: "#90A4AE" },

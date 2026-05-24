@@ -126,12 +126,9 @@ export default function ProductDetailPage() {
   const shareCardEffects = ACTIVE_CATEGORIES
     .map((cat) => ({
       label: cat.label,
-      score: Math.min(
-        allIngredients.filter(
-          (ing) => ing.activeIngredient && ing.categories.includes(cat.key)
-        ).length * 2,
-        10
-      ),
+      score: allIngredients.filter(
+        (ing) => ing.activeIngredient && ing.categories.includes(cat.key)
+      ).length,
     }))
     .filter((e) => e.score > 0)
     .slice(0, 4);
