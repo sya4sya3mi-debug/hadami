@@ -83,13 +83,13 @@ export interface Product {
   name: string;
   brand: string;
   productType: ProductGenre;
-  // 表示用（800×800 WEBP）。アプリ内のリスト・詳細・サムネ表示で参照する。
+  // 表示用（1600×1600 WEBP, q92）。アプリ内のリスト・詳細・サムネ表示で参照する。
   packageImage?: string;
   packageImagePath?: string;
   // 後方互換用エイリアス。今後は packageImage と同値になる。
   packageImageThumb?: string;
   packageImageThumbPath?: string;
-  // シェアカード生成用（1200×1200 WEBP）。SNSシェア時のみ参照する。
+  // シェアカード生成用（2400×2400 WEBP, q97）。SNSシェア時のみ参照する。
   packageImageShareUrl?: string;
   packageImageSharePath?: string;
   isFavorite: boolean;

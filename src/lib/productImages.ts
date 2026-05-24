@@ -1,8 +1,11 @@
 export const PRODUCT_IMAGE_BUCKET = "product-images";
 export const PRODUCT_IMAGE_DISPLAY_SIZE = 1600;
-export const PRODUCT_IMAGE_SHARE_SIZE = 2000;
+// シェア用は ProductShareCard を scale 4 で出力した時の写真エリア (高さ 2160px)
+// を 1px たりともアップスケールしない解像度を確保するため 2400 にしている。
+// R2 は egress 無料・ストレージ単価 $0.015/GB なのでコスト影響は微小。
+export const PRODUCT_IMAGE_SHARE_SIZE = 2400;
 export const PRODUCT_IMAGE_DISPLAY_QUALITY = 92;
-export const PRODUCT_IMAGE_SHARE_QUALITY = 95;
+export const PRODUCT_IMAGE_SHARE_QUALITY = 97;
 export const PRODUCT_IMAGE_WEBP_EFFORT = 6;
 export const PRODUCT_IMAGE_BACKFILL_BATCH_SIZE = 10;
 
