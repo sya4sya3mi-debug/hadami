@@ -183,12 +183,10 @@ function CommentBlock({
 function EffectBars({
   effects,
   ink,
-  ink40,
   hair,
 }: {
   effects: ProductShareCardEffect[];
   ink: string;
-  ink40: string;
   hair: string;
 }) {
   return (
@@ -199,7 +197,7 @@ function EffectBars({
             style={{
               fontFamily: "var(--hd-serif)",
               fontSize: 12,
-              flex: 1,
+              flexShrink: 0,
               letterSpacing: "-0.01em",
               color: ink,
             }}
@@ -207,17 +205,6 @@ function EffectBars({
             {e.label}
           </div>
           <div style={{ flex: 1, height: 1, background: hair }} />
-          <div
-            style={{
-              fontFamily: "var(--hd-mono)",
-              fontSize: 9,
-              color: ink40,
-              textAlign: "right",
-              flexShrink: 0,
-            }}
-          >
-            {e.score} 件
-          </div>
         </div>
       ))}
     </div>
@@ -389,7 +376,6 @@ function PatternA({
               <EffectBars
                 effects={displayEffects}
                 ink={palette.ink}
-                ink40={palette.ink40}
                 hair={palette.hair}
               />
             </>
@@ -590,7 +576,6 @@ function PatternB({
             <EffectBars
               effects={displayEffects}
               ink={palette.ink}
-              ink40={palette.ink40}
               hair={palette.hair}
             />
           </div>
@@ -771,7 +756,6 @@ function PatternC({
             <EffectBars
               effects={displayEffects}
               ink={palette.ink}
-              ink40={palette.ink40}
               hair={palette.hair}
             />
           </div>
