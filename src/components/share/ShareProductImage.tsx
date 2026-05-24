@@ -40,19 +40,18 @@ export default function ShareProductImage({ product, size, radius = 0, fontSize 
   return (
     <div style={style}>
       {hasImage ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={imageUrl}
-          alt={name}
-          loading="eager"
-          decoding="sync"
-          crossOrigin="anonymous"
+        // html2canvas は <img> + object-fit: cover を縦に引き伸ばすため、
+        // 等倍キャプチャ確実性を優先して background-image を使う。
+        <div
+          role="img"
+          aria-label={name}
           style={{
             position: "absolute",
             inset: 0,
-            width: "100%",
-            height: "100%",
-            objectFit: "cover",
+            backgroundImage: `url(${imageUrl})`,
+            backgroundSize: "cover",
+            backgroundPosition: "center",
+            backgroundRepeat: "no-repeat",
           }}
         />
       ) : (

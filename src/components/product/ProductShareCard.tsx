@@ -62,12 +62,19 @@ function PhotoPanel({
   return (
     <div style={{ position: "relative", overflow: "hidden", ...style }}>
       {imageUrl ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={imageUrl}
-          alt=""
-          crossOrigin="anonymous"
-          style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }}
+        // html2canvas は <img> + object-fit: cover を正しく描画できず縦に
+        // 引き伸ばすため、background-image + background-size: cover を使う。
+        <div
+          role="img"
+          aria-label=""
+          style={{
+            position: "absolute",
+            inset: 0,
+            backgroundImage: `url(${imageUrl})`,
+            backgroundSize: "cover",
+            backgroundPosition: "center",
+            backgroundRepeat: "no-repeat",
+          }}
         />
       ) : (
         <>
