@@ -166,6 +166,11 @@ function CommentBlock({
   accent: string;
   fontSize?: number;
 }) {
+  // 長文コメントが Active Effects を押し出さないよう、最大 3 行で打ち切る。
+  // -webkit-line-clamp は内部の <span>（引用符）を別アイテムとして数えて
+  // 1 行目しか見えなくなるケースがあったため、純粋な max-height + overflow で
+  // 制限する。lineHeight 1.5 × fontSize × 3 行。
+  const maxHeight = Math.ceil(fontSize * 1.5 * 3);
   return (
     <div
       style={{
@@ -178,12 +183,9 @@ function CommentBlock({
         position: "relative",
         paddingLeft: 14,
         borderLeft: `2px solid ${accent}`,
-        // 長文コメントで Active Effects が下に押し出されるのを防ぐため
-        // 最大 3 行で打ち切る。
-        display: "-webkit-box",
-        WebkitLineClamp: 3,
-        WebkitBoxOrient: "vertical",
+        maxHeight,
         overflow: "hidden",
+        wordBreak: "break-word",
       }}
     >
       <span style={{ color: accent, marginRight: 2 }}>&ldquo;</span>
@@ -227,7 +229,7 @@ function EffectBars({
 // ── Pattern A: left photo + right data ───────────────────────────────────────
 
 function PatternA({
-  name, brand, productType, initials, bgColor, imageUrl, no,
+  name, brand, initials, bgColor, imageUrl, no,
   effects, rating, comment, palette, deco,
 }: Omit<ProductShareCardProps, "pattern" | "paletteKey"> & { palette: SharePalette; deco: ShareDecoKey }) {
   const noLabel = no != null ? `No. ${String(no).padStart(3, "0")}` : "No. —";
@@ -264,30 +266,6 @@ function PatternA({
           style={{ position: "absolute", inset: 0 }}
         />
         <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 3, background: palette.ink }} />
-        <div
-          style={{
-            position: "absolute",
-            bottom: 32,
-            left: 0,
-            right: 0,
-            display: "flex",
-            justifyContent: "center",
-          }}
-        >
-          <div
-            style={{
-              writingMode: "vertical-rl",
-              fontFamily: "var(--hd-mono)",
-              fontSize: 9,
-              letterSpacing: "0.28em",
-              textTransform: "uppercase",
-              color: imageUrl ? "rgba(255,255,255,0.9)" : "rgba(255,255,255,0.7)",
-              textShadow: imageUrl ? "0 1px 3px rgba(0,0,0,0.5)" : undefined,
-            }}
-          >
-            {productType} · {brand}
-          </div>
-        </div>
       </div>
 
       {/* Right: data */}
