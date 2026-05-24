@@ -49,6 +49,28 @@ async function inlineImageAsDataUrl(url: string): Promise<string | null> {
   }
 }
 
+// シェアカードで使う Web フォントを事前にロードする。
+// document.fonts.ready は宣言済みフォントの完了を待つが、
+// 実際にレイアウトに使われていない font-family は読み込みが遅延するため、
+// 明示的に load() で要求しないと html2canvas 実行時にフォントスワップが
+// 起きて文字が二重に描画されるケースがある。
+async function preloadShareFonts(): Promise<void> {
+  if (typeof document === "undefined" || !document.fonts?.load) return;
+  const specs = [
+    'normal 17px "Shippori Mincho"',
+    'normal 12px "Shippori Mincho"',
+    'italic 12px "Shippori Mincho"',
+    'normal 22px "Shippori Mincho"',
+    'normal 30px "Shippori Mincho"',
+    'normal 10px "JetBrains Mono"',
+    'normal 14px "Inter Tight"',
+  ];
+  await Promise.all(
+    specs.map((spec) => document.fonts.load(spec).catch(() => null)),
+  );
+  if (document.fonts.ready) await document.fonts.ready;
+}
+
 interface ProductShareCardSheetProps extends ProductShareCardProps {
   open: boolean;
   onClose: () => void;
@@ -155,8 +177,7 @@ export default function ProductShareCardSheet({
     setStatus("idle");
 
     try {
-      const fontSet = document.fonts;
-      if (fontSet?.ready) await fontSet.ready;
+      await preloadShareFonts();
 
       const sourceUrl = imageOverride ?? cardProps.imageUrl ?? null;
       if (sourceUrl && !sourceUrl.startsWith("data:")) {
@@ -578,7 +599,7 @@ export default function ProductShareCardSheet({
           />
         </Section>
 
-        {/* ── Card preview ── */}
+        {/* ── Card preview (visible, scaled) ── */}
         <div
           style={{
             display: "flex",
@@ -594,18 +615,46 @@ export default function ProductShareCardSheet({
               transformOrigin: "top center",
               height: 292,
             }}
+            aria-hidden="true"
           >
-            <div ref={captureRef}>
-              <ProductShareCard
-                {...cardProps}
-                imageUrl={captureImageUrl ?? imageOverride ?? cardProps.imageUrl}
-                pattern={pattern}
-                paletteKey={paletteKey}
-                deco={deco}
-                rating={rating}
-                comment={comment}
-              />
-            </div>
+            <ProductShareCard
+              {...cardProps}
+              imageUrl={captureImageUrl ?? imageOverride ?? cardProps.imageUrl}
+              pattern={pattern}
+              paletteKey={paletteKey}
+              deco={deco}
+              rating={rating}
+              comment={comment}
+            />
+          </div>
+        </div>
+
+        {/*
+          html2canvas 用の等倍レンダー。
+          親に transform: scale が掛かっていると html2canvas が文字位置や
+          letter-spacing を誤って二重描画することがあるため、キャプチャ用は
+          画面外に等倍で配置する。
+        */}
+        <div
+          aria-hidden="true"
+          style={{
+            position: "fixed",
+            left: -99999,
+            top: 0,
+            pointerEvents: "none",
+            zIndex: -1,
+          }}
+        >
+          <div ref={captureRef}>
+            <ProductShareCard
+              {...cardProps}
+              imageUrl={captureImageUrl ?? imageOverride ?? cardProps.imageUrl}
+              pattern={pattern}
+              paletteKey={paletteKey}
+              deco={deco}
+              rating={rating}
+              comment={comment}
+            />
           </div>
         </div>
 
